@@ -2,6 +2,11 @@
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
+## Verbindlicher Versionsstand
+- Gesamt- und Produktstand: **V23**.
+- Repository, Vercel-Preview und Produktionsfreigabeprüfung beziehen sich verbindlich auf V23.
+- Die frühere Bezeichnung „V17“ war lediglich die interne Nummer eines technischen Quellcode-Sicherungspakets und ist nicht die Produktversion.
+
 ## Stand
 - Öffentliche Produkt- und Preisübersicht
 - Kostenloser Einstieg bis Gold Business
@@ -87,11 +92,11 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Die öffentlich erreichbaren Edge-Funktionen `gold-app` und `gold-install` bleiben absichtlich ohne JWT-Zwang, weil sie die Login-/Installationsoberfläche ausliefern; geschützte Datenzugriffe erfolgen weiterhin über Auth/RLS.
 - Bezahlfunktion bleibt deaktiviert.
 
-## V17 – Sicherheitsupdate Build-Basis (29.08.2026)
+## V23 – Sicherheitsupdate Build-Basis (29.08.2026)
 - Next.js von 15.5.2 auf 15.5.24 angehoben (Maintenance-LTS Sicherheitsstand laut Next.js Security Release vom 25.08.2026).
 - Keine Änderung an Zahlungsaktivierung: Zahlung bleibt deaktiviert.
 - Produktionsstand bleibt unverändert.
-- GitHub-Zugriff am 29.08.2026 erfolgreich hergestellt; die geprüfte V17-Basis wird vollständig im Repository versioniert.
+- GitHub-Zugriff am 29.08.2026 erfolgreich hergestellt; der geprüfte V23-Stand wird vollständig im Repository versioniert.
 - Lokaler Produktions-Build mit Next.js 15.5.24 erfolgreich.
 - Vollständige Vercel-Preview mit allen benötigten Source-Dateien erfolgreich gebaut.
 - Browser-Grundtest bestanden: öffentliche Startseite, Registrierungsansicht, Zurück-Navigation und Sprachwechsel DE/EN reagieren; keine App-Browserfehler festgestellt.
