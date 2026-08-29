@@ -91,6 +91,9 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Next.js von 15.5.2 auf 15.5.24 angehoben (Maintenance-LTS Sicherheitsstand laut Next.js Security Release vom 25.08.2026).
 - Keine Änderung an Zahlungsaktivierung: Zahlung bleibt deaktiviert.
 - Produktionsstand bleibt unverändert.
-- Preview-Freigabe erst nach vollständigem Source-Upload und erfolgreichem End-to-End-Test.
 - GitHub-Zugriff am 29.08.2026 erfolgreich hergestellt; die geprüfte V17-Basis wird vollständig im Repository versioniert.
-- Preview-Freigabe bleibt an einen erfolgreichen vollständigen Build und End-to-End-Test gebunden.
+- Lokaler Produktions-Build mit Next.js 15.5.24 erfolgreich.
+- Vollständige Vercel-Preview mit allen benötigten Source-Dateien erfolgreich gebaut.
+- Browser-Grundtest bestanden: öffentliche Startseite, Registrierungsansicht, Zurück-Navigation und Sprachwechsel DE/EN reagieren; keine App-Browserfehler festgestellt.
+- Produktion wurde nicht verändert und ist weiterhin erreichbar.
+- Noch offen vor einer Produktionsfreigabe: vollständiger End-to-End-Test von Anmeldung/E-Mail-Bestätigung, Passwort-Reset, Datenbank-/Storage-Funktionen, Upgrades, Exporten, Audit/Löschantrag und mobiler Darstellung.
