@@ -105,4 +105,6 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Die Exportprotokollierung besitzt jetzt die benötigten nutzergebundenen RLS-Rechte; unnötige `TRUNCATE`-, `TRIGGER`- und `REFERENCES`-Rechte wurden von Browserrollen entfernt und Clientfehler werden nicht mehr als Erfolg ausgegeben.
 - Die mobile öffentliche Kopfzeile ordnet Marke, Sprachwahl, Registrierung und Anmeldung auf schmalen Displays in zwei klare Zeilen.
 - Produktion wurde nicht verändert und ist weiterhin erreichbar.
-- Noch offen vor einer Produktionsfreigabe: vollständiger End-to-End-Test mit einem angemeldeten Testkonto, Aktivierung des Schutzes vor kompromittierten Passwörtern, verbindliche Upload-Größen-/Dateitypgrenzen und abschließender Test auf einem echten Mobilgerät.
+- Die vorläufige Upload-Testgrenze wurde auf 50 MB pro Datei angehoben. Sie entspricht der technischen Obergrenze des aktuellen Supabase-Free-Tarifs und ist ausdrücklich noch keine endgültige Produkt- oder Tarifgrenze.
+- Die vollständige Soll-/Ist-Definition und die offenen Produktentscheidungen stehen in `docs/V23_APP_DEFINITION.md`.
+- Noch offen vor einer Produktionsfreigabe: vollständige Definition und Implementierung des Kernablaufs, End-to-End-Test mit einem angemeldeten Testkonto, Aktivierung des Schutzes vor kompromittierten Passwörtern, endgültige Upload-Größen-/Dateitypgrenzen und abschließender Test auf einem echten Mobilgerät.
