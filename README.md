@@ -100,5 +100,7 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Lokaler Produktions-Build mit Next.js 15.5.24 erfolgreich.
 - Vollständige Vercel-Preview mit allen benötigten Source-Dateien erfolgreich gebaut.
 - Browser-Grundtest bestanden: öffentliche Startseite, Registrierungsansicht, Zurück-Navigation und Sprachwechsel DE/EN reagieren; keine App-Browserfehler festgestellt.
+- Anmeldung und Registrierung besitzen eine zugängliche Klartextanzeige für Passwortfelder; beide Registrierungsfelder lassen sich unabhängig umschalten, einschließlich lokalisierter RTL-Darstellung.
+- Die privilegierte interne Funktion zur Änderung von Tarifberechtigungen ist nicht mehr für normale angemeldete Nutzer ausführbar; nur die vertrauenswürdige Backend-Rolle behält Zugriff.
 - Produktion wurde nicht verändert und ist weiterhin erreichbar.
 - Noch offen vor einer Produktionsfreigabe: vollständiger End-to-End-Test von Anmeldung/E-Mail-Bestätigung, Passwort-Reset, Datenbank-/Storage-Funktionen, Upgrades, Exporten, Audit/Löschantrag und mobiler Darstellung.
