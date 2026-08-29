@@ -22,6 +22,16 @@ const languages = [
   { key:'ar', label:'العربية', short:'AR' }
 ]
 
+const passwordUi = {
+  de:{show:'Anzeigen',hide:'Verbergen'},
+  en:{show:'Show',hide:'Hide'},
+  tr:{show:'Göster',hide:'Gizle'},
+  pl:{show:'Pokaż',hide:'Ukryj'},
+  uk:{show:'Показати',hide:'Приховати'},
+  ru:{show:'Показать',hide:'Скрыть'},
+  ar:{show:'إظهار',hide:'إخفاء'}
+}
+
 const ui = {
   de:{ prices:'Preise', register:'Neu registrieren', login:'Anmelden', hero:'Komplexe Vorgänge. Klar geführt.', lead:'AS Gold ordnet Unterlagen, zeigt Lücken, Risiken, Fristen und nächste Schritte verständlich auf.', freeCta:'3 Dokumente kostenlos kennenlernen', compare:'Preise vergleichen', legal:'Rechtliche Grundlage: Deutschland / deutsches Recht', language:'Sprache', outputLanguage:'Ausgabesprache', germanOutput:'Deutsch', englishOutput:'Englisch', turkishOutput:'Türkisch', polishOutput:'Polnisch', ukrainianOutput:'Ukrainisch', russianOutput:'Russisch', arabicOutput:'Arabisch', marketNote:'AS Gold ist für den deutschen Markt ausgelegt. Die gewählte Sprache ändert nicht die rechtliche Grundlage.' },
   en:{ prices:'Prices', register:'Register', login:'Sign in', hero:'Complex cases. Clearly guided.', lead:'AS Gold organizes documents and highlights gaps, risks, deadlines and next steps in a clear way.', freeCta:'Try 3 documents for free', compare:'Compare prices', legal:'Legal basis: Germany / German law', language:'Language', outputLanguage:'Output language', germanOutput:'German', englishOutput:'English', turkishOutput:'Turkish', polishOutput:'Polish', ukrainianOutput:'Ukrainian', russianOutput:'Russian', arabicOutput:'Arabic', marketNote:'AS Gold is designed for the German market. Changing the language does not change the legal basis.' },
@@ -217,11 +227,18 @@ const lightText = s => s === 'yellow' ? '🟡 Gelb' : s === 'green' ? '🟢 Grü
 
 function Logo(){ return <div className="logo">AS</div> }
 
+function PasswordField({id,label,value,onChange,visible,onToggle,labels,autoComplete}){
+  const actionLabel = visible ? labels.hide : labels.show
+  return <div className="authField"><label htmlFor={id}>{label}</label><div className="passwordControl"><input id={id} type={visible?'text':'password'} value={value} onChange={onChange} autoComplete={autoComplete} required/><button type="button" className="passwordToggle" onClick={onToggle} aria-label={`${actionLabel}: ${label}`} aria-pressed={visible}>{actionLabel}</button></div></div>
+}
+
 export default function Home(){
   const [screen,setScreen] = useState('loading')
   const [email,setEmail] = useState('')
   const [password,setPassword] = useState('')
   const [password2,setPassword2] = useState('')
+  const [showPassword,setShowPassword] = useState(false)
+  const [showPassword2,setShowPassword2] = useState(false)
   const [displayName,setDisplayName] = useState('')
   const [message,setMessage] = useState('')
   const [user,setUser] = useState(null)
@@ -249,6 +266,7 @@ export default function Home(){
   const t = ui[language] || ui.de
   const a = appText[language] || appText.de
   const n = notices[language] || notices.de
+  const pui = passwordUi[language] || passwordUi.de
   const localizedPlans = plans.map((p,index)=>{ const v=(planText[language]||{})[p.key]; const j=(planJourney[language]||planJourney.de)[p.key] || {}; const base=v?{...p,audience:v[0],checks:v[1],result:v[2],excluded:v[3]}:p; return {...base,...j,level:index+1} })
   const period = periodText[language] || periodText.de
   const jl = journeyLabels[language] || journeyLabels.de
@@ -489,7 +507,7 @@ export default function Home(){
   function downloadBlob(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 
   if(screen==='loading') return <main className="center"><section className="card"><Logo/><h1>AS Gold</h1><p>{a.checking}</p></section></main>
-  if(screen==='login'||screen==='register') return <main className="center"><section className="card authCard"><Logo/><h1>AS Gold</h1><div className="languageSwitch"><span>{t.language}</span><select value={language} onChange={e=>setLanguage(e.target.value)}>{languages.map(l=><option value={l.key} key={l.key}>{l.label}</option>)}</select></div><p className="muted">{screen==='register'?a.registerTitle:a.protected}</p>{screen==='register'&&<div className="registerTransparency"><b>{tt.registerTitle}</b><p>{tt.registerNote}</p><span>✓ {a.noSubscription}</span></div>}{screen==='register'?<form onSubmit={register}><label>{a.name}<input value={displayName} onChange={e=>setDisplayName(e.target.value)} required/></label><label>{a.email}<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>{a.password}<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label><label>{a.passwordAgain}<input type="password" value={password2} onChange={e=>setPassword2(e.target.value)} required/></label><button className="primary full">{a.registerFree}</button></form>:<form onSubmit={signIn}><label>{a.email}<input type="email" value={email} onChange={e=>setEmail(e.target.value)} required/></label><label>{a.password}<input type="password" value={password} onChange={e=>setPassword(e.target.value)} required/></label><button className="primary full">{t.login}</button><button type="button" className="linkBtn full" onClick={resetPassword}>{lt.passwordReset}</button><small className="authHelp">{lt.passwordResetHelp}</small></form>}{message&&<div className="note">{message}</div>}<button className="linkBtn full" onClick={()=>setScreen(screen==='register'?'login':'register')}>{screen==='register'?a.already:a.newHere}</button><button className="linkBtn full" onClick={()=>setScreen('public')}>{a.backExplanation}</button></section></main>
+  if(screen==='login'||screen==='register') return <main className="center"><section className="card authCard"><Logo/><h1>AS Gold</h1><div className="languageSwitch"><span>{t.language}</span><select value={language} onChange={e=>setLanguage(e.target.value)}>{languages.map(l=><option value={l.key} key={l.key}>{l.label}</option>)}</select></div><p className="muted">{screen==='register'?a.registerTitle:a.protected}</p>{screen==='register'&&<div className="registerTransparency"><b>{tt.registerTitle}</b><p>{tt.registerNote}</p><span>✓ {a.noSubscription}</span></div>}{screen==='register'?<form onSubmit={register}><label>{a.name}<input value={displayName} onChange={e=>setDisplayName(e.target.value)} autoComplete="name" required/></label><label>{a.email}<input type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email" required/></label><PasswordField id="register-password" label={a.password} value={password} onChange={e=>setPassword(e.target.value)} visible={showPassword} onToggle={()=>setShowPassword(v=>!v)} labels={pui} autoComplete="new-password"/><PasswordField id="register-password-repeat" label={a.passwordAgain} value={password2} onChange={e=>setPassword2(e.target.value)} visible={showPassword2} onToggle={()=>setShowPassword2(v=>!v)} labels={pui} autoComplete="new-password"/><button className="primary full">{a.registerFree}</button></form>:<form onSubmit={signIn}><label>{a.email}<input type="email" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="username" required/></label><PasswordField id="login-password" label={a.password} value={password} onChange={e=>setPassword(e.target.value)} visible={showPassword} onToggle={()=>setShowPassword(v=>!v)} labels={pui} autoComplete="current-password"/><button className="primary full">{t.login}</button><button type="button" className="linkBtn full" onClick={resetPassword}>{lt.passwordReset}</button><small className="authHelp">{lt.passwordResetHelp}</small></form>}{message&&<div className="note">{message}</div>}<button className="linkBtn full" onClick={()=>{setShowPassword(false);setShowPassword2(false);setScreen(screen==='register'?'login':'register')}}>{screen==='register'?a.already:a.newHere}</button><button className="linkBtn full" onClick={()=>{setShowPassword(false);setShowPassword2(false);setScreen('public')}}>{a.backExplanation}</button></section></main>
 
   if(screen==='app'){
     const caseDocs=selectedCase?data.documents.filter(d=>d.case_id===selectedCase.id):[]
