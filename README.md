@@ -102,5 +102,7 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Browser-Grundtest bestanden: öffentliche Startseite, Registrierungsansicht, Zurück-Navigation und Sprachwechsel DE/EN reagieren; keine App-Browserfehler festgestellt.
 - Anmeldung und Registrierung besitzen eine zugängliche Klartextanzeige für Passwortfelder; beide Registrierungsfelder lassen sich unabhängig umschalten, einschließlich lokalisierter RTL-Darstellung.
 - Die privilegierte interne Funktion zur Änderung von Tarifberechtigungen ist nicht mehr für normale angemeldete Nutzer ausführbar; nur die vertrauenswürdige Backend-Rolle behält Zugriff.
+- Die Exportprotokollierung besitzt jetzt die benötigten nutzergebundenen RLS-Rechte; unnötige `TRUNCATE`-, `TRIGGER`- und `REFERENCES`-Rechte wurden von Browserrollen entfernt und Clientfehler werden nicht mehr als Erfolg ausgegeben.
+- Die mobile öffentliche Kopfzeile ordnet Marke, Sprachwahl, Registrierung und Anmeldung auf schmalen Displays in zwei klare Zeilen.
 - Produktion wurde nicht verändert und ist weiterhin erreichbar.
-- Noch offen vor einer Produktionsfreigabe: vollständiger End-to-End-Test von Anmeldung/E-Mail-Bestätigung, Passwort-Reset, Datenbank-/Storage-Funktionen, Upgrades, Exporten, Audit/Löschantrag und mobiler Darstellung.
+- Noch offen vor einer Produktionsfreigabe: vollständiger End-to-End-Test mit einem angemeldeten Testkonto, Aktivierung des Schutzes vor kompromittierten Passwörtern, verbindliche Upload-Größen-/Dateitypgrenzen und abschließender Test auf einem echten Mobilgerät.
