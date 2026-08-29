@@ -485,8 +485,11 @@ export default function Home(){
       } else if(type==='csv'){
         const q=v=>`"${String(v??'').replace(/"/g,'""')}"`; downloadBlob(new Blob(['\uFEFF'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),`${base}.csv`)
       } else if(type==='txt') downloadBlob(new Blob([rows.map((r,i)=>i===0?r[0]:`${r[0]}: ${r[1]||''}`).join('\r\n\r\n')],{type:'text/plain;charset=utf-8'}),`${base}.txt`)
-      await supabase.from('exports').insert({case_id:ref.kind==='case'?ref.item.id:ref.item.case_id||null,document_id:ref.kind==='document'?ref.item.id:null,export_type:type,title:`${ref.item.title||'AS Gold Export'} (${type.toUpperCase()})`,status:'ready'})
-      recordLocalAction('export_created',`${ref.item.title||ref.kind} · ${type.toUpperCase()}`); await recordServerAudit('export_created',`${ref.item.title||ref.kind} · ${type.toUpperCase()}`,ref.kind,ref.item.id); setMessage(`${a.export}: ${type.toUpperCase()} ✓`)
+      const {error:exportLogError}=await supabase.from('exports').insert({case_id:ref.kind==='case'?ref.item.id:ref.item.case_id||null,document_id:ref.kind==='document'?ref.item.id:null,export_type:type,title:`${ref.item.title||'AS Gold Export'} (${type.toUpperCase()})`,status:'ready'})
+      if(exportLogError) throw exportLogError
+      recordLocalAction('export_created',`${ref.item.title||ref.kind} · ${type.toUpperCase()}`)
+      const auditSaved=await recordServerAudit('export_created',`${ref.item.title||ref.kind} · ${type.toUpperCase()}`,ref.kind,ref.item.id)
+      setMessage(auditSaved?`${a.export}: ${type.toUpperCase()} ✓`:`${a.export}: ${type.toUpperCase()} ✓ · ${sct.auditFailed}`)
     } catch(err){ setMessage(`${a.export}: ${err.message}`) }
   }
   async function exportMyData(){
