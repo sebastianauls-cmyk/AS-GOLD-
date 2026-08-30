@@ -1,10 +1,11 @@
 # AS Gold V27 – kundenfreundliche Fallauswahl
 
-Stand: 30. August 2026
+Stand: 30. August 2026, nach öffentlichem Produktions-Browserlauf
 
-V27 baut ausschließlich auf dem vollständigen GitHub-Hauptstand V26 auf. Die
-fachlichen Abläufe aus V24, der revisionsgebundene Freigabeablauf aus V25 und
-die kontrollierte Dokumentanalyse aus V26 wurden nicht entfernt oder ersetzt.
+V27 baut ausschließlich auf dem vollständigen V26-Stand auf. Die fachlichen
+Abläufe aus V24, der revisionsgebundene Freigabeablauf aus V25 und die
+kontrollierte Dokumentanalyse aus V26 wurden nicht entfernt oder ersetzt. V27
+ist der aktuelle Produktionsstand im kontrollierten Testbetrieb.
 
 ## Ziel der Änderung
 
@@ -45,9 +46,31 @@ Die öffentliche Startseite soll innerhalb weniger Sekunden beantworten:
 - statische Generierung der Route `/`: erfolgreich
 - React-/JavaScript-Kompilierung und Typprüfung: erfolgreich
 - `git diff --check`: erfolgreich
-- lokaler Dev-Server auf `127.0.0.1`: gestartet
-- automatisierter visueller Browserlauf: in der Ausführungsumgebung nicht
-  verfügbar, weil das vorgesehene Browserprogramm nicht installiert ist
+- Vercel-Preview `dpl_2QFNfjPWDuJrs5R7f5nDkw6QR7H2`: `READY`
+- Vercel-Produktion `dpl_GgyevtiiYyxF8pap12RPfhDiDXbC`: `READY`
+- Live-Adresse: `https://app-gold-workspace.vercel.app`
+- öffentlicher Desktop-Browserlauf bei 1363 × 936 CSS-Pixeln: erfolgreich
+- alle acht Fallarten schalten die zugehörige Detailansicht korrekt um
+- Registrierungsansicht, unabhängige Klartextanzeige beider Passwortfelder und
+  Zurück-Navigation zur Erklärung: erfolgreich
+- DE, EN, TR, PL, UK, RU und AR: vollständig umschaltbar
+- Arabisch setzt `lang=ar` und `dir=rtl`; in keiner der sieben Sprachen wurde
+  horizontaler Seitenüberlauf festgestellt
+- sechs Transparenzregeln sind vollständig aufklappbar
+- alle sechs Nutzerziele empfehlen jeweils die passende günstigste Tarifstufe
+- keine Fehler aus dem Anwendungscode im Browserprotokoll; Meldungen stammten
+  ausschließlich aus der Testbrowser-Erweiterung
+- Vercel-Laufzeitfehlerprüfung für die letzte Stunde: keine Fehler gefunden
+
+## Noch ausstehende Prüfungen
+
+- visueller und funktionaler Test auf einem echten Mobilgerät; die
+  responsiven Regeln für 980, 700, 560 und 420 Pixel sind vorhanden, ersetzen
+  aber keinen physischen Gerätetest
+- authentifizierter End-to-End-Test mit einem isolierten Testkonto und reinen
+  Testdateien
+- getrennte Freigabe und Prüfung der vorbereiteten Datenbankmigrationen
+- Aktivierung des Supabase-Schutzes vor bekannten kompromittierten Passwörtern
 
 ## Unveränderte Grenzen
 
@@ -55,11 +78,12 @@ Die öffentliche Startseite soll innerhalb weniger Sekunden beantworten:
 - kein automatischer Versand
 - keine automatische fachliche oder rechtliche Endentscheidung
 - kontrollierter Testbetrieb ohne echte Kundendaten
-- Produktion wurde durch V27 nicht verändert
+- beim öffentlichen Browserlauf wurden kein Konto angelegt, keine Formulardaten
+  übermittelt und keine Live-Daten verändert
 
-## Vor einer Produktionsfreigabe
+## Freigabestatus
 
-1. denselben V27-Stand als Vercel-Preview bauen,
-2. Desktop- und Mobilansicht im Browser prüfen,
-3. Fallauswahl, Registrierung, Zurück-Navigation und sieben Sprachwechsel testen,
-4. anschließend nur denselben geprüften Stand freigeben.
+- V27 ist gebaut, versioniert, gesichert und produktiv veröffentlicht.
+- Die öffentliche Oberfläche ist für externe Tester erreichbar.
+- Die Freigabe bezieht sich weiterhin ausschließlich auf den kontrollierten
+  Testbetrieb ohne echte Kundendaten und ohne Bezahlfunktion.

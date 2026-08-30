@@ -3,8 +3,7 @@
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Verbindliche Ausgangs- und Produktionsbasis: **V26**.
-- Aktueller geprüfter Weiterentwicklungsstand: **V27**.
+- Gesamt- und Produktionsstand: **V27**.
 - V27 übernimmt den vollständigen V26-Funktionsstand und ergänzt ausschließlich den kundenfreundlichen öffentlichen Einstieg über Zielgruppen, Fallarten, typische Beispiele, konkreten Nutzen und erwartbare Ergebnisse.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
@@ -135,5 +134,7 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Transparenzregeln bleiben vollständig erreichbar, sind aber zugunsten einer ruhigen Startseite zunächst eingeklappt.
 - Kostenloser Einstieg, deaktivierte Zahlung und fehlende automatische Verlängerung bleiben sichtbar.
 - Die mobile Kopfzeile und Fallauswahl wurden für schmale Displays ergänzt.
-- Produktion bleibt unverändert; V27 ist bis zur abschließenden Browser- und Preview-Prüfung ein Weiterentwicklungsstand.
+- V27 ist unter `https://app-gold-workspace.vercel.app` produktiv im kontrollierten Testbetrieb veröffentlicht.
+- Der öffentliche Desktop-Browserlauf ist bestanden: acht Fallarten, Registrierung, Passwort-Sichtbarkeit, Zurück-Navigation, sieben Sprachwechsel einschließlich Arabisch/RTL, Transparenzregeln und alle sechs Tarifempfehlungen funktionieren ohne App-Browserfehler.
+- Der physische Test auf einem echten Mobilgerät sowie der authentifizierte End-to-End-Test mit einem isolierten Testkonto bleiben eigene Freigabeschritte.
 - Details stehen in `docs/V27_IMPLEMENTATION_STATUS.md`.
