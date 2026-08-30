@@ -35,6 +35,9 @@ Kundendaten und Zahlungsvorgänge sind nicht freigegeben.
 - Deutsch, Englisch, Französisch, Türkisch, Polnisch und Russisch bleiben LTR.
 - Die Laufzeit setzt Schreibrichtung und Dokumentensprache bei jedem Sprachwechsel
   neu, sodass kein RTL-Zustand in einer folgenden LTR-Sprache erhalten bleibt.
+- E-Mail-, Passwort-, Telefon-, Preis- und Zeitwerte bleiben innerhalb arabischer
+  und persischer Oberflächen bewusst LTR-isoliert, damit Kennungen und Zahlenfolgen
+  eindeutig lesbar und bedienbar bleiben.
 
 ## Technische Struktur
 

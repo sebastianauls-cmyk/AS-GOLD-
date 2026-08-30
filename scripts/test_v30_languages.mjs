@@ -98,4 +98,8 @@ for (const relativeFile of activeSources) {
   assert.equal(/[ІіЇїЄєҐґ]/.test(source),false,`${relativeFile} still contains Ukrainian copy`)
 }
 
+const globalCss = fs.readFileSync(new URL('../app/globals.css', import.meta.url),'utf8')
+assert.match(globalCss,/html\[dir="rtl"\] input\[type="email"\].*direction:ltr/,'RTL email fields must isolate LTR identifiers')
+assert.match(globalCss,/html\[dir="rtl"\] \.priceHead strong.*direction:ltr/,'RTL price values must remain LTR')
+
 console.log('V30-Sprachen: 8 aktive Sprachen, FR vollständig, FA vollständig/RTL, UK entfernt.')
