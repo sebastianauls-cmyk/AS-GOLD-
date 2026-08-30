@@ -5,15 +5,20 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:v29-password": "node scripts/test_v29_password_policy.mjs",
+    "test:v30-languages": "node scripts/test_v30_languages.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
     "docx": "9.5.1",
-    "jspdf": "3.0.2",
+    "jspdf": "4.2.1",
     "next": "15.5.24",
     "react": "19.1.1",
     "react-dom": "19.1.1",
-    "xlsx": "0.18.5"
+    "write-excel-file": "4.1.1"
+  },
+  "overrides": {
+    "postcss": "8.5.26"
   }
 }
