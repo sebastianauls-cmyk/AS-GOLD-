@@ -3,8 +3,8 @@
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamtstand: **V29-Sicherheitskandidat**; bestätigter Produktionsstand bleibt bis zum abgeschlossenen Rollout **V28**.
-- V29 übernimmt den vollständigen V28-Funktionsstand, repariert die beschädigte Repository-Quelldatei und ergänzt Abhängigkeits-, Header-, Export-, Passwort- und Audit-Härtungen.
+- Gesamt-, Arbeits- und Freigabestand: **V30**.
+- V30 verbindet die V29-Sicherheits-, Integritäts- und Testerhärtungen mit der bereinigten Sprachwahl sowie vollständigen Sprachpaketen für Französisch und Farsi.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
 ## Stand
@@ -30,19 +30,20 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 ## Sicherungsregel
 Jeder freigegebene funktionierende Stand wird nach Test sowohl auf Vercel bereitgestellt als auch versioniert im Google-Drive-Ordner „App intern gold / AS Gold Quellcode-Sicherungen“ gesichert.
 
-## Mehrsprachigkeit – V3
+## Mehrsprachigkeit – V30
 
 Aktive UI-/Ausgabesprachen:
 - Deutsch (Standard)
 - Englisch
+- Französisch
 - Türkisch
 - Polnisch
-- Ukrainisch
 - Russisch
 - Arabisch
+- Farsi
 
 Die Sprache der App und die Ausgabesprache sind getrennte Einstellungen. Die rechtliche Grundlage bleibt unabhängig von der Sprache Deutschland / deutsches Recht.
-Arabisch aktiviert automatisch RTL-Darstellung. Weitere Sprachpakete können über den zentralen `languages`-Katalog und das `ui`-Wörterbuch in `app/page.js` ergänzt werden, ohne Tarif-, Datenbank- oder Rechtslogik zu verändern.
+Arabisch und Farsi aktivieren automatisch RTL-Darstellung. Der zentrale V30-Sprachkatalog hält aktive Sprachen, Gebietsschemata, Schreibrichtung und Ausgabesprachennamen konsistent, ohne Tarif-, Datenbank- oder Rechtslogik zu verändern.
 
 Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, Bulgarisch, Kroatisch und Griechisch.
 
@@ -151,7 +152,7 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Zahlung, Abonnement, automatische Verlängerung und Verarbeitung echter Kundendaten bleiben deaktiviert.
 - Vollständiger technischer und rechtlicher Freigabestatus: `docs/V28_RELEASE_STATUS.md`.
 
-## V29 – kostenlose Sicherheits- und Integritätshärtung (30.08.2026)
+## V29 – Sicherheits-, Integritäts- und Testerhärtung (30.08.2026)
 
 - Beschädigten V28-Quelltext in `app/page.js` anhand des letzten vollständigen V27-Stands und zweier exakter 500-Zeichen-Anker rekonstruiert; die fehlende, zwischen V27 und V28 unveränderte Übersetzungsstrecke wurde vollständig wiederhergestellt.
 - Next.js auf 16.3.3, React/ReactDOM auf 19.2.8 und jsPDF auf 4.2.1 aktualisiert.
@@ -162,3 +163,20 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Registrierung verlangt clientseitig mindestens 12 Zeichen sowie Groß-/Kleinbuchstaben, Zahl und Sonderzeichen; die entsprechende Supabase-Servereinstellung bleibt ein gesonderter Konfigurationsschritt.
 - Lokaler Produktions-Build und HTTP-Header-Test erfolgreich; `npm audit` meldet 0 bekannte Schwachstellen.
 - Details und verbleibende Freigabeschritte stehen in `docs/V29_SECURITY_STATUS.md`.
+- GitHub-Quellstand wieder vollständig baubar; versehentlich gespeicherte Protokoll- und Kürzungsreste entfernt und fehlende V27-Textblöcke wiederhergestellt.
+- Öffentliche Testanleitung unter `/testen` mit klarer Vier-Schritt-Führung und ausdrücklicher Echtdaten-Sperre.
+- Vollständig synthetisches, visuell und technisch geprüftes Muster-PDF für Upload, Erkennung, Fristen, Beträge und Freigabe.
+- Registrierung verlangt mindestens 12 Zeichen, Buchstabe, Zahl, Sonderzeichen, Zeichenvielfalt und keine erkennbaren Namens-/E-Mail-Bestandteile.
+- Supabase-Leaked-Password-Protection bleibt wegen des aktuellen Free-Tarifs eine dokumentierte Marktstart-Sperre; es wurde kein kostenpflichtiger Tarifwechsel ausgelöst.
+- Details und offene Freigabegrenzen: `docs/V29_IMPLEMENTATION_STATUS.md`.
+
+## V30 – Französisch, Farsi und bereinigte Sprachwahl (30.08.2026)
+
+- Aktive UI- und Ausgabesprachen sind jetzt exakt Deutsch, Englisch, Französisch, Türkisch, Polnisch, Russisch, Arabisch und Farsi.
+- Ukrainisch wurde aus aktiven Sprachkatalogen, Auswahlfeldern und Laufzeit-Fallbacks entfernt.
+- Französisch und Farsi decken öffentliche Seite, Registrierung/Anmeldung, Arbeitsbereich, Fall- und Dokumentabläufe, Freigaben, Datenschutz, Tariftexte, Systemmeldungen und Exporte ab.
+- Farsi setzt wie Arabisch automatisch `lang` und `dir=rtl`; alle übrigen Sprachen bleiben links-nach-rechts.
+- Automatischer Katalogtest prüft die vollständige Struktur und Platzhalterparität der französischen und Farsi-Texte sowie das Fehlen ukrainischer Laufzeit-Einträge.
+- Browserlauf bestätigt beide neuen Sprachen, RTL, acht Sprachoptionen und eine fehlerfreie Browserkonsole.
+- Zahlung, Abonnement, automatische Verlängerung und echte Kundendaten bleiben unverändert deaktiviert bzw. gesperrt.
+- Details und Verifikation: `docs/V30_IMPLEMENTATION_STATUS.md`.
