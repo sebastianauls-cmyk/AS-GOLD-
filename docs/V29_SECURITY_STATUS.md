@@ -1,10 +1,10 @@
 # AS Gold V29 – Sicherheits- und Integritätsstatus
 
-Stand: 30. August 2026, vor Produktionsrollout
+Stand: 30. August 2026, nach Produktionsrollout
 
 ## Ergebnis
 
-V29 ist ein kostenloses Härtungsrelease auf Basis des vollständigen V28-Funktionsstands. Zahlung, Abonnement, automatische Verlängerung und die Verarbeitung echter Kundendaten bleiben deaktiviert. Der lokale Build, die neuen Office-Exporte, die HTTP-Sicherheitsheader und die Datenbankmigration sind geprüft; Produktion und Datenbank werden erst nach dem versionierten Frontend-Rollout gemeinsam freigegeben.
+V29 ist als kostenloses Härtungsrelease auf Basis des vollständigen V28-Funktionsstands produktiv veröffentlicht. Zahlung, Abonnement, automatische Verlängerung und die Verarbeitung echter Kundendaten bleiben deaktiviert. Quellstand, lokaler Build, Office-Exporte, Vercel-Produktionsbuild, Live-Header und beide V29-Datenbankmigrationen sind geprüft.
 
 ## Reparatur der Repository-Quelle
 
@@ -67,7 +67,27 @@ Die V29-Migration `v29_harden_audit_integrity` stellt das Audit-Protokoll auf ei
 
 Die Anwendung übermittelt keine Kunden-, Fall-, Betreff- oder Dateinamen mehr an Audit-Metadaten. Die lokale Gerätehistorie speichert nur Zeitpunkt und Ereignisart; bereits gespeicherte Detailwerte werden beim nächsten Laden bereinigt.
 
-Die vollständige Migration wurde in einer Produktionstransaktion ausgeführt, mit Berechtigungs- und Negativtests geprüft und danach vollständig zurückgerollt. Es entstand dadurch noch keine dauerhafte Datenbankänderung.
+Die vollständige Migration wurde zunächst in einer Produktionstransaktion mit Berechtigungs- und Negativtests geprüft und vollständig zurückgerollt. Nach dem erfolgreichen Frontend-Rollout wurde sie dauerhaft angewendet. Die anschließende Prüfung bestätigt:
+
+- `authenticated` kann eigene Audit-Ereignisse lesen, aber nicht direkt einfügen, ändern oder löschen
+- ausschließlich `authenticated` darf die öffentliche validierende RPC aufrufen
+- `anon` darf die öffentliche RPC nicht ausführen
+- Browserrollen dürfen die private Implementierung nicht direkt ausführen
+- einzige Audit-RLS-Policy bleibt `audit_events_select_own`
+- öffentliche RPC ist `SECURITY DEFINER` mit leerem `search_path`
+
+Der Security Advisor kennzeichnet die bewusst für angemeldete Nutzer freigegebene `SECURITY DEFINER`-RPC als Warnhinweis. Das ist hier die beabsichtigte, eng begrenzte Schreibgrenze: Die Funktion prüft aktive Berechtigung, Allowlists, Metadaten, Semantik und Entitätsbesitz; direkte Tabellenschreibrechte und der private Funktionszugriff sind entzogen. Die vier Info-Hinweise zu RLS ohne Policies betreffen ausschließlich interne Tabellen im nicht exponierten `private`-Schema und sind beabsichtigt.
+
+## Datenbank-Performance
+
+Die Migration `v29_index_foreign_keys` ergänzt Indizes für:
+
+- `exports.case_id`
+- `exports.document_id`
+- `user_access_periods.plan_id`
+- `user_access_periods.term_months`
+
+Alle vier Indizes sind produktiv vorhanden. Der erneut ausgeführte Performance Advisor meldet danach keine unindexierten Fremdschlüssel mehr. Hinweise auf bislang ungenutzte Indizes sind in dem jungen Testsystem erwartbar und kein belastbarer Löschgrund.
 
 ## Passwortschutz
 
@@ -75,7 +95,7 @@ Die Registrierung prüft in allen sieben Oberflächensprachen mindestens 12 Zeic
 
 Der Supabase Security Advisor meldet weiterhin die deaktivierte Prüfung auf bekannte kompromittierte Passwörter. Diese Funktion ist nach aktueller Supabase-Dokumentation nicht im verwendeten Free-Plan enthalten. V29 löst weder ein kostenpflichtiges Upgrade aus noch behauptet es, diese Plattformgrenze geschlossen zu haben.
 
-## Lokale Verifikation
+## Verifikation
 
 - `npm run build`: erfolgreich mit Next.js 16.3.3
 - alle App-Routen statisch erzeugt
@@ -84,17 +104,21 @@ Der Supabase Security Advisor meldet weiterhin die deaktivierte Prüfung auf bek
 - Hauptseite und Datenschutzseite lokal: HTTP 200
 - erwartete Sicherheitsheader lokal vorhanden
 - keine Kürzungsmarker, CDN-Loader, direkten Audit-Inserts oder alten XLSX-Imports im Quelltext
-- V29-Migration transaktional validiert und zurückgerollt
+- GitHub-Quellstand für das Frontend: `c09e9eefced0074ccb43a71a7f1746234ba9afd3`
+- Vercel-Preview `dpl_541dKT2vV8cNjzxyhGswkbPVzpeW`: `READY`
+- Vercel-Produktion `dpl_KrZ3Wqa8MzS7yVEszGSANojGeGSP`: `READY`
+- Produktionsadresse `https://app-gold-workspace.vercel.app`
+- `/`, `/datenschutz`, `/datenschutzsteuerung` und `/widerruf`: jeweils HTTP 200 mit erwarteten Sicherheitsheadern
+- keine Vercel-Laufzeitfehler im Kontrollzeitraum nach dem Rollout
+- Audit-Migration produktiv angewendet und Berechtigungsgrenzen geprüft
+- vier Fremdschlüssel-Indizes produktiv angewendet; Performance Advisor danach ohne unindexierte Fremdschlüssel
 
-## Noch ausstehend vor V29-Produktionsfreigabe
+## Noch ausstehend vor einer Freigabe über den kontrollierten Test hinaus
 
-1. Frontend-Commit versionieren und Vercel-Deployment bis `READY` prüfen.
-2. Danach die bereits transaktional geprüfte Audit-Migration einmalig anwenden.
-3. Supabase Security und Performance Advisor erneut ausführen.
-4. Produktionsadresse, Header, Rechtsseiten und öffentliche Widerrufsfunktion prüfen.
-5. Supabase-Mindestpasswort serverseitig auf die V29-Regel abstimmen, sobald die Projektkonfiguration über einen autorisierten Verwaltungsweg verfügbar ist.
-6. Authentifizierten End-to-End-Test mit isoliertem Testkonto und ausschließlich synthetischen Dateien durchführen.
-7. Separaten Test auf realen Mobilgeräten durchführen.
+1. Supabase-Mindestpasswort serverseitig auf die V29-Regel abstimmen, sobald die Projektkonfiguration über einen autorisierten Verwaltungsweg verfügbar ist.
+2. Schutz vor bekannten kompromittierten Passwörtern aktivieren, sobald dafür bewusst ein geeigneter Tarif freigegeben wird; V29 löst kein kostenpflichtiges Upgrade aus.
+3. Authentifizierten End-to-End-Test mit isoliertem Testkonto und ausschließlich synthetischen Dateien durchführen.
+4. Separaten Test auf realen Mobilgeräten durchführen.
 
 Die organisatorischen und rechtlichen offenen Punkte aus `V28_RELEASE_STATUS.md` bleiben unverändert: Auftragsverarbeitung und Unterauftragsverarbeiter, Drittland-/Regionsbewertung, mögliche DSFA, vollständige echte Anbieterangaben und fachanwaltliche Prüfung vor Bezahl- oder Echtdatenbetrieb.
 

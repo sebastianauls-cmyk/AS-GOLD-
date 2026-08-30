@@ -3,7 +3,7 @@
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamtstand: **V29-Sicherheitskandidat**; bestätigter Produktionsstand bleibt bis zum abgeschlossenen Rollout **V28**.
+- Gesamtstand: **V29 produktiv im kontrollierten Testbetrieb** unter `https://app-gold-workspace.vercel.app`.
 - V29 übernimmt den vollständigen V28-Funktionsstand, repariert die beschädigte Repository-Quelldatei und ergänzt Abhängigkeits-, Header-, Export-, Passwort- und Audit-Härtungen.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
@@ -160,5 +160,7 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Audit-Ereignisse laufen über eine serverseitig validierte Allowlist-RPC; direkte Browser-Inserts werden mit der V29-Migration entfernt.
 - Lokale Gerätehistorie speichert keine Kunden-, Fall-, Betreff- oder Dateinamen mehr und bereinigt vorhandene Detailfelder beim nächsten Laden.
 - Registrierung verlangt clientseitig mindestens 12 Zeichen sowie Groß-/Kleinbuchstaben, Zahl und Sonderzeichen; die entsprechende Supabase-Servereinstellung bleibt ein gesonderter Konfigurationsschritt.
-- Lokaler Produktions-Build und HTTP-Header-Test erfolgreich; `npm audit` meldet 0 bekannte Schwachstellen.
+- Vier vom Supabase Performance Advisor gemeldete Fremdschlüsselspalten sind jetzt indexiert; danach verbleiben keine Hinweise auf unindexierte Fremdschlüssel.
+- Lokaler und Vercel-Produktions-Build, Office-Exportprüfungen, Live-HTTP-Header-Test und öffentliche Kernseiten erfolgreich; `npm audit` meldet 0 bekannte Schwachstellen.
+- Produktionsdeployment `dpl_KrZ3Wqa8MzS7yVEszGSANojGeGSP` ist `READY`; die Audit- und Indexmigrationen sind produktiv angewendet und verifiziert.
 - Details und verbleibende Freigabeschritte stehen in `docs/V29_SECURITY_STATUS.md`.
