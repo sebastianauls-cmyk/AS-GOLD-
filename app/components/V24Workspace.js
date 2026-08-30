@@ -78,7 +78,7 @@ export function CaseDetail({copy:on, analysis, item, clients, documents, assessm
   </>
 }
 
-export function DocumentSection({copy:on, cases, documents, mode, setMode, defaultCaseId, onSubmit, uploading, accept, onSelect}){
+export function DocumentSection({copy:on, privacy, cases, documents, mode, setMode, defaultCaseId, onSubmit, uploading, accept, onSelect}){
   return <>
     <form className="actionCard coreForm" onSubmit={onSubmit}>
       <div className="formIntro"><h3>{on.documentUpload}</h3><div className="modeSwitch"><button type="button" className={mode==='upload'?'active':''} onClick={()=>setMode('upload')}>{on.uploadMode}</button><button type="button" className={mode==='scan'?'active':''} onClick={()=>setMode('scan')}>{on.scanMode}</button></div><p>{mode==='scan'?on.scanHelp:on.uploadHelp}</p></div>
@@ -86,6 +86,7 @@ export function DocumentSection({copy:on, cases, documents, mode, setMode, defau
       <label htmlFor="v24-document-case">{on.selectCase}<select id="v24-document-case" name="case_id" defaultValue={defaultCaseId||''}><option value="">{on.withoutCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
       <label htmlFor="v24-document-type">{on.documentType}<input id="v24-document-type" name="document_type" placeholder="z. B. Vertrag, Schreiben, Rechnung"/></label>
       <label htmlFor="v24-document-date">{on.documentDate}<input id="v24-document-date" name="document_date" type="date"/></label>
+      {privacy&&<><div className="documentPrivacyIntro"><b>{privacy.classification}</b><p>{privacy.uploadHelp}</p><a href="/datenschutz" target="_blank" rel="noreferrer">{privacy.privacy} →</a></div><label htmlFor="v28-document-classification">{privacy.classification}<select id="v28-document-classification" name="data_classification" defaultValue="" required><option value="" disabled>—</option><option value="synthetic">{privacy.synthetic}</option><option value="anonymized">{privacy.anonymized}</option></select></label><label className="documentPrivacyConfirm"><input name="test_data_confirmed" type="checkbox" required/><span>{privacy.uploadConfirm}</span></label></>}
       <input type="hidden" name="source" value={mode}/>
       <button className="primary full" disabled={uploading}>{uploading?on.uploading:on.upload}</button>
     </form>
@@ -106,7 +107,7 @@ export function DocumentDetail({copy:on, analysis, item, cases, onBack, onSave, 
   }
   return <>
     <button className="backBtn" type="button" onClick={onBack}>{on.back}</button>
-    <section className="documentReviewHead"><div><span className="modeBadge">V26</span><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={()=>onOpen(item)}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
+    <section className="documentReviewHead"><div><span className="modeBadge">V28</span><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={()=>onOpen(item)}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</p></div>
     {analysis&&onAnalyze&&<ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} phase={analysisPhase} onPhase={setAnalysisPhase}/>}
     <form className="actionCard coreForm documentReviewForm" onSubmit={save}>

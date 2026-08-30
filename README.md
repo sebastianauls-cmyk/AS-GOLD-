@@ -3,8 +3,8 @@
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Produktionsstand: **V27**.
-- V27 übernimmt den vollständigen V26-Funktionsstand und ergänzt ausschließlich den kundenfreundlichen öffentlichen Einstieg über Zielgruppen, Fallarten, typische Beispiele, konkreten Nutzen und erwartbare Ergebnisse.
+- Gesamtstand: **V28**; Veröffentlichung und Live-Verifikation werden in `docs/V28_RELEASE_STATUS.md` dokumentiert.
+- V28 übernimmt den vollständigen V27-Funktionsstand und ergänzt den öffentlichen Rechtsbereich, getrennte Registrierungsbestätigungen, strikte Testdaten-/KI-Schutzschalter, Datenschutz-Steuerung und die zweistufige elektronische Widerrufsfunktion.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
 ## Stand
@@ -138,3 +138,15 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Der öffentliche Desktop-Browserlauf ist bestanden: acht Fallarten, Registrierung, Passwort-Sichtbarkeit, Zurück-Navigation, sieben Sprachwechsel einschließlich Arabisch/RTL, Transparenzregeln und alle sechs Tarifempfehlungen funktionieren ohne App-Browserfehler.
 - Der physische Test auf einem echten Mobilgerät sowie der authentifizierte End-to-End-Test mit einem isolierten Testkonto bleiben eigene Freigabeschritte.
 - Details stehen in `docs/V27_IMPLEMENTATION_STATUS.md`.
+
+## V28 – Datenschutz, Rechtstexte und Widerruf (30.08.2026)
+
+- Dauerhaft erreichbarer Rechtsbereich mit Impressum, Datenschutz, Nutzungsbedingungen, Cookies/Browser-Speicher, KI-Transparenz, Kontakt und zentraler Übersicht.
+- Registrierung verlangt zwei getrennte, nicht vorausgewählte Bestätigungen: Rechtstexte und ausschließliche Verwendung synthetischer bzw. wirksam anonymisierter Testdaten.
+- Uploads benötigen eine zulässige Datenklassifizierung und eine zusätzliche Testdatenbestätigung; echte personenbezogene Daten und Art.-9-Daten bleiben im kontrollierten Test gesperrt.
+- KI-Analyse läuft nur nach aktueller Konto-Bestätigung und ausdrücklicher Freigabe des einzelnen Dokuments; jede Dokumentfreigabe wird serverseitig nach einem Versuch verbraucht.
+- Eigene Datenschutz-Steuerung zeigt Kontostatus und kann Konto-KI-Verarbeitung sowie noch offene Dokumentfreigaben ausschalten.
+- Öffentliche Zwei-Schritt-Funktion „Vertrag widerrufen“ / „Widerruf bestätigen“ speichert den Eingang privat und erzeugt sofort eine herunterladbare Textbestätigung.
+- OpenAI-Aufruf nutzt `store: false`; Ergebnisse bleiben vorläufig und werden erst nach menschlicher Prüfung bewusst gespeichert.
+- Zahlung, Abonnement, automatische Verlängerung und Verarbeitung echter Kundendaten bleiben deaktiviert.
+- Vollständiger technischer und rechtlicher Freigabestatus: `docs/V28_RELEASE_STATUS.md`.

@@ -1,0 +1,14 @@
+import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
+
+export const metadata={title:'KI-Transparenz | AS Gold',description:'Transparenz zur KI-gestützten Dokumentanalyse in AS Gold.'}
+
+export default function AiTransparency(){
+  return <LegalDocument title="KI-Transparenz" intro="Die Dokumentanalyse ist ein bewusst gestarteter, vorläufiger Organisationsvorschlag – keine automatische Entscheidung und keine Rechtsberatung.">
+    <LegalNotice tone="warning"><b>Nur Testdaten</b><p>Die KI-Analyse ist im kontrollierten Test ausschließlich für synthetische oder wirksam anonymisierte Dateien freigegeben. Echte personenbezogene Daten und besondere Kategorien nach Art. 9 DSGVO sind gesperrt.</p></LegalNotice>
+    <LegalSection title="Wann eine Übermittlung erfolgt"><ol><li>Der Nutzer lädt eine private Testdatei in den geschützten Supabase-Speicher.</li><li>Die Datei wird als „synthetisch“ oder „wirksam anonymisiert“ klassifiziert.</li><li>Erst im einzelnen Dokument wird die KI-Analyse durch eine nicht vorausgewählte Bestätigung bewusst gestartet.</li><li>Der Server prüft Anmeldung, Eigentum, aktuelle Datenschutzhinweise, Datenklasse und mehrere Freigabeschalter.</li><li>Nur dann wird die Datei über die Supabase Edge Function an die OpenAI API übertragen.</li></ol></LegalSection>
+    <LegalSection title="Anbieter und technische Einstellungen"><p>KI-Anbieter ist OpenAI Ireland Ltd. beziehungsweise die im OpenAI Data Processing Addendum bezeichnete Konzerngesellschaft. Verwendet wird die Responses API. Die Anfrage setzt <code>store: false</code>; API-Geschäftsdaten werden standardmäßig nicht zum Modelltraining verwendet. OpenAI kann API-Ein- und Ausgaben für Sicherheits- und Missbrauchsüberwachung dennoch bis zu 30 Tage speichern, sofern keine genehmigte Zero-Data-Retention-Konfiguration greift.</p></LegalSection>
+    <LegalSection title="Was das System liefert"><p>Das Modell kann sichtbaren Text, Dokumenttyp, Datum, Absender, Empfänger, Referenzen, ausdrücklich genannte Fristen und Beträge strukturiert vorschlagen. Es soll nichts erraten und formuliert nächste Schritte nur organisatorisch. Technische Regeln können Fehler reduzieren, aber nicht ausschließen.</p></LegalSection>
+    <LegalSection title="Menschliche Kontrolle"><p>Jedes Ergebnis bleibt zunächst als „KI-Vorschlag · vorläufig und nicht gespeichert“ gekennzeichnet. Der Nutzer kann alle Felder ändern. Erst ein eigener Speichervorgang übernimmt die geprüften Angaben. Es gibt keine ausschließlich automatisierte Entscheidung mit rechtlicher oder ähnlich erheblicher Wirkung.</p></LegalSection>
+    <LegalSection title="Grenzen"><ul><li>Keine Rechts-, Steuer- oder Finanzberatung.</li><li>Keine verbindliche Fristberechnung ohne fachliche Prüfung.</li><li>Keine automatische Kommunikation oder Versendung.</li><li>Keine Freigabe echter oder besonders sensibler Daten im Testbetrieb.</li></ul></LegalSection>
+  </LegalDocument>
+}

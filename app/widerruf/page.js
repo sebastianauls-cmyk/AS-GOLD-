@@ -1,0 +1,13 @@
+import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
+import WithdrawalForm from './WithdrawalForm'
+
+export const metadata={title:'Vertrag widerrufen | AS Gold',description:'Elektronische Widerrufsfunktion und Widerrufsinformation für AS Gold.'}
+
+export default function Withdrawal(){
+  return <LegalDocument title="Vertrag widerrufen" intro="Öffentlich erreichbare, zweistufige Widerrufsfunktion nach § 356a BGB und ergänzende Widerrufsinformation.">
+    <LegalNotice tone="success"><b>Aktueller Testbetrieb</b><p>Die Registrierung ist kostenlos; es gibt keine Zahlung und kein Abonnement. Ein wirksamer Widerruf beendet die vertragliche Bindung trotzdem eindeutig. Bereits entstandene gesetzliche Nachweis- oder Aufbewahrungspflichten bleiben unberührt.</p></LegalNotice>
+    <LegalSection title="Elektronische Widerrufsfunktion" id="widerrufsfunktion"><WithdrawalForm/></LegalSection>
+    <LegalSection title="Widerrufsbelehrung"><h3>Widerrufsrecht</h3><p>Verbraucher haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen einen im Fernabsatz geschlossenen Vertrag zu widerrufen, soweit kein gesetzlicher Ausschluss oder ein gesetzliches Erlöschen eingreift. Die Frist beginnt grundsätzlich mit Vertragsschluss, jedoch nicht bevor die erforderliche Belehrung erteilt wurde.</p><h3>Ausübung</h3><p>Zur Ausübung genügt eine eindeutige Erklärung an Sebastian Auls – Unternehmens- und Konzeptberatung, Chrysanderstraße 75, 21029 Hamburg, E-Mail <a href="mailto:sebastian.auls@gmail.com">sebastian.auls@gmail.com</a>. Sie können dafür die oben stehende elektronische Funktion oder das Muster unten verwenden. Zur Fristwahrung genügt die rechtzeitige Absendung.</p><h3>Folgen</h3><p>Nach wirksamem Widerruf werden empfangene Leistungen nach den gesetzlichen Regeln zurückgewährt. Im derzeit kostenlosen Test gibt es keine Zahlung zu erstatten. Ein Löschwunsch für Kontoinhalte kann zugleich erklärt werden; gesetzlich erforderliche Nachweise dürfen für die notwendige Dauer gesperrt aufbewahrt werden.</p></LegalSection>
+    <LegalSection title="Muster-Widerrufsformular"><div className="legalTemplate"><p>An Sebastian Auls – Unternehmens- und Konzeptberatung, Chrysanderstraße 75, 21029 Hamburg, E-Mail: sebastian.auls@gmail.com</p><p>Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über die Nutzung von AS Gold.</p><p>Vertrags-/Kontoreferenz: ____________________</p><p>Name: ____________________</p><p>Datum: ____________________</p><p>Unterschrift (nur bei Mitteilung auf Papier): ____________________</p></div></LegalSection>
+  </LegalDocument>
+}
