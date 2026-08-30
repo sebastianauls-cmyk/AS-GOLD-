@@ -42,7 +42,8 @@ export default function PrivacyDashboard(){
     if(error){setMessage(error.message);setState('error');return}
     const documentsUpdate=await supabase.from('documents').update({ai_processing_allowed:false,updated_at:now}).eq('owner_id',session.user.id).eq('ai_processing_allowed',true)
     if(documentsUpdate.error){setMessage(documentsUpdate.error.message);setState('error');return}
-    await supabase.from('audit_events').insert({owner_id:session.user.id,event_type:'account_ai_processing_disabled',entity_type:'account',event_data:{detail:'all outstanding document permissions revoked'},source:'app'})
+    const audit=await supabase.rpc('record_gold_audit_event',{p_event_type:'account_ai_processing_disabled',p_entity_type:'account',p_entity_id:null,p_metadata:{status:'completed'}})
+    if(audit.error){setMessage(audit.error.message);setState('error');return}
     setSettings(data);setMessage(on.disableAiDone);setState('ready')
   }
 

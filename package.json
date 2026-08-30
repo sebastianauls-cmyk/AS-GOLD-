@@ -10,10 +10,10 @@
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
     "docx": "9.5.1",
-    "jspdf": "3.0.2",
-    "next": "15.5.24",
-    "react": "19.1.1",
-    "react-dom": "19.1.1",
-    "xlsx": "0.18.5"
+    "jspdf": "4.2.1",
+    "jszip": "3.10.1",
+    "next": "16.3.3",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
   }
 }

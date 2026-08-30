@@ -5,4 +5,4 @@ node_modules/
 .env.*
 !.env.example
 npm-debug.log*
-
+# Next.js 16 agent documentation is bundled in the ignored node_modules tree.

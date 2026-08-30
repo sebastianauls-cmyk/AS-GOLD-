@@ -3,8 +3,8 @@
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Produktionsstand: **V28**.
-- V28 übernimmt den vollständigen V27-Funktionsstand und ergänzt den öffentlichen Rechtsbereich, getrennte Registrierungsbestätigungen, strikte Testdaten-/KI-Schutzschalter, Datenschutz-Steuerung und die zweistufige elektronische Widerrufsfunktion.
+- Gesamtstand: **V29-Sicherheitskandidat**; bestätigter Produktionsstand bleibt bis zum abgeschlossenen Rollout **V28**.
+- V29 übernimmt den vollständigen V28-Funktionsstand, repariert die beschädigte Repository-Quelldatei und ergänzt Abhängigkeits-, Header-, Export-, Passwort- und Audit-Härtungen.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
 ## Stand
@@ -150,3 +150,15 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - OpenAI-Aufruf nutzt `store: false`; Ergebnisse bleiben vorläufig und werden erst nach menschlicher Prüfung bewusst gespeichert.
 - Zahlung, Abonnement, automatische Verlängerung und Verarbeitung echter Kundendaten bleiben deaktiviert.
 - Vollständiger technischer und rechtlicher Freigabestatus: `docs/V28_RELEASE_STATUS.md`.
+
+## V29 – kostenlose Sicherheits- und Integritätshärtung (30.08.2026)
+
+- Beschädigten V28-Quelltext in `app/page.js` anhand des letzten vollständigen V27-Stands und zweier exakter 500-Zeichen-Anker rekonstruiert; die fehlende, zwischen V27 und V28 unveränderte Übersetzungsstrecke wurde vollständig wiederhergestellt.
+- Next.js auf 16.3.3, React/ReactDOM auf 19.2.8 und jsPDF auf 4.2.1 aktualisiert.
+- Verwundbare bzw. nicht reparierbare XLSX-/PPTX-Abhängigkeiten entfernt; Office-Dateien werden lokal als formelsichere Open-XML-Pakete erzeugt und ohne Laufzeit-CDN heruntergeladen.
+- Globale CSP-, Frame-, MIME-, Referrer-, Permissions-, COOP- und HSTS-Header ergänzt; der `X-Powered-By`-Header ist deaktiviert.
+- Audit-Ereignisse laufen über eine serverseitig validierte Allowlist-RPC; direkte Browser-Inserts werden mit der V29-Migration entfernt.
+- Lokale Gerätehistorie speichert keine Kunden-, Fall-, Betreff- oder Dateinamen mehr und bereinigt vorhandene Detailfelder beim nächsten Laden.
+- Registrierung verlangt clientseitig mindestens 12 Zeichen sowie Groß-/Kleinbuchstaben, Zahl und Sonderzeichen; die entsprechende Supabase-Servereinstellung bleibt ein gesonderter Konfigurationsschritt.
+- Lokaler Produktions-Build und HTTP-Header-Test erfolgreich; `npm audit` meldet 0 bekannte Schwachstellen.
+- Details und verbleibende Freigabeschritte stehen in `docs/V29_SECURITY_STATUS.md`.
