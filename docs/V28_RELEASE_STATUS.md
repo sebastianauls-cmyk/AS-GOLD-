@@ -42,7 +42,19 @@ V28 vervollständigt den kontrollierten, kostenlosen Testbetrieb um einen öffen
 - `npm run build`: erfolgreich mit Next.js 15.5.24; alle 13 Routen statisch erzeugt.
 - `git diff --check`: erfolgreich.
 - Supabase Security Advisor nach den Migrationen geprüft.
-- Ergebnis der Browser- und Produktionsprüfung sowie die endgültige Vercel-/GitHub-Kennung werden bei Veröffentlichung ergänzt.
+- produktiver Edge-API-Test `gold-withdrawal`: HTTP 201 mit Widerrufs-ID, Eingangszeitpunkt und vollständiger Textbestätigung; der ausschließlich synthetische Testdatensatz wurde danach gezielt entfernt.
+- fremder Origin an `gold-withdrawal`: HTTP 403.
+- Aufruf von `gold-ocr-v28` ohne gültige Anmeldung: HTTP 401.
+- GitHub-V28-Codecommit: `26448a08f4e945880f0f0be85f105e3f877bff64` auf `main`.
+- Vercel-Produktionsdeployment: `dpl_Ba9v8y61QdqoMMF5ExX6jycmdj6G`, Status `READY`, Next.js 15.5.24, 13 statische Routen.
+- Produktionsadresse: `https://app-gold-workspace.vercel.app`.
+- Browserlauf auf der Produktionsadresse: alle neun Rechts-/Kontrolllinks und alle Pflichtseiten erreichbar; keine horizontale Überbreite bei 1363 × 936 CSS-Pixeln.
+- Registrierung: zwei getrennte, erforderliche und zunächst nicht ausgewählte Checkboxen; Registrierung bleibt bis zur Bestätigung beider Felder deaktiviert.
+- Widerruf: erster Schritt „Vertrag widerrufen“, zweiter Schritt mit Name, Vertrags-/Kontoreferenz, Download-Kanal, Erklärung und „Widerruf bestätigen“.
+- Datenschutz-Steuerung: öffentlich erreichbar; ohne Sitzung korrekter Anmeldehinweis, mit Sitzung für persönliche Kontofreigaben vorbereitet.
+- Arabische Oberfläche: `lang=ar`, `dir=rtl` und lokalisierter Rechtsfooter ohne horizontalen Überlauf.
+- Browserprotokoll: keine Fehler aus der Anwendung; angezeigte Meldungen stammten ausschließlich aus der Testbrowser-Erweiterung.
+- Vercel-Laufzeitfehlerprüfung für die letzte Stunde: keine Fehler gefunden.
 
 ## Bewusst offene Freigaben vor Bezahl- oder Echtdatenbetrieb
 

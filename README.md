@@ -3,7 +3,7 @@
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamtstand: **V28**; Veröffentlichung und Live-Verifikation werden in `docs/V28_RELEASE_STATUS.md` dokumentiert.
+- Gesamt- und Produktionsstand: **V28**.
 - V28 übernimmt den vollständigen V27-Funktionsstand und ergänzt den öffentlichen Rechtsbereich, getrennte Registrierungsbestätigungen, strikte Testdaten-/KI-Schutzschalter, Datenschutz-Steuerung und die zweistufige elektronische Widerrufsfunktion.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
