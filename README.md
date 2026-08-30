@@ -3,16 +3,19 @@
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Produktstand: **V23**.
-- Repository, Vercel-Preview und Produktionsfreigabeprüfung beziehen sich verbindlich auf V23.
-- Die frühere Bezeichnung „V17“ war lediglich die interne Nummer eines technischen Quellcode-Sicherungspakets und ist nicht die Produktversion.
+- Gesamt- und Produktstand: **V26**.
+- V26 führt den mobilen Kernablauf aus V24, den revisionsgebundenen Freigabeablauf aus V25 und die bewusst gestartete Dokumentanalyse in einem gemeinsamen Veröffentlichungsstand zusammen.
+- Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
 ## Stand
 - Öffentliche Produkt- und Preisübersicht
 - Kostenloser Einstieg bis Gold Business
 - Registrierung / Anmeldung über Supabase
 - Dashboard, Fälle, Kunden, Dokumente, Freigaben
+- mobiler Kernablauf von Fallanlage über Dokumentprüfung bis zur ausdrücklichen Freigabe
 - Dokument-Upload in privaten Supabase Storage
+- bewusst gestartete Analyse für PDF- und Bild-Testdateien; Vorschläge bleiben bis zur Prüfung und Speicherung vorläufig
+- revisionsgebundene Freigaben mit sichtbarer Vorschau und ausdrücklicher Bestätigung
 - Exporte: PDF, DOCX, XLSX, PPTX, CSV, TXT
 - Tarifabhängige Exportfreigaben
 - Upgrade-Vorschau mit 1/3/6/12 Monaten
@@ -20,6 +23,7 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 - anteilige Upgrade-Differenz bis zum Ende der laufenden Periode
 - keine automatische Verlängerung
 - Bezahlfunktion bewusst deaktiviert
+- keine echten Kundendaten im kontrollierten Testbetrieb
 
 ## Sicherungsregel
 Jeder freigegebene funktionierende Stand wird nach Test sowohl auf Vercel bereitgestellt als auch versioniert im Google-Drive-Ordner „App intern gold / AS Gold Quellcode-Sicherungen“ gesichert.
@@ -108,3 +112,13 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Die vorläufige Upload-Testgrenze wurde auf 50 MB pro Datei angehoben. Sie entspricht der technischen Obergrenze des aktuellen Supabase-Free-Tarifs und ist ausdrücklich noch keine endgültige Produkt- oder Tarifgrenze.
 - Die vollständige Soll-/Ist-Definition und die offenen Produktentscheidungen stehen in `docs/V23_APP_DEFINITION.md`.
 - Noch offen vor einer Produktionsfreigabe: vollständige Definition und Implementierung des Kernablaufs, End-to-End-Test mit einem angemeldeten Testkonto, Aktivierung des Schutzes vor kompromittierten Passwörtern, endgültige Upload-Größen-/Dateitypgrenzen und abschließender Test auf einem echten Mobilgerät.
+
+## V26 – gemeinsamer Veröffentlichungsstand (30.08.2026)
+
+- V24-Fallakte, Fristen, Quellenbasis, Bewertungen, Kamera-/Dateiupload und korrigierbare Dokumentdaten zusammengeführt.
+- V25-Freigabeablauf mit Vorschau-Revision, ausdrücklicher Zustimmung oder Ablehnung und Audit-Ereignissen übernommen.
+- Geschützte Edge-Funktion `gold-ocr` wird ausschließlich von angemeldeten Nutzern und erst nach aktiver Testdatenbestätigung aufgerufen.
+- Analyse unterstützt PDF, JPG, JPEG, PNG, WEBP und GIF bis 18 MB; der allgemeine Test-Upload bleibt vorläufig auf 50 MB begrenzt.
+- Erkannter Text, Dokumentart, Datum, Fallzuordnung, Zusammenfassung und nächster Schritt werden nur als änderbarer Vorschlag angezeigt und erst durch bewusstes Speichern übernommen.
+- Automatischer Versand, Zahlung, Abonnement und automatische Verlängerung bleiben deaktiviert.
+- Details zu Freigabegrenzen und Verifikation stehen in `docs/V26_RELEASE_STATUS.md`.
