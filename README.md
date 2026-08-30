@@ -3,12 +3,15 @@
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Produktstand: **V26**.
-- V26 führt den mobilen Kernablauf aus V24, den revisionsgebundenen Freigabeablauf aus V25 und die bewusst gestartete Dokumentanalyse in einem gemeinsamen Veröffentlichungsstand zusammen.
+- Verbindliche Ausgangs- und Produktionsbasis: **V26**.
+- Aktueller geprüfter Weiterentwicklungsstand: **V27**.
+- V27 übernimmt den vollständigen V26-Funktionsstand und ergänzt ausschließlich den kundenfreundlichen öffentlichen Einstieg über Zielgruppen, Fallarten, typische Beispiele, konkreten Nutzen und erwartbare Ergebnisse.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
 ## Stand
 - Öffentliche Produkt- und Preisübersicht
+- interaktive Fallauswahl für acht typische Anwendungsbereiche
+- sichtbare Einordnung für Privatpersonen, Selbstständige, kleine Unternehmen und Teams mit dokumentenreichen Kundenfällen
 - Kostenloser Einstieg bis Gold Business
 - Registrierung / Anmeldung über Supabase
 - Dashboard, Fälle, Kunden, Dokumente, Freigaben
@@ -122,3 +125,15 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 - Erkannter Text, Dokumentart, Datum, Fallzuordnung, Zusammenfassung und nächster Schritt werden nur als änderbarer Vorschlag angezeigt und erst durch bewusstes Speichern übernommen.
 - Automatischer Versand, Zahlung, Abonnement und automatische Verlängerung bleiben deaktiviert.
 - Details zu Freigabegrenzen und Verifikation stehen in `docs/V26_RELEASE_STATUS.md`.
+
+## V27 – kundenfreundliche Fallauswahl (30.08.2026)
+
+- Der vollständige V26-Stand mit V24-Fallakte, V25-Freigabeablauf und V26-Dokumentanalyse bleibt erhalten.
+- Die öffentliche Startseite beantwortet verdichtet: für wen AS Gold gedacht ist, bei welchen Vorgängen es hilft, welche typischen Fälle passen und welches Ergebnis Nutzer erhalten.
+- Acht Fallarten werden als kompakte Auswahl gezeigt; Detailinformationen erscheinen erst nach Auswahl statt gleichzeitig.
+- Der Ablauf wird in drei Schritten erklärt: Fallart wählen, Unterlagen hinzufügen, Ergebnis prüfen.
+- Transparenzregeln bleiben vollständig erreichbar, sind aber zugunsten einer ruhigen Startseite zunächst eingeklappt.
+- Kostenloser Einstieg, deaktivierte Zahlung und fehlende automatische Verlängerung bleiben sichtbar.
+- Die mobile Kopfzeile und Fallauswahl wurden für schmale Displays ergänzt.
+- Produktion bleibt unverändert; V27 ist bis zur abschließenden Browser- und Preview-Prüfung ein Weiterentwicklungsstand.
+- Details stehen in `docs/V27_IMPLEMENTATION_STATUS.md`.
