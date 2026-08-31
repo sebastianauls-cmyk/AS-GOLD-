@@ -8,21 +8,21 @@ const flagComponents={AF,AE,DE,FR,GB,IR,PL,RU,SA,TR,US}
 
 function FlagSet({countryCodes=[],fallback='',className=''}){
   const supported=countryCodes.filter(code=>flagComponents[code])
-  return <span className={`flagIconSet ${className}`.trim()} aria-hidden="true">
-    {supported.map(code=>{const CountryFlag=flagComponents[code];return <CountryFlag className="flagIcon" focusable="false" key={code}/>})}
-    {!supported.length&&fallback}
+  return <span className={`flagIconSet ${className}`.trim()} aria-hidden="true" style={{display:'inline-flex',alignItems:'center',gap:'4px',minWidth:'28px'}}>
+    {supported.map(code=>{const CountryFlag=flagComponents[code];return <CountryFlag style={{width:'28px',height:'19px',display:'block',borderRadius:'2px',boxShadow:'0 0 0 1px rgba(24,30,38,.25)'}} focusable="false" key={code}/>})}
+    {!supported.length&&<span style={{fontSize:'1.2rem'}}>{fallback}</span>}
   </span>
 }
 
 export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false}){
   const [open,setOpen]=useState(false)
-  const [persistentRail,setPersistentRail]=useState(false)
+  const [publicPicker,setPublicPicker]=useState(false)
   const menuId=useId()
   const rootRef=useRef(null)
   const active=supportedLanguages.find(item=>item.key===value)||supportedLanguages[0]
 
   useEffect(()=>{
-    setPersistentRail(Boolean(rootRef.current?.closest('.publicTop')))
+    setPublicPicker(Boolean(rootRef.current?.closest('.publicTop')))
   },[])
 
   useEffect(()=>{
@@ -37,23 +37,42 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     }
   },[open])
 
-  if(persistentRail){
+  if(publicPicker){
     return <div
-      className={`flagLanguage flagLanguageRail ${className}`.trim()}
+      className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()}
       ref={rootRef}
-      role="group"
-      aria-label={label}
-      style={{position:'fixed',top:'82px',left:'8px',zIndex:120,display:'flex',flexDirection:'column',alignItems:'stretch',gap:'6px',padding:'7px',background:'rgba(255,255,255,.97)',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 14px 40px rgba(27,31,37,.2)'}}
+      style={{position:'fixed',top:'82px',left:'8px',zIndex:120,direction:'ltr'}}
     >
-      {supportedLanguages.map(item=><button
+      <button
         type="button"
-        aria-pressed={item.key===value}
-        aria-label={item.label}
-        title={item.label}
-        onClick={()=>onChange(item.key)}
-        key={item.key}
-        style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'5px',width:'64px',minHeight:'44px',padding:'6px',borderRadius:'10px',border:item.key===value?'2px solid #9b792b':'1px solid #dfe2e7',background:item.key===value?'#fff8e8':'#fff',color:'#27303b',fontWeight:850}}
-      ><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><small style={{fontSize:'.68rem',fontWeight:850}}>{item.short}</small></button>)}
+        aria-label={`${label}: ${active.label}`}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open?menuId:undefined}
+        onClick={()=>setOpen(current=>!current)}
+        style={{display:'flex',alignItems:'center',gap:'8px',minHeight:'46px',padding:'8px 11px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#fff',color:'#3b321d',fontWeight:850,boxShadow:'0 8px 24px rgba(27,31,37,.18)'}}
+      >
+        <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/>
+        <span>{label}</span>
+        <span aria-hidden="true">{open?'▴':'▾'}</span>
+      </button>
+      {open&&<div
+        id={menuId}
+        role="listbox"
+        aria-label={label}
+        style={{marginTop:'7px',width:'220px',maxHeight:'calc(100dvh - 150px)',overflowY:'auto',padding:'7px',display:'flex',flexDirection:'column',gap:'6px',background:'#fff',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 16px 42px rgba(27,31,37,.22)'}}
+      >
+        {supportedLanguages.map(item=><button
+          type="button"
+          role="option"
+          aria-selected={item.key===value}
+          aria-label={item.label}
+          title={item.label}
+          onClick={()=>{onChange(item.key);setOpen(false)}}
+          key={item.key}
+          style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px',width:'100%',minHeight:'48px',padding:'8px 10px',borderRadius:'10px',border:item.key===value?'2px solid #9b792b':'1px solid #e0e3e7',background:item.key===value?'#fff8e8':'#fff',color:'#27303b',fontWeight:800,textAlign:'left'}}
+        ><span style={{display:'flex',alignItems:'center',gap:'10px'}}><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span>{item.label}</span></span><small>{item.short}</small></button>)}
+      </div>}
     </div>
   }
 
