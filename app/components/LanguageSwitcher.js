@@ -3,7 +3,6 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { AF, AE, DE, FR, GB, IR, PL, RU, SA, TR, US } from 'country-flag-icons/react/3x2'
 import { supportedLanguages } from '../lib/v30Languages.mjs'
-import { V35ExplainerVideo } from './V35ExplainerVideo'
 
 const flagComponents={AF,AE,DE,FR,GB,IR,PL,RU,SA,TR,US}
 
@@ -60,7 +59,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     return <div
       className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()}
       ref={rootRef}
-      style={{position:'relative',zIndex:120,direction:'ltr',display:'inline-flex',alignItems:'center',gap:'8px',width:'auto',maxWidth:'100%',minWidth:0,flexWrap:mobilePublic?'wrap':'nowrap'}}
+      style={{position:'relative',zIndex:120,direction:'ltr',display:'inline-flex',width:'auto',maxWidth:'100%',minWidth:0}}
     >
       <button
         type="button"
@@ -75,7 +74,6 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         <div style={{display:'inline-flex',alignItems:'center',gap:'9px',minWidth:0}}><FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong style={{display:'inline-block',fontSize:'.9rem',whiteSpace:'nowrap'}}>Sprache</strong></div>
         <b aria-hidden="true" style={{fontSize:'.8rem',flex:'0 0 auto',marginLeft:'2px'}}>{open?'▴':'▾'}</b>
       </button>
-      <V35ExplainerVideo language={value}/>
       {open&&<div
         id={menuId}
         role="listbox"
