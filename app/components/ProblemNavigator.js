@@ -89,11 +89,26 @@ export function ProblemNavigator(){
   function showPlans(){const prices=document.querySelector('.prices');const target=prices?.closest('section')||prices;if(target)target.scrollIntoView({behavior:'smooth',block:'start'})}
   const secondary={padding:'10px 13px',border:'1px solid #d5c38f',borderRadius:11,background:'#fffaf0',color:'#5b4618',fontWeight:800,textDecoration:'none',display:'inline-flex',alignItems:'center'}
 
-  return createPortal(<section id="asgold-problem-navigator-react" style={{margin:'26px 0 10px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
-    <div style={{display:'flex',gap:12,alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap'}}><div><b style={{display:'block',fontSize:'1.1rem',color:'#4d3b14'}}>{c.title}</b><p style={{margin:'5px 0 12px',color:'#626c78',lineHeight:1.45,maxWidth:720}}>{c.lead}</p></div><a href="#fallarten" style={secondary}>{c.back}</a></div>
-    <textarea ref={textRef} value={value} onChange={e=>setValue(e.target.value)} rows={3} placeholder={c.placeholder} dir={language==='ar'||language==='fa'?'rtl':'ltr'} style={{width:'100%',resize:'vertical',minHeight:82,padding:12,border:'1px solid #d8dbe1',borderRadius:12,background:'#fff',color:'#27303b'}}/>
-    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:9}}><button type="button" onClick={voice} style={secondary}>{listening?'⏹':'🎙'} {listening?c.stop:c.voice}</button><button type="button" onClick={analyse} style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button><a href="#fallarten" style={secondary}>{c.back}</a></div>
+  return createPortal(<section id="asgold-problem-navigator-react" dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 10px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
+    <div style={{display:'flex',gap:12,alignItems:'flex-start',justifyContent:'space-between',flexWrap:'wrap'}}><div><b style={{display:'block',fontSize:'1.1rem',color:'#4d3b14'}}>{c.title}</b><p style={{margin:'5px 0 12px',color:'#626c78',lineHeight:1.45,maxWidth:720}}>{c.lead}</p></div></div>
+    <textarea ref={textRef} value={value} onChange={e=>{setValue(e.target.value);setResult(null)}} rows={3} placeholder={c.placeholder} dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',resize:'vertical',minHeight:82,padding:12,border:'1px solid #d8dbe1',borderRadius:12,background:'#fff',color:'#27303b'}}/>
+    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:9}}><button type="button" onClick={voice} style={secondary}>{listening?'⏹':'🎙'} {listening?c.stop:c.voice}</button><button type="button" onClick={analyse} style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button></div>
     {status&&<small style={{display:'block',marginTop:8,color:'#6d7682'}}>{status}</small>}
-    {recommendation&&<article style={{marginTop:14,padding:15,border:'1px solid #d8c78f',borderRadius:14,background:'linear-gradient(135deg,#fffaf0,#fff)'}}><small style={{fontWeight:850,color:'#79601f'}}>{c.recommendation}</small><div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10,margin:'9px 0'}}><div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.caseLabel}</span><b>{profile.cases[recommendation.caseKey]}</b></div><div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.planLabel}</span><b>{plans[recommendation.planKey]}</b></div></div><p style={{margin:'7px 0',color:'#596472',lineHeight:1.45}}><b>{c.why}</b> {recommendation.reason}</p><div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}><button type="button" onClick={showCase} style={{padding:'9px 12px',border:0,borderRadius:10,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.showCase}</button><button type="button" onClick={showPlans} style={secondary}>{c.showPlans}</button><a href="#fallarten" style={secondary}>{c.back}</a></div><small style={{display:'block',marginTop:9,color:'#6d7682'}}>{c.change}</small></article>}
+
+    {recommendation&&<article style={{marginTop:12,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
+      <small style={{display:'block',fontWeight:850,color:'#79601f',marginBottom:6}}>{c.recommendation}</small>
+      <div style={{padding:'12px 13px',borderRadius:12,background:'#fff',border:'1px solid #ead69e',marginBottom:10}}>
+        <span style={{display:'block',fontSize:'.78rem',fontWeight:800,color:'#707986',marginBottom:3}}>{c.caseLabel}</span>
+        <strong style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{profile.cases[recommendation.caseKey]}</strong>
+      </div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10,margin:'9px 0'}}>
+        <div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.planLabel}</span><b>{plans[recommendation.planKey]}</b></div>
+        <div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.why}</span><span style={{color:'#596472',lineHeight:1.45}}>{recommendation.reason}</span></div>
+      </div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}><button type="button" onClick={showCase} style={{padding:'9px 12px',border:0,borderRadius:10,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.showCase}</button><button type="button" onClick={showPlans} style={secondary}>{c.showPlans}</button></div>
+      <small style={{display:'block',marginTop:9,color:'#6d7682'}}>{c.change}</small>
+    </article>}
+
+    <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid #ece7d8'}}><a href="#fallarten" style={secondary}>{c.back}</a></div>
   </section>,host)
 }
