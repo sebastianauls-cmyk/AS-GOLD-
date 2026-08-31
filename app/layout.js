@@ -2,6 +2,7 @@ import './globals.css'
 import { HeroCopyEnhancer } from './components/HeroCopyEnhancer'
 import { HeroTitleStabilizer } from './components/HeroTitleStabilizer'
 import { ProductIntroCompact } from './components/ProductIntroCompact'
+import { ExplainerVideo } from './components/ExplainerVideo'
 import { ProblemNavigator } from './components/ProblemNavigator'
 import { CaseChoiceJumpEnhancer } from './components/CaseChoiceJumpEnhancer'
 
@@ -14,5 +15,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><HeroCopyEnhancer/><HeroTitleStabilizer/><ProductIntroCompact/><ProblemNavigator/><CaseChoiceJumpEnhancer/>{children}</body></html>
+  return <html lang="de"><body><HeroCopyEnhancer/><HeroTitleStabilizer/><ProductIntroCompact/><ExplainerVideo/><ProblemNavigator/><CaseChoiceJumpEnhancer/>{children}</body></html>
 }
