@@ -8,10 +8,10 @@ const flagComponents={AF,AE,DE,FR,GB,IR,PL,RU,SA,TR,US}
 
 function FlagSet({countryCodes=[],fallback='',className=''}){
   const supported=countryCodes.filter(code=>flagComponents[code])
-  return <span className={`flagIconSet ${className}`.trim()} aria-hidden="true" style={{display:'inline-flex',alignItems:'center',gap:'4px',minWidth:'28px'}}>
-    {supported.map(code=>{const CountryFlag=flagComponents[code];return <CountryFlag style={{width:'28px',height:'19px',display:'block',borderRadius:'2px',boxShadow:'0 0 0 1px rgba(24,30,38,.25)'}} focusable="false" key={code}/>})}
-    {!supported.length&&<span style={{fontSize:'1.2rem'}}>{fallback}</span>}
-  </span>
+  return <div className={`flagIconSet ${className}`.trim()} aria-hidden="true" style={{display:'inline-flex',alignItems:'center',gap:'4px',minWidth:'30px',flex:'0 0 auto'}}>
+    {supported.map(code=>{const CountryFlag=flagComponents[code];return <CountryFlag style={{width:'30px',height:'20px',display:'block',borderRadius:'2px',boxShadow:'0 0 0 1px rgba(24,30,38,.28)'}} focusable="false" key={code}/>})}
+    {!supported.length&&<b style={{fontSize:'1.2rem'}}>{fallback}</b>}
+  </div>
 }
 
 export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false}){
@@ -49,18 +49,19 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={open?menuId:undefined}
+        title={`${label}: ${active.label}`}
         onClick={()=>setOpen(current=>!current)}
-        style={{display:'flex',alignItems:'center',gap:'8px',minHeight:'46px',padding:'8px 11px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#fff',color:'#3b321d',fontWeight:850,boxShadow:'0 8px 24px rgba(27,31,37,.18)'}}
+        style={{display:'flex',alignItems:'center',gap:'9px',minHeight:'48px',padding:'8px 12px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#fff',color:'#2f291b',fontWeight:850,boxShadow:'0 8px 24px rgba(27,31,37,.18)'}}
       >
         <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/>
-        <span>{label}</span>
-        <span aria-hidden="true">{open?'▴':'▾'}</span>
+        <strong style={{display:'inline-block',fontSize:'.95rem',whiteSpace:'nowrap'}}>Sprache</strong>
+        <b aria-hidden="true" style={{fontSize:'.8rem'}}>{open?'▴':'▾'}</b>
       </button>
       {open&&<div
         id={menuId}
         role="listbox"
         aria-label={label}
-        style={{marginTop:'7px',width:'220px',maxHeight:'calc(100dvh - 150px)',overflowY:'auto',padding:'7px',display:'flex',flexDirection:'column',gap:'6px',background:'#fff',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 16px 42px rgba(27,31,37,.22)'}}
+        style={{marginTop:'7px',width:'230px',maxHeight:'calc(100dvh - 150px)',overflowY:'auto',padding:'7px',display:'flex',flexDirection:'column',gap:'6px',background:'#fff',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 16px 42px rgba(27,31,37,.22)'}}
       >
         {supportedLanguages.map(item=><button
           type="button"
@@ -70,8 +71,8 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
           title={item.label}
           onClick={()=>{onChange(item.key);setOpen(false)}}
           key={item.key}
-          style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px',width:'100%',minHeight:'48px',padding:'8px 10px',borderRadius:'10px',border:item.key===value?'2px solid #9b792b':'1px solid #e0e3e7',background:item.key===value?'#fff8e8':'#fff',color:'#27303b',fontWeight:800,textAlign:'left'}}
-        ><span style={{display:'flex',alignItems:'center',gap:'10px'}}><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span>{item.label}</span></span><small>{item.short}</small></button>)}
+          style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px',width:'100%',minHeight:'50px',padding:'8px 10px',borderRadius:'10px',border:item.key===value?'2px solid #9b792b':'1px solid #e0e3e7',background:item.key===value?'#fff8e8':'#fff',color:'#27303b',fontWeight:800,textAlign:'left'}}
+        ><div style={{display:'flex',alignItems:'center',gap:'10px',minWidth:0}}><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><strong style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</strong></div><small>{item.short}</small></button>)}
       </div>}
     </div>
   }
