@@ -7,6 +7,16 @@ import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, norma
 const plans={start:'AS Gold Start',klar:'AS Gold Klar',analyse:'AS Gold Analyse',komplett:'AS Gold Komplett',business:'AS Gold Business'}
 const caseOrder=['insurance','property','contract','authority','work','business','dispute','private']
 const freeLabels={de:'3 Dokumente kostenlos kennenlernen',en:'Try 3 documents for free',fr:'Découvrir gratuitement avec 3 documents',tr:'3 belgeyi ücretsiz deneyin',pl:'Wypróbuj 3 dokumenty bezpłatnie',ru:'Попробовать 3 документа бесплатно',ar:'جرّب 3 مستندات مجانًا',fa:'۳ سند را رایگان امتحان کنید'}
+const inputHelp={
+  de:'Beschreiben Sie Ihr Problem einfach in eigenen Worten. Sie müssen keine Fachbegriffe kennen. Schreiben Sie, was passiert ist und was Sie erreichen möchten – oder sprechen Sie es ein.',
+  en:'Describe your problem in your own words. You do not need technical terms. Say what happened and what you want to achieve – or speak it aloud.',
+  fr:'Décrivez simplement votre problème avec vos propres mots. Aucun terme technique n’est nécessaire. Dites ce qui s’est passé et ce que vous souhaitez obtenir – ou dictez-le.',
+  tr:'Sorununuzu kendi sözlerinizle anlatın. Teknik terimler kullanmanız gerekmez. Ne olduğunu ve neye ulaşmak istediğinizi yazın ya da söyleyin.',
+  pl:'Opisz problem własnymi słowami. Nie musisz znać fachowych pojęć. Napisz, co się wydarzyło i co chcesz osiągnąć – albo powiedz to.',
+  ru:'Опишите проблему своими словами. Специальные термины не нужны. Напишите, что произошло и чего вы хотите добиться, или продиктуйте это.',
+  ar:'اشرح مشكلتك بكلماتك الخاصة. لا تحتاج إلى مصطلحات متخصصة. اكتب ما حدث وما الذي تريد الوصول إليه، أو قل ذلك بصوتك.',
+  fa:'مشکل خود را با کلمات خودتان توضیح دهید. نیازی به اصطلاحات تخصصی نیست. بنویسید چه اتفاقی افتاده و چه نتیجه‌ای می‌خواهید، یا آن را بیان کنید.'
+}
 
 function normalize(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function hits(text,arr){return arr.reduce((n,w)=>n+(text.includes(normalize(w))?1:0),0)}
@@ -99,10 +109,12 @@ export function ProblemNavigator(){
 
   const secondary={padding:'10px 13px',border:'1px solid #d5c38f',borderRadius:11,background:'#fffaf0',color:'#5b4618',fontWeight:800,textDecoration:'none',display:'inline-flex',alignItems:'center'}
   const freeText=freeLabels[language]||freeLabels.en
+  const helpText=inputHelp[language]||inputHelp.en
 
   return createPortal(<section id="asgold-problem-navigator-react" dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
-    <p style={{margin:'8px 0 16px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
+    <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
+    <div style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{language==='de'?'So funktioniert die Eingabe:':language==='en'?'How to enter your problem:':language==='fr'?'Comment saisir votre problème :':language==='tr'?'Sorununuzu nasıl girersiniz:':language==='pl'?'Jak wpisać problem:':language==='ru'?'Как описать проблему:':language==='ar'?'كيفية إدخال المشكلة:':'نحوه وارد کردن مشکل:'}</b>{helpText}</div>
     <textarea ref={textRef} value={value} onChange={e=>{setValue(e.target.value);setResult(null)}} rows={4} placeholder={c.placeholder} dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
     <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
       <button type="button" onClick={voice} style={secondary}>{listening?'⏹':'🎙'} {listening?c.stop:c.voice}</button>
