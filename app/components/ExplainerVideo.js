@@ -22,17 +22,22 @@ const copy={
   bg:{title:'AS Gold накратко',lead:'Актуалното обяснително видео за най-новата версия на AS Gold.',language:'Език на видеото',loading:'Видеото се зарежда …'}
 }
 
-const videos={
-  de:'/videos/as-gold-v35-de.mp4',
-  en:'/videos/as-gold-v35-en.mp4',
-  fr:'/videos/as-gold-v35-fr.mp4',
-  tr:'/videos/as-gold-v35-tr.mp4',
-  pl:'/videos/as-gold-v35-pl.mp4',
-  ru:'/videos/as-gold-v35-ru.mp4',
-  ar:'/videos/as-gold-v35-ar.mp4',
-  fa:'/videos/as-gold-v35-fa.mp4',
-  ro:'/videos/as-gold-v35-ro.mp4',
-  bg:'/videos/as-gold-v35-bg.mp4'
+const localVideos={
+  de:'/videos/as-gold-v35-de.mp4',en:'/videos/as-gold-v35-en.mp4',fr:'/videos/as-gold-v35-fr.mp4',tr:'/videos/as-gold-v35-tr.mp4',pl:'/videos/as-gold-v35-pl.mp4',
+  ru:'/videos/as-gold-v35-ru.mp4',ar:'/videos/as-gold-v35-ar.mp4',fa:'/videos/as-gold-v35-fa.mp4',ro:'/videos/as-gold-v35-ro.mp4',bg:'/videos/as-gold-v35-bg.mp4'
+}
+
+const remoteVideos={
+  de:'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/6c9d9075013e6f931578d77afa8c9f07.mp4?Expires=1788816789&Signature=LbtR~QuDek1UKe3orhlhcXtpDGSaLnObbK~WeE3aunm-jDJHj3QLf~btzVGQ5tLYLp1RLu4npwL636qyQZPRYDR0ngLSiY51Cz7AhmZnkCjQEMGDlXfaVG3CygjtCQiGqPmLsgpoXtMCEp3JghTdiVqAw322uc6AT4RmLXQy1fWHJ6VgEzgCnvFVcP79TSXijF5cqp2hvSXWzlcvTh7zYqZxF6Q4eJMNFDSOVZDMaS4t0TAMReC6saTXN6kRMhB~panKiVrfGAi7NaGZZ~uenyovRowBeC3L2EVM7T~94NLu4RG~bgPSyIf6UdYkuN0fVwOcGXc4H~fnJ0oiYfCggQ__&Key-Pair-Id=K38HBHX5LX3X2H',
+  en:'https://resource2.heygen.ai/video_translate/3ccf94ed801641f585cd0620cc97de38-en/original.mp4',
+  fr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-fr/original.mp4',
+  tr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-tr/original.mp4',
+  pl:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-pl/original.mp4',
+  ru:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ru/original.mp4',
+  ar:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ar/original.mp4',
+  fa:'https://resource2.heygen.ai/video_translate/4378b94dc0e84ad598a3742c105bbda7-fa_fa-IR/original.mp4',
+  ro:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-ro/original.mp4',
+  bg:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-bg/original.mp4'
 }
 
 export function ExplainerVideo(){
@@ -75,7 +80,8 @@ export function ExplainerVideo(){
 
   if(!host) return null
   const c=copy[uiLanguage]||copy.de
-  const source=videos[videoLanguage]||videos.de
+  const localSource=localVideos[videoLanguage]||localVideos.de
+  const remoteSource=remoteVideos[videoLanguage]||remoteVideos.de
   const rtl=uiLanguage==='ar'||uiLanguage==='fa'
 
   return createPortal(<section dir={rtl?'rtl':'ltr'} style={{margin:'16px 0 10px',padding:16,border:'1px solid #d9c792',borderRadius:18,background:'#fff',boxShadow:'0 8px 26px rgba(72,55,18,.06)'}}>
@@ -86,8 +92,9 @@ export function ExplainerVideo(){
         {languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}
       </select>
     </label>
-    <video key={source} controls playsInline preload='metadata' aria-label={c.title} style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>
-      <source src={source} type='video/mp4'/>
+    <video key={videoLanguage} controls playsInline preload='metadata' aria-label={c.title} style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>
+      <source src={localSource} type='video/mp4'/>
+      <source src={remoteSource} type='video/mp4'/>
       {c.loading}
     </video>
   </section>,host)
