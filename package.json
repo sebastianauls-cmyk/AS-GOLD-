@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run test:v34",
     "build": "next build",
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
