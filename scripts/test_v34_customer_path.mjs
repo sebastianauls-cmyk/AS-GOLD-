@@ -18,11 +18,13 @@ expect((layout.match(/<ProblemNavigator\s*\/>/g)||[]).length===1,'ProblemNavigat
 expect(!layout.includes('FreeEntryAfterRecommendation'),'legacy free-entry helper must not be mounted')
 expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not be mounted')
 
-// Order: product understanding first, then problem input, then case jump support.
-const introPos=layout.indexOf('<ProductIntroCompact/>')
+// V37 deliberately moves action and problem guidance before the explanatory product intro.
+// Preserve the core path: first-action -> problem navigator -> product intro -> case jump support.
+const firstActionPos=layout.indexOf('<V37FirstAction/>')
 const navPos=layout.indexOf('<ProblemNavigator/>')
+const introPos=layout.indexOf('<ProductIntroCompact/>')
 const jumpPos=layout.indexOf('<CaseChoiceJumpEnhancer/>')
-expect(introPos>=0&&navPos>introPos&&jumpPos>navPos,'layout order must be intro -> problem navigator -> case jump enhancer')
+expect(firstActionPos>=0&&navPos>firstActionPos&&introPos>navPos&&jumpPos>introPos,'layout order must be first action -> problem navigator -> product intro -> case jump enhancer')
 
 // Mobile input must be a stable controlled React textarea with explicit help.
 expect(navigator.includes('<textarea ref={textRef} value={value} onChange='),'problem input must remain a controlled textarea')
@@ -32,13 +34,14 @@ expect((navigator.match(/id=\"asgold-problem-navigator-react\"/g)||[]).length===
 expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document entry is missing from recommendation flow')
 
 // Product intro is intentionally compact: exactly four benefits per language.
-for(const code of ['de','en','fr','tr','pl','ru','ar','fa']){
+const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
+for(const code of supported){
   expect(intro.includes(`${code}:{title:`),`compact product intro missing language ${code}`)
   expect(languages.includes(`${code}:{locale:`),`problem language profile missing ${code}`)
 }
 const itemGroups=[...intro.matchAll(/items:\[(.*?)\]\}/gs)]
-expect(itemGroups.length>=8,'compact product intro must define benefit lists for all eight languages')
-for(const group of itemGroups.slice(0,8)){
+expect(itemGroups.length>=supported.length,'compact product intro must define benefit lists for all ten languages')
+for(const group of itemGroups.slice(0,supported.length)){
   const itemCount=(group[1].match(/','/g)||[]).length+1
   expect(itemCount===4,'each compact product intro language must contain exactly four benefit points')
 }
