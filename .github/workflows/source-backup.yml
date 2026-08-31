@@ -3,8 +3,6 @@ name: AS Gold Source Backup
 on:
   push:
     branches: [main]
-    paths:
-      - '.github/workflows/source-backup.yml'
   workflow_dispatch:
 
 permissions:
@@ -20,11 +18,11 @@ jobs:
           fetch-depth: 1
       - name: Create source archive
         run: |
-          zip -r AS-Gold-V34-Quellcode-${GITHUB_SHA}.zip . -x '.git/*'
+          zip -r AS-Gold-Quellcode-${GITHUB_SHA}.zip . -x '.git/*'
       - name: Upload source archive
         uses: actions/upload-artifact@v4
         with:
-          name: AS-Gold-V34-Quellcode-${{ github.sha }}
-          path: AS-Gold-V34-Quellcode-${{ github.sha }}.zip
+          name: AS-Gold-Quellcode-${{ github.sha }}
+          path: AS-Gold-Quellcode-${{ github.sha }}.zip
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
