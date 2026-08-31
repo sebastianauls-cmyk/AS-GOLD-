@@ -11,7 +11,9 @@ function objectBody(name){
   return match[1]
 }
 
-const languageBlock=objectBody('languages')
+const languageMatch=explainerSource.match(/const languages=\[([\s\S]*?)\n\]/)
+assert.ok(languageMatch,'missing explainer language selector')
+const languageBlock=languageMatch[1]
 const copyBlock=objectBody('copy')
 const femaleLocalBlock=objectBody('femaleLocalVideos')
 const femaleRemoteBlock=objectBody('femaleRemoteVideos')
