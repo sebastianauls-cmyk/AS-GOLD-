@@ -23,16 +23,16 @@ const copy={
 }
 
 const videos={
-  de:'https://resource2.heygen.ai/video_translate/6b18109b292448afb9fedf930f8ccdbb-de/original.mp4',
-  en:'https://resource2.heygen.ai/video_translate/3ccf94ed801641f585cd0620cc97de38-en/original.mp4',
-  fr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-fr/original.mp4',
-  tr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-tr/original.mp4',
-  pl:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-pl/original.mp4',
-  ru:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ru/original.mp4',
-  ar:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ar/original.mp4',
-  fa:'https://resource2.heygen.ai/video_translate/4378b94dc0e84ad598a3742c105bbda7-fa_fa-IR/original.mp4',
-  ro:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-ro/original.mp4',
-  bg:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-bg/original.mp4'
+  de:'/videos/as-gold-v35-de.mp4',
+  en:'/videos/as-gold-v35-en.mp4',
+  fr:'/videos/as-gold-v35-fr.mp4',
+  tr:'/videos/as-gold-v35-tr.mp4',
+  pl:'/videos/as-gold-v35-pl.mp4',
+  ru:'/videos/as-gold-v35-ru.mp4',
+  ar:'/videos/as-gold-v35-ar.mp4',
+  fa:'/videos/as-gold-v35-fa.mp4',
+  ro:'/videos/as-gold-v35-ro.mp4',
+  bg:'/videos/as-gold-v35-bg.mp4'
 }
 
 export function ExplainerVideo(){
