@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from '../lib/problemNavigatorLanguages.mjs'
+import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from '../lib/problemNavigatorLanguagesV36.mjs'
 
 const plans={start:'AS Gold Start',klar:'AS Gold Klar',analyse:'AS Gold Analyse',komplett:'AS Gold Komplett',business:'AS Gold Business'}
 const caseOrder=['insurance','property','contract','authority','work','business','dispute','private']
-const freeLabels={de:'3 Dokumente kostenlos kennenlernen',en:'Try 3 documents for free',fr:'Découvrir gratuitement avec 3 documents',tr:'3 belgeyi ücretsiz deneyin',pl:'Wypróbuj 3 dokumenty bezpłatnie',ru:'Попробовать 3 документа бесплатно',ar:'جرّب 3 مستندات مجانًا',fa:'۳ سند را رایگان امتحان کنید'}
+const freeLabels={de:'3 Dokumente kostenlos kennenlernen',en:'Try 3 documents for free',fr:'Découvrir gratuitement avec 3 documents',tr:'3 belgeyi ücretsiz deneyin',pl:'Wypróbuj 3 dokumenty bezpłatnie',ru:'Попробовать 3 документа бесплатно',ar:'جرّب 3 مستندات مجانًا',fa:'۳ سند را رایگان امتحان کنید',ro:'Încercați gratuit cu 3 documente',bg:'Опитайте 3 документа безплатно'}
 const inputHelp={
   de:'Beschreiben Sie Ihr Problem einfach in eigenen Worten. Sie müssen keine Fachbegriffe kennen. Schreiben Sie, was passiert ist und was Sie erreichen möchten – oder sprechen Sie es ein.',
   en:'Describe your problem in your own words. You do not need technical terms. Say what happened and what you want to achieve – or speak it aloud.',
@@ -15,8 +15,11 @@ const inputHelp={
   pl:'Opisz problem własnymi słowami. Nie musisz znać fachowych pojęć. Napisz, co się wydarzyło i co chcesz osiągnąć – albo powiedz to.',
   ru:'Опишите проблему своими словами. Специальные термины не нужны. Напишите, что произошло и чего вы хотите добиться, или продиктуйте это.',
   ar:'اشرح مشكلتك بكلماتك الخاصة. لا تحتاج إلى مصطلحات متخصصة. اكتب ما حدث وما الذي تريد الوصول إليه، أو قل ذلك بصوتك.',
-  fa:'مشکل خود را با کلمات خودتان توضیح دهید. نیازی به اصطلاحات تخصصی نیست. بنویسید چه اتفاقی افتاده و چه نتیجه‌ای می‌خواهید، یا آن را بیان کنید.'
+  fa:'مشکل خود را با کلمات خودتان توضیح دهید. نیازی به اصطلاحات تخصصی نیست. بنویسید چه اتفاقی افتاده و چه نتیجه‌ای می‌خواهید، یا آن را بیان کنید.',
+  ro:'Descrieți problema cu propriile cuvinte. Nu aveți nevoie de termeni tehnici. Scrieți ce s-a întâmplat și ce doriți să obțineți – sau spuneți cu voce tare.',
+  bg:'Опишете проблема със свои думи. Не са нужни специални термини. Напишете какво се е случило и какво искате да постигнете – или го кажете с глас.'
 }
+const inputTitles={de:'So funktioniert die Eingabe:',en:'How to enter your problem:',fr:'Comment saisir votre problème :',tr:'Sorununuzu nasıl girersiniz:',pl:'Jak wpisać problem:',ru:'Как описать проблему:',ar:'كيفية إدخال المشكلة:',fa:'نحوه وارد کردن مشکل:',ro:'Cum introduceți problema:',bg:'Как да въведете проблема:'}
 
 function normalize(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function hits(text,arr){return arr.reduce((n,w)=>n+(text.includes(normalize(w))?1:0),0)}
@@ -27,10 +30,10 @@ function recommend(value,profile){
   if(Math.max(...Object.values(scores))===0) caseKey=text.length>180?'dispute':'private'
   let planKey='start'
   const has=terms=>terms.some(term=>text.includes(normalize(term)))
-  if(has(['mehrere kunden','team','wiederkehr','mandanten','portfolio','multiple clients','recurring','plusieurs clients','équipe','müşteri','ekip','klienci','zespół','клиент','команда','عملاء','فريق','مشتری','تیم'])) planKey='business'
-  else if(text.length>420||has(['komplex','umfangreich','viele unterlagen','komplett','complex','extensive','many documents','complet','nombreux documents','karmaşık','kapsamlı','złożon','obszern','сложн','много документов','معقد','مستندات كثيرة','پیچیده','مدارک زیاد'])) planKey='komplett'
-  else if(text.length>240||has(['risiko','bewerten','analyse','anwalt','gericht','klage','risk','assess','lawyer','court','analysis','risque','avocat','tribunal','avukat','mahkeme','ryzyko','sąd','риск','суд','مخاطر','محكمة','ریسک','دادگاه'])) planKey='analyse'
-  else if(text.length>120||has(['frist','widerspruch','fehlt','unklar','prüfen','deadline','contradiction','missing','review','délai','eksik','süre','termin','brak','срок','противореч','موعد','تناقض','مهلت'])) planKey='klar'
+  if(has(['mehrere kunden','team','wiederkehr','mandanten','portfolio','multiple clients','recurring','plusieurs clients','équipe','müşteri','ekip','klienci','zespół','клиент','команда','عملاء','فريق','مشتری','تیم','mai mulți clienți','echipă','recurent','няколко клиента','екип','повтарящ'])) planKey='business'
+  else if(text.length>420||has(['komplex','umfangreich','viele unterlagen','komplett','complex','extensive','many documents','complet','nombreux documents','karmaşık','kapsamlı','złożon','obszern','сложн','много документов','معقد','مستندات كثيرة','پیچیده','مدارک زیاد','complex','multe documente','сложен','много документи'])) planKey='komplett'
+  else if(text.length>240||has(['risiko','bewerten','analyse','anwalt','gericht','klage','risk','assess','lawyer','court','analysis','risque','avocat','tribunal','avukat','mahkeme','ryzyko','sąd','риск','суд','مخاطر','محكمة','ریسک','دادگاه','risc','evaluare','avocat','instanță','риск','оценка','адвокат','съд'])) planKey='analyse'
+  else if(text.length>120||has(['frist','widerspruch','fehlt','unklar','prüfen','deadline','contradiction','missing','review','délai','eksik','süre','termin','brak','срок','противореч','موعد','تناقض','مهلت','termen','contradicție','lipsește','срок','противоречие','липсва'])) planKey='klar'
   return {caseKey,planKey,reason:profile.reasons[planKey]||profile.reasons.start}
 }
 
@@ -110,11 +113,12 @@ export function ProblemNavigator(){
   const secondary={padding:'10px 13px',border:'1px solid #d5c38f',borderRadius:11,background:'#fffaf0',color:'#5b4618',fontWeight:800,textDecoration:'none',display:'inline-flex',alignItems:'center'}
   const freeText=freeLabels[language]||freeLabels.en
   const helpText=inputHelp[language]||inputHelp.en
+  const inputTitle=inputTitles[language]||inputTitles.en
 
   return createPortal(<section id="asgold-problem-navigator-react" dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
-    <div style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{language==='de'?'So funktioniert die Eingabe:':language==='en'?'How to enter your problem:':language==='fr'?'Comment saisir votre problème :':language==='tr'?'Sorununuzu nasıl girersiniz:':language==='pl'?'Jak wpisać problem:':language==='ru'?'Как описать проблему:':language==='ar'?'كيفية إدخال المشكلة:':'نحوه وارد کردن مشکل:'}</b>{helpText}</div>
+    <div style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
     <textarea ref={textRef} value={value} onChange={e=>{setValue(e.target.value);setResult(null)}} rows={4} placeholder={c.placeholder} dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
     <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
       <button type="button" onClick={voice} style={secondary}>{listening?'⏹':'🎙'} {listening?c.stop:c.voice}</button>
