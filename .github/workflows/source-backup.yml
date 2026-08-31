@@ -31,7 +31,7 @@ jobs:
             curl --fail --location --retry 3 --output public/videos/as-gold-explainer-de-female.mp4 'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/8c396922b110ea1a7a59411a8d8e1fa5.mp4?Expires=1788811604&Signature=RnGhwBkMar1aRLlWpBZiTgwP3h1v88ui~7PiEZ6Y749UqGprJ3kpFFBGeB01e1jj0ueq3BizEtSdZA2txmct5erxXGJ6OZZMyTnr3Ni8z6hMS0b57KXAlKDBy2FFiNp2~LXHk4nK3U7isPFP5PYdSqgnGHdCUwsxdWjCLwMTHBZqQ6rrDZlwDgWqLxOe8PijtH1I5cryEYtPpzaat7JoS6ZGjB0pAYMrX7Eqoqe0y5yuQfGXHX4nFN4jfh7S01YpCEEH5JVtHLyBfardRvF8FIpbaVGj7LW56usa6Crbi8g82cBh8ea5gF9CkP4YfQTA6NtRQXOC3PaLDRrQdFmPHw__&Key-Pair-Id=K38HBHX5LX3X2H'
           fi
 
-          if ! git diff --quiet -- public/videos; then
+          if [ -n "$(git status --porcelain -- public/videos)" ]; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add public/videos
