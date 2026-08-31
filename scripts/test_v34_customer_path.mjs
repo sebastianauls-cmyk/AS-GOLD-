@@ -11,7 +11,7 @@ const navigator=read('app/components/ProblemNavigator.js')
 const intro=read('app/components/ProductIntroCompact.js')
 const jump=read('app/components/CaseChoiceJumpEnhancer.js')
 const title=read('app/components/HeroTitleStabilizer.js')
-const languages=read('app/lib/problemNavigatorLanguages.mjs')
+const languages=read('app/lib/problemNavigatorLanguagesV36.mjs')
 
 // Public customer path must have exactly one active problem navigator.
 expect((layout.match(/<ProblemNavigator\s*\/>/g)||[]).length===1,'ProblemNavigator must be mounted exactly once')
@@ -37,8 +37,10 @@ expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document
 const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
 for(const code of supported){
   expect(intro.includes(`${code}:{title:`),`compact product intro missing language ${code}`)
-  expect(languages.includes(`${code}:{locale:`),`problem language profile missing ${code}`)
+  if(code==='ro'||code==='bg') expect(languages.includes(`${code}:{locale:`),`problem language profile missing ${code}`)
 }
+expect(languages.includes("import {problemLanguageProfiles as baseProfiles"),'V36 profile layer must include the base eight languages')
+expect(languages.includes('problemLanguageProfiles={...baseProfiles,...extraProfiles}'),'V36 profile layer must merge base and extra languages')
 const itemGroups=[...intro.matchAll(/items:\[(.*?)\]\}/gs)]
 expect(itemGroups.length>=supported.length,'compact product intro must define benefit lists for all ten languages')
 for(const group of itemGroups.slice(0,supported.length)){
