@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e",
+    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness",
     "build": "next build",
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
@@ -16,7 +16,8 @@
     "test:v35": "node scripts/test_v35_languages.mjs",
     "test:v36": "node scripts/test_v36_explainer_video.mjs",
     "test:v37": "node scripts/test_v37_first_action.mjs",
-    "test:v37-e2e": "node scripts/test_v37_end_to_end.mjs"
+    "test:v37-e2e": "node scripts/test_v37_end_to_end.mjs",
+    "test:v37-readiness": "node scripts/test_v37_product_reife.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
