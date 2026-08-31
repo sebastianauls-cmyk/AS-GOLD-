@@ -1,0 +1,30 @@
+name: AS Gold Source Backup
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/source-backup.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Create source archive
+        run: |
+          zip -r AS-Gold-V34-Quellcode-${GITHUB_SHA}.zip . -x '.git/*'
+      - name: Upload source archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: AS-Gold-V34-Quellcode-${{ github.sha }}
+          path: AS-Gold-V34-Quellcode-${{ github.sha }}.zip
+          if-no-files-found: error
+          retention-days: 30
