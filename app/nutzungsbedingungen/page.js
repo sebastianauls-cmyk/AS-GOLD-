@@ -3,7 +3,7 @@ import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDoc
 export const metadata={title:'Nutzungsbedingungen | AS Gold',description:'Nutzungsbedingungen für den kontrollierten Testbetrieb von AS Gold.'}
 
 export default function Terms(){
-  return <LegalDocument title="Nutzungsbedingungen" intro="Bedingungen für den aktuellen kostenlosen und kontrollierten Testbetrieb von AS Gold." updated="30. August 2026 · Version 2026-08-30-test-v1">
+  return <LegalDocument pageId="nutzungsbedingungen" title="Nutzungsbedingungen" intro="Bedingungen für den aktuellen kostenlosen und kontrollierten Testbetrieb von AS Gold." updated="30. August 2026 · Version 2026-08-30-test-v1">
     <LegalNotice tone="warning"><b>Keine Zahlung, kein Abo</b><p>Die Bezahlfunktion ist deaktiviert. Registrierung und Testzugang lösen keine Zahlung, kein kostenpflichtiges Abonnement und keine automatische Verlängerung aus.</p></LegalNotice>
     <LegalSection title="1. Anbieter und Geltungsbereich"><p>Anbieter ist Sebastian Auls – Unternehmens- und Konzeptberatung, Chrysanderstraße 75, 21029 Hamburg. Diese Bedingungen gelten für die Registrierung und Nutzung von AS Gold im kontrollierten Test. Abweichende Bedingungen gelten nur, wenn sie ausdrücklich vereinbart wurden.</p></LegalSection>
     <LegalSection title="2. Testzugang"><p>Der Zugang dient der Erprobung von Fallstruktur, Dokumentablage, manueller Prüfung, Freigaben, Exporten und optionaler KI-Analyse. Verfügbarkeit, Funktionen und Testumfang können sachlich begründet angepasst oder beendet werden. Vor einer wesentlichen nachteiligen Änderung werden registrierte Nutzer angemessen informiert, soweit dies möglich und zumutbar ist.</p></LegalSection>

@@ -14,7 +14,7 @@ const cards=[
 ]
 
 export default function LegalHub(){
-  return <LegalDocument title="Rechtliches" intro="Alle Pflichtinformationen und Kontrollmöglichkeiten für den aktuellen, kostenlosen Testbetrieb von AS Gold an einem Ort.">
+  return <LegalDocument pageId="rechtliches" title="Rechtliches" intro="Alle Pflichtinformationen und Kontrollmöglichkeiten für den aktuellen, kostenlosen Testbetrieb von AS Gold an einem Ort.">
     <LegalNotice tone="warning"><b>Kontrollierter Testbetrieb</b><p>Die Bezahlfunktion ist deaktiviert. Zulässig sind ausschließlich synthetische oder wirksam anonymisierte Testdaten. Echte personenbezogene Kundendaten und besonders sensible Daten sind technisch und vertraglich nicht freigegeben.</p></LegalNotice>
     <LegalSection title="Dokumente und Funktionen"><div className="legalCardGrid">{cards.map(([href,title,text])=><a className="legalCard" href={href} key={href}><h2>{title}</h2><p>{text}</p><span>Öffnen →</span></a>)}</div></LegalSection>
     <LegalSection title="Vor einem späteren Bezahlbetrieb"><p>Die Rechtstexte bilden den transparenten Stand des kontrollierten Tests ab. Vor Aktivierung von Zahlungen oder echten personenbezogenen Daten sind insbesondere Anbieterpflichtangaben, Auftragsverarbeitungsverträge, Drittlandtransfers, Löschprozesse und gegebenenfalls eine Datenschutz-Folgenabschätzung operativ zu dokumentieren und freizugeben.</p></LegalSection>

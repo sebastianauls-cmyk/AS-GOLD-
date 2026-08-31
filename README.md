@@ -1,10 +1,10 @@
-# AS Gold Workspace
+# AS Gold Workspace – V31
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt-, Arbeits- und Freigabestand: **V30 produktiv im kontrollierten Testbetrieb** unter `https://app-gold-workspace.vercel.app`.
-- V30 verbindet die V29-Sicherheits-, Integritäts- und Testerhärtungen mit der bereinigten Sprachwahl sowie vollständigen Sprachpaketen für Französisch und Farsi.
+- Gesamt-, Arbeits- und Freigabestand: **V31 zur Veröffentlichung freigegeben** unter `https://app-gold-workspace.vercel.app`.
+- V31 ergänzt V30 um flaggenbasierte Sprachwahl, automatisch lokalisierte Rechtsseiten und sicher serverseitig validierte Promo-Codes.
 - V29 übernimmt den vollständigen V28-Funktionsstand, repariert die Repository-Quelldatei und ergänzt Abhängigkeits-, Header-, Export-, Passwort-, Audit- und Datenbankhärtungen.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
 
@@ -22,6 +22,7 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 - Exporte: PDF, DOCX, XLSX, PPTX, CSV, TXT
 - Tarifabhängige Exportfreigaben
 - Upgrade-Vorschau mit 1/3/6/12 Monaten
+- Promo-Code-Eingabe mit serverseitiger Gültigkeits-, Tarif-, Laufzeit- und Limitprüfung
 - 0/5/10/15 % Mehrmonatsvorteil
 - anteilige Upgrade-Differenz bis zum Ende der laufenden Periode
 - keine automatische Verlängerung
@@ -31,7 +32,7 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 ## Sicherungsregel
 Jeder freigegebene funktionierende Stand wird nach Test sowohl auf Vercel bereitgestellt als auch versioniert im Google-Drive-Ordner „App intern gold / AS Gold Quellcode-Sicherungen“ gesichert.
 
-## Mehrsprachigkeit – V30
+## Mehrsprachigkeit – V31
 
 Aktive UI-/Ausgabesprachen:
 - Deutsch (Standard)
@@ -43,8 +44,8 @@ Aktive UI-/Ausgabesprachen:
 - Arabisch
 - Farsi
 
-Die Sprache der App und die Ausgabesprache sind getrennte Einstellungen. Die rechtliche Grundlage bleibt unabhängig von der Sprache Deutschland / deutsches Recht.
-Arabisch und Farsi aktivieren automatisch RTL-Darstellung. Der zentrale V30-Sprachkatalog hält aktive Sprachen, Gebietsschemata, Schreibrichtung und Ausgabesprachennamen konsistent, ohne Tarif-, Datenbank- oder Rechtslogik zu verändern.
+Die Sprache der App und die Ausgabesprache sind getrennte Einstellungen und werden mit Landesflaggen gewählt. Englisch, Arabisch und Farsi zeigen mehrere zugehörige Landesflaggen. Impressum, Datenschutz, Nutzungsbedingungen, Cookies, KI-Transparenz, Kontakt, Rechtliches, Testhinweise, Widerruf und Datenschutz-Steuerung wechseln automatisch mit der App-Sprache. Die deutsche Fassung bleibt ausdrücklich verbindlich.
+Arabisch und Farsi aktivieren automatisch RTL-Darstellung. Der zentrale Sprachkatalog hält aktive Sprachen, Gebietsschemata und Schreibrichtung konsistent.
 
 Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, Bulgarisch, Kroatisch und Griechisch.
 

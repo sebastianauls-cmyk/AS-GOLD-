@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@supabase/supabase-js'
-import { getV28PrivacyCopy, PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../components/V28PrivacyControls'
+import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../components/V28PrivacyControls'
+import { useLegalLanguage } from '../components/LegalLanguageContext'
+import { privacyDashboardCopy } from '../lib/v31InteractiveLegalTranslations.mjs'
 
 const supabase=createClient(
   'https://bcvggtnvuesaihqvgisg.supabase.co',
@@ -11,11 +13,12 @@ const supabase=createClient(
 )
 
 export default function PrivacyDashboard(){
+  const language=useLegalLanguage()
   const [session,setSession]=useState(null)
   const [settings,setSettings]=useState(null)
   const [state,setState]=useState('loading')
   const [message,setMessage]=useState('')
-  const on=getV28PrivacyCopy('de')
+  const on=privacyDashboardCopy[language]||privacyDashboardCopy.de
 
   useEffect(()=>{
     let active=true
@@ -44,22 +47,22 @@ export default function PrivacyDashboard(){
     if(documentsUpdate.error){setMessage(documentsUpdate.error.message);setState('error');return}
     const audit=await supabase.rpc('record_gold_audit_event',{p_event_type:'account_ai_processing_disabled',p_entity_type:'account',p_entity_id:null,p_metadata:{status:'completed'}})
     if(audit.error){setMessage(audit.error.message);setState('error');return}
-    setSettings(data);setMessage(on.disableAiDone);setState('ready')
+    setSettings(data);setMessage(on.done);setState('ready')
   }
 
-  if(state==='loading') return <div className="privacyDashboard"><p>Status wird sicher geladen …</p></div>
-  if(state==='signed-out') return <div className="privacyDashboard"><h3>Anmeldung erforderlich</h3><p>Die Rechtstexte sind öffentlich. Ihre persönlichen Freigaben können Sie nach der Anmeldung prüfen und ändern.</p><a className="primary btn" href="/">Zur Anmeldung</a></div>
+  if(state==='loading') return <div className="privacyDashboard"><p>{on.loading}</p></div>
+  if(state==='signed-out') return <div className="privacyDashboard"><h3>{on.signedOut}</h3><p>{on.signedOutText}</p><a className="primary btn" href={language==='de'?'/':`/?lang=${language}`}>{on.signIn}</a></div>
 
   const current=settings?.privacy_notice_version===PRIVACY_NOTICE_VERSION&&settings?.terms_version===TERMS_VERSION
   return <div className="privacyDashboard">
     <div className="privacyStatusGrid">
-      <div><small>Rechtstexte</small><b>{current?'Aktuelle Version bestätigt':'Bestätigung ausstehend'}</b><span>{settings?.privacy_notice_version||'—'} · {settings?.terms_version||'—'}</span></div>
-      <div><small>{on.aiControl}</small><b>{settings?.ai_processing_enabled?'Freigegeben':'Ausgeschaltet'}</b><span>{settings?.ai_processing_enabled?on.aiEnabled:on.aiDisabled}</span></div>
-      <div><small>Echte personenbezogene Daten</small><b>{settings?.real_data_authorized?'Freigegeben':'Gesperrt'}</b><span>Im kontrollierten V28-Test muss diese Freigabe ausgeschaltet bleiben.</span></div>
-      <div><small>Besondere Kategorien</small><b>{settings?.special_categories_authorized?'Freigegeben':'Gesperrt'}</b><span>Daten nach Art. 9 DSGVO sind im Test gesperrt.</span></div>
+      <div><small>{on.legal}</small><b>{current?on.current:on.pending}</b><span>{settings?.privacy_notice_version||'—'} · {settings?.terms_version||'—'}</span></div>
+      <div><small>{on.ai}</small><b>{settings?.ai_processing_enabled?on.enabled:on.disabled}</b><span>{settings?.ai_processing_enabled?on.aiEnabled:on.aiDisabled}</span></div>
+      <div><small>{on.real}</small><b>{settings?.real_data_authorized?on.enabled:on.blocked}</b><span>{on.realNote}</span></div>
+      <div><small>{on.special}</small><b>{settings?.special_categories_authorized?on.enabled:on.blocked}</b><span>{on.specialNote}</span></div>
     </div>
     {message&&<div className={`legalNotice ${state==='error'?'legalNotice-warning':'legalNotice-success'}`} role="status">{message}</div>}
-    {settings?.ai_processing_enabled?<button className="secondary" disabled={state==='busy'} onClick={disableAi}>{state==='busy'?'Wird ausgeschaltet …':on.disableAi}</button>:<p className="privacySafeState">Es bestehen keine offenen KI-Kontofreigaben. Eine neue Analyse braucht wieder die ausdrückliche Dokumentbestätigung.</p>}
-    <p className="privacyControlNote">Das Ausschalten beendet keine bereits abgeschlossene Übermittlung rückwirkend. Löschung, Auskunft oder Widerspruch können zusätzlich über die Kontofunktionen oder per E-Mail angefragt werden.</p>
+    {settings?.ai_processing_enabled?<button className="secondary" disabled={state==='busy'} onClick={disableAi}>{state==='busy'?on.disabling:on.disable}</button>:<p className="privacySafeState">{on.safe}</p>}
+    <p className="privacyControlNote">{on.note}</p>
   </div>
 }

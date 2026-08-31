@@ -5,7 +5,7 @@ export const metadata={title:'AS Gold sicher testen',description:'Kontrollierter
 const sample='/testdaten/AS_Gold_Synthetischer_Testfall_V29.pdf'
 
 export default function TestingGuide(){
-  return <LegalDocument eyebrow="AS Gold · Testerbetrieb V30" title="AS Gold sicher ausprobieren" intro="Mit diesem Ablauf können Tester die App vollständig erkunden, ohne echte Kundendaten oder sensible Informationen zu verwenden.">
+  return <LegalDocument pageId="testen" eyebrow="AS Gold · Testerbetrieb V31" title="AS Gold sicher ausprobieren" intro="Mit diesem Ablauf können Tester die App vollständig erkunden, ohne echte Kundendaten oder sensible Informationen zu verwenden.">
     <LegalNotice tone="success"><b>Der Test kostet nichts.</b><p>Es gibt keine Zahlung, kein Abonnement und keine automatische Verlängerung. Die Bezahlfunktion bleibt deaktiviert.</p></LegalNotice>
     <LegalNotice tone="warning"><b>Nur die vorbereitete Musterdatei oder eigene vollständig erfundene Daten verwenden.</b><p>Keine Namen, Anschriften, Verträge, Gesundheitsdaten, Ausweise, Bankdaten oder Unterlagen realer Personen hochladen. Auch geschwärzte Unterlagen sind nur zulässig, wenn eine Rückführung auf Personen tatsächlich ausgeschlossen ist.</p></LegalNotice>
 

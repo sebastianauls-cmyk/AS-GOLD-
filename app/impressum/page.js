@@ -3,7 +3,7 @@ import { LegalDocument, LegalSection } from '../components/LegalDocument'
 export const metadata={title:'Impressum | AS Gold',description:'Anbieterkennzeichnung von AS Gold.'}
 
 export default function Imprint(){
-  return <LegalDocument title="Impressum" intro="Anbieterkennzeichnung für AS Gold gemäß § 5 Digitale-Dienste-Gesetz (DDG).">
+  return <LegalDocument pageId="impressum" title="Impressum" intro="Anbieterkennzeichnung für AS Gold gemäß § 5 Digitale-Dienste-Gesetz (DDG).">
     <LegalSection title="Diensteanbieter">
       <address><b>Sebastian Auls – Unternehmens- und Konzeptberatung</b><br/>Chrysanderstraße 75<br/>21029 Hamburg<br/>Deutschland</address>
     </LegalSection>

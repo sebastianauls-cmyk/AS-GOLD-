@@ -26,7 +26,7 @@ export const componentTranslations = {
     fa:{title:'گذرواژه امن آزمایشی',intro:'دست‌کم ۱۲ نویسه استفاده کنید و این گذرواژه را فقط برای AS Gold به‌کار ببرید.',length:'دست‌کم ۱۲ نویسه',letter:'دست‌کم یک حرف',number:'دست‌کم یک عدد',symbol:'دست‌کم یک نویسه ویژه',variety:'دست‌کم ۸ نویسه متفاوت',personal:'بدون نام، بخش ایمیل یا گذرواژه رایج',match:'هر دو ورودی یکسان‌اند',invalid:'گذرواژه هنوز شرایط امنیتی را برآورده نمی‌کند.'}
   },
   footerCopy:{
-    fr:{nav:'Informations juridiques',test:'Test sécurisé',hub:'Mentions juridiques',imprint:'Mentions légales',privacy:'Confidentialité',controls:'Contrôle de la confidentialité',terms:'Conditions d’utilisation',cookies:'Cookies et stockage',ai:'Transparence de l’IA',contact:'Contact',withdrawal:'Révoquer le contrat',binding:'Les textes juridiques allemands font foi.'},
-    fa:{nav:'اطلاعات حقوقی',test:'آزمایش امن',hub:'اطلاعات حقوقی',imprint:'مشخصات ناشر',privacy:'حریم خصوصی',controls:'کنترل حریم خصوصی',terms:'شرایط استفاده',cookies:'کوکی‌ها و ذخیره‌سازی',ai:'شفافیت هوش مصنوعی',contact:'تماس',withdrawal:'انصراف از قرارداد',binding:'متن‌های حقوقی آلمانی ملاک و الزام‌آورند.'}
+    fr:{nav:'Informations juridiques',test:'Test sécurisé',hub:'Mentions juridiques',imprint:'Mentions légales',privacy:'Confidentialité',controls:'Contrôle de la confidentialité',terms:'Conditions d’utilisation',cookies:'Cookies et stockage',ai:'Transparence de l’IA',contact:'Contact',withdrawal:'Révoquer le contrat',binding:'Les textes juridiques allemands font foi.',updated:'Mise à jour'},
+    fa:{nav:'اطلاعات حقوقی',test:'آزمایش امن',hub:'اطلاعات حقوقی',imprint:'مشخصات ناشر',privacy:'حریم خصوصی',controls:'کنترل حریم خصوصی',terms:'شرایط استفاده',cookies:'کوکی‌ها و ذخیره‌سازی',ai:'شفافیت هوش مصنوعی',contact:'تماس',withdrawal:'انصراف از قرارداد',binding:'متن‌های حقوقی آلمانی ملاک و الزام‌آورند.',updated:'به‌روزرسانی'}
   }
 }

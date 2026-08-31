@@ -1,12 +1,12 @@
 export const supportedLanguages = [
-  { key: 'de', label: 'Deutsch', short: 'DE' },
-  { key: 'en', label: 'English', short: 'EN' },
-  { key: 'fr', label: 'Français', short: 'FR' },
-  { key: 'tr', label: 'Türkçe', short: 'TR' },
-  { key: 'pl', label: 'Polski', short: 'PL' },
-  { key: 'ru', label: 'Русский', short: 'RU' },
-  { key: 'ar', label: 'العربية', short: 'AR' },
-  { key: 'fa', label: 'فارسی', short: 'FA' }
+  { key: 'de', label: 'Deutsch', short: 'DE', flags: '🇩🇪' },
+  { key: 'en', label: 'English', short: 'EN', flags: '🇬🇧 🇺🇸' },
+  { key: 'fr', label: 'Français', short: 'FR', flags: '🇫🇷' },
+  { key: 'tr', label: 'Türkçe', short: 'TR', flags: '🇹🇷' },
+  { key: 'pl', label: 'Polski', short: 'PL', flags: '🇵🇱' },
+  { key: 'ru', label: 'Русский', short: 'RU', flags: '🇷🇺' },
+  { key: 'ar', label: 'العربية', short: 'AR', flags: '🇸🇦 🇦🇪' },
+  { key: 'fa', label: 'فارسی', short: 'FA', flags: '🇮🇷 🇦🇫' }
 ]
 
 export const rtlLanguages = new Set(['ar', 'fa'])

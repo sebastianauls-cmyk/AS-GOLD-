@@ -1,6 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { useLegalLanguage } from '../components/LegalLanguageContext'
+import { localeForLanguage } from '../lib/v30Languages.mjs'
+import { withdrawalCopy } from '../lib/v31InteractiveLegalTranslations.mjs'
 
 const endpoint='https://bcvggtnvuesaihqvgisg.supabase.co/functions/v1/gold-withdrawal'
 const publishableKey='sb_publishable_O0JQYoJW-60sh3_5f7yr2Q_czCPZNH0'
@@ -11,6 +14,8 @@ function saveText(text,name){
 }
 
 export default function WithdrawalForm(){
+  const language=useLegalLanguage()
+  const on=withdrawalCopy[language]||withdrawalCopy.de
   const [step,setStep]=useState('start')
   const [startedAt,setStartedAt]=useState('')
   const [name,setName]=useState('')
@@ -27,26 +32,26 @@ export default function WithdrawalForm(){
     try{
       const response=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json',apikey:publishableKey},body:JSON.stringify({name:name.trim(),contract_reference:reference.trim(),confirmation_channel:'download',started_at:startedAt,company})})
       const payload=await response.json().catch(()=>({}))
-      if(!response.ok) throw new Error(payload.error||'Der Widerruf konnte nicht übermittelt werden.')
+      if(!response.ok) throw new Error(on.error)
       setConfirmation(payload);setStep('done')
       saveText(payload.confirmation_text,`AS_Gold_Widerruf_${payload.withdrawal_id}.txt`)
-    }catch(reason){setError(reason.message||'Der Widerruf konnte nicht übermittelt werden.')}
+    }catch{setError(on.error)}
     finally{setBusy(false)}
   }
 
-  if(step==='start') return <div className="withdrawalStart"><p>Die Funktion ist ohne Anmeldung erreichbar. Nach dem ersten Schritt können Sie Name, Vertrags-/Kontoreferenz und den Bestätigungskanal angeben.</p><button type="button" className="primary withdrawalPrimary" onClick={begin}>Vertrag widerrufen</button></div>
+  if(step==='start') return <div className="withdrawalStart"><p>{on.startText}</p><button type="button" className="primary withdrawalPrimary" onClick={begin}>{on.start}</button></div>
 
-  if(step==='done') return <div className="withdrawalDone" aria-live="polite"><h3>Widerruf eingegangen</h3><p>Ihr Widerruf wurde am <b>{new Date(confirmation.received_at).toLocaleString('de-DE')}</b> gespeichert.</p><p>Referenz: <code>{confirmation.withdrawal_id}</code></p><button type="button" className="secondary" onClick={()=>saveText(confirmation.confirmation_text,`AS_Gold_Widerruf_${confirmation.withdrawal_id}.txt`)}>Eingangsbestätigung erneut herunterladen</button><small>Bewahren Sie die heruntergeladene Textdatei als dauerhafte Eingangsbestätigung auf.</small></div>
+  if(step==='done') return <div className="withdrawalDone" aria-live="polite"><h3>{on.done}</h3><p>{on.received} <b>{new Date(confirmation.received_at).toLocaleString(localeForLanguage[language]||localeForLanguage.de)}</b>.</p><p>{on.reference}: <code>{confirmation.withdrawal_id}</code></p><button type="button" className="secondary" onClick={()=>saveText(confirmation.confirmation_text,`AS_Gold_Widerruf_${confirmation.withdrawal_id}.txt`)}>{on.again}</button><small>{on.keep}</small></div>
 
   return <form className="withdrawalForm" onSubmit={submit}>
-    <h3>Widerruf vorbereiten</h3>
-    <label>Ihr Name<input value={name} onChange={event=>setName(event.target.value)} minLength="2" maxLength="160" autoComplete="name" required/></label>
-    <label>Vertrags- oder Kontoreferenz<input value={reference} onChange={event=>setReference(event.target.value)} minLength="3" maxLength="200" placeholder="z. B. Konto-E-Mail oder Vertragsreferenz" required/><small>Geben Sie nur an, was zur eindeutigen Zuordnung erforderlich ist.</small></label>
-    <label>Elektronischer Bestätigungskanal<input value="Download-Bestätigung in diesem Browser" readOnly/></label>
-    <label className="withdrawalHoneypot" aria-hidden="true">Firma<input tabIndex="-1" autoComplete="off" value={company} onChange={event=>setCompany(event.target.value)}/></label>
-    <div className="withdrawalDeclaration"><b>Erklärung</b><p>Hiermit widerrufe ich den über die AS-Gold-Online-Benutzeroberfläche geschlossenen Vertrag beziehungsweise den durch die angegebene Referenz bezeichneten Vertragsteil.</p></div>
+    <h3>{on.prepare}</h3>
+    <label>{on.name}<input value={name} onChange={event=>setName(event.target.value)} minLength="2" maxLength="160" autoComplete="name" required/></label>
+    <label>{on.contract}<input value={reference} onChange={event=>setReference(event.target.value)} minLength="3" maxLength="200" placeholder={on.placeholder} required/><small>{on.help}</small></label>
+    <label>{on.channel}<input value={on.download} readOnly/></label>
+    <label className="withdrawalHoneypot" aria-hidden="true">{on.company}<input tabIndex="-1" autoComplete="off" value={company} onChange={event=>setCompany(event.target.value)}/></label>
+    <div className="withdrawalDeclaration"><b>{on.declaration}</b><p>{on.declarationText}</p></div>
     {error&&<div className="legalNotice legalNotice-warning" role="alert">{error}</div>}
-    <button className="primary withdrawalPrimary" disabled={busy}>{busy?'Widerruf wird übermittelt …':'Widerruf bestätigen'}</button>
-    <button type="button" className="linkBtn" onClick={()=>setStep('start')}>Abbrechen</button>
+    <button className="primary withdrawalPrimary" disabled={busy}>{busy?on.sending:on.confirm}</button>
+    <button type="button" className="linkBtn" onClick={()=>setStep('start')}>{on.cancel}</button>
   </form>
 }
