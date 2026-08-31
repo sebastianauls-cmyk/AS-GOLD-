@@ -77,7 +77,7 @@ export function LegalDocument({pageId,eyebrow='AS Gold · Rechtliches',title,int
   },[language,shownTitle])
 
   return <LegalLanguageContext.Provider value={language}><div className="legalSite">
-    <header className="legalHeader"><div className="wrap legalHeaderInner"><a className="brand legalHome" href={localizedHref('/',language)}><span className="logo">AS</span><b>AS Gold</b></a><div className="legalHeaderActions"><LanguageSwitcher value={language} onChange={setLanguage} label={shell.eyebrow}/><a className="secondary btn" href={localizedHref('/',language)}>{shell.back}</a></div></div></header>
+    <header className="legalHeader"><div className="wrap legalHeaderInner"><a className="brand legalHome" href={localizedHref('/',language)}><span className="logo">AS</span><b>AS Gold</b></a><div className="legalHeaderActions"><LanguageSwitcher value={language} onChange={setLanguage} label={shell.eyebrow}/><a className="secondary btn legalBackBtn" href={localizedHref('/',language)}><span aria-hidden="true">{rtlLanguages.has(language)?'→':'←'}</span>{shell.back}</a></div></div></header>
     <main className="legalMain wrap">
       <div className="legalTitle"><span className="eyebrow">{language==='de'?eyebrow:shell.eyebrow}</span><h1>{shownTitle}</h1>{shownIntro&&<p className="lead">{shownIntro}</p>}<p className="legalUpdated">{shell.updated}: {language==='de'?updated:formattedUpdated(updated,language)} · {shell.binding}</p>{language!=='de'&&<p className="legalTranslationNote">{shell.note}</p>}</div>
       <div className="legalBody">{translated?<TranslatedLegalBody page={translated} language={language} localizedExtra={localizedExtra} localizedExtraAfterSection={localizedExtraAfterSection}/>:children}</div>

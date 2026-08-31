@@ -1,9 +1,10 @@
-# AS Gold Workspace – V32
+# AS Gold Workspace – V33
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt-, Arbeits- und Freigabestand: **V32 zur Veröffentlichung freigegeben** unter `https://app-gold-workspace.vercel.app`.
+- Gesamt-, Arbeits- und Freigabestand: **V33 zur Veröffentlichung vorbereitet** unter `https://app-gold-workspace.vercel.app`.
+- V33 ordnet alle Sprachoptionen vertikal und vollständig sichtbar an und macht die Zurück-Navigation auf jeder betroffenen Oberfläche eindeutig erkennbar.
 - V32 ersetzt systemabhängige Emoji-Flaggen durch echte SVG-Landesflaggen und kennzeichnet App- und Ausgabesprache in der oberen App-Leiste eindeutig.
 - V31 ergänzt V30 um flaggenbasierte Sprachwahl, automatisch lokalisierte Rechtsseiten und sicher serverseitig validierte Promo-Codes.
 - V29 übernimmt den vollständigen V28-Funktionsstand, repariert die Repository-Quelldatei und ergänzt Abhängigkeits-, Header-, Export-, Passwort-, Audit- und Datenbankhärtungen.

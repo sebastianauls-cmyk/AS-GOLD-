@@ -129,3 +129,44 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 
 @media(max-width:700px){.flagLanguageMenu{position:fixed;top:auto;right:12px;bottom:12px;left:12px;width:auto;grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.appHeaderTools .flagLanguageLabeled{flex-direction:column;align-items:flex-start;gap:3px}.legalHeaderActions .btn{display:none}.legalHeaderInner{min-height:64px}.outputLanguageControl{justify-content:space-between}.promoForm>div{grid-template-columns:1fr}.promoForm button{width:100%}.promoBoxHead{align-items:flex-start}}
 @media(max-width:420px){.flagLanguageMenu{grid-template-columns:1fr 1fr}.flagLanguageMenu button{min-width:0}.flagLanguageMenu button small{font-size:.7rem}}
+
+/* V33: vertically ordered language choices and consistently visible back navigation. */
+.backBtn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #c9ad66;color:#4f3c12;box-shadow:0 5px 16px rgba(83,63,20,.09)}
+.backBtn:hover{border-color:#9b792b;background:#fffaf0}
+.backBtn:focus-visible{outline:3px solid rgba(55,104,176,.32);outline-offset:3px}
+.authBackBtn{margin-top:7px}
+.legalBackBtn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-color:#c9ad66;color:#4f3c12;box-shadow:0 5px 16px rgba(83,63,20,.08);white-space:nowrap}
+.legalBackBtn:hover{border-color:#9b792b;background:#fffaf0}
+.flagLanguageMenu{width:min(280px,calc(100vw - 24px));max-width:none;grid-template-columns:1fr;max-height:calc(100vh - 92px);max-height:calc(100dvh - 92px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
+.flagLanguageMenu button{width:100%;min-height:50px;text-align:start}
+.flagLanguageOptionMain{min-width:0;display:flex;align-items:center;gap:10px}
+.flagLanguageName{overflow:hidden;color:#27303b;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
+.flagLanguageMenu button small{min-width:31px;padding:4px 6px;border-radius:7px;background:#eceff2;text-align:center}
+.flagLanguageMenu button.active small{background:#eadcae;color:#594412}
+
+@media(max-width:760px){
+  .appTop{display:grid;grid-template-columns:1fr;align-items:stretch;gap:9px;padding-top:10px;padding-bottom:10px}
+  .appHeaderTools{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px}
+  .appHeaderTools .legalChip{grid-column:1;width:auto;text-align:start}
+  .appHeaderTools .flagLanguageLabeled{grid-column:1/-1;width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px}
+  .appHeaderTools .flagLanguageTrigger{justify-self:end}
+  .appHeaderTools>button.secondary{grid-column:2;grid-row:1}
+  .sectionHead{align-items:flex-start;flex-wrap:wrap}
+  .sectionHead h2{width:100%;margin-top:4px}
+}
+
+@media(max-width:700px){
+  .flagLanguageMenu{position:fixed;top:auto;right:12px;bottom:12px;left:12px;width:auto;max-height:calc(100vh - 24px);max-height:calc(100dvh - 24px);grid-template-columns:1fr;padding:10px}
+  .legalHeaderInner{min-height:64px;flex-wrap:wrap;padding-top:8px;padding-bottom:8px}
+  .legalHeaderActions .btn{display:inline-flex}
+}
+
+@media(max-width:430px){
+  .legalHeaderInner{display:grid;grid-template-columns:1fr;gap:9px}
+  .legalHeaderActions{width:100%;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px}
+  .legalHeaderActions .flagLanguage{justify-self:start}
+  .legalBackBtn{min-height:44px}
+  .flagLanguageMenu{grid-template-columns:1fr}
+  .flagLanguageMenu button{min-width:0}
+  .flagLanguageMenu button small{font-size:.72rem}
+}
