@@ -1,5 +1,6 @@
 import './globals.css'
 import { HeroCopyEnhancer } from './components/HeroCopyEnhancer'
+import { ProductIntro } from './components/ProductIntro'
 import { ProblemNavigator } from './components/ProblemNavigator'
 import { CaseChoiceJumpEnhancer } from './components/CaseChoiceJumpEnhancer'
 
@@ -12,5 +13,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><HeroCopyEnhancer/><ProblemNavigator/><CaseChoiceJumpEnhancer/>{children}</body></html>
+  return <html lang="de"><body><HeroCopyEnhancer/><ProductIntro/><ProblemNavigator/><CaseChoiceJumpEnhancer/>{children}</body></html>
 }
