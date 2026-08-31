@@ -17,12 +17,29 @@ function FlagSet({countryCodes=[],fallback='',className=''}){
 export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false}){
   const [open,setOpen]=useState(false)
   const [publicPicker,setPublicPicker]=useState(false)
+  const [mobilePublic,setMobilePublic]=useState(false)
   const menuId=useId()
   const rootRef=useRef(null)
   const active=supportedLanguages.find(item=>item.key===value)||supportedLanguages[0]
 
   useEffect(()=>{
-    setPublicPicker(Boolean(rootRef.current?.closest('.publicTop')))
+    const isPublic=Boolean(rootRef.current?.closest('.publicTop'))
+    setPublicPicker(isPublic)
+    if(!isPublic) return
+    const mq=window.matchMedia('(max-width: 560px)')
+    const apply=()=>{
+      setMobilePublic(mq.matches)
+      const parent=rootRef.current?.parentElement
+      if(parent?.classList?.contains('languageSwitch')){
+        parent.style.gridColumn=mq.matches?'1 / -1':''
+        parent.style.width=mq.matches?'100%':''
+        parent.style.minWidth='0'
+        parent.style.display=mq.matches?'block':''
+      }
+    }
+    apply()
+    mq.addEventListener?.('change',apply)
+    return ()=>mq.removeEventListener?.('change',apply)
   },[])
 
   useEffect(()=>{
@@ -41,7 +58,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     return <div
       className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()}
       ref={rootRef}
-      style={{position:'relative',zIndex:120,direction:'ltr',display:'inline-flex'}}
+      style={{position:'relative',zIndex:120,direction:'ltr',display:'flex',width:mobilePublic?'100%':'auto',minWidth:0}}
     >
       <button
         type="button"
@@ -51,17 +68,16 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         aria-controls={open?menuId:undefined}
         title={`${label}: ${active.label}`}
         onClick={()=>setOpen(current=>!current)}
-        style={{display:'flex',alignItems:'center',gap:'9px',minHeight:'46px',padding:'8px 10px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#fff',color:'#2f291b',fontWeight:850,boxShadow:'0 4px 14px rgba(27,31,37,.10)',maxWidth:'100%'}}
+        style={{display:'flex',alignItems:'center',justifyContent:mobilePublic?'space-between':'flex-start',gap:'9px',width:mobilePublic?'100%':'auto',minWidth:0,minHeight:'46px',padding:'8px 10px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#fff',color:'#2f291b',fontWeight:850,boxShadow:'0 4px 14px rgba(27,31,37,.10)',maxWidth:'100%'}}
       >
-        <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/>
-        <strong style={{display:'inline-block',fontSize:'.9rem',whiteSpace:'nowrap'}}>Sprache</strong>
-        <b aria-hidden="true" style={{fontSize:'.8rem'}}>{open?'▴':'▾'}</b>
+        <span style={{display:'flex',alignItems:'center',gap:'9px',minWidth:0}}><FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong style={{display:'inline-block',fontSize:'.9rem',whiteSpace:'nowrap'}}>Sprache</strong></span>
+        <b aria-hidden="true" style={{fontSize:'.8rem',flex:'0 0 auto'}}>{open?'▴':'▾'}</b>
       </button>
       {open&&<div
         id={menuId}
         role="listbox"
         aria-label={label}
-        style={{position:'absolute',top:'calc(100% + 7px)',left:0,width:'230px',maxWidth:'calc(100vw - 24px)',maxHeight:'calc(100dvh - 110px)',overflowY:'auto',padding:'7px',display:'flex',flexDirection:'column',gap:'6px',background:'#fff',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 16px 42px rgba(27,31,37,.22)'}}
+        style={{position:'absolute',top:'calc(100% + 7px)',left:0,width:mobilePublic?'100%':'230px',maxWidth:'calc(100vw - 24px)',maxHeight:'calc(100dvh - 150px)',overflowY:'auto',padding:'7px',display:'flex',flexDirection:'column',gap:'6px',background:'#fff',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 16px 42px rgba(27,31,37,.22)'}}
       >
         {supportedLanguages.map(item=><button
           type="button"
