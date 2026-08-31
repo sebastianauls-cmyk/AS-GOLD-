@@ -34,6 +34,7 @@ const videoLanguages=[
 
 const videoButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی',ro:'Videoclip explicativ',bg:'Обяснително видео'}
 const videoCloseText={de:'Schließen',en:'Close',fr:'Fermer',tr:'Kapat',pl:'Zamknij',ru:'Закрыть',ar:'إغلاق',fa:'بستن',ro:'Închide',bg:'Затвори'}
+const backText={de:'← Zurück',en:'← Back',fr:'← Retour',tr:'← Geri',pl:'← Wstecz',ru:'← Назад',ar:'← رجوع',fa:'← بازگشت',ro:'← Înapoi',bg:'← Назад'}
 
 function FlagSet({countryCodes=[],fallback='',className=''}){
   const supported=countryCodes.filter(code=>flagComponents[code])
@@ -93,6 +94,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
   if(publicPicker){
     const explainerLabel=videoButtonText[value]||videoButtonText.de
     const closeLabel=videoCloseText[value]||videoCloseText.de
+    const backLabel=label==='Sprache'?backText.de:(backText[value]||backText.de)
     return <div
       className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()}
       ref={rootRef}
@@ -118,6 +120,12 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         aria-label={label}
         style={{position:'absolute',top:'calc(100% + 7px)',left:0,width:'230px',maxWidth:'calc(100vw - 24px)',maxHeight:'calc(100dvh - 150px)',overflowY:'auto',padding:'7px',display:'flex',flexDirection:'column',gap:'6px',background:'#fff',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 16px 42px rgba(27,31,37,.22)'}}
       >
+        <button
+          type="button"
+          onClick={()=>setOpen(false)}
+          aria-label={backLabel.replace('← ','')}
+          style={{display:'flex',alignItems:'center',justifyContent:'flex-start',width:'100%',minHeight:'46px',padding:'9px 11px',borderRadius:'10px',border:'1px solid #c9ad66',background:'#2f291b',color:'#fff',fontWeight:900,textAlign:'left',position:'sticky',top:0,zIndex:2}}
+        >{backLabel}</button>
         {supportedLanguages.map(item=><button
           type="button"
           role="option"
