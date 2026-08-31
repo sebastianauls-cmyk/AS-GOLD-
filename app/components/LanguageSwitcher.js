@@ -34,7 +34,8 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         parent.style.gridColumn=mq.matches?'1 / -1':''
         parent.style.width=mq.matches?'100%':''
         parent.style.minWidth='0'
-        parent.style.display=mq.matches?'block':''
+        parent.style.display=mq.matches?'flex':''
+        parent.style.justifyContent=mq.matches?'flex-start':''
       }
     }
     apply()
@@ -58,7 +59,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     return <div
       className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()}
       ref={rootRef}
-      style={{position:'relative',zIndex:120,direction:'ltr',display:'flex',width:mobilePublic?'100%':'auto',minWidth:0}}
+      style={{position:'relative',zIndex:120,direction:'ltr',display:'inline-flex',width:'auto',maxWidth:'100%',minWidth:0}}
     >
       <button
         type="button"
@@ -68,16 +69,16 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         aria-controls={open?menuId:undefined}
         title={`${label}: ${active.label}`}
         onClick={()=>setOpen(current=>!current)}
-        style={{display:'flex',alignItems:'center',justifyContent:mobilePublic?'space-between':'flex-start',gap:'9px',width:mobilePublic?'100%':'auto',minWidth:0,minHeight:'46px',padding:'8px 10px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#fff',color:'#2f291b',fontWeight:850,boxShadow:'0 4px 14px rgba(27,31,37,.10)',maxWidth:'100%'}}
+        style={{display:'inline-flex',alignItems:'center',justifyContent:'flex-start',gap:'9px',width:'auto',minWidth:mobilePublic?'150px':0,minHeight:'46px',padding:'8px 11px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#fff',color:'#2f291b',fontWeight:850,boxShadow:'0 4px 14px rgba(27,31,37,.10)',maxWidth:'100%'}}
       >
-        <span style={{display:'flex',alignItems:'center',gap:'9px',minWidth:0}}><FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong style={{display:'inline-block',fontSize:'.9rem',whiteSpace:'nowrap'}}>Sprache</strong></span>
-        <b aria-hidden="true" style={{fontSize:'.8rem',flex:'0 0 auto'}}>{open?'▴':'▾'}</b>
+        <div style={{display:'inline-flex',alignItems:'center',gap:'9px',minWidth:0}}><FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong style={{display:'inline-block',fontSize:'.9rem',whiteSpace:'nowrap'}}>Sprache</strong></div>
+        <b aria-hidden="true" style={{fontSize:'.8rem',flex:'0 0 auto',marginLeft:'2px'}}>{open?'▴':'▾'}</b>
       </button>
       {open&&<div
         id={menuId}
         role="listbox"
         aria-label={label}
-        style={{position:'absolute',top:'calc(100% + 7px)',left:0,width:mobilePublic?'100%':'230px',maxWidth:'calc(100vw - 24px)',maxHeight:'calc(100dvh - 150px)',overflowY:'auto',padding:'7px',display:'flex',flexDirection:'column',gap:'6px',background:'#fff',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 16px 42px rgba(27,31,37,.22)'}}
+        style={{position:'absolute',top:'calc(100% + 7px)',left:0,width:'230px',maxWidth:'calc(100vw - 24px)',maxHeight:'calc(100dvh - 150px)',overflowY:'auto',padding:'7px',display:'flex',flexDirection:'column',gap:'6px',background:'#fff',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 16px 42px rgba(27,31,37,.22)'}}
       >
         {supportedLanguages.map(item=><button
           type="button"
