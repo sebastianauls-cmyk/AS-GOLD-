@@ -10,7 +10,9 @@ const copy={
   pl:{title:'AS Gold – jasność, gdy sprawy stają się złożone.',lead:'Połącz dokumenty i e-maile, wykrywaj ryzyka i terminy, twórz analizy i pisma odpowiedzi – z jasnymi kolejnymi krokami.'},
   ru:{title:'AS Gold – ясность, когда дела становятся сложными.',lead:'Объединяйте документы и почту, выявляйте риски и сроки, создавайте анализы и ответные письма – с понятными следующими шагами.'},
   ar:{title:'AS Gold – وضوح عندما تصبح المعاملات معقدة.',lead:'اجمع المستندات والبريد، واكتشف المخاطر والمواعيد، وأنشئ التحليلات وخطابات الرد – مع خطوات تالية واضحة.'},
-  fa:{title:'AS Gold – شفافیت وقتی پرونده‌ها پیچیده می‌شوند.',lead:'اسناد و ایمیل‌ها را یکجا کنید، ریسک‌ها و مهلت‌ها را ببینید، تحلیل و پاسخ‌نامه بسازید – با گام‌های بعدی روشن.'}
+  fa:{title:'AS Gold – شفافیت وقتی پرونده‌ها پیچیده می‌شوند.',lead:'اسناد و ایمیل‌ها را یکجا کنید، ریسک‌ها و مهلت‌ها را ببینید، تحلیل و پاسخ‌نامه بسازید – با گام‌های بعدی روشن.'},
+  ro:{title:'AS Gold – claritate când situațiile devin complexe.',lead:'Reuniți documente și e-mailuri, identificați riscuri și termene, creați evaluări tip semafor și scrisori de răspuns – cu pași următori clari.'},
+  bg:{title:'AS Gold – яснота, когато случаите станат сложни.',lead:'Съберете документи и имейли, открийте рискове и срокове, създавайте светофарни оценки и писма за отговор – с ясни следващи стъпки.'}
 }
 
 export function HeroTitleStabilizer(){
