@@ -1,6 +1,7 @@
 import './globals.css'
 import { HeroCopyEnhancer } from './components/HeroCopyEnhancer'
 import { ProblemNavigator } from './components/ProblemNavigator'
+import { CaseChoiceJumpEnhancer } from './components/CaseChoiceJumpEnhancer'
 
 export const metadata = {
   metadataBase: new URL('https://app-gold-workspace.vercel.app'),
@@ -11,5 +12,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><HeroCopyEnhancer/><ProblemNavigator/>{children}</body></html>
+  return <html lang="de"><body><HeroCopyEnhancer/><ProblemNavigator/><CaseChoiceJumpEnhancer/>{children}</body></html>
 }
