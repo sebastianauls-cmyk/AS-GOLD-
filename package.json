@@ -8,10 +8,12 @@
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
     "test:v30-languages": "node scripts/test_v30_languages.mjs",
-    "test:v31": "node scripts/test_v31_flags_legal_promo.mjs"
+    "test:v31": "node scripts/test_v31_flags_legal_promo.mjs",
+    "test:v32": "node scripts/test_v32_svg_flags.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
+    "country-flag-icons": "1.6.20",
     "docx": "9.5.1",
     "jspdf": "4.2.1",
     "jszip": "3.10.1",

@@ -9,12 +9,14 @@ const languageKeys=['de','en','fr','tr','pl','ru','ar','fa']
 assert.deepEqual(supportedLanguages.map(item=>item.key),languageKeys)
 for(const language of supportedLanguages){
   assert.ok(language.flags,`${language.key}: flag missing`)
+  assert.ok(language.countryCodes?.length,`${language.key}: SVG country flag missing`)
   assert.ok(legalShellCopy[language.key],`${language.key}: legal shell missing`)
   assert.ok(withdrawalCopy[language.key],`${language.key}: withdrawal copy missing`)
   assert.ok(privacyDashboardCopy[language.key],`${language.key}: privacy controls missing`)
   assert.ok(promoTranslations[language.key],`${language.key}: promo copy missing`)
 }
 for(const key of ['en','ar','fa']) assert.ok(supportedLanguages.find(item=>item.key===key).flags.includes(' '),`${key}: multiple country flags expected`)
+for(const key of ['en','ar','fa']) assert.equal(supportedLanguages.find(item=>item.key===key).countryCodes.length,2,`${key}: multiple SVG country flags expected`)
 for(const language of languageKeys.filter(key=>key!=='de')){
   for(const pageId of legalPageIds){
     const page=legalTranslations[language]?.[pageId]
@@ -35,7 +37,10 @@ assert.match(migration,/revoke all on table private\.gold_promo_codes from publi
 assert.doesNotMatch(migration,/insert\s+into\s+private\.gold_promo_codes/i,'No commercial promo code may be seeded')
 
 const pageSource=await readFile(new URL('../app/page.js',import.meta.url),'utf8')
+const switcherSource=await readFile(new URL('../app/components/LanguageSwitcher.js',import.meta.url),'utf8')
 assert.match(pageSource,/p_promo_code/)
 assert.match(pageSource,/LanguageSwitcher/)
 assert.match(pageSource,/PromoCodeControl/)
+assert.match(switcherSource,/country-flag-icons\/react\/3x2/)
+assert.match(switcherSource,/FlagSet/)
 console.log('V31 flags, legal translations and secure promo contract: OK')

@@ -1,9 +1,10 @@
-# AS Gold Workspace – V31
+# AS Gold Workspace – V32
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt-, Arbeits- und Freigabestand: **V31 zur Veröffentlichung freigegeben** unter `https://app-gold-workspace.vercel.app`.
+- Gesamt-, Arbeits- und Freigabestand: **V32 zur Veröffentlichung freigegeben** unter `https://app-gold-workspace.vercel.app`.
+- V32 ersetzt systemabhängige Emoji-Flaggen durch echte SVG-Landesflaggen und kennzeichnet App- und Ausgabesprache in der oberen App-Leiste eindeutig.
 - V31 ergänzt V30 um flaggenbasierte Sprachwahl, automatisch lokalisierte Rechtsseiten und sicher serverseitig validierte Promo-Codes.
 - V29 übernimmt den vollständigen V28-Funktionsstand, repariert die Repository-Quelldatei und ergänzt Abhängigkeits-, Header-, Export-, Passwort-, Audit- und Datenbankhärtungen.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
@@ -32,7 +33,7 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 ## Sicherungsregel
 Jeder freigegebene funktionierende Stand wird nach Test sowohl auf Vercel bereitgestellt als auch versioniert im Google-Drive-Ordner „App intern gold / AS Gold Quellcode-Sicherungen“ gesichert.
 
-## Mehrsprachigkeit – V31
+## Mehrsprachigkeit – V32
 
 Aktive UI-/Ausgabesprachen:
 - Deutsch (Standard)
@@ -44,7 +45,7 @@ Aktive UI-/Ausgabesprachen:
 - Arabisch
 - Farsi
 
-Die Sprache der App und die Ausgabesprache sind getrennte Einstellungen und werden mit Landesflaggen gewählt. Englisch, Arabisch und Farsi zeigen mehrere zugehörige Landesflaggen. Impressum, Datenschutz, Nutzungsbedingungen, Cookies, KI-Transparenz, Kontakt, Rechtliches, Testhinweise, Widerruf und Datenschutz-Steuerung wechseln automatisch mit der App-Sprache. Die deutsche Fassung bleibt ausdrücklich verbindlich.
+Die Sprache der App und die Ausgabesprache sind getrennte Einstellungen und werden mit geräteunabhängigen SVG-Landesflaggen gewählt. Dadurch bleiben die Flaggen auch auf Geräten sichtbar, die Unicode-Flaggen nicht oder nur als Buchstaben darstellen. Englisch, Arabisch und Farsi zeigen mehrere zugehörige Landesflaggen. In der oberen App-Leiste sind „Sprache“ und „Ausgabesprache“ zusätzlich sichtbar beschriftet. Impressum, Datenschutz, Nutzungsbedingungen, Cookies, KI-Transparenz, Kontakt, Rechtliches, Testhinweise, Widerruf und Datenschutz-Steuerung wechseln automatisch mit der App-Sprache. Die deutsche Fassung bleibt ausdrücklich verbindlich.
 Arabisch und Farsi aktivieren automatisch RTL-Darstellung. Der zentrale Sprachkatalog hält aktive Sprachen, Gebietsschemata und Schreibrichtung konsistent.
 
 Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, Bulgarisch, Kroatisch und Griechisch.

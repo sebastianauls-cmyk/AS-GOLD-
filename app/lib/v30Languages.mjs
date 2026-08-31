@@ -1,12 +1,12 @@
 export const supportedLanguages = [
-  { key: 'de', label: 'Deutsch', short: 'DE', flags: '🇩🇪' },
-  { key: 'en', label: 'English', short: 'EN', flags: '🇬🇧 🇺🇸' },
-  { key: 'fr', label: 'Français', short: 'FR', flags: '🇫🇷' },
-  { key: 'tr', label: 'Türkçe', short: 'TR', flags: '🇹🇷' },
-  { key: 'pl', label: 'Polski', short: 'PL', flags: '🇵🇱' },
-  { key: 'ru', label: 'Русский', short: 'RU', flags: '🇷🇺' },
-  { key: 'ar', label: 'العربية', short: 'AR', flags: '🇸🇦 🇦🇪' },
-  { key: 'fa', label: 'فارسی', short: 'FA', flags: '🇮🇷 🇦🇫' }
+  { key: 'de', label: 'Deutsch', short: 'DE', flags: '🇩🇪', countryCodes: ['DE'] },
+  { key: 'en', label: 'English', short: 'EN', flags: '🇬🇧 🇺🇸', countryCodes: ['GB', 'US'] },
+  { key: 'fr', label: 'Français', short: 'FR', flags: '🇫🇷', countryCodes: ['FR'] },
+  { key: 'tr', label: 'Türkçe', short: 'TR', flags: '🇹🇷', countryCodes: ['TR'] },
+  { key: 'pl', label: 'Polski', short: 'PL', flags: '🇵🇱', countryCodes: ['PL'] },
+  { key: 'ru', label: 'Русский', short: 'RU', flags: '🇷🇺', countryCodes: ['RU'] },
+  { key: 'ar', label: 'العربية', short: 'AR', flags: '🇸🇦 🇦🇪', countryCodes: ['SA', 'AE'] },
+  { key: 'fa', label: 'فارسی', short: 'FA', flags: '🇮🇷 🇦🇫', countryCodes: ['IR', 'AF'] }
 ]
 
 export const rtlLanguages = new Set(['ar', 'fa'])

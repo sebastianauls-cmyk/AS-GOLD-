@@ -1,9 +1,20 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { AF, AE, DE, FR, GB, IR, PL, RU, SA, TR, US } from 'country-flag-icons/react/3x2'
 import { supportedLanguages } from '../lib/v30Languages.mjs'
 
-export function LanguageSwitcher({value,onChange,label='Sprache',className=''}){
+const flagComponents={AF,AE,DE,FR,GB,IR,PL,RU,SA,TR,US}
+
+function FlagSet({countryCodes=[],fallback='',className=''}){
+  const supported=countryCodes.filter(code=>flagComponents[code])
+  return <span className={`flagIconSet ${className}`.trim()} aria-hidden="true">
+    {supported.map(code=>{const CountryFlag=flagComponents[code];return <CountryFlag className="flagIcon" focusable="false" key={code}/>})}
+    {!supported.length&&fallback}
+  </span>
+}
+
+export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false}){
   const [open,setOpen]=useState(false)
   const rootRef=useRef(null)
   const active=supportedLanguages.find(item=>item.key===value)||supportedLanguages[0]
@@ -20,12 +31,13 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className=''}){
     }
   },[open])
 
-  return <div className={`flagLanguage ${className}`.trim()} ref={rootRef}>
+  return <div className={`flagLanguage ${showLabel?'flagLanguageLabeled':''} ${className}`.trim()} ref={rootRef}>
+    {showLabel&&<span className="flagLanguageLabel">{label}</span>}
     <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} title={`${label}: ${active.label}`} onClick={()=>setOpen(current=>!current)}>
-      <span className="flagLanguageActive" aria-hidden="true">{active.flags}</span><span className="flagLanguageChevron" aria-hidden="true">⌄</span>
+      <FlagSet countryCodes={active.countryCodes} fallback={active.flags} className="flagLanguageActive"/><span className="flagLanguageChevron" aria-hidden="true">⌄</span>
     </button>
     {open&&<div className="flagLanguageMenu" role="listbox" aria-label={label}>
-      {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}><span aria-hidden="true">{item.flags}</span><small>{item.short}</small></button>)}
+      {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><small>{item.short}</small></button>)}
     </div>}
   </div>
 }
