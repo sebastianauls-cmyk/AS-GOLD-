@@ -1,4 +1,5 @@
 import './globals.css'
+import { HeroCopyEnhancer } from './components/HeroCopyEnhancer'
 
 export const metadata = {
   metadataBase: new URL('https://app-gold-workspace.vercel.app'),
@@ -9,5 +10,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body>{children}</body></html>
+  return <html lang="de"><body><HeroCopyEnhancer/>{children}</body></html>
 }
