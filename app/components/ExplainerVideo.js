@@ -10,16 +10,16 @@ const languages=[
 ]
 
 const copy={
-  de:{title:'AS Gold kurz erklärt',lead:'Das aktuelle Erklärvideo zum neuesten AS-Gold-Stand.',language:'Videosprache',voice:'Video-Ausgabe',female:'Weiblich',male:'Männlich',loading:'Video wird geladen …'},
-  en:{title:'AS Gold explained briefly',lead:'The current explainer video for the latest AS Gold version.',language:'Video language',voice:'Presenter',female:'Female',male:'Male',loading:'Loading video …'},
-  fr:{title:'AS Gold expliqué brièvement',lead:'La vidéo explicative actuelle de la dernière version d’AS Gold.',language:'Langue de la vidéo',voice:'Présentation',female:'Femme',male:'Homme',loading:'Chargement de la vidéo …'},
-  tr:{title:'AS Gold kısaca anlatılıyor',lead:'En güncel AS Gold sürümünün açıklayıcı videosu.',language:'Video dili',voice:'Video sunumu',female:'Kadın',male:'Erkek',loading:'Video yükleniyor …'},
-  pl:{title:'AS Gold w skrócie',lead:'Aktualny film objaśniający najnowszą wersję AS Gold.',language:'Język filmu',voice:'Prowadzący',female:'Kobieta',male:'Mężczyzna',loading:'Ładowanie filmu …'},
-  ru:{title:'AS Gold — краткое объяснение',lead:'Актуальное объясняющее видео для последней версии AS Gold.',language:'Язык видео',voice:'Ведущий',female:'Женщина',male:'Мужчина',loading:'Видео загружается …'},
-  ar:{title:'شرح مختصر لـ AS Gold',lead:'الفيديو التوضيحي الحالي لأحدث إصدار من AS Gold.',language:'لغة الفيديو',voice:'مقدم الفيديو',female:'امرأة',male:'رجل',loading:'جارٍ تحميل الفيديو …'},
-  fa:{title:'معرفی کوتاه AS Gold',lead:'ویدیوی توضیحی فعلی برای جدیدترین نسخه AS Gold.',language:'زبان ویدیو',voice:'ارائه‌دهنده ویدیو',female:'زن',male:'مرد',loading:'در حال بارگذاری ویدیو …'},
-  ro:{title:'AS Gold explicat pe scurt',lead:'Videoclipul explicativ actual pentru cea mai nouă versiune AS Gold.',language:'Limba videoclipului',voice:'Prezentator',female:'Femeie',male:'Bărbat',loading:'Se încarcă videoclipul …'},
-  bg:{title:'AS Gold накратко',lead:'Актуалното обяснително видео за най-новата версия на AS Gold.',language:'Език на видеото',voice:'Водещ',female:'Жена',male:'Мъж',loading:'Видеото се зарежда …'}
+  de:{title:'AS Gold kurz erklärt',lead:'Das aktuelle Erklärvideo zum neuesten AS-Gold-Stand.',language:'Videosprache',voice:'Video-Ausgabe',female:'Weiblich',male:'Männlich',loading:'Video wird geladen …',maleFallback:'Die männliche Fassung dieser Sprache wird noch verarbeitet. Falls sie noch nicht verfügbar ist, wird vorübergehend die aktuelle Sprachfassung gezeigt.'},
+  en:{title:'AS Gold explained briefly',lead:'The current explainer video for the latest AS Gold version.',language:'Video language',voice:'Presenter',female:'Female',male:'Male',loading:'Loading video …',maleFallback:'The male version in this language is still being processed. Until it is ready, the current language version may be shown temporarily.'},
+  fr:{title:'AS Gold expliqué brièvement',lead:'La vidéo explicative actuelle de la dernière version d’AS Gold.',language:'Langue de la vidéo',voice:'Présentation',female:'Femme',male:'Homme',loading:'Chargement de la vidéo …',maleFallback:'La version masculine dans cette langue est encore en cours de traitement. En attendant, la version linguistique actuelle peut être affichée.'},
+  tr:{title:'AS Gold kısaca anlatılıyor',lead:'En güncel AS Gold sürümünün açıklayıcı videosu.',language:'Video dili',voice:'Video sunumu',female:'Kadın',male:'Erkek',loading:'Video yükleniyor …',maleFallback:'Bu dildeki erkek sunucu sürümü hâlâ hazırlanıyor. Hazır olana kadar mevcut dil sürümü geçici olarak gösterilebilir.'},
+  pl:{title:'AS Gold w skrócie',lead:'Aktualny film objaśniający najnowszą wersję AS Gold.',language:'Język filmu',voice:'Prowadzący',female:'Kobieta',male:'Mężczyzna',loading:'Ładowanie filmu …',maleFallback:'Męska wersja w tym języku jest jeszcze przetwarzana. Do czasu jej ukończenia może być tymczasowo wyświetlana bieżąca wersja językowa.'},
+  ru:{title:'AS Gold — краткое объяснение',lead:'Актуальное объясняющее видео для последней версии AS Gold.',language:'Язык видео',voice:'Ведущий',female:'Женщина',male:'Мужчина',loading:'Видео загружается …',maleFallback:'Мужская версия на этом языке ещё обрабатывается. Пока она не готова, временно может показываться текущая языковая версия.'},
+  ar:{title:'شرح مختصر لـ AS Gold',lead:'الفيديو التوضيحي الحالي لأحدث إصدار من AS Gold.',language:'لغة الفيديو',voice:'مقدم الفيديو',female:'امرأة',male:'رجل',loading:'جارٍ تحميل الفيديو …',maleFallback:'لا تزال النسخة الرجالية بهذه اللغة قيد المعالجة. حتى تكتمل قد تظهر مؤقتاً النسخة الحالية باللغة المختارة.'},
+  fa:{title:'معرفی کوتاه AS Gold',lead:'ویدیوی توضیحی فعلی برای جدیدترین نسخه AS Gold.',language:'زبان ویدیو',voice:'ارائه‌دهنده ویدیو',female:'زن',male:'مرد',loading:'در حال بارگذاری ویدیو …',maleFallback:'نسخه مردانه در این زبان هنوز در حال پردازش است. تا آماده‌شدن آن ممکن است موقتاً نسخه فعلی همان زبان نمایش داده شود.'},
+  ro:{title:'AS Gold explicat pe scurt',lead:'Videoclipul explicativ actual pentru cea mai nouă versiune AS Gold.',language:'Limba videoclipului',voice:'Prezentator',female:'Femeie',male:'Bărbat',loading:'Se încarcă videoclipul …',maleFallback:'Versiunea masculină în această limbă este încă în procesare. Până când este gata, poate fi afișată temporar versiunea curentă în limba selectată.'},
+  bg:{title:'AS Gold накратко',lead:'Актуалното обяснително видео за най-новата версия на AS Gold.',language:'Език на видеото',voice:'Водещ',female:'Жена',male:'Мъж',loading:'Видеото се зарежда …',maleFallback:'Мъжката версия на този език все още се обработва. Докато стане готова, временно може да се показва текущата версия на избрания език.'}
 }
 
 const femaleLocalVideos={
@@ -41,7 +41,7 @@ const femaleRemoteVideos={
 }
 
 const maleRemoteVideos={
-  de:'https://resource2.heygen.ai/video_translate/a2b05b0034dd4ab8910e619c01867bb5-de/original.mp4',
+  de:'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/b780eebf3d4ac79f61de519984d98f8c.mp4',
   en:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-en/original.mp4',
   fr:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-fr/original.mp4',
   tr:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-tr/original.mp4',
@@ -102,26 +102,28 @@ export function ExplainerVideo(){
   const femaleRemote=femaleRemoteVideos[videoLanguage]||femaleRemoteVideos.de
   const maleRemote=maleRemoteVideos[videoLanguage]||maleRemoteVideos.de
   const rtl=uiLanguage==='ar'||uiLanguage==='fa'
+  const buttonStyle=active=>({flex:'1 1 150px',minHeight:46,padding:'10px 14px',border:active?'2px solid #8f6e25':'1px solid #d8d1bd',borderRadius:12,background:active?'#fff6d8':'#fff',color:'#4d3b14',fontWeight:900,cursor:'pointer',boxShadow:active?'0 4px 14px rgba(143,110,37,.14)':'none'})
 
   return createPortal(<section dir={rtl?'rtl':'ltr'} style={{margin:'16px 0 10px',padding:16,border:'1px solid #d9c792',borderRadius:18,background:'#fff',boxShadow:'0 8px 26px rgba(72,55,18,.06)'}}>
     <b style={{display:'block',fontSize:'1.3rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'6px 0 13px',color:'#596472',lineHeight:1.4}}>{c.lead}</p>
-    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10,marginBottom:12}}>
-      <label style={{display:'grid',gap:5,fontWeight:800,color:'#5d4a1e'}}>{c.language}
-        <select value={videoLanguage} onChange={e=>setVideoLanguage(e.target.value)} style={{width:'100%',padding:'10px 11px',border:'1px solid #d8d1bd',borderRadius:11,background:'#fff',color:'#27303b'}}>
-          {languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}
-        </select>
-      </label>
-      <label style={{display:'grid',gap:5,fontWeight:800,color:'#5d4a1e'}}>{c.voice}
-        <select value={presenter} onChange={e=>setPresenter(e.target.value)} style={{width:'100%',padding:'10px 11px',border:'1px solid #d8d1bd',borderRadius:11,background:'#fff',color:'#27303b'}}>
-          <option value='female'>👩 {c.female}</option>
-          <option value='male'>👨 {c.male}</option>
-        </select>
-      </label>
+    <label style={{display:'grid',gap:5,fontWeight:800,color:'#5d4a1e',maxWidth:340,marginBottom:12}}>{c.language}
+      <select value={videoLanguage} onChange={e=>setVideoLanguage(e.target.value)} style={{width:'100%',padding:'10px 11px',border:'1px solid #d8d1bd',borderRadius:11,background:'#fff',color:'#27303b'}}>
+        {languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}
+      </select>
+    </label>
+    <div style={{marginBottom:12}}>
+      <b style={{display:'block',marginBottom:6,color:'#5d4a1e'}}>{c.voice}</b>
+      <div role='group' aria-label={c.voice} style={{display:'flex',gap:10,flexWrap:'wrap'}}>
+        <button type='button' aria-pressed={presenter==='female'} onClick={()=>setPresenter('female')} style={buttonStyle(presenter==='female')}>👩 {c.female}</button>
+        <button type='button' aria-pressed={presenter==='male'} onClick={()=>setPresenter('male')} style={buttonStyle(presenter==='male')}>👨 {c.male}</button>
+      </div>
     </div>
+    {presenter==='male'&&videoLanguage!=='de'&&<p style={{margin:'0 0 10px',padding:'9px 11px',borderRadius:10,background:'#fff8df',border:'1px solid #ead69e',color:'#65562d',fontSize:'.9rem',lineHeight:1.4}}>{c.maleFallback}</p>}
     <video key={`${videoLanguage}-${presenter}`} controls playsInline preload='metadata' aria-label={`${c.title} – ${presenter==='male'?c.male:c.female}`} style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>
       {presenter==='female'&&<source src={femaleLocal} type='video/mp4'/>}
       <source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>
+      {presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}
       {c.loading}
     </video>
   </section>,host)
