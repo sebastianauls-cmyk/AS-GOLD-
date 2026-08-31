@@ -1,4 +1,5 @@
 const supabaseOrigin='https://bcvggtnvuesaihqvgisg.supabase.co'
+const heygenMediaOrigin='https://resource2.heygen.ai'
 
 const contentSecurityPolicy=[
   "default-src 'self'",
@@ -10,7 +11,7 @@ const contentSecurityPolicy=[
   "style-src 'self' 'unsafe-inline'",
   "img-src 'self' data: blob:",
   "font-src 'self' data:",
-  "media-src 'self' blob:",
+  `media-src 'self' blob: ${heygenMediaOrigin}`,
   `connect-src 'self' ${supabaseOrigin} wss://bcvggtnvuesaihqvgisg.supabase.co`,
   "worker-src 'self' blob:",
   "manifest-src 'self'",
