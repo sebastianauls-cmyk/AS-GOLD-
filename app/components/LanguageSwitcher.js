@@ -16,9 +16,14 @@ function FlagSet({countryCodes=[],fallback='',className=''}){
 
 export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false}){
   const [open,setOpen]=useState(false)
+  const [persistentRail,setPersistentRail]=useState(false)
   const menuId=useId()
   const rootRef=useRef(null)
   const active=supportedLanguages.find(item=>item.key===value)||supportedLanguages[0]
+
+  useEffect(()=>{
+    setPersistentRail(Boolean(rootRef.current?.closest('.publicTop')))
+  },[])
 
   useEffect(()=>{
     if(!open) return
@@ -31,6 +36,26 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
       document.removeEventListener('keydown',escape)
     }
   },[open])
+
+  if(persistentRail){
+    return <div
+      className={`flagLanguage flagLanguageRail ${className}`.trim()}
+      ref={rootRef}
+      role="group"
+      aria-label={label}
+      style={{position:'fixed',top:'82px',left:'8px',zIndex:120,display:'flex',flexDirection:'column',alignItems:'stretch',gap:'6px',padding:'7px',background:'rgba(255,255,255,.97)',border:'1px solid #d8dbe0',borderRadius:'14px',boxShadow:'0 14px 40px rgba(27,31,37,.2)'}}
+    >
+      {supportedLanguages.map(item=><button
+        type="button"
+        aria-pressed={item.key===value}
+        aria-label={item.label}
+        title={item.label}
+        onClick={()=>onChange(item.key)}
+        key={item.key}
+        style={{display:'flex',alignItems:'center',justifyContent:'center',gap:'5px',width:'64px',minHeight:'44px',padding:'6px',borderRadius:'10px',border:item.key===value?'2px solid #9b792b':'1px solid #dfe2e7',background:item.key===value?'#fff8e8':'#fff',color:'#27303b',fontWeight:850}}
+      ><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><small style={{fontSize:'.68rem',fontWeight:850}}>{item.short}</small></button>)}
+    </div>
+  }
 
   return <div className={`flagLanguage ${showLabel?'flagLanguageLabeled':''} ${className}`.trim()} ref={rootRef}>
     {showLabel&&<span className="flagLanguageLabel">{label}</span>}
