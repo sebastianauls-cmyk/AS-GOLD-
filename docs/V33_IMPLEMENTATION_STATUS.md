@@ -6,7 +6,7 @@ Stand: 31. August 2026
 
 - Die Sprachoptionen werden in einer einzigen, senkrechten Liste von oben nach unten angezeigt.
 - Jeder Sprachbutton zeigt weiterhin die echten SVG-Landesflaggen und zusätzlich den vollständigen Namen der Sprache.
-- Auch der geschlossene Sprachbutton zeigt neben der Flagge den Namen der aktuell gewählten Sprache.
+- Auch beide geschlossenen Sprachbuttons zeigen neben der Flagge den Namen der aktuell gewählten Sprache vollständig und ohne Verdrängung durch ältere Layoutregeln.
 - Auf Mobilgeräten öffnet sich die Sprachauswahl vollständig sichtbar mit eigener Scrollfläche.
 - App-Sprache und Ausgabesprache stehen in der geschützten mobilen Kopfzeile untereinander.
 - Die Sprachauswahl besitzt einen großen, lokalisierten „Zurück“-Button und lässt sich weiterhin mit Escape oder durch Tippen außerhalb schließen.
