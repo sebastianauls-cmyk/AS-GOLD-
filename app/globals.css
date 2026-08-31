@@ -129,3 +129,29 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 
 @media(max-width:700px){.flagLanguageMenu{position:fixed;top:auto;right:12px;bottom:12px;left:12px;width:auto;grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.appHeaderTools .flagLanguageLabeled{flex-direction:column;align-items:flex-start;gap:3px}.legalHeaderActions .btn{display:none}.legalHeaderInner{min-height:64px}.outputLanguageControl{justify-content:space-between}.promoForm>div{grid-template-columns:1fr}.promoForm button{width:100%}.promoBoxHead{align-items:flex-start}}
 @media(max-width:420px){.flagLanguageMenu{grid-template-columns:1fr 1fr}.flagLanguageMenu button{min-width:0}.flagLanguageMenu button small{font-size:.7rem}}
+
+/* V33: sichtbare, senkrechte Sprachauswahl und eindeutige Zurück-Navigation. */
+.flagLanguageTrigger{min-width:148px;justify-content:flex-start}.flagLanguageTrigger>.flagIconSet,.flagLanguageTrigger>.flagLanguageChevron{flex:0 0 auto}.flagLanguageTrigger>.flagLanguageCurrent{min-width:0;flex:1 1 auto;overflow:hidden;text-overflow:ellipsis;text-align:start;font-weight:800;white-space:nowrap}.flagLanguageChevron{margin-inline-start:auto}.flagLanguageMenu{width:min(310px,calc(100vw - 24px));max-height:calc(100dvh - 24px);display:block;overflow-y:auto;padding:10px}.flagLanguageMenuHead{position:sticky;top:-10px;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:12px;margin:-2px -2px 8px;padding:8px 2px 10px;border-bottom:1px solid #e3e5e9;background:#fff}.flagLanguageMenuHead>strong{overflow-wrap:anywhere}.flagLanguageMenu .flagLanguageBack{min-height:44px;flex:0 0 auto;justify-content:center;padding:8px 12px;border-color:#bda45f;background:#fff8e8;color:#5d4717;font-weight:850}.flagLanguageMenu .flagLanguageBack:hover{border-color:#8f6e25;background:#f7e9c1}.flagLanguageOptions{display:grid;grid-template-columns:1fr;gap:7px}.flagLanguageOptions>button{width:100%;min-height:52px;justify-content:flex-start;text-align:start}.flagLanguageOptionName{min-width:0;flex:1;overflow-wrap:anywhere;font-weight:800}.flagLanguageOptions>button small{margin-inline-start:auto}.backBtn,.authCard>button.linkBtn:last-of-type{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #cbb16c;background:#fffaf0;color:#5c4513;box-shadow:0 3px 12px rgba(66,51,17,.08)}.backBtn:hover,.authCard>button.linkBtn:last-of-type:hover{border-color:#8f6e25;background:#f7e9c1}.backBtn:focus-visible,.flagLanguageBack:focus-visible,.authCard>button.linkBtn:last-of-type:focus-visible{outline:3px solid rgba(55,104,176,.32);outline-offset:2px}
+
+@media(max-width:700px){
+  .flagLanguageMenu{position:fixed;top:12px;right:12px;bottom:12px;left:12px;width:auto;max-height:none}
+  .appTop{min-height:auto;flex-direction:column;align-items:stretch;gap:10px;padding-top:10px;padding-bottom:10px}
+  .appTop>.brand{justify-content:center}
+  .appHeaderTools{width:100%;display:grid;grid-template-columns:1fr;align-items:stretch;justify-content:stretch;gap:8px}
+  .appHeaderTools .flagLanguageLabeled{width:100%;display:grid;align-items:stretch;gap:4px}
+  .appHeaderTools .flagLanguageTrigger,.appHeaderTools>.secondary{width:100%}
+  .legalHeaderInner{min-height:auto;display:grid;grid-template-columns:1fr;align-items:stretch;padding-top:10px;padding-bottom:10px}
+  .legalHeaderActions{width:100%;display:grid;grid-template-columns:minmax(0,1fr) minmax(118px,.7fr);align-items:stretch}
+  .legalHeaderActions .flagLanguage,.legalHeaderActions .flagLanguageTrigger{width:100%}
+  .legalHeaderActions .btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;text-align:center}
+  .legalMarketBar label{width:100%;align-items:stretch;flex-direction:column}
+  .legalMarketBar .flagLanguage,.legalMarketBar .flagLanguageTrigger{width:100%}
+}
+
+@media(max-width:560px){
+  .publicTop .nav nav{grid-template-columns:1fr 1fr}
+  .publicTop .languageSwitch{grid-column:1/-1;display:flex;align-items:stretch}
+  .publicTop .languageSwitch .flagLanguage,.publicTop .languageSwitch .flagLanguageTrigger{width:100%}
+  .publicTop .nav nav>button.secondary{grid-column:1}
+  .publicTop .nav nav>button.primary{grid-column:2}
+}

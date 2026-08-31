@@ -9,7 +9,8 @@
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
     "test:v30-languages": "node scripts/test_v30_languages.mjs",
     "test:v31": "node scripts/test_v31_flags_legal_promo.mjs",
-    "test:v32": "node scripts/test_v32_svg_flags.mjs"
+    "test:v32": "node scripts/test_v32_svg_flags.mjs",
+    "test:v33": "node scripts/test_v33_language_navigation.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
