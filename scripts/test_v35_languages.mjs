@@ -8,7 +8,7 @@ import {
   rtlLanguages,
   supportedLanguages
 } from '../app/lib/v30Languages.mjs'
-import { problemLanguageProfiles } from '../app/lib/problemNavigatorLanguages.mjs'
+import { problemLanguageProfiles } from '../app/lib/problemNavigatorLanguagesV36.mjs'
 import { promoTranslations } from '../app/lib/v31PromoTranslations.mjs'
 
 const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
