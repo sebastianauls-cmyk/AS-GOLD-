@@ -17,25 +17,36 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Persist German explainer master videos
+      - name: Persist current multilingual explainer videos
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p public/videos
 
-          if [ ! -s public/videos/as-gold-explainer-de-male.mp4 ]; then
-            curl --fail --location --retry 3 --output public/videos/as-gold-explainer-de-male.mp4 'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/a9f64e0a49d407631331eb59ac9d7ae0.mp4?Expires=1788811447&Signature=IU~7E2J0FxNmWDwMhQaYv6KHNTT3MbKjnmQOt-7AIz~G26QT6po2PDg3tgtdHPEU9jP3E9juOvZ29M6r4DGQ7G6Yb8NRBa2yEEzaGIbgk4pJjAife7w-uUsU-aBcULvq1hulI1hWnWS1dPs34TRirikD7h~67My90eAIiRwjeMjP1GXaHXTHtjQI7sbvSOVbe8S3laOcXxltSrA2qD4B5pUkHxqvM8keM-loO9MsNjkdPoBgWDgSU7qHfzBHKGM8pYczQ5X8qG4DJA3SMwboIDKyhuSV5OeEl-aVuRdFlpLMisxM4ZRqDqorf0ZySL7Ydtuef-rZOegih3qy4BJBAw__&Key-Pair-Id=K38HBHX5LX3X2H'
-          fi
+          download_if_missing() {
+            target="$1"
+            url="$2"
+            if [ ! -s "$target" ]; then
+              curl --fail --location --retry 3 --retry-delay 2 --output "$target" "$url"
+            fi
+          }
 
-          if [ ! -s public/videos/as-gold-explainer-de-female.mp4 ]; then
-            curl --fail --location --retry 3 --output public/videos/as-gold-explainer-de-female.mp4 'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/8c396922b110ea1a7a59411a8d8e1fa5.mp4?Expires=1788811604&Signature=RnGhwBkMar1aRLlWpBZiTgwP3h1v88ui~7PiEZ6Y749UqGprJ3kpFFBGeB01e1jj0ueq3BizEtSdZA2txmct5erxXGJ6OZZMyTnr3Ni8z6hMS0b57KXAlKDBy2FFiNp2~LXHk4nK3U7isPFP5PYdSqgnGHdCUwsxdWjCLwMTHBZqQ6rrDZlwDgWqLxOe8PijtH1I5cryEYtPpzaat7JoS6ZGjB0pAYMrX7Eqoqe0y5yuQfGXHX4nFN4jfh7S01YpCEEH5JVtHLyBfardRvF8FIpbaVGj7LW56usa6Crbi8g82cBh8ea5gF9CkP4YfQTA6NtRQXOC3PaLDRrQdFmPHw__&Key-Pair-Id=K38HBHX5LX3X2H'
-          fi
+          download_if_missing public/videos/as-gold-v35-de.mp4 'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/6c9d9075013e6f931578d77afa8c9f07.mp4?Expires=1788816789&Signature=LbtR~QuDek1UKe3orhlhcXtpDGSaLnObbK~WeE3aunm-jDJHj3QLf~btzVGQ5tLYLp1RLu4npwL636qyQZPRYDR0ngLSiY51Cz7AhmZnkCjQEMGDlXfaVG3CygjtCQiGqPmLsgpoXtMCEp3JghTdiVqAw322uc6AT4RmLXQy1fWHJ6VgEzgCnvFVcP79TSXijF5cqp2hvSXWzlcvTh7zYqZxF6Q4eJMNFDSOVZDMaS4t0TAMReC6saTXN6kRMhB~panKiVrfGAi7NaGZZ~uenyovRowBeC3L2EVM7T~94NLu4RG~bgPSyIf6UdYkuN0fVwOcGXc4H~fnJ0oiYfCggQ__&Key-Pair-Id=K38HBHX5LX3X2H'
+          download_if_missing public/videos/as-gold-v35-en.mp4 'https://resource2.heygen.ai/video_translate/3ccf94ed801641f585cd0620cc97de38-en/original.mp4'
+          download_if_missing public/videos/as-gold-v35-fr.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-fr/original.mp4'
+          download_if_missing public/videos/as-gold-v35-tr.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-tr/original.mp4'
+          download_if_missing public/videos/as-gold-v35-pl.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-pl/original.mp4'
+          download_if_missing public/videos/as-gold-v35-ru.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ru/original.mp4'
+          download_if_missing public/videos/as-gold-v35-ar.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ar/original.mp4'
+          download_if_missing public/videos/as-gold-v35-fa.mp4 'https://resource2.heygen.ai/video_translate/4378b94dc0e84ad598a3742c105bbda7-fa_fa-IR/original.mp4'
+          download_if_missing public/videos/as-gold-v35-ro.mp4 'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-ro/original.mp4'
+          download_if_missing public/videos/as-gold-v35-bg.mp4 'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-bg/original.mp4'
 
           if [ -n "$(git status --porcelain -- public/videos)" ]; then
             git config user.name 'github-actions[bot]'
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add public/videos
-            git commit -m 'Store German explainer master videos permanently'
+            git commit -m 'Store V35 multilingual explainer videos permanently'
             git push
           fi
 
