@@ -1,1 +1,1 @@
-export * from './v35Languages.mjs'
+export * from './v36Languages.mjs'
