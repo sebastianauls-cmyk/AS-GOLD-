@@ -19,9 +19,11 @@ const copy={
   fa:{title:'AS Gold در ۶۰ ثانیه',lead:'کوتاه ببینید AS Gold برای موضوعات پیچیده چه کاری انجام می‌دهد.',language:'زبان ویدیو',speaker:'ارائه‌دهنده',male:'مرد',female:'زن',pending:'این نسخه پس از تأیید ویدیوهای اصلی آلمانی ساخته می‌شود.',rendering:'ویدیوی اصلی آلمانی در حال آماده‌سازی است.'}
 }
 
-// Filled with stable video URLs after the German masters finish rendering.
 const videos={
-  de:{male:'',female:''}
+  de:{
+    male:'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/a9f64e0a49d407631331eb59ac9d7ae0.mp4?Expires=1788811447&Signature=IU~7E2J0FxNmWDwMhQaYv6KHNTT3MbKjnmQOt-7AIz~G26QT6po2PDg3tgtdHPEU9jP3E9juOvZ29M6r4DGQ7G6Yb8NRBa2yEEzaGIbgk4pJjAife7w-uUsU-aBcULvq1hulI1hWnWS1dPs34TRirikD7h~67My90eAIiRwjeMjP1GXaHXTHtjQI7sbvSOVbe8S3laOcXxltSrA2qD4B5pUkHxqvM8keM-loO9MsNjkdPoBgWDgSU7qHfzBHKGM8pYczQ5X8qG4DJA3SMwboIDKyhuSV5OeEl-aVuRdFlpLMisxM4ZRqDqorf0ZySL7Ydtuef-rZOegih3qy4BJBAw__&Key-Pair-Id=K38HBHX5LX3X2H',
+    female:'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/8c396922b110ea1a7a59411a8d8e1fa5.mp4?Expires=1788811604&Signature=RnGhwBkMar1aRLlWpBZiTgwP3h1v88ui~7PiEZ6Y749UqGprJ3kpFFBGeB01e1jj0ueq3BizEtSdZA2txmct5erxXGJ6OZZMyTnr3Ni8z6hMS0b57KXAlKDBy2FFiNp2~LXHk4nK3U7isPFP5PYdSqgnGHdCUwsxdWjCLwMTHBZqQ6rrDZlwDgWqLxOe8PijtH1I5cryEYtPpzaat7JoS6ZGjB0pAYMrX7Eqoqe0y5yuQfGXHX4nFN4jfh7S01YpCEEH5JVtHLyBfardRvF8FIpbaVGj7LW56usa6Crbi8g82cBh8ea5gF9CkP4YfQTA6NtRQXOC3PaLDRrQdFmPHw__&Key-Pair-Id=K38HBHX5LX3X2H'
+  }
 }
 
 export function ExplainerVideo(){
