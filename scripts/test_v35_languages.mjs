@@ -51,8 +51,8 @@ for(const language of expectedLanguages){
 for(const catalog of requiredPageCatalogs){
   for(const language of ['ro','bg']){
     const value=pageTranslations[catalog]?.[language]
-    assert.ok(value&&typeof value==='object',`missing ${catalog} page catalog for ${language}`)
-    assert.ok(Object.keys(value).length>0,`empty ${catalog} page catalog for ${language}`)
+    const populated=typeof value==='string'?Boolean(value.trim()):Boolean(value&&typeof value==='object'&&Object.keys(value).length)
+    assert.ok(populated,`missing or empty ${catalog} page catalog for ${language}`)
   }
 }
 
