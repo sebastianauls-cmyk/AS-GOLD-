@@ -6,6 +6,34 @@ import { supportedLanguages } from '../lib/v30Languages.mjs'
 
 const flagComponents={AF,AE,DE,FR,GB,IR,PL,RU,SA,TR,US}
 
+const explainerVideos={
+  de:'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/6c9d9075013e6f931578d77afa8c9f07.mp4',
+  en:'https://resource2.heygen.ai/video_translate/3ccf94ed801641f585cd0620cc97de38-en/original.mp4',
+  fr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-fr/original.mp4',
+  tr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-tr/original.mp4',
+  pl:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-pl/original.mp4',
+  ru:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ru/original.mp4',
+  ar:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ar/original.mp4',
+  fa:'https://resource2.heygen.ai/video_translate/4378b94dc0e84ad598a3742c105bbda7-fa_fa-IR/original.mp4',
+  ro:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-ro/original.mp4',
+  bg:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-bg/original.mp4'
+}
+
+const videoLanguages=[
+  {key:'de',label:'Deutsch',flag:'🇩🇪'},
+  {key:'en',label:'English',flag:'🇬🇧'},
+  {key:'fr',label:'Français',flag:'🇫🇷'},
+  {key:'tr',label:'Türkçe',flag:'🇹🇷'},
+  {key:'pl',label:'Polski',flag:'🇵🇱'},
+  {key:'ru',label:'Русский',flag:'🇷🇺'},
+  {key:'ar',label:'العربية',flag:'🇸🇦'},
+  {key:'fa',label:'فارسی',flag:'🇮🇷'},
+  {key:'ro',label:'Română',flag:'🇷🇴'},
+  {key:'bg',label:'Български',flag:'🇧🇬'}
+]
+
+const videoButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی'}
+
 function FlagSet({countryCodes=[],fallback='',className=''}){
   const supported=countryCodes.filter(code=>flagComponents[code])
   return <div className={`flagIconSet ${className}`.trim()} aria-hidden="true" style={{display:'inline-flex',alignItems:'center',gap:'4px',minWidth:'30px',flex:'0 0 auto'}}>
@@ -16,11 +44,17 @@ function FlagSet({countryCodes=[],fallback='',className=''}){
 
 export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false}){
   const [open,setOpen]=useState(false)
+  const [videoOpen,setVideoOpen]=useState(false)
+  const [videoLanguage,setVideoLanguage]=useState(explainerVideos[value]?value:'de')
   const [publicPicker,setPublicPicker]=useState(false)
   const [mobilePublic,setMobilePublic]=useState(false)
   const menuId=useId()
   const rootRef=useRef(null)
   const active=supportedLanguages.find(item=>item.key===value)||supportedLanguages[0]
+
+  useEffect(()=>{
+    if(explainerVideos[value]) setVideoLanguage(value)
+  },[value])
 
   useEffect(()=>{
     const isPublic=Boolean(rootRef.current?.closest('.publicTop'))
@@ -56,10 +90,11 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
   },[open])
 
   if(publicPicker){
+    const explainerLabel=videoButtonText[value]||videoButtonText.de
     return <div
       className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()}
       ref={rootRef}
-      style={{position:'relative',zIndex:120,direction:'ltr',display:'inline-flex',width:'auto',maxWidth:'100%',minWidth:0}}
+      style={{position:'relative',zIndex:120,direction:'ltr',display:'inline-flex',alignItems:'center',gap:'8px',width:'auto',maxWidth:'100%',minWidth:0,flexWrap:'wrap'}}
     >
       <button
         type="button"
@@ -74,6 +109,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         <div style={{display:'inline-flex',alignItems:'center',gap:'9px',minWidth:0}}><FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong style={{display:'inline-block',fontSize:'.9rem',whiteSpace:'nowrap'}}>Sprache</strong></div>
         <b aria-hidden="true" style={{fontSize:'.8rem',flex:'0 0 auto',marginLeft:'2px'}}>{open?'▴':'▾'}</b>
       </button>
+      <button type="button" onClick={()=>setVideoOpen(current=>!current)} aria-expanded={videoOpen} style={{minHeight:'46px',padding:'8px 12px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#2f291b',color:'#fff',fontWeight:850,boxShadow:'0 4px 14px rgba(27,31,37,.10)',whiteSpace:'nowrap'}}>▶ {explainerLabel}</button>
       {open&&<div
         id={menuId}
         role="listbox"
@@ -90,6 +126,13 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
           key={item.key}
           style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px',width:'100%',minHeight:'50px',padding:'8px 10px',borderRadius:'10px',border:item.key===value?'2px solid #9b792b':'1px solid #e0e3e7',background:item.key===value?'#fff8e8':'#fff',color:'#27303b',fontWeight:800,textAlign:'left'}}
         ><div style={{display:'flex',alignItems:'center',gap:'10px',minWidth:0}}><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><strong style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{item.label}</strong></div><small>{item.short}</small></button>)}
+      </div>}
+      {videoOpen&&<div role="dialog" aria-label={explainerLabel} style={{position:'fixed',inset:0,zIndex:500,background:'rgba(20,24,30,.72)',display:'flex',alignItems:'center',justifyContent:'center',padding:'18px'}} onClick={()=>setVideoOpen(false)}>
+        <div style={{width:'min(960px,100%)',maxHeight:'92dvh',overflow:'auto',background:'#fff',borderRadius:'18px',padding:'14px',boxShadow:'0 24px 70px rgba(0,0,0,.34)'}} onClick={event=>event.stopPropagation()}>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'12px',marginBottom:'10px'}}><strong style={{fontSize:'1.05rem'}}>AS Gold · {explainerLabel}</strong><button type="button" onClick={()=>setVideoOpen(false)} aria-label="Schließen" style={{border:0,background:'#eef0f2',borderRadius:'999px',width:'36px',height:'36px',fontSize:'1.25rem'}}>×</button></div>
+          <div style={{display:'flex',gap:'6px',overflowX:'auto',paddingBottom:'10px'}}>{videoLanguages.map(item=><button key={item.key} type="button" onClick={()=>setVideoLanguage(item.key)} title={item.label} aria-pressed={videoLanguage===item.key} style={{border:videoLanguage===item.key?'2px solid #9b792b':'1px solid #d8dbe0',background:videoLanguage===item.key?'#fff8e8':'#fff',borderRadius:'10px',padding:'7px 9px',fontWeight:800,whiteSpace:'nowrap'}}>{item.flag} {item.label}</button>)}</div>
+          <video key={videoLanguage} controls playsInline preload="metadata" style={{display:'block',width:'100%',maxHeight:'68dvh',background:'#000',borderRadius:'12px'}}><source src={explainerVideos[videoLanguage]} type="video/mp4"/></video>
+        </div>
       </div>}
     </div>
   }
