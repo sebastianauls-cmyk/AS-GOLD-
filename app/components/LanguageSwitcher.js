@@ -35,7 +35,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
   return <div className={`flagLanguage ${showLabel?'flagLanguageLabeled':''} ${className}`.trim()} ref={rootRef}>
     {showLabel&&<span className="flagLanguageLabel">{label}</span>}
     <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(current=>!current)}>
-      <FlagSet countryCodes={active.countryCodes} fallback={active.flags} className="flagLanguageActive"/><span className="flagLanguageChevron" aria-hidden="true">⌄</span>
+      <FlagSet countryCodes={active.countryCodes} fallback={active.flags} className="flagLanguageActive"/><strong>{active.label}</strong><span className="flagLanguageChevron" aria-hidden="true">⌄</span>
     </button>
     {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
       {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}><span className="flagLanguageOptionMain"><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span className="flagLanguageName">{item.label}</span></span><small>{item.short}</small></button>)}
