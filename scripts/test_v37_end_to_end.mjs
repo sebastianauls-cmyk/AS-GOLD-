@@ -1,5 +1,6 @@
 import fs from 'node:fs'
 
+// V37 final production verification trigger: 2026-09-01
 const page=fs.readFileSync('app/page.js','utf8')
 const layout=fs.readFileSync('app/layout.js','utf8')
 const firstAction=fs.readFileSync('app/components/V37FirstAction.js','utf8')
