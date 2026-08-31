@@ -2,6 +2,7 @@ import './globals.css'
 import { HeroCopyEnhancer } from './components/HeroCopyEnhancer'
 import { ProblemNavigator } from './components/ProblemNavigator'
 import { FreeEntryAfterRecommendation } from './components/FreeEntryAfterRecommendation'
+import { HeroProblemOrder } from './components/HeroProblemOrder'
 
 export const metadata = {
   metadataBase: new URL('https://app-gold-workspace.vercel.app'),
@@ -12,5 +13,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><HeroCopyEnhancer/><ProblemNavigator/><FreeEntryAfterRecommendation/>{children}</body></html>
+  return <html lang="de"><body><HeroCopyEnhancer/><ProblemNavigator/><FreeEntryAfterRecommendation/><HeroProblemOrder/>{children}</body></html>
 }
