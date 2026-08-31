@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run test:v34",
+    "prebuild": "npm run test:v34 && npm run test:v35",
     "build": "next build",
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
@@ -12,7 +12,8 @@
     "test:v31": "node scripts/test_v31_flags_legal_promo.mjs",
     "test:v32": "node scripts/test_v32_svg_flags.mjs",
     "test:v33": "node scripts/test_v33_language_navigation.mjs",
-    "test:v34": "node scripts/test_v34_customer_path.mjs"
+    "test:v34": "node scripts/test_v34_customer_path.mjs",
+    "test:v35": "node scripts/test_v35_languages.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
