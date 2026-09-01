@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments",
+    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step",
     "build": "next build",
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
@@ -19,7 +19,8 @@
     "test:v37-e2e": "node scripts/test_v37_end_to_end.mjs",
     "test:v37-readiness": "node scripts/test_v37_product_reife.mjs",
     "test:v38-deadlines": "node scripts/test_v38_deadline_intelligence.mjs",
-    "test:v38-assessments": "node scripts/test_v38_assessment_explainability.mjs"
+    "test:v38-assessments": "node scripts/test_v38_assessment_explainability.mjs",
+    "test:v38-next-step": "node scripts/test_v38_primary_next_step.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
