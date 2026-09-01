@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/v46-sync-vietnamese-main.yml'
       - 'scripts/v46_sync_vietnamese_from_main.mjs'
+      - 'scripts/v46_complete_vietnamese_public_catalogs.mjs'
   workflow_dispatch:
 
 permissions:
@@ -27,6 +28,9 @@ jobs:
 
       - name: Port Vietnamese into modular domain ownership
         run: node scripts/v46_sync_vietnamese_from_main.mjs
+
+      - name: Complete Vietnamese public catalog ownership
+        run: node scripts/v46_complete_vietnamese_public_catalogs.mjs
 
       - name: Install dependencies
         run: npm ci
