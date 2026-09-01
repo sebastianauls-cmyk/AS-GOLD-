@@ -15,6 +15,7 @@ on:
       - 'scripts/v46_consolidate_workspace_shell.mjs'
       - 'scripts/v46_extract_public_landing.mjs'
       - 'scripts/test_v44_language_order.mjs'
+      - 'scripts/test_v46_modular_boundaries.mjs'
   workflow_dispatch:
 
 permissions:
