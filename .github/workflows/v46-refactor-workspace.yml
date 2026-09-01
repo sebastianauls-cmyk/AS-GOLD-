@@ -70,6 +70,16 @@ jobs:
           NODE
       - name: Repair generated public-module guard order
         run: node scripts/v46_fix_public_guard_order.mjs
+      - name: Align V34 guard with V50 explainer trigger
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs'
+          const path='scripts/test_v34_customer_path.mjs'
+          let source=fs.readFileSync(path,'utf8')
+          source=source.replace("const videoPos=publicLanding.indexOf('<ExplainerVideo language={language}/>')","const videoPos=publicLanding.indexOf('<ExplainerVideo language={language} openSignal={explainerSignal}/>')")
+          fs.writeFileSync(path,source)
+          NODE
 
       - name: Install dependencies
         run: npm ci
