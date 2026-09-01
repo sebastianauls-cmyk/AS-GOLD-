@@ -5,7 +5,7 @@ This directory is the target ownership structure for the V46 modularization. New
 ## Domains
 
 - `language/` — interface language, output language, flags, language-menu state, explainer-video language.
-- `navigation/` — page/back/menu navigation and mobile navigation state.
+- `navigation/` — page/back/menu navigation, accessibility and mobile resilience.
 - `public/` — public landing surface, case discovery and pricing presentation.
 - `tester/` — controlled tester-access state and tester guidance.
 - `auth/` — login, registration, password policy and session-facing UI.
@@ -25,3 +25,19 @@ This directory is the target ownership structure for the V46 modularization. New
 5. Existing functionality is preserved while code moves. Compatibility re-exports may remain temporarily so migration can be incremental and regression-safe.
 6. Every removal of a legacy enhancer must be accompanied by a guard that verifies the replacement behavior rather than the old file location.
 7. `main` is updated only after the modular branch builds successfully and the relevant navigation/functionality guards pass.
+
+## Migration status — 1 September 2026
+
+- `language/`: owns the language switcher, explainer dialog and output-language helpers; V43/V44 DOM correction layers are no longer mounted.
+- `navigation/`: owns accessibility hardening and mobile resilience; root layout imports both modules directly.
+- `tester/`: owns the paused tester state; public tester access remains closed.
+- `auth/`, `cases/`, `documents/`, `pricing/`, `compliance/`: core implementations are moving behind compatibility adapters.
+- `integrations/`: `IntegrationHub` renders OAuth availability directly. The former global V38 integration DOM guard has been deleted.
+- `public/` and `services/`: still to be completed.
+
+## Remaining release blockers
+
+- Replace `V45OutputLanguageBridge` global fetch interception/polling with explicit output-language data flow.
+- Replace or migrate remaining public/case DOM enhancers.
+- Split oversized `app/page.js` into public, auth/workspace and domain components.
+- Complete service extraction and a full branch build/navigation regression pass before touching `main` or reopening tester access.
