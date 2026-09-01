@@ -40,6 +40,22 @@ write(
   "'use client'\n\n// Compatibility shell only. Output language now flows explicitly into the document-analysis service.\nexport function OutputLanguageBridge(){ return null }\nexport const V45OutputLanguageBridge=OutputLanguageBridge\n"
 )
 
+const e2ePath='scripts/test_v37_end_to_end.mjs'
+let e2e=read(e2ePath)
+e2e=replaceRequired(
+  e2e,
+  "const problemCompatibility=fs.readFileSync('app/components/ProblemNavigator.js','utf8')\n",
+  "const problemCompatibility=fs.readFileSync('app/components/ProblemNavigator.js','utf8')\nconst analysisService=fs.readFileSync('app/modules/services/documentAnalysis.js','utf8')\n",
+  'V37 analysis service source'
+)
+e2e=replaceRequired(
+  e2e,
+  "mustContain(page,\"supabase.functions.invoke('gold-ocr-v28'\",'OCR/analysis backend')",
+  "mustContain(page,'invokeDocumentAnalysis','OCR/analysis service boundary')\nmustContain(analysisService,\"supabase.functions.invoke('gold-ocr-v28'\",'OCR/analysis backend')",
+  'V37 OCR service guard'
+)
+write(e2ePath,e2e)
+
 write('scripts/test_v45_output_language.mjs',[
   "import fs from 'node:fs'",
   "import assert from 'node:assert/strict'",
