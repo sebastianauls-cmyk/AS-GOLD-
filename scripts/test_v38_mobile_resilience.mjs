@@ -17,7 +17,7 @@ assert.match(language,/aria-label="Zurück"/)
 assert.match(language,/>← Zurück<\/button>/)
 assert.equal((language.match(/aria-label="Zurück"/g)||[]).length,1,'exactly one explicit language-menu back control expected')
 assert.match(styles,/\.flagLanguageMenu\{[^}]*max-height:calc\(100dvh - 92px\)[^}]*overflow-y:auto/s)
-assert.match(styles,/@media\(max-width:700px\)\{\.flagLanguageMenu\{[^}]*position:fixed[^}]*max-height:calc\(100dvh - 24px\)/s)
+assert.match(styles,/@media\(max-width:700px\)\{\s*\.flagLanguageMenu\{[^}]*position:fixed[^}]*max-height:calc\(100dvh - 24px\)/s)
 assert.match(layout,/V38MobileResilience/)
 
 console.log('V38 mobile resilience guard passed: responsive layout, long-text wrapping, V38 cards and one scrollable language-menu back control verified.')
