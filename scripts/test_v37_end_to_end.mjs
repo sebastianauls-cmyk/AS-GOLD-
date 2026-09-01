@@ -1,7 +1,8 @@
 import fs from 'node:fs'
 
 // V37 final production verification trigger: 2026-09-01
-const page=fs.readFileSync('app/page.js','utf8')
+const page=fs.readFileSync('app/modules/workspace/WorkspaceApp.js','utf8')
+const pageEntry=fs.readFileSync('app/page.js','utf8')
 const layout=fs.readFileSync('app/layout.js','utf8')
 const firstAction=fs.readFileSync('app/modules/public/V37FirstAction.js','utf8')
 const firstActionCompatibility=fs.readFileSync('app/components/V37FirstAction.js','utf8')
@@ -12,6 +13,7 @@ const mustContain=(source,needle,label)=>{
   if(!source.includes(needle)) throw new Error(`V37 E2E guard: missing ${label}: ${needle}`)
 }
 
+mustContain(pageEntry,"./modules/workspace/WorkspaceApp",'workspace page module boundary')
 mustContain(layout,'V37FirstAction','V37 first-action mount')
 mustContain(layout,"./modules/public/V37FirstAction",'V37 first-action module ownership')
 mustContain(layout,'ProblemNavigator','problem navigator mount')
@@ -52,4 +54,4 @@ mustContain(page,'function downloadBlob','download delivery')
 
 for(const marker of ['backOverview','backCases','backClients','backExplanation']) mustContain(page,marker,`navigation ${marker}`)
 
-console.log('V37 code-path end-to-end regression checks passed')
+console.log('V37 code-path end-to-end regression checks passed through the workspace module boundary')

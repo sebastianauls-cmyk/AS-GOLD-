@@ -1,6 +1,7 @@
 import fs from 'node:fs'
 
-const page=fs.readFileSync('app/page.js','utf8')
+const page=fs.readFileSync('app/modules/workspace/WorkspaceApp.js','utf8')
+const pageEntry=fs.readFileSync('app/page.js','utf8')
 const css=fs.readFileSync('app/globals.css','utf8')
 const firstAction=fs.readFileSync('app/modules/public/V37FirstAction.js','utf8')
 const video=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8')
@@ -9,6 +10,7 @@ const videoCompatibility=fs.readFileSync('app/components/ExplainerVideo.js','utf
 
 const need=(source,needle,label)=>{if(!source.includes(needle)) throw new Error(`V37 readiness: missing ${label}`)}
 
+need(pageEntry,"./modules/workspace/WorkspaceApp",'workspace page module boundary')
 need(css,'@media(max-width:850px)','tablet breakpoint')
 need(css,'@media(max-width:560px)','phone breakpoint')
 need(css,'.exportBar select,.exportBar button{width:100%}','mobile export controls')
@@ -40,4 +42,4 @@ need(video,"role='group' aria-label={c.voice}",'presenter accessibility group')
 need(video,"aria-pressed={presenter==='female'}",'female pressed state')
 need(video,"aria-pressed={presenter==='male'}",'male pressed state')
 
-console.log('V37 product-readiness guard passed: responsive layout, modular public entry, navigation, error handling, approvals and exports protected.')
+console.log('V37 product-readiness guard passed through the workspace module boundary.')
