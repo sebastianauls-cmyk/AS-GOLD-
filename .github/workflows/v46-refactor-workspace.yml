@@ -85,11 +85,12 @@ jobs:
                   app/modules/documents/uploadConfig.js \
                   app/modules/documents/exportUi.js \
                   scripts/test_v37_end_to_end.mjs \
+                  scripts/test_v37_product_reife.mjs \
                   scripts/test_v38_prelaunch_guard.mjs \
                   scripts/test_v38_practical_simulation.mjs \
                   scripts/test_v45_output_language.mjs \
                   scripts/test_v46_modular_boundaries.mjs \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md \
                   app/modules/README.md
-          git commit -m 'V46 extract authentication surface'
+          git commit -m 'V46 persist modular auth readiness guard'
           git push origin HEAD:v46-navigation-clean
