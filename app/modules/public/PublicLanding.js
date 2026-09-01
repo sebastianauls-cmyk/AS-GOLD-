@@ -65,8 +65,8 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <h1>{hero.title}</h1>
             <p className="lead">{hero.lead}</p>
             <V37FirstAction language={language} onRegister={()=>setScreen('register')}/>
-            <ProblemNavigator language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
-            <ExplainerVideo language={language} openSignal={explainerSignal}/>
+            <ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
+            <ExplainerVideo key={`${language}-${explainerSignal}`} language={language} openSignal={explainerSignal}/>
             <ProductIntroCompact language={language}/>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
