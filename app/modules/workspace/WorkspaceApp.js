@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../services/supabaseClient'
+import { invokeDocumentAnalysis } from '../services/documentAnalysis'
 import { CaseDetail, CaseSection, DocumentDetail, DocumentSection, QuickActions, getV24Copy } from './components/V24Workspace'
 import { ApprovalDetail, ApprovalSection, getV25ApprovalCopy } from './components/V25ApprovalWorkflow'
 import { getV26AnalysisCopy } from './components/V26DocumentAnalysis'
@@ -12,12 +13,6 @@ import { PasswordPolicyChecklist, getV29PasswordCopy, validateV29Password } from
 import { PromoCodeControl } from './components/PromoCodeControl'
 import { localeForLanguage, pageTranslations, rtlLanguages, supportedLanguages } from './lib/v30Languages.mjs'
 import { promoTranslations } from './lib/v31PromoTranslations.mjs'
-
-const supabase = createClient(
-  'https://bcvggtnvuesaihqvgisg.supabase.co',
-  'sb_publishable_O0JQYoJW-60sh3_5f7yr2Q_czCPZNH0',
-  { auth: { persistSession: true, autoRefreshToken: true } }
-)
 
 const emptyData = { cases: [], clients: [], documents: [], approvals: [], assessments: [], sourceStatus: [] }
 const emptyCase = { title:'', client_id:'', reference_no:'', goal:'', summary:'', deadline_at:'', next_action:'' }
@@ -688,7 +683,7 @@ export default function Home(){
     if(allowed.error){setMessage(allowed.error.message);return false}
     setPrivacySettings(enabled.data)
     await recordServerAudit('document_ai_transfer_authorized',{classification:document.data_classification},'document',document.id)
-    const {data:result,error}=await supabase.functions.invoke('gold-ocr-v28',{body:{file_path:document.file_path,document_id:document.id,acknowledged:true,privacy_notice_version:PRIVACY_NOTICE_VERSION,terms_version:TERMS_VERSION}})
+    const {data:result,error}=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
     if(error){setMessage(await functionErrorMessage(error,analysisUi.failed));return false}
     if(result?.status==='configuration_required'){setMessage(result.message||analysisUi.failed);return false}
     const suggestedCase=data.cases.some(item=>item.id===result?.suggested_case_id)?result.suggested_case_id:null

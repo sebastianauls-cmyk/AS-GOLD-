@@ -31,7 +31,7 @@ This directory is the target ownership structure for the V46 modularization. New
 
 ## Migration status — 1 September 2026
 
-- `language/`: owns LanguageSwitcher, ExplainerVideoDialog, LegalLanguageContext, output-language helpers, the complete language catalog chain and component translation catalogs. V43/V44 DOM correction layers are removed. OutputLanguageBridge no longer performs DOM polling; only its temporary fetch interception remains.
+- `language/`: owns LanguageSwitcher, ExplainerVideoDialog, LegalLanguageContext, output-language helpers, the complete language catalog chain and component translation catalogs. V43/V44 DOM correction layers are removed. Output-language transport no longer relies on DOM polling or global fetch interception.
 - `navigation/`: owns accessibility hardening and mobile resilience; root layout imports both modules directly.
 - `tester/`: owns the paused tester state; public tester access remains closed and has no registration start link.
 - `auth/`: owns password policy and password UI; broader login/registration composition is still inside WorkspaceApp.
@@ -40,7 +40,7 @@ This directory is the target ownership structure for the V46 modularization. New
 - `pricing/`: owns PromoCodeControl and promo translations; plan/quote orchestration remains to be extracted from WorkspaceApp.
 - `compliance/`: owns legal documents/footer/privacy controls plus the privacy-dashboard and withdrawal-flow implementations. The route-local PrivacyDashboard/WithdrawalForm files are thin adapters, while the pages import the compliance module directly.
 - `integrations/`: IntegrationHub renders OAuth availability directly. The former global V38 integration DOM guard is deleted.
-- `services/`: owns Office export implementation and now a shared Supabase client used by the compliance privacy dashboard. The old `app/lib/officeExports.js` path is only an adapter. Workspace data access and OCR orchestration still need extraction.
+- `services/`: owns Office export implementation, the shared Supabase client and explicit document-analysis invocation. Workspace and compliance surfaces share the same Supabase client, and OCR receives the selected output language through the service boundary. Remaining CRUD/export orchestration still needs extraction.
 - `public/`: public enhancers are module-owned and legacy component paths are adapters, but several still use DOM enhancement internally and must be replaced by direct component composition.
 - `workspace/`: `app/page.js` is already a thin entry point. The remaining large composition file is `app/modules/workspace/WorkspaceApp.js`, which still needs to be decomposed into public/auth/dashboard/document/pricing/account surfaces.
 
@@ -50,10 +50,9 @@ This directory is the target ownership structure for the V46 modularization. New
 
 ## Remaining release blockers
 
-- Replace the remaining `OutputLanguageBridge` fetch interception with explicit output-language data flow into OCR/document analysis, then remove the bridge from the root layout.
 - Replace remaining public/case DOM enhancers with direct React component composition where they still mutate rendered markup.
-- Decompose `WorkspaceApp.js` into public, auth, dashboard/cases, documents, pricing and account/compliance composition surfaces.
-- Move the remaining WorkspaceApp Supabase data access and OCR orchestration behind service boundaries.
-- Run the final full preview build plus mobile/navigation regression and functional smoke checks before touching `main` or reopening tester access.
+- Decompose WorkspaceApp.js into public, auth, dashboard/cases, documents, pricing and account/compliance composition surfaces.
+- Move the remaining WorkspaceApp CRUD, upload and export orchestration behind service/domain boundaries.
+- Run the final full preview build plus mobile/navigation regression and functional smoke checks before touching main or reopening tester access.
 
 Current gate: latest V46 compliance/service modularization build is green; `main` remains unchanged and tester access remains closed until all release blockers above are cleared.

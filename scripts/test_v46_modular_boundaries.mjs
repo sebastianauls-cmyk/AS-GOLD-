@@ -36,6 +36,7 @@ for(const path of [
   'app/modules/integrations/IntegrationHub.js',
   'app/modules/services/officeExports.js',
   'app/modules/services/supabaseClient.js',
+  'app/modules/services/documentAnalysis.js',
   'app/modules/workspace/WorkspaceApp.js'
 ]) exists(path)
 
@@ -46,15 +47,25 @@ const workspace=read('app/modules/workspace/WorkspaceApp.js')
 assert.match(workspace,/signInWithPassword/)
 assert.match(workspace,/DocumentSection/)
 assert.match(workspace,/doExport/)
+assert.match(workspace,/\.\.\/services\/supabaseClient/)
+assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
+assert.doesNotMatch(workspace,/const supabase = createClient\(/)
+assert.match(workspace,/invokeDocumentAnalysis/)
 
 const layout=read('app/layout.js')
 assert.doesNotMatch(layout,/components\/V4[0-5]/)
 assert.doesNotMatch(layout,/V43VisibilityFix|V44LanguageOrder|V38IntegrationAvailabilityGuard/)
-assert.match(layout,/modules\/language\/OutputLanguageBridge/)
+assert.doesNotMatch(layout,/OutputLanguageBridge/)
 assert.match(layout,/modules\/navigation\/AccessibilityHardening/)
 assert.match(layout,/modules\/navigation\/MobileResilience/)
 assert.match(layout,/modules\/public\/ProblemNavigator/)
 assert.match(layout,/modules\/cases\/V42ActionableGaps/)
+
+const outputBridge=read('app/modules/language/OutputLanguageBridge.js')
+const analysisService=read('app/modules/services/documentAnalysis.js')
+assert.doesNotMatch(outputBridge,/window\.fetch|gold-ocr-v28/)
+assert.match(analysisService,/output_language:outputLanguage/)
 
 const switcher=read('app/modules/language/LanguageSwitcher.js')
 assert.equal((switcher.match(/← Zurück/g)||[]).length,1,'language menu must have exactly one visible back/close control')

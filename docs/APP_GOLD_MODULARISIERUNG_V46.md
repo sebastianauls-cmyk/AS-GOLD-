@@ -42,7 +42,7 @@ Ein Modul darf ein anderes Modul nicht mehr durch nachträgliche DOM-Manipulatio
 - Zustand, Normalisierung und Payload-Erweiterung liegen zentral in `app/modules/language/outputLanguage.js`.
 - Die V45-Bridge wurde als `OutputLanguageBridge` in das Language-Modul verschoben; der alte Komponentenpfad ist nur noch ein Adapter.
 - Die Regressionstests prüfen jetzt die Modulimplementierung statt der alten Datei.
-- Noch offen: die verbleibende globale `window.fetch`-Interception und das DOM-Polling vollständig durch expliziten Datenfluss zu Analyse-/Exportservices ersetzen.
+- Die globale window.fetch-Interception ist entfernt. Die Ausgabesprache wird jetzt explizit aus WorkspaceApp an app/modules/services/documentAnalysis.js und von dort als output_language an gold-ocr-v28 übergeben. Der alte Bridge-Pfad bleibt nur als wirkungslose Kompatibilitätshülle bestehen.
 
 ### Fälle und Dokumentintelligenz
 
@@ -80,14 +80,13 @@ Neu hinzugekommen ist `scripts/test_v46_modular_boundaries.mjs`. Dieser Guard l�
 
 Mehrere vollständige Vercel-Preview-Builds der Branch sind nach den bisherigen Umbauten erfolgreich mit Status `READY` durchgelaufen. Zwischenfehler wurden ausschließlich auf der Entwicklungs-Branch korrigiert; `main` blieb unverändert.
 
-## Noch offene Kernarbeiten vor Freigabe
+## Verbleibende Kernarbeiten vor Freigabe
 
-1. `OutputLanguageBridge` als globale Fetch-/Polling-Migrationsschicht vollständig ablösen und Ausgabesprache explizit an Analyse-/Exportservices übergeben.
-2. Das sehr große `app/page.js` in öffentliche Oberfläche, Auth/Session und geschützten Workspace zerlegen.
-3. Den Workspace in Dashboard, Cases, Clients, Documents, Approvals und AccountControl aufteilen.
-4. Verbliebene Public-/Case-Enhancer, die gerendertes DOM dekorieren, durch direkte Komponentenstruktur ersetzen.
-5. Supabase-, Analyse- und Exportzugriffe aus UI-Dateien in `app/modules/services/` bzw. zuständige Fachservices verschieben.
-6. Abschließenden vollständigen Build-, Mobil-, Accessibility- und Navigationstest durchführen.
+1. Den geschützten Workspace weiter in Dashboard, Cases, Clients, Documents, Approvals, Pricing und AccountControl aufteilen.
+2. Verbliebene Public-/Case-Enhancer, die gerendertes DOM dekorieren, durch direkte Komponentenstruktur ersetzen.
+3. Weitere Supabase-, Daten- und Exportzugriffe aus WorkspaceApp hinter Fachservices verschieben; der gemeinsame Supabase-Client und die Dokumentanalyse sind bereits ausgelagert.
+4. Den öffentlichen, Auth- und geschützten Workspace als getrennte Kompositionsflächen aus WorkspaceApp herauslösen.
+5. Abschließenden vollständigen Build-, Mobil-, Accessibility-, Navigations- und Funktions-Smoketest durchführen.
 
 ## Freigaberegel
 
