@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import {analyzeDeadlines,deadlineUrgency,extractDeadlineDates,parseGermanDate} from '../app/lib/v38DeadlineIntelligence.mjs'
+import {analyzeDeadlines,deadlineUrgency,extractDeadlineDates,parseGermanDate} from '../app/modules/lib/v38DeadlineIntelligence.mjs'
 
 const now=new Date('2026-09-01T10:00:00Z')
 
@@ -47,7 +47,8 @@ assert.equal(noDeadline.primary,null)
 assert.match(noDeadline.message,/Keine sichere Frist/)
 assert.match(noDeadline.consequence,/Keine Rechtsfolge behauptet/)
 
-const card=fs.readFileSync(new URL('../app/components/V38DeadlineCardEnhancer.js',import.meta.url),'utf8')
+const card=fs.readFileSync(new URL('../app/modules/cases/V38DeadlineCardEnhancer.js',import.meta.url),'utf8')
+const compatibility=fs.readFileSync(new URL('../app/components/V38DeadlineCardEnhancer.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 assert.match(card,/Fristen-Warnung/)
 assert.match(card,/Mögliche Folge/)
@@ -61,6 +62,7 @@ assert.match(card,/cImmediate/)
 assert.match(card,/cUncertain/)
 assert.match(card,/de:.*Fristen-Warnung/)
 for(const language of ['en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(card,new RegExp(`${language}:\\{`))
-assert.match(layout,/V38DeadlineCardEnhancer/)
+assert.match(compatibility,/modules\/cases\/V38DeadlineCardEnhancer/)
+assert.match(layout,/modules\/cases\/V38DeadlineCardEnhancer/)
 
-console.log('V38 deadline intelligence guard passed: semantic deadline cues, false-positive rejection, document-view wiring, localized consequences, prioritization and uncertainty verified.')
+console.log('V38 deadline intelligence guard passed: module-owned deadline UI and engine, semantic cues, localization and compatibility adapter verified.')

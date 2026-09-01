@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { analyzeCaseConsistency } from '../app/lib/v41CaseConsistency.mjs'
+import { analyzeCaseConsistency } from '../app/modules/lib/v41CaseConsistency.mjs'
 
 const result=analyzeCaseConsistency({
   caseItem:{title:'Test',goal:'Zahlung prüfen',summary:'Zwei Schreiben liegen vor',deadline_at:'2026-09-10',next_action:'Antwort vorbereiten'},
@@ -18,12 +18,14 @@ assert.ok(result.score<100)
 const gaps=analyzeCaseConsistency({caseItem:{},documents:[{title:'X',extracted_text:''}],assessments:[{traffic_light:'red',next_step:''}]})
 for(const key of ['goal','summary','deadline','next_action','unread_documents','red_without_next']) assert.ok(gaps.gaps.includes(key))
 
-const component=fs.readFileSync(new URL('../app/components/V41CaseConsistency.js',import.meta.url),'utf8')
+const component=fs.readFileSync(new URL('../app/modules/cases/V41CaseConsistency.js',import.meta.url),'utf8')
+const compatibility=fs.readFileSync(new URL('../app/components/V41CaseConsistency.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(component,new RegExp(`\\b${language}:\\{`))
 assert.match(component,/Nicht automatisch als Widerspruch gewertet/)
 assert.match(component,/data-v41-consistency/)
 assert.match(component,/from\('documents'\)/)
 assert.match(component,/from\('assessments'\)/)
-assert.match(layout,/V41CaseConsistency/)
-console.log('V41 case consistency guard passed: evidence gaps, cautious cross-document deviations, score and 10-language UI verified.')
+assert.match(compatibility,/modules\/cases\/V41CaseConsistency/)
+assert.match(layout,/modules\/cases\/V41CaseConsistency/)
+console.log('V41 case consistency guard passed: module-owned evidence gaps, cautious deviations, score and 10-language UI verified.')
