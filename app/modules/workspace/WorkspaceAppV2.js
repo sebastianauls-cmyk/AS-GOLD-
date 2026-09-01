@@ -7,6 +7,7 @@ import { getUpgradeQuotes, requestUpgradeRecord } from '../services/pricingRepos
 import { acknowledgeLegalSettings } from '../services/complianceRepository'
 import { getAuthSession, registerTestAccount, sendPasswordReset, signInSession, signOutSession, watchAuthState } from '../services/authRepository'
 import { allowedUploadAccept, uploadUi } from '../documents/uploadConfig'
+import { exportUi } from '../documents/exportUi'
 import { appText } from './workspaceText'
 import { ui } from '../public/publicUi'
 import { passwordUi } from '../auth/passwordUi'
@@ -41,7 +42,7 @@ import { createExportWorkflowActions } from '../documents/exportWorkflow'
 const eur=value=>`${Number(value||0).toFixed(2).replace('.',',')} €`
 
 const pageCatalogs={
-  passwordUi,uploadUi,ui,appText,planJourney,planText,notices,
+  passwordUi,uploadUi,ui,exportUi,appText,planJourney,planText,notices,
   journeyLabels,dashboardGuide,recommendationText,transparencyText,
   caseDiscoveryText,publicAudienceText,testerLinkText,periodText,
   launchTrustText,serverControlText
