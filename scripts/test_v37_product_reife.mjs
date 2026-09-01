@@ -30,7 +30,7 @@ need(firstActionCompatibility,'../modules/public/V37FirstAction','first-action c
 need(videoCompatibility,'../modules/public/ExplainerVideo','explainer compatibility adapter')
 need(publicLanding,'<V37FirstAction language={outputLanguage}','first action customer-language callback')
 need(publicLanding,'onRegister={()=>setScreen(\'register\')}','first action registration callback')
-need(publicLanding,'onSpeakProblem={()=>setProblemVoiceSignal','direct voice callback')
+need(publicLanding,'onSpeakProblem={()=>problemNavigatorRef.current?.speak()}','direct ref-owned voice callback')
 
 need(publicLanding,"setScreen('register')",'registration path in public content')
 need(publicHeader,"onScreenChange('register')",'registration path in public header')
