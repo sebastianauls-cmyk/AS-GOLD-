@@ -25,22 +25,37 @@ jobs:
       - name: Extract auth service
         run: node scripts/v46_extract_auth_service.mjs
 
-      - name: Align legacy E2E auth guard
+      - name: Align legacy auth guards
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
-          path=Path('scripts/test_v37_end_to_end.mjs')
-          source=path.read_text()
+
+          e2e=Path('scripts/test_v37_end_to_end.mjs')
+          source=e2e.read_text()
           repo_line="const workspaceRepository=fs.readFileSync('app/modules/services/workspaceRepository.js','utf8')"
           auth_line="const authRepository=fs.readFileSync('app/modules/services/authRepository.js','utf8')"
           if auth_line not in source:
               if repo_line not in source:
-                  raise SystemExit('auth repository guard import anchor missing')
+                  raise SystemExit('E2E auth repository import anchor missing')
               source=source.replace(repo_line, repo_line+'\n'+auth_line)
           source=source.replace("mustContain(page,'signInWithPassword','password login')","mustContain(authRepository,'signInWithPassword','password login service')")
           source=source.replace("mustContain(page,'auth.signUp','registration action')","mustContain(authRepository,'auth.signUp','registration service action')")
-          path.write_text(source)
+          e2e.write_text(source)
+
+          prelaunch=Path('scripts/test_v38_prelaunch_guard.mjs')
+          source=prelaunch.read_text()
+          anchor="const page=read('app/modules/workspace/WorkspaceApp.js')"
+          auth_line="const authRepository=read('app/modules/services/authRepository.js')"
+          if auth_line not in source:
+              if anchor not in source:
+                  raise SystemExit('prelaunch auth repository import anchor missing')
+              source=source.replace(anchor,anchor+'\n'+auth_line)
+          source=source.replace('assert.match(page,/signInWithPassword/)','assert.match(authRepository,/signInWithPassword/)')
+          source=source.replace('assert.match(page,/resetPasswordForEmail/)','assert.match(authRepository,/resetPasswordForEmail/)')
+          source=source.replace('assert.match(page,/auth\\.signUp/)','assert.match(authRepository,/auth\\.signUp/)')
+          source=source.replace('assert.match(page,/test_data_only:true/)','assert.match(authRepository,/test_data_only:true/)')
+          prelaunch.write_text(source)
           PY
 
       - name: Install dependencies
@@ -66,6 +81,7 @@ jobs:
                   app/modules/services/authRepository.js \
                   app/modules/README.md \
                   scripts/test_v46_modular_boundaries.mjs \
-                  scripts/test_v37_end_to_end.mjs
+                  scripts/test_v37_end_to_end.mjs \
+                  scripts/test_v38_prelaunch_guard.mjs
           git commit -m 'V46 extract auth service boundary'
           git push origin HEAD:v46-navigation-clean
