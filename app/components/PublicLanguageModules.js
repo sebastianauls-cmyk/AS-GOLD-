@@ -36,7 +36,8 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
     document.dispatchEvent(new CustomEvent('asgold:open-explainer',{detail:{language,presenter}}))
   }
 
-  function returnToStart(){
+  function returnToGerman(){
+    onLanguageChange('de')
     const cleanUrl=`${window.location.pathname}${window.location.search}`
     if(window.location.hash)window.history.replaceState(window.history.state,'',cleanUrl)
     window.scrollTo({top:0,left:0,behavior:'instant'})
@@ -47,7 +48,7 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
       <strong className="publicLanguageTitle">{text.interfaceTitle}</strong>
       <div className="publicLanguageMainRow">
         <LanguageSwitcher value={language} onChange={onLanguageChange} label={text.interfaceLabel}/>
-        <button type="button" className="publicBackButton" onClick={returnToStart}>{language==='ar'||language==='fa'?'→':'←'} {text.back}</button>
+        <button type="button" className="publicBackButton" onClick={returnToGerman} aria-label="Oberfläche auf Deutsch zurückstellen">{language==='ar'||language==='fa'?'→':'←'} 🇩🇪 Deutsch</button>
       </div>
       <span className="publicPresenterLabel">{text.presenter}</span>
       <div className="publicPresenterRow" role="group" aria-label={text.presenter}>
