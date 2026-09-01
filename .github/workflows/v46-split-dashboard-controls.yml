@@ -23,42 +23,18 @@ jobs:
           fetch-depth: 1
 
       - name: Split dashboard, pricing and account controls
-        id: transform
-        shell: bash
-        run: |
-          set +e
-          node scripts/v46_split_dashboard_controls.mjs > docs/V46_DASHBOARD_SPLIT_LOG.txt 2>&1
-          code=$?
-          cat docs/V46_DASHBOARD_SPLIT_LOG.txt
-          echo "exit_code=$code" >> "$GITHUB_OUTPUT"
-          exit 0
-
-      - name: Commit transformation diagnostics on failure
-        if: steps.transform.outputs.exit_code != '0'
-        shell: bash
-        run: |
-          set -euo pipefail
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add docs/V46_DASHBOARD_SPLIT_LOG.txt
-          git commit -m 'V46 record dashboard split failure' || true
-          git push origin HEAD:v46-navigation-clean
-          exit 1
+        run: node scripts/v46_split_dashboard_controls.mjs
 
       - name: Install dependencies
-        if: steps.transform.outputs.exit_code == '0'
         run: npm ci
 
       - name: Run full regression chain
-        if: steps.transform.outputs.exit_code == '0'
         run: npm run prebuild
 
       - name: Build production bundle
-        if: steps.transform.outputs.exit_code == '0'
         run: npx next build
 
       - name: Commit verified modular split
-        if: steps.transform.outputs.exit_code == '0'
         shell: bash
         run: |
           set -euo pipefail
@@ -74,6 +50,7 @@ jobs:
                   app/modules/pricing/PricingSurface.js \
                   app/modules/compliance/AccountSurface.js \
                   scripts/test_v46_modular_boundaries.mjs \
-                  docs/APP_GOLD_MODULARISIERUNG_V46.md
+                  docs/APP_GOLD_MODULARISIERUNG_V46.md \
+                  docs/V46_DASHBOARD_SPLIT_LOG.txt
           git commit -m 'V46 split dashboard pricing and account surfaces'
           git push origin HEAD:v46-navigation-clean
