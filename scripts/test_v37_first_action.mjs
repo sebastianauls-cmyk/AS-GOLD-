@@ -30,8 +30,9 @@ if(!video.includes("setPresenter('female')") || !video.includes("setPresenter('m
 
 const productIndex=publicLanding.indexOf('<ProductIntroCompact language={outputLanguage}/>')
 const firstActionIndex=publicLanding.indexOf('<V37FirstAction language={outputLanguage}')
-const problemIndex=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
+const problemIndex=publicLanding.indexOf('<ProblemNavigator ref={problemNavigatorRef} outputLanguage={outputLanguage}')
 const videoIndex=publicLanding.indexOf('<ExplainerVideo key=')
 if(!(productIndex>=0 && firstActionIndex>productIndex && problemIndex>firstActionIndex && videoIndex>problemIndex)) throw new Error('V37 guard: hero priority order must be explanation -> first action -> problem input -> optional video')
+if(!publicLanding.includes('problemNavigatorRef.current?.speak()')||!publicLanding.includes('problemNavigatorRef.current?.focus()')) throw new Error('V37 guard: first action must reach the problem navigator synchronously through its React ref')
 if(firstAction.includes('createPortal')||firstAction.includes('MutationObserver')||video.includes('createPortal')||video.includes('MutationObserver')||languageModules.includes('createPortal')||languageModules.includes('MutationObserver')) throw new Error('V37 guard: public modules must render directly without portal mount observers')
 console.log('V37 first-action regression checks passed')
