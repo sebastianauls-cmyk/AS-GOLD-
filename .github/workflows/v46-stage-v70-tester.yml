@@ -1,0 +1,56 @@
+name: V46 Stage V70 Tester Sharing
+
+on:
+  push:
+    branches: [v46-navigation-clean]
+    paths:
+      - '.github/workflows/v46-stage-v70-tester.yml'
+      - 'scripts/v46_stage_v70_tester.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  stage-v70:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout modular branch
+        uses: actions/checkout@v4
+        with:
+          ref: v46-navigation-clean
+          fetch-depth: 1
+
+      - name: Stage V70 tester sharing behind closed route
+        run: node scripts/v46_stage_v70_tester.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run complete regression chain
+        run: npm run prebuild
+
+      - name: Build production bundle
+        run: npx next build
+
+      - name: Commit only verified V70 modular staging
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo 'No V70 staging changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/modules/tester/TesterShareButton.js \
+                  app/modules/tester/TesterGuide.js \
+                  app/components/TesterShareButton.js \
+                  app/testen/page.js \
+                  scripts/test_v38_tester_guide.mjs \
+                  scripts/test_v70_tester_sharing.mjs \
+                  package.json \
+                  docs/APP_GOLD_MODULARISIERUNG_V46.md
+          git commit -m 'V46 stage V70 tester sharing behind release gate'
+          git push origin HEAD:v46-navigation-clean
