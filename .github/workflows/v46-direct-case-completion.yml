@@ -1,0 +1,81 @@
+name: V46 Direct Case Completion
+
+on:
+  push:
+    branches: [v46-navigation-clean]
+    paths:
+      - '.github/workflows/v46-direct-case-completion.yml'
+      - 'scripts/v46_direct_case_completion.mjs'
+      - 'app/modules/cases/CaseCompletionPanels.js'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  direct-case-completion:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout modular branch
+        uses: actions/checkout@v4
+        with:
+          ref: v46-navigation-clean
+          fetch-depth: 1
+
+      - name: Migrate V40-V42 to direct case components
+        run: node scripts/v46_direct_case_completion.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full regression chain
+        id: prebuild
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run prebuild 2>&1 | tee docs/V46_CASE_COMPLETION_PREBUILD_LOG.txt
+
+      - name: Commit regression diagnostics on failure
+        if: steps.prebuild.outcome == 'failure'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/V46_CASE_COMPLETION_PREBUILD_LOG.txt
+          git commit -m 'V46 record direct case completion regression failure' || true
+          git push origin HEAD:v46-navigation-clean
+          exit 1
+
+      - name: Build production bundle
+        if: steps.prebuild.outcome == 'success'
+        run: npx next build
+
+      - name: Commit verified direct case completion
+        if: steps.prebuild.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f docs/V46_CASE_COMPLETION_PREBUILD_LOG.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A app/layout.js \
+                     app/modules/cases/V24Workspace.js \
+                     app/modules/cases/CaseCompletionPanels.js \
+                     app/modules/cases/V40ProfessionalHandoff.js \
+                     app/modules/cases/V41CaseConsistency.js \
+                     app/modules/cases/V42ActionableGaps.js \
+                     scripts/test_v40_professional_handoff.mjs \
+                     scripts/test_v41_case_consistency.mjs \
+                     scripts/test_v42_actionable_gaps.mjs \
+                     scripts/test_v46_modular_boundaries.mjs \
+                     docs/APP_GOLD_MODULARISIERUNG_V46.md \
+                     docs/V46_CASE_COMPLETION_PREBUILD_LOG.txt
+          if [ -z "$(git diff --cached --name-only)" ]; then
+            echo 'No direct case completion changes to commit.'
+            exit 0
+          fi
+          git commit -m 'V46 render V40-V42 directly in case detail'
+          git push origin HEAD:v46-navigation-clean
