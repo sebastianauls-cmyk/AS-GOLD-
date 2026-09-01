@@ -9,6 +9,12 @@ for(const path of [
   'app/modules/language/OutputLanguageBridge.js',
   'app/modules/language/outputLanguage.js',
   'app/modules/language/LegalLanguageContext.js',
+  'app/modules/language/v30Languages.base.mjs',
+  'app/modules/language/v35Languages.mjs',
+  'app/modules/language/v35RoBgExtras.mjs',
+  'app/modules/language/v36Languages.mjs',
+  'app/modules/language/v30ComponentTranslations.base.mjs',
+  'app/modules/language/v35ComponentTranslations.mjs',
   'app/modules/navigation/AccessibilityHardening.js',
   'app/modules/navigation/MobileResilience.js',
   'app/modules/public/ProblemNavigator.js',
@@ -18,8 +24,10 @@ for(const path of [
   'app/modules/cases/V42ActionableGaps.js',
   'app/modules/documents/V26DocumentAnalysis.js',
   'app/modules/pricing/PromoCodeControl.js',
+  'app/modules/pricing/v31PromoTranslations.mjs',
   'app/modules/compliance/LegalDocument.js',
   'app/modules/integrations/IntegrationHub.js',
+  'app/modules/services/officeExports.js',
   'app/modules/workspace/WorkspaceApp.js'
 ]) exists(path)
 
@@ -60,7 +68,22 @@ for(const [compat,modulePath] of [
   ['app/components/V41CaseConsistency.js','modules/cases/V41CaseConsistency'],
   ['app/components/V42ActionableGaps.js','modules/cases/V42ActionableGaps'],
   ['app/components/V45OutputLanguageBridge.js','modules/language/OutputLanguageBridge'],
-  ['app/components/LegalLanguageContext.js','modules/language/LegalLanguageContext']
+  ['app/components/LegalLanguageContext.js','modules/language/LegalLanguageContext'],
+  ['app/lib/v30Languages.mjs','modules/language/v36Languages'],
+  ['app/lib/v36Languages.mjs','modules/language/v36Languages'],
+  ['app/lib/v35Languages.mjs','modules/language/v35Languages'],
+  ['app/lib/v35RoBgExtras.mjs','modules/language/v35RoBgExtras'],
+  ['app/lib/v30Languages.base.mjs','modules/language/v30Languages.base'],
+  ['app/lib/v30ComponentTranslations.mjs','modules/language/v35ComponentTranslations'],
+  ['app/lib/v35ComponentTranslations.mjs','modules/language/v35ComponentTranslations'],
+  ['app/lib/v30ComponentTranslations.base.mjs','modules/language/v30ComponentTranslations.base'],
+  ['app/lib/v31PromoTranslations.mjs','modules/pricing/v31PromoTranslations'],
+  ['app/lib/officeExports.js','modules/services/officeExports']
 ]) assert.match(read(compat),new RegExp(modulePath.replaceAll('/','\\/')))
 
-console.log('V46 modular-boundary guard passed: thin page entry, workspace ownership, module boundaries, single language-menu back control, tester lock and compatibility adapters verified.')
+for(const path of [
+  'app/lib/v30Languages.mjs','app/lib/v36Languages.mjs','app/lib/v35Languages.mjs','app/lib/v35RoBgExtras.mjs','app/lib/v30Languages.base.mjs',
+  'app/lib/v30ComponentTranslations.mjs','app/lib/v35ComponentTranslations.mjs','app/lib/v30ComponentTranslations.base.mjs','app/lib/v31PromoTranslations.mjs','app/lib/officeExports.js'
+]) assert.ok(read(path).length<140,`${path} should be a thin compatibility adapter`)
+
+console.log('V46 modular-boundary guard passed: thin page entry, domain-owned language/pricing catalogs, service ownership, single language-menu back control, tester lock and compatibility adapters verified.')
