@@ -5,19 +5,11 @@ on:
     branches: [v46-navigation-clean]
     paths:
       - '.github/workflows/v46-refactor-workspace.yml'
-      - 'scripts/v46_refactor_workspace_services.mjs'
-      - 'scripts/v46_fix_service_guard.mjs'
-      - 'scripts/v46_refactor_upload_module.mjs'
-      - 'scripts/v46_refactor_workspace_catalogs.mjs'
-      - 'scripts/v46_extract_domain_catalogs.mjs'
-      - 'scripts/v46_extract_workspace_shell.mjs'
-      - 'scripts/v46_extract_auth_surface.mjs'
-      - 'scripts/v46_consolidate_workspace_shell.mjs'
-      - 'scripts/v46_extract_public_landing.mjs'
-      - 'scripts/v46_direct_public_interactions.mjs'
-      - 'scripts/v46_embed_public_modules.mjs'
-      - 'scripts/test_v44_language_order.mjs'
-      - 'scripts/test_v46_modular_boundaries.mjs'
+      - 'app/**'
+      - 'scripts/v46_*.mjs'
+      - 'scripts/test_*.mjs'
+      - 'package.json'
+      - 'package-lock.json'
   workflow_dispatch:
 
 permissions:
