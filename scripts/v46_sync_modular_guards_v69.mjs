@@ -28,7 +28,7 @@ patch('scripts/test_v46_modular_boundaries.mjs',[
   ["assert.match(publicLanguageModules,/customerModuleSlot/)\nassert.match(publicLanguageModules,/\\{customerModule\\}/)", "assert.doesNotMatch(publicLanguageModules,/customerModuleSlot|\\{customerModule\\}/)\nassert.match(publicLanding,/<ProblemNavigator outputLanguage=\\{outputLanguage\\}/)"],
   ["assert.match(publicLanguageModules,/returnToStart/)", "assert.match(publicLanguageModules,/returnToGerman/)\nassert.match(publicLanguageModules,/onLanguageChange\\('de'\\)/)\nassert.match(publicLanguageModules,/onOutputLanguageChange\\('de'\\)/)"],
   ["assert.match(publicLanguageModules,/customerModuleSlot/)", "assert.doesNotMatch(publicLanguageModules,/customerModuleSlot/)"],
-  ["assert.match(currentCss,/\\.customerModuleSlot\\{/)", "assert.match(currentCss,/\\.publicWelcome\\{/)"]
+  ["assert.match(currentCss,/\\.customerModuleSlot/)", "assert.match(currentCss,/\\.publicWelcome/)"]
 ])
 
 patch('scripts/test_v56_modular_parity.mjs',[
