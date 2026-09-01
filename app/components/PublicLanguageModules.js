@@ -17,6 +17,19 @@ const copy={
   bg:{welcome:'Добре дошли в AS Gold – радваме се, че сте тук.',interfaceTitle:'1. Език на интерфейса',interfaceLabel:'Интерфейс',outputTitle:'2. Език на резултатите и клиентите',outputLabel:'Език на резултата',outputHelp:'Документите, резултатите и писмата за клиенти или други лица се създават на {language}. Интерфейсът остава независим.',presenter:'Кой да обясни AS Gold?',female:'Обяснява жена',male:'Обяснява мъж',play:'Пусни обяснителното видео',back:'Назад'}
 }
 
+const warmWelcome={
+  de:'Herzlich willkommen bei AS Gold – hier sind Sie richtig und finden in Ruhe den nächsten Schritt.',
+  en:'A warm welcome to AS Gold – you are in the right place to find your next step at your own pace.',
+  fr:'Bienvenue chez AS Gold – vous êtes au bon endroit pour trouver sereinement la prochaine étape.',
+  tr:'AS Gold’a içtenlikle hoş geldiniz – bir sonraki adımınızı sakince bulmak için doğru yerdesiniz.',
+  pl:'Serdecznie witamy w AS Gold – jesteś we właściwym miejscu, aby spokojnie znaleźć kolejny krok.',
+  ru:'Добро пожаловать в AS Gold — здесь вы спокойно найдёте правильный следующий шаг.',
+  ar:'أهلاً وسهلاً بك في AS Gold — أنت في المكان المناسب لتجد خطوتك التالية بهدوء.',
+  fa:'صمیمانه به AS Gold خوش آمدید — اینجا جای مناسبی است تا با آرامش گام بعدی را پیدا کنید.',
+  ro:'Bine ați venit la AS Gold – sunteți în locul potrivit pentru a găsi în liniște următorul pas.',
+  bg:'Добре дошли в AS Gold – тук сте на правилното място, за да намерите спокойно следващата стъпка.'
+}
+
 export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange}){
   const [presenter,setPresenter]=useState('female')
   const text=copy[language]||copy.de
@@ -45,7 +58,7 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
   }
 
   return <section className="publicLanguageModules" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
-    <p className="publicWelcome"><span aria-hidden="true">👋</span> {text.welcome}</p>
+    <p className="publicWelcome"><span aria-hidden="true">👋</span> {warmWelcome[language]||warmWelcome.de}</p>
     <div className="publicLanguageModule interfaceModule">
       <strong className="publicLanguageTitle">{text.interfaceTitle}</strong>
       <div className="publicLanguageMainRow">

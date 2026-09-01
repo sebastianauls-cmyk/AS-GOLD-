@@ -136,7 +136,8 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .publicActions{display:flex;justify-content:flex-end;align-items:center;gap:9px;flex-wrap:wrap}
 .publicActions a{min-height:42px;display:grid;place-items:center;padding:8px 12px;border:1px solid #e1e3e7;border-radius:10px;background:#fff;color:#374151;text-decoration:none;font-weight:750}
 .publicLanguageModules{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;width:100%}
-.publicWelcome{grid-column:1/-1;margin:0;padding:0 4px;color:#6a5520;font-size:.9rem;font-weight:750;line-height:1.4}
+.publicWelcome{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:0;padding:12px 14px;border:1px solid #e2ca8d;border-radius:14px;background:linear-gradient(135deg,#fff7d9,#fffdf7);box-shadow:0 6px 18px rgba(83,63,20,.08);color:#594516;font-size:1.08rem;font-weight:820;line-height:1.45}
+.publicWelcome span{font-size:1.35rem;line-height:1}
 .publicLanguageModule{min-width:0;padding:14px;border:1px solid #d9c792;border-radius:16px;background:#fffdf7;box-shadow:0 5px 18px rgba(27,31,37,.06)}
 .publicLanguageTitle{display:block;margin-bottom:9px;color:#443817;font-size:1rem}
 .publicLanguageMainRow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
