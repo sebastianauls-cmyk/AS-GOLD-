@@ -91,3 +91,11 @@ Mehrere vollständige Vercel-Preview-Builds der Branch sind nach den bisherigen 
 ## Freigaberegel
 
 Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule getrennt sind, die verbliebenen globalen Korrekturschichten entfernt oder bewusst begründet sind und die komplette Build-/Regressionskette ohne Fehler durchläuft, darf der Stand kontrolliert auf `main` übernommen werden. Der Testerzugang bleibt bis dahin geschlossen.
+
+
+### V46 Dokumentmodul – Upload-Konfiguration
+
+- Die Upload-Konfiguration wurde aus WorkspaceApp herausgelöst und liegt führend unter app/modules/documents/uploadConfig.js.
+- Dateigrenze, unterstützte Dateiendungen, Accept-Liste und lokalisierte Upload-Hinweise besitzen damit eine eindeutige fachliche Zuständigkeit im Dokumentmodul.
+- WorkspaceApp konsumiert diese Werte nur noch über die Modulgrenze.
+- Die End-to-End-, Prelaunch-, Praxis-Simulations- und V46-Modulguards wurden auf die neue Zuständigkeit umgestellt.

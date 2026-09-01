@@ -26,6 +26,7 @@ for(const path of [
   'app/modules/cases/V24Workspace.js',
   'app/modules/cases/V42ActionableGaps.js',
   'app/modules/documents/V26DocumentAnalysis.js',
+  'app/modules/documents/uploadConfig.js',
   'app/modules/pricing/PromoCodeControl.js',
   'app/modules/pricing/v31PromoTranslations.mjs',
   'app/modules/compliance/LegalDocument.js',
@@ -47,6 +48,13 @@ const workspace=read('app/modules/workspace/WorkspaceApp.js')
 assert.match(workspace,/signInWithPassword/)
 assert.match(workspace,/DocumentSection/)
 assert.match(workspace,/doExport/)
+assert.match(workspace,/\.\.\/services\/supabaseClient/)
+assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
+assert.doesNotMatch(workspace,/const supabase = createClient\(/)
+assert.match(workspace,/invokeDocumentAnalysis/)
+assert.match(workspace,/\.\.\/documents\/uploadConfig/)
+assert.doesNotMatch(workspace,/const maxUploadBytes =/)
 assert.match(workspace,/\.\.\/services\/supabaseClient/)
 assert.match(workspace,/\.\.\/services\/documentAnalysis/)
 assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)

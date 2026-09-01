@@ -56,3 +56,5 @@ This directory is the target ownership structure for the V46 modularization. New
 - Run the final full preview build plus mobile/navigation regression and functional smoke checks before touching main or reopening tester access.
 
 Current gate: latest V46 compliance/service modularization build is green; `main` remains unchanged and tester access remains closed until all release blockers above are cleared.
+
+- `documents/uploadConfig.js`: owns upload limits, accepted file extensions and localized upload validation copy; WorkspaceApp only consumes this domain configuration.

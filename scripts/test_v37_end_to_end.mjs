@@ -9,6 +9,7 @@ const firstActionCompatibility=fs.readFileSync('app/components/V37FirstAction.js
 const problem=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8')
 const problemCompatibility=fs.readFileSync('app/components/ProblemNavigator.js','utf8')
 const analysisService=fs.readFileSync('app/modules/services/documentAnalysis.js','utf8')
+const uploadConfig=fs.readFileSync('app/modules/documents/uploadConfig.js','utf8')
 
 const mustContain=(source,needle,label)=>{
   if(!source.includes(needle)) throw new Error(`V37 E2E guard: missing ${label}: ${needle}`)
@@ -32,7 +33,7 @@ mustContain(page,"setScreen('login')",'login route')
 mustContain(page,'signInWithPassword','password login')
 mustContain(page,'auth.signUp','registration action')
 
-for(const ext of ['pdf','jpg','png','docx','xlsx','pptx','eml','msg']) mustContain(page,`'${ext}'`,`upload extension ${ext}`)
+for(const ext of ['pdf','jpg','png','docx','xlsx','pptx','eml','msg']) mustContain(uploadConfig,`'${ext}'`,`upload extension ${ext}`)
 mustContain(page,"action==='scan'||action==='upload'",'quick upload route')
 mustContain(page,'DocumentSection','document workspace')
 
