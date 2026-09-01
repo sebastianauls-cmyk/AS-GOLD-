@@ -57,7 +57,14 @@ assert.match(terms,/keine automatische Außenwirkung/i)
 assert.match(aiTransparency,/keine automatische Entscheidung und keine Rechtsberatung/i)
 assert.match(aiTransparency,/store: false/)
 assert.match(cookies,/Kein Marketing-Tracking/)
-assert.match(testing,/Bezahlfunktion bleibt deaktiviert/)
+const testerPaused=/Testerzugang vorübergehend geschlossen/.test(testing)
+if(testerPaused){
+  assert.match(testing,/Aktuell keine Testerfreigabe/)
+  assert.match(testing,/Bitte noch keinen Test starten und keine Testdaten hochladen/)
+  assert.doesNotMatch(testing,/\?start=register/,'paused tester page must not expose the public registration start CTA')
+}else{
+  assert.match(testing,/Bezahlfunktion bleibt deaktiviert/)
+}
 assert.match(legalHub,/Vor einem späteren Bezahlbetrieb/)
 
 // Upload, error/empty/busy handling and export routes
@@ -96,4 +103,4 @@ assert.match(integrationTokens,/createHash\('sha256'\)/)
 // Existing product/readiness guards must stay mandatory before production builds
 for(const guard of ['test:v37-readiness','test:v38-deadlines','test:v38-assessments','test:v38-next-step','test:v38-simulation','test:v38-mobile','test:v38-accessibility']) assert.match(packageJson.scripts.prebuild,new RegExp(guard.replace(':','\\:')))
 
-console.log('V38 pre-launch guard passed: auth, legal/test-data gates, payment lock, exports, security headers, OAuth safeguards, deletion/audit controls and readiness guards verified.')
+console.log('V38 pre-launch guard passed: auth, legal/test-data gates, payment lock, paused-or-open tester safety, exports, security headers, OAuth safeguards, deletion/audit controls and readiness guards verified.')
