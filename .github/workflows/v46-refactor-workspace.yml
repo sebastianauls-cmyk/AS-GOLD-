@@ -12,6 +12,7 @@ on:
       - 'scripts/v46_extract_domain_catalogs.mjs'
       - 'scripts/v46_extract_workspace_shell.mjs'
       - 'scripts/v46_extract_auth_surface.mjs'
+      - 'scripts/v46_consolidate_workspace_shell.mjs'
   workflow_dispatch:
 
 permissions:
@@ -49,6 +50,9 @@ jobs:
       - name: Extract authentication surface
         run: node scripts/v46_extract_auth_surface.mjs
 
+      - name: Consolidate protected workspace shell
+        run: node scripts/v46_consolidate_workspace_shell.mjs
+
       - name: Install dependencies
         run: npm ci
 
@@ -74,6 +78,7 @@ jobs:
                   app/modules/workspace/stateConfig.js \
                   app/modules/workspace/AppLogo.js \
                   app/modules/workspace/ProtectedWorkspaceShell.js \
+                  app/modules/workspace/LoadingSurface.js \
                   app/modules/language/OutputLanguageBridge.js \
                   app/modules/auth/passwordUi.js \
                   app/modules/auth/PasswordField.js \
@@ -92,5 +97,5 @@ jobs:
                   scripts/test_v46_modular_boundaries.mjs \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md \
                   app/modules/README.md
-          git commit -m 'V46 persist modular auth readiness guard'
+          git commit -m 'V46 consolidate protected workspace shell'
           git push origin HEAD:v46-navigation-clean
