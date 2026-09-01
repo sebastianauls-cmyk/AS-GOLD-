@@ -11,7 +11,8 @@ const navigator=read('app/components/ProblemNavigator.js')
 const intro=read('app/components/ProductIntroCompact.js')
 const jump=read('app/modules/public/CaseChoiceJumpEnhancer.js')
 const jumpCompatibility=read('app/components/CaseChoiceJumpEnhancer.js')
-const title=read('app/components/HeroTitleStabilizer.js')
+const title=read('app/modules/public/HeroTitleStabilizer.js')
+const titleCompatibility=read('app/components/HeroTitleStabilizer.js')
 const languages=read('app/lib/problemNavigatorLanguagesV36.mjs')
 
 // Public customer path must have exactly one active problem navigator.
@@ -27,7 +28,9 @@ const introPos=layout.indexOf('<ProductIntroCompact/>')
 const jumpPos=layout.indexOf('<CaseChoiceJumpEnhancer/>')
 expect(firstActionPos>=0&&navPos>firstActionPos&&introPos>navPos&&jumpPos>introPos,'layout order must be first action -> problem navigator -> product intro -> case jump enhancer')
 expect(layout.includes("./modules/public/CaseChoiceJumpEnhancer"),'case-choice behavior must be owned by public module')
+expect(layout.includes("./modules/public/HeroTitleStabilizer"),'hero title behavior must be owned by public module')
 expect(jumpCompatibility.includes("../modules/public/CaseChoiceJumpEnhancer"),'legacy case-choice import must remain a compatibility re-export')
+expect(titleCompatibility.includes("../modules/public/HeroTitleStabilizer"),'legacy hero-title import must remain a compatibility re-export')
 
 // Mobile input must be a stable controlled React textarea with explicit help.
 expect(navigator.includes('<textarea ref={textRef} value={value} onChange='),'problem input must remain a controlled textarea')
