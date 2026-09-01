@@ -3,6 +3,7 @@ import fs from 'node:fs'
 const workspacePath='app/modules/workspace/WorkspaceApp.js'
 const hookPath='app/modules/language/useLanguagePreferences.js'
 const guardPath='scripts/test_v46_modular_boundaries.mjs'
+const parityPath='scripts/test_v56_modular_parity.mjs'
 const readmePath='app/modules/README.md'
 
 const workspace=fs.readFileSync(workspacePath,'utf8')
@@ -50,6 +51,19 @@ if(!guard.includes('const languagePreferences=')){
   guard=guard.replace(workspaceAnchor,`${workspaceAnchor}\n${hookGuard}`)
 }
 fs.writeFileSync(guardPath,guard)
+
+let parity=fs.readFileSync(parityPath,'utf8')
+const parityWorkspace="const workspace=fs.readFileSync('app/modules/workspace/WorkspaceApp.js','utf8')"
+const parityLanguage="const languagePreferences=fs.readFileSync('app/modules/language/useLanguagePreferences.js','utf8')"
+if(!parity.includes(parityLanguage)){
+  if(!parity.includes(parityWorkspace)) throw new Error('V56 parity workspace anchor missing')
+  parity=parity.replace(parityWorkspace,`${parityWorkspace}\n${parityLanguage}`)
+}
+parity=parity.replace("assert.match(workspace,/document\\.documentElement\\.dataset\\.outputLanguage=outputLanguage/)","assert.match(languagePreferences,/document\\.documentElement\\.dataset\\.outputLanguage=outputLanguage/)")
+parity=parity.replace("assert.match(workspace,/CustomEvent\\('asgold:output-language'/)","assert.match(languagePreferences,/CustomEvent\\('asgold:output-language'/)")
+if(!parity.includes("assert.match(languagePreferences,/document\\.documentElement\\.dataset\\.outputLanguage=outputLanguage/)")) throw new Error('V56 dataset parity assertion was not moved')
+if(!parity.includes("assert.match(languagePreferences,/CustomEvent\\('asgold:output-language'/)")) throw new Error('V56 output event parity assertion was not moved')
+fs.writeFileSync(parityPath,parity)
 
 let readme=fs.readFileSync(readmePath,'utf8')
 const languageStatus='- `language/`: owns LanguageSwitcher, ExplainerVideoDialog, LegalLanguageContext, output-language helpers, the complete language catalog chain and component translation catalogs. V43/V44 DOM correction layers are removed. Output-language transport no longer relies on DOM polling or global fetch interception.'
