@@ -9,6 +9,7 @@ on:
       - 'scripts/v46_fix_service_guard.mjs'
       - 'scripts/v46_refactor_upload_module.mjs'
       - 'scripts/v46_refactor_workspace_catalogs.mjs'
+      - 'scripts/v46_extract_domain_catalogs.mjs'
   workflow_dispatch:
 
 permissions:
@@ -37,6 +38,9 @@ jobs:
       - name: Extract static UI and workspace catalogs
         run: node scripts/v46_refactor_workspace_catalogs.mjs
 
+      - name: Extract pricing, public, compliance and state catalogs
+        run: node scripts/v46_extract_domain_catalogs.mjs
+
       - name: Install dependencies
         run: npm ci
 
@@ -59,9 +63,13 @@ jobs:
           git add app/layout.js \
                   app/modules/workspace/WorkspaceApp.js \
                   app/modules/workspace/workspaceText.js \
+                  app/modules/workspace/stateConfig.js \
                   app/modules/language/OutputLanguageBridge.js \
                   app/modules/auth/passwordUi.js \
                   app/modules/public/publicUi.js \
+                  app/modules/public/catalog.js \
+                  app/modules/pricing/catalog.js \
+                  app/modules/compliance/workspaceControlText.js \
                   app/modules/documents/uploadConfig.js \
                   app/modules/documents/exportUi.js \
                   scripts/test_v37_end_to_end.mjs \
@@ -71,5 +79,5 @@ jobs:
                   scripts/test_v46_modular_boundaries.mjs \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md \
                   app/modules/README.md
-          git commit -m 'V46 extract static workspace catalogs'
+          git commit -m 'V46 extract domain catalogs from WorkspaceApp'
           git push origin HEAD:v46-navigation-clean
