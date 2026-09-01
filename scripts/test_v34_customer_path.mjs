@@ -15,7 +15,8 @@ const jump=read('app/modules/public/CaseChoiceJumpEnhancer.js')
 const jumpCompatibility=read('app/components/CaseChoiceJumpEnhancer.js')
 const title=read('app/modules/public/HeroTitleStabilizer.js')
 const titleCompatibility=read('app/components/HeroTitleStabilizer.js')
-const languages=read('app/lib/problemNavigatorLanguagesV36.mjs')
+const languages=read('app/modules/public/problemNavigatorLanguagesV36.mjs')
+const languagesCompatibility=read('app/lib/problemNavigatorLanguagesV36.mjs')
 
 expect((layout.match(/<ProblemNavigator\s*\/>/g)||[]).length===1,'ProblemNavigator must be mounted exactly once')
 expect(!layout.includes('FreeEntryAfterRecommendation'),'legacy free-entry helper must not be mounted')
@@ -34,6 +35,7 @@ expect(navigatorCompatibility.includes("../modules/public/ProblemNavigator"),'le
 expect(introCompatibility.includes("../modules/public/ProductIntroCompact"),'legacy product intro import must remain a compatibility re-export')
 expect(jumpCompatibility.includes("../modules/public/CaseChoiceJumpEnhancer"),'legacy case-choice import must remain a compatibility re-export')
 expect(titleCompatibility.includes("../modules/public/HeroTitleStabilizer"),'legacy hero-title import must remain a compatibility re-export')
+expect(languagesCompatibility.includes("../modules/public/problemNavigatorLanguagesV36.mjs"),'legacy problem-language path must remain a compatibility re-export')
 
 expect(navigator.includes('<textarea ref={textRef} value={value} onChange='),'problem input must remain a controlled textarea')
 expect(navigator.includes('So funktioniert die Eingabe:'),'German input explanation is missing')
