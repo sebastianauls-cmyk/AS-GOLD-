@@ -8,6 +8,7 @@ import { acknowledgeLegalSettings, authorizeDocumentAnalysis } from '../services
 import { createWorkspaceDocumentSignedUrl, recordExportEntry, updateDocumentRecord, uploadWorkspaceDocument } from '../services/documentRepository'
 import { approveApprovalRecord, createApprovalRecord, rejectApprovalRecord, updateApprovalRecord } from '../services/approvalRepository'
 import { getAuthSession, registerTestAccount, sendPasswordReset, signInSession, signOutSession, watchAuthState } from '../services/authRepository'
+import { createAccountDataArtifact, createWorkspaceExportArtifact, downloadExportArtifact } from '../services/exportService'
 import { invokeDocumentAnalysis } from '../services/documentAnalysis'
 import { allowedUploadAccept, allowedUploadExtensions, maxUploadBytes, uploadUi } from '../documents/uploadConfig'
 import { appText } from './workspaceText'
@@ -559,40 +560,17 @@ export default function Home(){
     const ex=exportUi[outputLanguage]||exportUi.de
     const outputCore=getV24Copy(outputLanguage)
     const outputApprovalUi=getV25ApprovalCopy(outputLanguage)
-    const localStatus=s=>s==='open'?ex.open:s==='closed'?ex.closed:s||'—'
-    const localLight=s=>s==='yellow'?`🟡 ${ex.yellow}`:s==='green'?`🟢 ${ex.green}`:s==='red'?`🔴 ${ex.red}`:s||'—'
-    const caseDocuments=ref.kind==='case'?data.documents.filter(item=>item.case_id===ref.item.id):[]
-    const caseAssessments=ref.kind==='case'?data.assessments.filter(item=>item.case_id===ref.item.id):[]
-    const caseSources=ref.kind==='case'?data.sourceStatus.filter(item=>item.case_id===ref.item.id):[]
-    const caseApprovals=ref.kind==='case'?data.approvals.filter(item=>item.case_id===ref.item.id):[]
-    const rows=ref.kind==='case'
-      ? [[ex.caseTitle,''],[ex.case,ref.item.title||ex.case],[ex.status,localStatus(ref.item.status)],[ex.traffic,localLight(ref.item.traffic_light)],[outputCore.goal,ref.item.goal||''],[ex.summary,ref.item.summary||''],[outputCore.deadline,ref.item.deadline_at?new Date(ref.item.deadline_at).toLocaleString():''],[outputCore.nextAction,ref.item.next_action||''],[ex.documents,caseDocuments.map(item=>item.title).join(', ')||ex.none],[outputCore.currentAssessments,caseAssessments.map(item=>`${localLight(item.traffic_light)} · ${item.title}: ${item.reasoning||''}${item.next_step?` · ${outputCore.nextAction}: ${item.next_step}`:''}`).join('\n')||ex.none],[outputCore.sourceBasis,caseSources.map(item=>`${item.source_label||item.source_kind}: ${item.status}${item.details?` · ${item.details}`:''}`).join('\n')||ex.none],[outputApprovalUi.title,caseApprovals.map(item=>`${item.subject||item.approval_type} · ${outputApprovalUi[item.status]||item.status} · ${outputApprovalUi.revision} ${item.preview_revision}`).join('\n')||ex.none]]
-      : [[ex.documentTitle,''],[ex.document,ref.item.title||ex.document],[ex.documentType,ref.item.document_type||''],[ex.documentDate,ref.item.document_date||''],[ex.analysis,ref.item.analysis_summary||ex.noAnalysis],[ex.nextStep,ref.item.analysis_next_step||''],[ex.extracted,ref.item.extracted_text||'']]
-    const base=(ref.item.title||(ref.kind==='case'?'Fall':'Dokument')).replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g,'_').slice(0,80)
     try{
-      if(type==='docx'){
-        const {Document,Packer,Paragraph,TextRun}=await import('docx')
-        const children=rows.flatMap((r,i)=>i===0?[new Paragraph({children:[new TextRun({text:r[0],bold:true,size:32})]})]:[new Paragraph({children:[new TextRun({text:`${r[0]}: `,bold:true}),new TextRun(String(r[1]||''))]})])
-        const blob=await Packer.toBlob(new Document({sections:[{children}]})); downloadBlob(blob,`${base}.docx`)
-      } else if(type==='pdf'){
-        const {jsPDF}=await import('jspdf'); const pdf=new jsPDF(); let y=18
-        rows.forEach((r,i)=>{const line=i===0?r[0]:`${r[0]}: ${r[1]||''}`;const split=pdf.splitTextToSize(String(line),175);if(y+7*split.length>280){pdf.addPage();y=18}pdf.setFont(undefined,i===0?'bold':'normal');pdf.text(split,18,y);y+=7*split.length+4}); pdf.save(`${base}.pdf`)
-      } else if(type==='xlsx'){
-        const {createXlsxBlob}=await import('./lib/officeExports')
-        downloadBlob(await createXlsxBlob(rows),`${base}.xlsx`)
-      } else if(type==='pptx'){
-        const {createPptxBlob}=await import('./lib/officeExports')
-        downloadBlob(await createPptxBlob(rows),`${base}.pptx`)
-      } else if(type==='csv'){
-        const q=v=>`"${String(v??'').replace(/"/g,'""')}"`; downloadBlob(new Blob(['\uFEFF'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),`${base}.csv`)
-      } else if(type==='txt') downloadBlob(new Blob([rows.map((r,i)=>i===0?r[0]:`${r[0]}: ${r[1]||''}`).join('\r\n\r\n')],{type:'text/plain;charset=utf-8'}),`${base}.txt`)
+      const artifact=await createWorkspaceExportArtifact({ref,type,data,copy:{ex,core:outputCore,approvalUi:outputApprovalUi}})
+      downloadExportArtifact(artifact)
       const {error:exportLogError}=await recordExportEntry(supabase,{ref,type})
       if(exportLogError) throw exportLogError
       recordLocalAction('export_created')
       const auditSaved=await recordServerAudit('export_created',{format:type.toUpperCase()},ref.kind,ref.item.id)
-      setMessage(auditSaved?`${a.export}: ${type.toUpperCase()} ✓`:`${a.export}: ${type.toUpperCase()} ✓ · ${sct.auditFailed}`)
-    } catch(err){ setMessage(`${a.export}: ${err.message}`) }
+      setMessage(a.export+': '+type.toUpperCase()+' ✓'+(auditSaved?'':' · '+sct.auditFailed))
+    } catch(err){ setMessage(a.export+': '+err.message) }
   }
+
   async function exportMyData(){
     const packageData={
       product:'AS Gold',
@@ -603,13 +581,11 @@ export default function Home(){
       retention_note:a.pauseInfo,
       data:{cases:data.cases,clients:data.clients,documents:data.documents,assessments:data.assessments,source_status:data.sourceStatus,approvals:data.approvals}
     }
-    const blob=new Blob([JSON.stringify(packageData,null,2)],{type:'application/json;charset=utf-8'})
-    downloadBlob(blob,`AS_Gold_Datenexport_${new Date().toISOString().slice(0,10)}.json`)
+    downloadExportArtifact(createAccountDataArtifact(packageData))
     recordLocalAction('account_data_export')
     await recordServerAudit('account_data_export',{format:'JSON'},'account',null)
-    setMessage(`${lt.dataExport} ✓`)
+    setMessage(lt.dataExport+' ✓')
   }
-  function downloadBlob(blob,name){const u=URL.createObjectURL(blob);const a=document.createElement('a');a.href=u;a.download=name;a.click();URL.revokeObjectURL(u)}
 
   function handleQuickAction(action,item=null){
     setSelectedClient(null); setSelectedDocument(null); setSelectedApproval(null)

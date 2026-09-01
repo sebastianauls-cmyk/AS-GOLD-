@@ -94,3 +94,5 @@ The workspace controller now delegates repeated shell markup to explicit compone
 - `services/`: transactional pricing, compliance, approval and document storage/database operations are now isolated behind repository/service boundaries; WorkspaceApp retains workflow state and user-facing validation only.
 
 - `services/authRepository.js`: session lookup/subscription, sign-in, reset, test registration and sign-out are isolated from WorkspaceApp; AuthSurface remains presentation-only.
+
+- `services/exportService.js`: workspace and account export artifact generation/download is isolated from WorkspaceApp; the controller only applies permissions, audit logging and user feedback.
