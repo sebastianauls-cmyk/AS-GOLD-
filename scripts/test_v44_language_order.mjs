@@ -3,6 +3,7 @@ import fs from 'node:fs'
 
 const workspace=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceApp.js',import.meta.url),'utf8')
 const publicSurface=fs.readFileSync(new URL('../app/modules/public/PublicLanding.js',import.meta.url),'utf8')
+const publicHeader=fs.readFileSync(new URL('../app/modules/public/PublicHeader.js',import.meta.url),'utf8')
 const languageSurface=fs.readFileSync(new URL('../app/modules/public/PublicLanguageModules.js',import.meta.url),'utf8')
 const pageEntry=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
@@ -12,7 +13,8 @@ const interfaceControl=languageSurface.indexOf('<LanguageSwitcher value={languag
 const outputControl=languageSurface.indexOf('<LanguageSwitcher value={outputLanguage} onChange={onOutputLanguageChange}')
 
 assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/,'root page must delegate to workspace module')
-assert.match(publicSurface,/PublicLanguageModules/,'public landing must compose the language module directly')
+assert.match(publicSurface,/PublicHeader/,'public landing must compose the public header directly')
+assert.match(publicHeader,/PublicLanguageModules/,'public header must compose the language module directly')
 assert.ok(interfaceControl>=0,'public interface-language control must exist in its owning module')
 assert.ok(outputControl>interfaceControl,'public output-language control must follow interface-language control in source order')
 assert.doesNotMatch(languageSurface,/MutationObserver|createPortal/,'language controls must render directly without DOM rearrangement')
