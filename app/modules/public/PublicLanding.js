@@ -7,7 +7,6 @@ import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
 import { jumpToPublicCaseResult } from './caseNavigation'
 import { orderCasesByResearch } from './casePriorityV56.mjs'
-import { getProblemLanguageProfile } from './problemNavigatorLanguagesV36.mjs'
 import { V37FirstAction } from './V37FirstAction'
 import { ProblemNavigator } from './ProblemNavigator'
 import { ExplainerVideo } from './ExplainerVideo'
@@ -15,14 +14,13 @@ import { ProductIntroCompact } from './ProductIntroCompact'
 import { PublicLanguageModules } from './PublicLanguageModules'
 
 export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
-  const hero=heroTitleCopy[language]||heroTitleCopy.de
-  const audience=audienceCopy[language]||audienceCopy.de
+  const hero=heroTitleCopy[outputLanguage]||heroTitleCopy.de
+  const audience=audienceCopy[outputLanguage]||audienceCopy.de
   const outputLanguageLabel=({de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български'})[outputLanguage]||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
-  const problemUi=getProblemLanguageProfile(outputLanguage).ui
   const [explainerSignal,setExplainerSignal]=useState(0)
-
-  const customerModule=<ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase} voiceSignal={explainerSignal}/>
+  const [problemVoiceSignal,setProblemVoiceSignal]=useState(0)
+  const [problemFocusSignal,setProblemFocusSignal]=useState(0)
 
   return <>
     <header className="publicTop">
@@ -34,7 +32,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
           <button className="secondary" onClick={()=>setScreen('register')}>{t.register}</button>
           <button className="primary" onClick={()=>setScreen('login')}>{t.login}</button>
         </nav>
-        <PublicLanguageModules language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onPlayExplainer={()=>setExplainerSignal(value=>value+1)} customerModule={customerModule}/>
+        <PublicLanguageModules language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onPlayExplainer={()=>setExplainerSignal(value=>value+1)}/>
       </div>
     </header>
     <main>
@@ -51,10 +49,10 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <div className="eyebrow">{a.eyebrow}</div>
             <h1>{hero.title}</h1>
             <p className="lead">{hero.lead}</p>
-            <V37FirstAction language={language} onRegister={()=>setScreen('register')}/>
-            <button type="button" className="secondary heroVoiceShortcut" aria-controls="asgold-problem-navigator-react" onClick={()=>setExplainerSignal(value=>value+1)}>🎙 {problemUi.voice}</button>
-            <ExplainerVideo key={`${language}-${explainerSignal}`} language={language} openSignal={explainerSignal}/>
-            <ProductIntroCompact language={language}/>
+            <ProductIntroCompact language={outputLanguage}/>
+            <V37FirstAction language={outputLanguage} onRegister={()=>setScreen('register')} onFocusProblem={()=>setProblemFocusSignal(value=>value+1)} onSpeakProblem={()=>setProblemVoiceSignal(value=>value+1)}/>
+            <ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase} voiceSignal={problemVoiceSignal} focusSignal={problemFocusSignal}/>
+            <ExplainerVideo key={`${outputLanguage}-${explainerSignal}`} language={outputLanguage} openSignal={explainerSignal}/>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
               <button className="secondary btn" onClick={()=>setScreen('register')}>{t.freeCta}</button>
@@ -73,7 +71,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
         <div className="wrap">
           <div className="caseIntro"><div className="eyebrow">{cd.eyebrow}</div><h2>{cd.title}</h2><p className="lead">{cd.lead}</p></div>
           <section id="asgold-user-audience" style={{margin:'0 0 34px',padding:'24px',border:'1px solid #e2d6b7',borderRadius:'20px',background:'linear-gradient(135deg,#fffaf0,#fff)'}}>
-            <div className="eyebrow">{audience.title}</div><h2 style={{margin:'8px 0 8px',fontSize:'clamp(1.7rem,5vw,2.5rem)'}}>{audience.title}</h2><p style={{margin:'0 0 18px',color:'#5f6976',lineHeight:1.5}}>{audience.lead}</p>
+            <h2 style={{margin:'8px 0 8px',fontSize:'clamp(1.7rem,5vw,2.5rem)'}}>{audience.title}</h2><p style={{margin:'0 0 18px',color:'#5f6976',lineHeight:1.5}}>{audience.lead}</p>
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))',gap:'12px'}}>{audience.items.map(([title,text])=><article key={title} style={{background:'#fff',border:'1px solid #e3e5e9',borderRadius:'14px',padding:'16px'}}><b style={{display:'block',marginBottom:'7px',color:'#5e4818'}}>{title}</b><span style={{color:'#626c78',lineHeight:1.45}}>{text}</span></article>)}</div>
           </section>
           <div className="audienceStrip" aria-label={pa.label}><b>{pa.label}</b><div>{pa.items.map(item=><span key={item}>✓ {item}</span>)}</div></div>
@@ -123,6 +121,6 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
         </div>
       </section>
     </main>
-    <LegalFooter language={language}/>
+    <LegalFooter language={outputLanguage}/>
   </>
 }

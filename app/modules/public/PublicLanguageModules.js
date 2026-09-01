@@ -17,7 +17,20 @@ const copy={
   bg:{interfaceTitle:'1. Език на интерфейса',interfaceLabel:'Интерфейс',outputTitle:'2. Език на резултатите и клиентите',outputLabel:'Език на резултата',outputHelp:'Документите, резултатите и писмата за клиенти или други лица се създават на {language}. Интерфейсът остава независим.',presenter:'Кой да обясни AS Gold?',female:'Обяснява жена',male:'Обяснява мъж',play:'Пусни обяснителното видео',back:'Назад'}
 }
 
-export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer,customerModule}){
+const warmWelcome={
+  de:'Herzlich willkommen bei AS Gold – hier sind Sie richtig und finden in Ruhe den nächsten Schritt.',
+  en:'A warm welcome to AS Gold – you are in the right place to find your next step at your own pace.',
+  fr:'Bienvenue chez AS Gold – vous êtes au bon endroit pour trouver sereinement la prochaine étape.',
+  tr:'AS Gold’a içtenlikle hoş geldiniz – bir sonraki adımınızı sakince bulmak için doğru yerdesiniz.',
+  pl:'Serdecznie witamy w AS Gold – jesteś we właściwym miejscu, aby spokojnie znaleźć kolejny krok.',
+  ru:'Добро пожаловать в AS Gold — здесь вы спокойно найдёте правильный следующий шаг.',
+  ar:'أهلاً وسهلاً بك في AS Gold — أنت في المكان المناسب لتجد خطوتك التالية بهدوء.',
+  fa:'صمیمانه به AS Gold خوش آمدید — اینجا جای مناسبی است تا با آرامش گام بعدی را پیدا کنید.',
+  ro:'Bine ați venit la AS Gold – sunteți în locul potrivit pentru a găsi în liniște următorul pas.',
+  bg:'Добре дошли в AS Gold – тук сте на правилното място, за да намерите спокойно следващата стъпка.'
+}
+
+export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer}){
   const [presenter,setPresenter]=useState('female')
   const text=copy[language]||copy.de
   const outputName=(outputLanguageNames[language]||outputLanguageNames.de)?.[outputLanguage]||outputLanguage
@@ -34,18 +47,21 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
 
   function playVideo(){onPlayExplainer?.({language,presenter})}
 
-  function returnToStart(){
+  function returnToGerman(){
+    onLanguageChange('de')
+    onOutputLanguageChange('de')
     const cleanUrl=`${window.location.pathname}${window.location.search}`
     if(window.location.hash)window.history.replaceState(window.history.state,'',cleanUrl)
     window.scrollTo({top:0,left:0,behavior:'instant'})
   }
 
-  return <section className="publicLanguageModules" aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
+  return <section className="publicLanguageModules" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
+    <p className="publicWelcome"><span aria-hidden="true">👋</span> {warmWelcome[language]||warmWelcome.de}</p>
+    <button type="button" className="publicBackButton" dir="ltr" onClick={returnToGerman} aria-label="Back to German – Oberfläche und Kundensprache auf Deutsch zurückstellen">← 🇩🇪 Back to German / Zurück zu Deutsch</button>
     <div className="publicLanguageModule interfaceModule">
       <strong className="publicLanguageTitle">{text.interfaceTitle}</strong>
       <div className="publicLanguageMainRow">
         <LanguageSwitcher value={language} onChange={onLanguageChange} label={text.interfaceLabel}/>
-        <button type="button" className="publicBackButton" onClick={returnToStart}>{language==='ar'||language==='fa'?'→':'←'} {text.back}</button>
       </div>
       <span className="publicPresenterLabel">{text.presenter}</span>
       <div className="publicPresenterRow" role="group" aria-label={text.presenter}>
@@ -59,7 +75,6 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
       <LanguageSwitcher value={outputLanguage} onChange={onOutputLanguageChange} label={text.outputLabel}/>
       <p>{text.outputHelp.replace('{language}',outputName)}</p>
       <span className="outputLanguageStatus" data-output-language-status aria-live="polite">✓ {text.outputLabel}: <b>{outputName}</b></span>
-      <div id="asgold-customer-module-slot" className="customerModuleSlot">{customerModule}</div>
     </div>
   </section>
 }

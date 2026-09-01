@@ -172,6 +172,22 @@ export default function Home(){
   const promoAllInvalid = !!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
   const promoSomeInvalid = !!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='invalid')
 
+  // Public/customer content follows the selected output language; the app interface stays independent.
+  const publicLanguage = outputLanguage
+  const publicT = ui[publicLanguage] || ui.de
+  const publicA = appText[publicLanguage] || appText.de
+  const publicLocalizedPlans = plans.map((p,index)=>{ const v=(planText[publicLanguage]||{})[p.key]; const j=(planJourney[publicLanguage]||planJourney.de)[p.key] || {}; const base=v?{...p,audience:v[0],checks:v[1],result:v[2],excluded:v[3]}:p; return {...base,...j,level:index+1} })
+  const publicPeriod = periodText[publicLanguage] || periodText.de
+  const publicJl = journeyLabels[publicLanguage] || journeyLabels.de
+  const publicRt = recommendationText[publicLanguage] || recommendationText.de
+  const publicTt = transparencyText[publicLanguage] || transparencyText.de
+  const publicCd = caseDiscoveryText[publicLanguage] || caseDiscoveryText.de
+  const publicOrderedPublicCases = orderCasesByResearch(publicCd.cases)
+  const publicPa = publicAudienceText[publicLanguage] || publicAudienceText.de
+  const publicActivePublicCase = publicOrderedPublicCases.find(item=>item.key===selectedPublicCase) || publicOrderedPublicCases[0]
+  const publicRecommendedPlan = publicLocalizedPlans.find(p=>p.key===recommendedTier) || publicLocalizedPlans[0]
+  const publicMonthsLabel = value => publicA.months.replace('{n}',value).replace('{plural}', value>1 ? (publicLanguage==='de'?'e':publicLanguage==='en'?'s':'') : '')
+
   useEffect(()=>{
     if(!user?.id) return
     try{
@@ -609,5 +625,5 @@ export default function Home(){
       :<ClientsSurface a={a} showClientForm={showClientForm} setShowClientForm={setShowClientForm} createClient={createClient} newClient={newClient} setNewClient={setNewClient} clients={data.clients} setSelectedClient={setSelectedClient} onBack={()=>setSection('dashboard')}/>}</>)
   }
 
-  return <PublicLanding t={t} a={a} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={setScreen} cd={cd} testerLinkText={testerLinkText} pa={pa} activePublicCase={activePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={tt} jl={jl} localizedPlans={localizedPlans} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} recommendedTier={recommendedTier} eur={eur} period={period} terms={terms} monthsLabel={monthsLabel}/>
+  return <PublicLanding t={publicT} a={publicA} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={setScreen} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
 }

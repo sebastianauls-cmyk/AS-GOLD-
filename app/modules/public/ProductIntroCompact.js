@@ -1,22 +1,11 @@
-const copy={
-  de:{title:'Was kann AS Gold?',lead:'AS Gold macht komplexe Vorgänge verständlich und bearbeitbar.',items:['Dokumente, E-Mails und Informationen zusammenführen','Fristen, Lücken, Widersprüche und Risiken erkennen','Ampelanalysen, nächste Schritte und Antwortschreiben erstellen','Ergebnisse exportieren und E-Mail, Cloud oder eigene Speicherorte anbinden']},
-  en:{title:'What can AS Gold do?',lead:'AS Gold makes complex matters clear and workable.',items:['Bring documents, emails and information together','Identify deadlines, gaps, contradictions and risks','Create traffic-light analyses, next steps and reply letters','Export results and connect email, cloud or your own storage']},
-  fr:{title:'Que peut faire AS Gold ?',lead:'AS Gold rend les dossiers complexes clairs et exploitables.',items:['Regrouper documents, e-mails et informations','Repérer délais, lacunes, contradictions et risques','Créer des analyses, prochaines étapes et lettres de réponse','Exporter les résultats et connecter e-mail, cloud ou stockage personnel']},
-  tr:{title:'AS Gold ne yapabilir?',lead:'AS Gold karmaşık işlemleri açık ve yönetilebilir hale getirir.',items:['Belgeleri, e-postaları ve bilgileri bir araya getirir','Süreleri, eksikleri, çelişkileri ve riskleri belirler','Analizler, sonraki adımlar ve cevap yazıları oluşturur','Sonuçları dışa aktarır; e-posta, bulut veya kendi depolamanızı bağlar']},
-  pl:{title:'Co potrafi AS Gold?',lead:'AS Gold upraszcza złożone sprawy i ułatwia ich prowadzenie.',items:['Łączy dokumenty, e-maile i informacje','Wykrywa terminy, braki, sprzeczności i ryzyka','Tworzy analizy, kolejne kroki i pisma odpowiedzi','Eksportuje wyniki i łączy pocztę, chmurę lub własny zapis']},
-  ru:{title:'Что умеет AS Gold?',lead:'AS Gold делает сложные дела понятными и управляемыми.',items:['Объединяет документы, почту и информацию','Выявляет сроки, пробелы, противоречия и риски','Создаёт анализы, следующие шаги и ответные письма','Экспортирует результаты и подключает почту, облако или ваше хранилище']},
-  ar:{title:'ماذا يستطيع AS Gold أن يفعل؟',lead:'يجعل AS Gold المعاملات المعقدة واضحة وقابلة للمعالجة.',items:['جمع المستندات والبريد والمعلومات','اكتشاف المواعيد والنواقص والتناقضات والمخاطر','إنشاء التحليلات والخطوات التالية وخطابات الرد','تصدير النتائج وربط البريد أو السحابة أو مساحة التخزين الخاصة']},
-  fa:{title:'AS Gold چه کارهایی می‌تواند انجام دهد؟',lead:'AS Gold موضوعات پیچیده را روشن و قابل مدیریت می‌کند.',items:['یکپارچه‌سازی اسناد، ایمیل‌ها و اطلاعات','شناسایی مهلت‌ها، کمبودها، تناقض‌ها و ریسک‌ها','ایجاد تحلیل، گام‌های بعدی و پاسخ‌نامه','خروجی گرفتن و اتصال ایمیل، فضای ابری یا محل ذخیره شخصی']},
-  ro:{title:'Ce poate face AS Gold?',lead:'AS Gold face situațiile complexe clare și ușor de gestionat.',items:['Reunește documente, e-mailuri și informații','Identifică termene, lipsuri, contradicții și riscuri','Creează evaluări tip semafor, pașii următori și scrisori de răspuns','Exportă rezultatele și conectează e-mailul, cloud-ul sau propriile locații de stocare']},
-  bg:{title:'Какво може AS Gold?',lead:'AS Gold прави сложните случаи ясни и управляеми.',items:['Събира документи, имейли и информация','Открива срокове, липси, противоречия и рискове','Създава светофарни оценки, следващи стъпки и писма за отговор','Експортира резултати и свързва имейл, облак или собствени места за съхранение']}
-}
+import { howAsGoldWorksCopy } from './asGoldIntroCopy.mjs'
 
 export function ProductIntroCompact({language='de'}){
-  const c=copy[language]||copy.de
+  const c=howAsGoldWorksCopy[language]||howAsGoldWorksCopy.de
   const rtl=language==='ar'||language==='fa'
   return <section id="asgold-product-intro-compact" dir={rtl?'rtl':'ltr'} style={{margin:'18px 0 8px',padding:16,border:'1px solid #dccb9f',borderRadius:18,background:'linear-gradient(135deg,#fffaf0,#fff)',boxShadow:'0 8px 24px rgba(72,55,18,.05)'}}>
     <b style={{display:'block',fontSize:'1.3rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'6px 0 10px',color:'#596472',lineHeight:1.4}}>{c.lead}</p>
-    <div style={{display:'grid',gap:7}}>{c.items.map(item=><div key={item} style={{padding:'8px 10px',borderRadius:10,background:'#fff',border:'1px solid #ece4cf',color:'#4f5966',lineHeight:1.3}}>✓ {item}</div>)}</div>
+    <div style={{display:'grid',gap:8}}>{c.items.map((item,index)=><div key={item} style={{display:'flex',alignItems:'flex-start',gap:10,padding:'10px 11px',borderRadius:10,background:'#fff',border:'1px solid #ece4cf',color:'#4f5966',lineHeight:1.4}}><span aria-hidden="true" style={{flex:'0 0 auto',display:'grid',placeItems:'center',width:25,height:25,borderRadius:999,background:'#9b7724',color:'#fff',fontWeight:900,fontSize:'.82rem'}}>{index+1}</span><span>{item}</span></div>)}</div>
   </section>
 }

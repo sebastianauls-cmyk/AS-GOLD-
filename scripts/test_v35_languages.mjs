@@ -23,6 +23,7 @@ for(const language of ['ro','bg']){const profile=problemLanguageProfiles[languag
 const switcherSource=await readFile(new URL('../app/modules/language/LanguageSwitcher.js',import.meta.url),'utf8')
 const videoDialogSource=await readFile(new URL('../app/modules/language/ExplainerVideoDialog.js',import.meta.url),'utf8')
 const heroSource=await readFile(new URL('../app/modules/public/HeroTitleStabilizer.js',import.meta.url),'utf8')
+const introCopySource=await readFile(new URL('../app/modules/public/asGoldIntroCopy.mjs',import.meta.url),'utf8')
 const heroCompatibility=await readFile(new URL('../app/components/HeroTitleStabilizer.js',import.meta.url),'utf8')
 const introSource=await readFile(new URL('../app/modules/public/ProductIntroCompact.js',import.meta.url),'utf8')
 const introCompatibility=await readFile(new URL('../app/components/ProductIntroCompact.js',import.meta.url),'utf8')
@@ -33,8 +34,8 @@ assert.match(switcherSource,/import \{[^}]*\bBG\b[^}]*\bRO\b[^}]*\} from 'countr
 assert.match(switcherSource,/const flagComponents=\{[^}]*\bBG\b[^}]*\bRO\b[^}]*\}/s)
 assert.match(videoDialogSource,/ro:'Videoclip explicativ'/);assert.match(videoDialogSource,/bg:'Обяснително видео'/);assert.match(videoDialogSource,/ro:'Închide'/);assert.match(videoDialogSource,/bg:'Затвори'/)
 assert.match(switcherSource,/className="flagLanguagePublicText"/,'public language picker must expose a clear interface-language label');assert.match(switcherSource,/<strong>\{active\.label\}<\/strong>/,'active language name must remain visible');assert.equal((switcherSource.match(/className="flagLanguageMenuBack"/g)||[]).length,2,'the mutually exclusive public and standard switcher branches must each define exactly one back control');assert.doesNotMatch(switcherSource,/flagLanguageClose/,'obsolete duplicate close control must stay removed');assert.doesNotMatch(videoDialogSource,/heygen\.ai/,'language control must use the permanent local video paths')
-assert.match(heroSource,/\bro:\{title:/);assert.match(heroSource,/\bbg:\{title:/);assert.match(heroCompatibility,/modules\/public\/HeroTitleStabilizer/)
-assert.match(introSource,/\bro:\{/);assert.match(introSource,/\bbg:\{/);assert.match(introCompatibility,/modules\/public\/ProductIntroCompact/)
+assert.match(heroSource,/whatIsAsGoldCopy/);assert.match(introCopySource,/\bro:\{title:/);assert.match(introCopySource,/\bbg:\{title:/);assert.match(heroCompatibility,/modules\/public\/HeroTitleStabilizer/)
+assert.match(introSource,/howAsGoldWorksCopy/);assert.match(introCopySource,/\bro:\{title:/);assert.match(introCopySource,/\bbg:\{title:/);assert.match(introCompatibility,/modules\/public\/ProductIntroCompact/)
 assert.match(explainerSource,/\['ro','🇷🇴','Română'\]/);assert.match(explainerSource,/\['bg','🇧🇬','Български'\]/);assert.match(explainerCompatibility,/modules\/public\/ExplainerVideo/)
 for(const language of expectedLanguages){const path=new URL(`../public/videos/as-gold-v35-${language}.mp4`,import.meta.url);const info=await stat(path);assert.ok(info.isFile()&&info.size>1_000_000,`missing or incomplete local explainer video for ${language}`);assert.match(videoDialogSource,new RegExp(`\\/videos\\/as-gold-v35-${language}\\.mp4`))}
 console.log('V35 language guard: 10 app languages, RO/BG catalogs, SVG flags, modular public components and local videos verified.')

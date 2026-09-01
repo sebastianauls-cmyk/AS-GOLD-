@@ -188,3 +188,15 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - V42 erhält explizite React-Callbacks für Fallbearbeitung, Dokumentupload, Dokumentprüfung und Bewertung statt querySelector-/Click-Weiterleitung.
 - V40 behält lokale PDF-/DOCX-Exporte, ohne MutationObserver oder nachträgliche UI-Montage.
 - Die alten Modulpfade bleiben nur als dünne Kompatibilitäts-Re-Exports erhalten.
+
+
+### V46 Public-Parität V59–V69 direkt modularisiert
+
+- Die aktuelle öffentliche Zwei-Sprachen-Logik ist in die Modularchitektur übernommen: Oberflächensprache und Kunden-/Ausgabesprache bleiben unabhängig; alle öffentlichen Kundeninhalte folgen der Ausgabesprache.
+- Der warme Willkommensgruß und ein eigenständiger zweisprachiger Deutsch-Reset stehen vor den beiden Sprachmodulen. Der Reset stellt Oberfläche und Ausgabe gemeinsam auf Deutsch zurück.
+- Der Startablauf ist nun direkt als React-Struktur aufgebaut: Erklärung → Funktionsablauf → Startart → Problem-/Spracheingabe. Es gibt keinen nachträglich erzeugten Customer-Slot.
+- Der Mikrofonstart wird über explizite React-Callbacks/Signals an den Problem-Navigator übergeben; keine querySelector-/Click-Weiterleitung ist dafür nötig.
+- „Wie möchten Sie starten?“ und „Worum geht es?“ sind in allen zehn Sprachen getrennte Überschriften.
+- Die ausführliche „Was ist AS Gold?“-Erklärung und der vierstufige Ablauf liegen als Public-Fachkatalog im Modul.
+- Die doppelte Zielgruppenüberschrift wurde direkt im PublicLanding entfernt.
+- Ein eigener V69-Modulguard ist Bestandteil der verpflichtenden prebuild-Kette.

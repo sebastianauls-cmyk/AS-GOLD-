@@ -15,7 +15,7 @@ for(const text of requiredTrust){if(!firstAction.includes(text)) throw new Error
 
 if(!publicLanding.includes("./V37FirstAction")) throw new Error('V37 guard: first-action module is not owned by PublicLanding')
 if(!publicLanding.includes("./ExplainerVideo")) throw new Error('V37 guard: explainer module is not owned by PublicLanding')
-if(!publicLanding.includes('customerModule={customerModule}')||!languageModules.includes('{customerModule}')) throw new Error('V37 guard: customer navigator must be directly nested in the output-language module')
+if(publicLanding.includes('customerModule={customerModule}')||languageModules.includes('{customerModule}')||languageModules.includes('asgold-customer-module-slot')) throw new Error('V37 guard: customer navigator must be owned directly by PublicLanding')
 if(layout.includes('V37FirstAction')||layout.includes('ExplainerVideo')||layout.includes('ProblemNavigator')||layout.includes('ProductIntroCompact')) throw new Error('V37 guard: public hero modules must not be global layout enhancers')
 if(!firstActionCompatibility.includes("../modules/public/V37FirstAction")) throw new Error('V37 guard: legacy first-action path must remain a compatibility re-export')
 if(!videoCompatibility.includes("../modules/public/ExplainerVideo")) throw new Error('V37 guard: legacy explainer path must remain a compatibility re-export')
@@ -28,9 +28,10 @@ if(!video.includes('AS Gold in 90 Sekunden ansehen')) throw new Error('V37 guard
 if(!video.includes('Weiblich') || !video.includes('Männlich')) throw new Error('V37 guard: presenter choice missing')
 if(!video.includes("setPresenter('female')") || !video.includes("setPresenter('male')")) throw new Error('V37 guard: presenter buttons are not interactive')
 
-const firstActionIndex=publicLanding.indexOf('<V37FirstAction language={language}')
-const videoIndex=publicLanding.indexOf('<ExplainerVideo key={`${language}-${explainerSignal}`} language={language} openSignal={explainerSignal}/>')
-const productIndex=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
-if(!(firstActionIndex>=0 && videoIndex>firstActionIndex && productIndex>videoIndex)) throw new Error('V37 guard: hero priority order must be first action -> optional video -> product details, with the customer navigator directly above in the output-language module')
+const productIndex=publicLanding.indexOf('<ProductIntroCompact language={outputLanguage}/>')
+const firstActionIndex=publicLanding.indexOf('<V37FirstAction language={outputLanguage}')
+const problemIndex=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
+const videoIndex=publicLanding.indexOf('<ExplainerVideo key=')
+if(!(productIndex>=0 && firstActionIndex>productIndex && problemIndex>firstActionIndex && videoIndex>problemIndex)) throw new Error('V37 guard: hero priority order must be explanation -> first action -> problem input -> optional video')
 if(firstAction.includes('createPortal')||firstAction.includes('MutationObserver')||video.includes('createPortal')||video.includes('MutationObserver')||languageModules.includes('createPortal')||languageModules.includes('MutationObserver')) throw new Error('V37 guard: public modules must render directly without portal mount observers')
 console.log('V37 first-action regression checks passed')

@@ -20,6 +20,7 @@ const inputHelp={
   bg:'Опишете проблема със свои думи. Не са нужни специални термини. Напишете какво се е случило и какво искате да постигнете – или го кажете с глас.'
 }
 const inputTitles={de:'So funktioniert die Eingabe:',en:'How to enter your problem:',fr:'Comment saisir votre problème :',tr:'Sorununuzu nasıl girersiniz:',pl:'Jak wpisać problem:',ru:'Как описать проблему:',ar:'كيفية إدخال المشكلة:',fa:'نحوه وارد کردن مشکل:',ro:'Cum introduceți problema:',bg:'Как да въведете проблема:'}
+const concernTitles={de:'Worum geht es?',en:'What is this about?',fr:'De quoi s’agit-il ?',tr:'Konu nedir?',pl:'Czego dotyczy sprawa?',ru:'О чём идёт речь?',ar:'ما موضوع الأمر؟',fa:'موضوع چیست؟',ro:'Despre ce este vorba?',bg:'За какво става въпрос?'}
 const voiceMessages={
   de:{starting:'Mikrofon wird aktiviert …',done:'Sprache wurde übernommen.',noSpeech:'Es wurde keine Sprache erkannt. Tippen Sie erneut auf das Mikrofon und sprechen Sie nach dem Startsignal.',audio:'Das Mikrofon ist auf diesem Gerät nicht verfügbar oder wird gerade von einer anderen App verwendet.',denied:'Der Mikrofonzugriff ist gesperrt. Öffnen Sie die App- bzw. Browser-Einstellungen, erlauben Sie das Mikrofon für AS Gold und versuchen Sie es erneut.',network:'Die Spracherkennung ist momentan nicht erreichbar. Bitte versuchen Sie es erneut oder verwenden Sie das Mikrofon Ihrer Tastatur.',insecure:'Die Spracheingabe benötigt eine sichere HTTPS-Verbindung.'},
   en:{starting:'Activating microphone …',done:'Speech was added.',noSpeech:'No speech was recognized. Tap the microphone again and speak after it starts.',audio:'The microphone is unavailable or currently used by another app.',denied:'Microphone access is blocked. Allow the microphone for AS Gold in the app or browser settings, then try again.',network:'Speech recognition is temporarily unavailable. Try again or use your keyboard microphone.',insecure:'Voice input requires a secure HTTPS connection.'},
@@ -50,7 +51,7 @@ function recommend(value,profile){
   return {caseKey,planKey,reason:profile.reasons[planKey]||profile.reasons.start}
 }
 
-export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,voiceSignal=0}){
+export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,voiceSignal=0,focusSignal=0}){
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
   const [result,setResult]=useState(null)
@@ -143,6 +144,13 @@ export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,vo
     return()=>clearTimeout(timer)
   },[voiceSignal])
 
+  useEffect(()=>{
+    if(focusSignal<=0)return
+    rootRef.current?.scrollIntoView({behavior:'smooth',block:'center'})
+    const timer=setTimeout(()=>textRef.current?.focus(),350)
+    return()=>clearTimeout(timer)
+  },[focusSignal])
+
   function showCase(){onSelectCase?.(recommendation.caseKey);jumpToPublicCaseResult()}
   function showPlans(){document.getElementById('preise')?.scrollIntoView({behavior:'smooth',block:'start'})}
   function startFree(){onRegister?.()}
@@ -151,13 +159,14 @@ export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,vo
   const freeText=freeLabels[customerLanguage]||freeLabels.en
   const helpText=inputHelp[customerLanguage]||inputHelp.en
   const inputTitle=inputTitles[customerLanguage]||inputTitles.en
+  const concernTitle=concernTitles[customerLanguage]||concernTitles.de
 
   return <section ref={rootRef} id="asgold-problem-navigator-react" data-customer-language={customerLanguage} lang={customerLanguage} dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
-    <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
+    <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{concernTitle}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
     <div id="asgold-problem-input-help" style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
     <form onSubmit={event=>{event.preventDefault();analyse()}} noValidate>
-      <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={c.title} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
+      <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={concernTitle} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
         <button type="button" data-problem-voice onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting?.7:1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[customerLanguage]||voiceMessages.de).starting:c.voice}</button>
         <button type="submit" aria-controls="asgold-problem-result" style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
