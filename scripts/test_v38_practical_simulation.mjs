@@ -10,6 +10,7 @@ const {sealIntegrationToken,openIntegrationToken}=await import('../app/modules/i
 
 const page=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceApp.js',import.meta.url),'utf8')
 const pageEntry=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')
+const uploadConfig=fs.readFileSync(new URL('../app/modules/documents/uploadConfig.js',import.meta.url),'utf8')
 const googleStart=fs.readFileSync(new URL('../app/api/integrations/google/start/route.js',import.meta.url),'utf8')
 const googleCallback=fs.readFileSync(new URL('../app/api/integrations/google/callback/route.js',import.meta.url),'utf8')
 const microsoftStart=fs.readFileSync(new URL('../app/api/integrations/microsoft/start/route.js',import.meta.url),'utf8')
@@ -38,9 +39,9 @@ for(const token of [
   "test_data_confirmed"
 ]) assert.match(page,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')))
 
-assert.match(page,/tooLarge/)
-assert.match(page,/unsupported/)
-assert.match(page,/maxUploadBytes\s*=\s*50\s*\*\s*1024\s*\*\s*1024/)
+assert.match(uploadConfig,/tooLarge/)
+assert.match(uploadConfig,/unsupported/)
+assert.match(uploadConfig,/maxUploadBytes\s*=\s*50\s*\*\s*1024\s*\*\s*1024/)
 assert.match(page,/disabled=\{uploading\}/)
 assert.match(page,/if\(!canExport\(type\)\)/)
 
