@@ -23,12 +23,15 @@ const maleRemoteBlock=objectBody('maleRemoteVideos')
 for(const language of expectedLanguages){
   assert.match(languageBlock,new RegExp(`\\['${language}',`),`missing ${language} in explainer language selector`)
   assert.match(copyBlock,new RegExp(`\\b${language}:\\{[^\\n]*voice:'[^']+'[^\\n]*female:'[^']+'[^\\n]*male:'[^']+'[^\\n]*maleFallback:'[^']+'`),`missing presenter or fallback controls for ${language}`)
-  assert.match(femaleLocalBlock,new RegExp(`\\b${language}:'/videos/as-gold-v35-${language}\\.mp4'`),`missing local female video for ${language}`)
+  const expectedLocal=language==='de'?'/videos/as-gold-explainer-de-female.mp4':`/videos/as-gold-v35-${language}.mp4`
+  assert.ok(femaleLocalBlock.includes(`${language}:'${expectedLocal}'`),`missing local female video for ${language}`)
   assert.match(femaleRemoteBlock,new RegExp(`\\b${language}:'https://resource2\\.heygen\\.ai/video_translate/[^']+/original\\.mp4'`),`missing female fallback for ${language}`)
   assert.match(maleRemoteBlock,new RegExp(`\\b${language}:'https://(?:resource2|files2)\\.heygen\\.ai/[^']+\\.mp4'`),`missing male video for ${language}`)
 }
 
-assert.equal((femaleLocalBlock.match(/\/videos\/as-gold-v35-[a-z]{2}\.mp4/g)||[]).length,expectedLanguages.length,'local female catalog must contain exactly ten videos')
+assert.equal((femaleLocalBlock.match(/\/videos\/as-gold-v35-[a-z]{2}\.mp4/g)||[]).length,expectedLanguages.length-1,'nine translated local female videos must remain in the v35 catalog')
+assert.match(explainerSource,/as-gold-explainer-de-female\.mp4/,'current German female explainer must remain available')
+assert.match(explainerSource,/as-gold-explainer-de-male\.mp4/,'current German male explainer must remain available')
 assert.equal((femaleRemoteBlock.match(/https:\/\/resource2\.heygen\.ai\/video_translate\//g)||[]).length,expectedLanguages.length,'female fallback catalog must contain exactly ten videos')
 assert.equal((maleRemoteBlock.match(/https:\/\/(?:resource2|files2)\.heygen\.ai\//g)||[]).length,expectedLanguages.length,'male catalog must contain exactly ten videos')
 assert.doesNotMatch(femaleRemoteBlock+maleRemoteBlock,/[?&](?:Expires|Signature|Key-Pair-Id)=/i,'video catalogs must not use expiring signed query parameters')

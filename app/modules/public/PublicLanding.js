@@ -1,3 +1,6 @@
+'use client'
+
+import { useState } from 'react'
 import { LegalFooter } from '../compliance/LegalFooter'
 import { LanguageSwitcher } from '../language/LanguageSwitcher'
 import { AppLogo } from '../workspace/AppLogo'
@@ -9,15 +12,37 @@ import { ProblemNavigator } from './ProblemNavigator'
 import { ExplainerVideo } from './ExplainerVideo'
 import { ProductIntroCompact } from './ProductIntroCompact'
 
+const publicNavigationCopy={
+  de:{interface:'1. Sprache der Oberfläche',output:'2. Ausgabesprache',back:'← Zurück'},
+  en:{interface:'1. Interface language',output:'2. Output language',back:'← Back'},
+  fr:{interface:"1. Langue de l’interface",output:'2. Langue de sortie',back:'← Retour'},
+  tr:{interface:'1. Arayüz dili',output:'2. Çıktı dili',back:'← Geri'},
+  pl:{interface:'1. Język interfejsu',output:'2. Język wyniku',back:'← Wstecz'},
+  ru:{interface:'1. Язык интерфейса',output:'2. Язык результата',back:'← Назад'},
+  ar:{interface:'1. لغة الواجهة',output:'2. لغة الإخراج',back:'الرجوع →'},
+  fa:{interface:'1. زبان رابط',output:'2. زبان خروجی',back:'بازگشت →'},
+  ro:{interface:'1. Limba interfeței',output:'2. Limba rezultatului',back:'← Înapoi'},
+  bg:{interface:'1. Език на интерфейса',output:'2. Език на резултата',back:'← Назад'}
+}
+
 export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
   const hero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
+  const publicNav=publicNavigationCopy[language]||publicNavigationCopy.de
+  const outputLanguageName=(language===outputLanguage?language:outputLanguage)
+  const outputLanguageLabel=({de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български'})[outputLanguageName]||'Deutsch'
+  const [explainerSignal,setExplainerSignal]=useState(0)
+  function returnToPublicTop(){window.scrollTo({top:0,behavior:'smooth'})}
   return <>
     <header className="publicTop">
       <div className="wrap nav">
         <div className="brand"><AppLogo/><b>AS Gold</b></div>
-        <nav>
-          <div className="languageSwitch"><span>{t.language}</span><LanguageSwitcher value={language} onChange={setLanguage} label={t.language}/></div>
+        <div className="publicLanguageStack" aria-label={`${t.language} / ${t.outputLanguage}`}>
+          <div className="publicLanguageRow"><span>{publicNav.interface}</span><LanguageSwitcher value={language} onChange={setLanguage} label={t.language} publicPicker onExplainer={()=>setExplainerSignal(value=>value+1)}/></div>
+          <div className="publicLanguageRow"><span>{publicNav.output}</span><LanguageSwitcher value={outputLanguage} onChange={setOutputLanguage} label={t.outputLanguage}/></div>
+        </div>
+        <nav className="publicNavActions">
+          <button type="button" className="backBtn publicBackBtn" onClick={returnToPublicTop}>{publicNav.back}</button>
           <a href="#fallarten">{cd.nav}</a>
           <a href="#preise">{t.prices}</a>
           <button className="secondary" onClick={()=>setScreen('register')}>{t.register}</button>
@@ -29,7 +54,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
       <div className="legalMarketBar">
         <div className="wrap">
           <b>{t.legal}</b><span>{t.marketNote}</span>
-          <label>{t.outputLanguage}<LanguageSwitcher value={outputLanguage} onChange={setOutputLanguage} label={t.outputLanguage}/></label>
+          <strong className="legalChip" data-output-language-status aria-live="polite">{t.outputLanguage}: {outputLanguageLabel}</strong>
         </div>
       </div>
 
@@ -41,7 +66,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <p className="lead">{hero.lead}</p>
             <V37FirstAction language={language} onRegister={()=>setScreen('register')}/>
             <ProblemNavigator language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
-            <ExplainerVideo language={language}/>
+            <ExplainerVideo language={language} openSignal={explainerSignal}/>
             <ProductIntroCompact language={language}/>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>

@@ -25,7 +25,7 @@ expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not 
 
 const firstActionPos=publicLanding.indexOf('<V37FirstAction language={language}')
 const navPos=publicLanding.indexOf('<ProblemNavigator language={language}')
-const videoPos=publicLanding.indexOf('<ExplainerVideo language={language}/>')
+const videoPos=publicLanding.indexOf('<ExplainerVideo language={language} openSignal={explainerSignal}/>')
 const introPos=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
 expect(firstActionPos>=0&&navPos>firstActionPos&&videoPos>navPos&&introPos>videoPos,'public module order must be first action -> problem navigator -> explainer video -> product intro')
 expect(!layout.includes('V37FirstAction')&&!layout.includes('ProblemNavigator')&&!layout.includes('ExplainerVideo')&&!layout.includes('ProductIntroCompact'),'public hero modules must not be mounted globally')
