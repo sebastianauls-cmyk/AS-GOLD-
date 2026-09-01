@@ -1,10 +1,9 @@
 'use client'
 
-import { useEffect } from 'react'
 import { analyzeDeadlines } from '../lib/v38DeadlineIntelligence.mjs'
 import { autoDocumentAssessment,sortTimelineEntries } from '../lib/v39CaseIntelligence.mjs'
 
-const labels={
+export const caseIntelligenceLabels={
   de:{auto:'Automatische Dokument-Ampel',provisional:'Vorläufig – Original prüfen',basis:'Erkannte Grundlage',next:'Nächster Schritt',timeline:'Fall-Timeline',document:'Dokument',deadline:'Frist',caseStart:'Fallstand',noTimeline:'Noch keine datierten Ereignisse erkannt.',green:'Grün',yellow:'Gelb',red:'Rot'},
   en:{auto:'Automatic document traffic light',provisional:'Provisional – verify original',basis:'Detected basis',next:'Next step',timeline:'Case timeline',document:'Document',deadline:'Deadline',caseStart:'Case status',noTimeline:'No dated events detected yet.',green:'Green',yellow:'Yellow',red:'Red'},
   fr:{auto:'Feu automatique du document',provisional:'Provisoire – vérifier l’original',basis:'Base détectée',next:'Étape suivante',timeline:'Chronologie du dossier',document:'Document',deadline:'Délai',caseStart:'État du dossier',noTimeline:'Aucun événement daté détecté.',green:'Vert',yellow:'Jaune',red:'Rouge'},
@@ -17,55 +16,52 @@ const labels={
   bg:{auto:'Автоматична оценка на документа',provisional:'Предварително – проверете оригинала',basis:'Разпозната основа',next:'Следваща стъпка',timeline:'Хронология на случая',document:'Документ',deadline:'Срок',caseStart:'Състояние на случая',noTimeline:'Все още няма разпознати събития с дата.',green:'Зелено',yellow:'Жълто',red:'Червено'}
 }
 
-function lang(){const value=(document.documentElement.lang||'de').toLowerCase().slice(0,2);return labels[value]?value:'de'}
-function escapeHtml(value=''){return String(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]))}
-function parsedDate(value=''){const match=String(value).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/);if(!match)return null;const [,d,m,y]=match;return `${y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`}
+function copyFor(language='de'){
+  return caseIntelligenceLabels[language]||caseIntelligenceLabels.de
+}
 
-function renderDocumentAssessment(){
-  const head=document.querySelector('.documentReviewHead')
-  if(!head){document.querySelector('[data-v39-auto-assessment]')?.remove();return}
-  const text=document.querySelector('.documentReviewForm textarea[id$="-extracted"],textarea[id*="extracted"]')?.value?.trim()||''
+function isoDate(value=''){
+  const raw=String(value||'').trim()
+  if(!raw) return ''
+  const iso=raw.match(/^(\d{4}-\d{2}-\d{2})/)
+  if(iso) return iso[1]
+  const local=raw.match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/)
+  if(local){const [,d,m,y]=local;return [y,m.padStart(2,'0'),d.padStart(2,'0')].join('-')}
+  const date=new Date(raw)
+  return Number.isNaN(date.getTime())?'':date.toISOString().slice(0,10)
+}
+
+export function DocumentAutoAssessment({language='de',text=''}){
+  const t=copyFor(language)
   const deadline=analyzeDeadlines({text})
   const result=autoDocumentAssessment(text,deadline)
-  const t=labels[lang()]
-  let card=document.querySelector('[data-v39-auto-assessment]')
-  if(!card){card=document.createElement('section');card.dataset.v39AutoAssessment='true';card.className='detailCard v39AutoAssessment';head.insertAdjacentElement('afterend',card)}
   const icon=result.trafficLight==='red'?'🔴':result.trafficLight==='green'?'🟢':'🟡'
-  const light=t[result.trafficLight]
-  card.innerHTML=`<div class="detailCardHead"><div><span class="modeBadge">V39</span><h3>${escapeHtml(t.auto)}</h3></div><strong>${icon} ${escapeHtml(light)}</strong></div><p><b>${escapeHtml(result.title)}</b></p><small>${escapeHtml(t.provisional)}</small><p><b>${escapeHtml(t.basis)}:</b> ${escapeHtml(result.reason)}</p><p><b>${escapeHtml(t.next)}:</b> ${escapeHtml(result.nextStep)}</p>`
+  return <section className="detailCard v39AutoAssessment" data-v39-auto-assessment="true">
+    <div className="detailCardHead"><div><span className="modeBadge">V39</span><h3>{t.auto}</h3></div><strong>{icon} {t[result.trafficLight]}</strong></div>
+    <p><b>{result.title}</b></p>
+    <small>{t.provisional}</small>
+    <p><b>{t.basis}:</b> {result.reason}</p>
+    <p><b>{t.next}:</b> {result.nextStep}</p>
+  </section>
 }
 
-function renderTimeline(){
-  const grid=document.querySelector('.caseCoreGrid')
-  if(!grid){document.querySelector('[data-v39-timeline]')?.remove();return}
-  const t=labels[lang()]
+export function CaseTimeline({language='de',caseDeadline='',documents=[]}){
+  const t=copyFor(language)
   const entries=[]
-  const cards=[...grid.querySelectorAll(':scope > article')]
-  const deadlineText=cards[2]?.querySelector('p')?.textContent?.trim()||''
-  const deadlineDate=parsedDate(deadlineText)
-  if(deadlineDate) entries.push({date:deadlineDate,type:'deadline',title:t.deadline,detail:deadlineText})
-  document.querySelectorAll('.sourceList button').forEach(button=>{
-    const rawDate=button.querySelector('span')?.textContent?.trim()||''
-    const date=parsedDate(rawDate)
-    const title=button.querySelector('b')?.textContent?.trim()||t.document
-    if(date) entries.push({date,type:'document',title,detail:rawDate})
-  })
+  const deadlineDate=isoDate(caseDeadline)
+  if(deadlineDate) entries.push({date:deadlineDate,type:'deadline',title:t.deadline,detail:String(caseDeadline)})
+  for(const document of documents){
+    const rawDate=document?.document_date||document?.created_at||''
+    const date=isoDate(rawDate)
+    if(date) entries.push({date,type:'document',title:document?.title||t.document,detail:String(rawDate)})
+  }
   const sorted=sortTimelineEntries(entries)
-  let section=document.querySelector('[data-v39-timeline]')
-  if(!section){section=document.createElement('section');section.dataset.v39Timeline='true';section.className='detailCard v39Timeline';grid.insertAdjacentElement('afterend',section)}
-  const rows=sorted.length?sorted.map(entry=>`<li><time>${escapeHtml(entry.date)}</time><div><b>${escapeHtml(entry.type==='deadline'?t.deadline:t.document)} · ${escapeHtml(entry.title)}</b><small>${escapeHtml(entry.detail||'')}</small></div></li>`).join(''):`<li class="emptyState">${escapeHtml(t.noTimeline)}</li>`
-  section.innerHTML=`<div class="detailCardHead"><div><span class="modeBadge">V39</span><h3>${escapeHtml(t.timeline)}</h3></div></div><ol class="v39TimelineList">${rows}</ol>`
+  return <section className="detailCard v39Timeline" data-v39-timeline="true">
+    <div className="detailCardHead"><div><span className="modeBadge">V39</span><h3>{t.timeline}</h3></div></div>
+    <ol className="v39TimelineList">
+      {sorted.length?sorted.map((entry,index)=><li key={`${entry.type}-${entry.date}-${index}`}><time>{entry.date}</time><div><b>{entry.type==='deadline'?t.deadline:t.document} · {entry.title}</b><small>{entry.detail||''}</small></div></li>):<li className="emptyState">{t.noTimeline}</li>}
+    </ol>
+  </section>
 }
 
-export function V39CaseTimelineAutoAssessment(){
-  useEffect(()=>{
-    const render=()=>{renderDocumentAssessment();renderTimeline()}
-    render()
-    const observer=new MutationObserver(render)
-    observer.observe(document.body,{childList:true,subtree:true,characterData:true})
-    document.addEventListener('input',render,true)
-    const timer=setInterval(render,1000)
-    return()=>{observer.disconnect();document.removeEventListener('input',render,true);clearInterval(timer);document.querySelector('[data-v39-auto-assessment]')?.remove();document.querySelector('[data-v39-timeline]')?.remove()}
-  },[])
-  return null
-}
+export function V39CaseTimelineAutoAssessment(){ return null }

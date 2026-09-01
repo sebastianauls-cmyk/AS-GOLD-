@@ -5,6 +5,7 @@ import { ControlledDocumentAnalysis } from './V26DocumentAnalysis'
 import { DeadlineWarningCard } from './V38DeadlineCardEnhancer'
 import { AssessmentExplainability } from './V38AssessmentExplainability'
 import { PrimaryNextStepCard } from './V38PrimaryNextStep'
+import { CaseTimeline, DocumentAutoAssessment } from './V39CaseTimelineAutoAssessment'
 import { componentTranslations } from '../lib/v30ComponentTranslations.mjs'
 
 const copy = {
@@ -77,6 +78,7 @@ export function CaseDetail({copy:on, analysis, language='de', item, clients, doc
     <section className="caseCoreGrid"><article><b>{on.goal}</b><p>{item.goal||'—'}</p></article><article><b>{on.summary}</b><p>{item.summary||'—'}</p></article><article><b>{on.deadline}</b><p>{item.deadline_at?new Date(item.deadline_at).toLocaleString():'—'}</p></article><article><b>{on.nextAction}</b><p>{item.next_action||'—'}</p></article></section>
     <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case"/>
     <PrimaryNextStepCard language={language} item={item} documents={documents} assessments={assessments}/>
+    <CaseTimeline language={language} caseDeadline={item.deadline_at||''} documents={documents}/>
     <section className={`readinessCard ${!documents.length?'attentionBox':''}`}><b>{on.assessmentState}</b><p>{readiness}</p></section>
     <section className="detailCard"><div className="detailCardHead"><h3>{on.sourceBasis}</h3><button className="secondary" type="button" onClick={()=>onAddDocument(item.id)}>＋ {on.documentUpload}</button></div>{documents.length?<div className="sourceList">{documents.map(document=><button type="button" onClick={()=>onOpenDocument(document)} key={document.id}><span>{document.document_date||new Date(document.created_at).toLocaleDateString()}</span><b>{document.title}</b><small>{document.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</small></button>)}</div>:<div className="emptyState">{on.noDocuments}</div>}</section>
     <section className="detailCard"><h3>{on.currentAssessments}</h3>{assessments.length?<div className="assessmentList">{assessments.map(entry=><article className={`assessment ${entry.traffic_light}`} key={entry.id}><div><span>{entry.traffic_light==='red'?`🔴 ${on.red}`:entry.traffic_light==='green'?`🟢 ${on.green}`:`🟡 ${on.yellow}`}</span><b>{entry.title}</b></div><p>{entry.reasoning||'—'}</p><small>{on.nextAction}: {entry.next_step||'—'}</small><AssessmentExplainability language={language} reasoning={entry.reasoning} next={entry.next_step}/></article>)}</div>:<p>{on.noAssessment}</p>}
@@ -116,6 +118,7 @@ export function DocumentDetail({copy:on, analysis, language='de', item, cases, o
     <button className="backBtn" type="button" onClick={onBack}>{on.back}</button>
     <section className="documentReviewHead"><div><span className="modeBadge">V28</span><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={()=>onOpen(item)}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
     <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document"/>
+    <DocumentAutoAssessment language={language} text={draft.extracted_text}/>
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</p></div>
     {analysis&&onAnalyze&&<ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} phase={analysisPhase} onPhase={setAnalysisPhase}/>}
     <form className="actionCard coreForm documentReviewForm" onSubmit={save}>

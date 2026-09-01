@@ -1,7 +1,6 @@
 import './globals.css'
 import { AccessibilityHardening } from './modules/navigation/AccessibilityHardening'
 import { MobileResilience } from './modules/navigation/MobileResilience'
-import { V39CaseTimelineAutoAssessment } from './modules/cases/V39CaseTimelineAutoAssessment'
 import { V40ProfessionalHandoff } from './modules/cases/V40ProfessionalHandoff'
 import { V41CaseConsistency } from './modules/cases/V41CaseConsistency'
 import { V42ActionableGaps } from './modules/cases/V42ActionableGaps'
@@ -15,5 +14,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
+  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
 }
