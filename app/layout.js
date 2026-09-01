@@ -12,6 +12,7 @@ import { V38PrimaryNextStep } from './components/V38PrimaryNextStep'
 import { V38MobileResilience } from './components/V38MobileResilience'
 import { V38AccessibilityHardening } from './components/V38AccessibilityHardening'
 import { V38IntegrationAvailabilityGuard } from './components/V38IntegrationAvailabilityGuard'
+import { V39CaseTimelineAutoAssessment } from './components/V39CaseTimelineAutoAssessment'
 
 export const metadata = {
   metadataBase: new URL('https://app-gold-workspace.vercel.app'),
@@ -22,5 +23,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><V38AccessibilityHardening/><V38MobileResilience/><V38IntegrationAvailabilityGuard/><HeroCopyEnhancer/><HeroTitleStabilizer/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><CaseChoiceJumpEnhancer/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/>{children}</body></html>
+  return <html lang="de"><body><V38AccessibilityHardening/><V38MobileResilience/><V38IntegrationAvailabilityGuard/><HeroCopyEnhancer/><HeroTitleStabilizer/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><CaseChoiceJumpEnhancer/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/>{children}</body></html>
 }
