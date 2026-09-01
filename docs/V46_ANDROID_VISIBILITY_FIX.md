@@ -1,0 +1,1 @@
+Android acceptance fix based on the user screenshot: output language must be visible directly below interface language; fixed fallback controls must not cover an open language list.
