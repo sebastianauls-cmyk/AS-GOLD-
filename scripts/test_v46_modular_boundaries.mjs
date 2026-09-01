@@ -29,6 +29,9 @@ for(const path of [
   'app/modules/documents/uploadConfig.js',
   'app/modules/workspace/workspaceText.js',
   'app/modules/workspace/stateConfig.js',
+  'app/modules/workspace/ProtectedWorkspaceShell.js',
+  'app/modules/workspace/AppLogo.js',
+  'app/modules/auth/PasswordField.js',
   'app/modules/compliance/workspaceControlText.js',
   'app/modules/public/catalog.js',
   'app/modules/pricing/catalog.js',
@@ -76,6 +79,11 @@ assert.match(workspace,/\.\.\/services\/documentAnalysis/)
 assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
 assert.doesNotMatch(workspace,/const supabase = createClient\(/)
 assert.match(workspace,/invokeDocumentAnalysis/)
+assert.match(workspace,/\.\.\/services\/supabaseClient/)
+assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
+assert.doesNotMatch(workspace,/const supabase = createClient\(/)
+assert.match(workspace,/invokeDocumentAnalysis/)
 assert.match(workspace,/\.\.\/documents\/uploadConfig/)
 assert.doesNotMatch(workspace,/const maxUploadBytes =/)
 assert.match(workspace,/\.\.\/auth\/passwordUi/)
@@ -90,6 +98,11 @@ assert.match(workspace,/\.\.\/pricing\/catalog/)
 assert.match(workspace,/\.\.\/public\/catalog/)
 assert.match(workspace,/\.\.\/compliance\/workspaceControlText/)
 assert.match(workspace,/\.\/stateConfig/)
+assert.match(workspace,/ProtectedWorkspaceShell/)
+assert.match(workspace,/\.\.\/auth\/PasswordField/)
+assert.match(workspace,/\.\/AppLogo/)
+assert.doesNotMatch(workspace,/function PasswordField\(/)
+assert.doesNotMatch(workspace,/function Logo\(/)
 for (const name of ['terms','plans','planJourney','planText','journeyLabels','recommendationText','periodText','goalTier','tierRank','notices','dashboardGuide','transparencyText','caseDiscoveryText','publicAudienceText','testerLinkText','launchTrustText','serverControlText','accessPendingMessages','emptyData','emptyCase','sectionNames']) assert.doesNotMatch(workspace,new RegExp('const '+name+'\\s*='))
 assert.match(workspace,/\.\.\/services\/supabaseClient/)
 assert.match(workspace,/\.\.\/services\/documentAnalysis/)

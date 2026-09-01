@@ -76,3 +76,11 @@ WorkspaceApp consumes these catalogs; it no longer owns their leading definition
 - `workspace/stateConfig.js`: initial workspace data/case/section state.
 
 These declarations no longer live in `WorkspaceApp.js`; the composition layer consumes them through explicit domain imports.
+
+### Workspace composition components
+
+- `auth/PasswordField.js`: reusable authentication password control.
+- `workspace/AppLogo.js`: shared product mark.
+- `workspace/ProtectedWorkspaceShell.js`: protected header/language/logout/message/footer composition.
+
+The workspace controller now delegates repeated shell markup to explicit components.

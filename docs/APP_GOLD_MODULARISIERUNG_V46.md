@@ -117,3 +117,11 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Compliance- und Audit-/Löschtexte liegen unter `app/modules/compliance/workspaceControlText.js`.
 - Initiale Workspace-Zustände liegen unter `app/modules/workspace/stateConfig.js`.
 - `WorkspaceApp.js` importiert diese Kataloge nur noch und besitzt keine parallelen Inline-Kopien mehr.
+
+
+### V46 Workspace-Shell
+
+- `auth/PasswordField.js` besitzt das wiederverwendbare Passwortfeld.
+- `workspace/AppLogo.js` besitzt die gemeinsame AS-Gold-Logo-Komponente.
+- `workspace/ProtectedWorkspaceShell.js` besitzt Header, Sprach-/Ausgabesprachen-Steuerung, Logout-Rahmen, Nachrichtenfläche und Footer des geschützten Bereichs.
+- `WorkspaceApp.js` übergibt nur noch Zustand und Handler an die Shell statt deren Markup selbst zu duplizieren.
