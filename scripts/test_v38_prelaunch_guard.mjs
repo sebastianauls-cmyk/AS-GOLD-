@@ -4,7 +4,8 @@ import fs from 'node:fs'
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
 const exists=path=>fs.existsSync(new URL(`../${path}`,import.meta.url))
 
-const page=read('app/page.js')
+const page=read('app/modules/workspace/WorkspaceApp.js')
+const pageEntry=read('app/page.js')
 const privacyControls=read('app/modules/compliance/PrivacyControls.js')
 const legalFooter=read('app/modules/compliance/LegalFooter.js')
 const nextConfig=read('next.config.mjs')
@@ -23,7 +24,8 @@ const microsoftStart=read('app/api/integrations/microsoft/start/route.js')
 const microsoftCallback=read('app/api/integrations/microsoft/callback/route.js')
 const integrationStatus=read('app/api/integrations/status/route.js')
 
-// Auth + legal gate
+assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/)
+
 assert.match(page,/signInWithPassword/)
 assert.match(page,/resetPasswordForEmail/)
 assert.match(page,/auth\.signUp/)
@@ -35,7 +37,6 @@ assert.match(privacyControls,/TERMS_VERSION/)
 assert.match(privacyControls,/synthetische oder wirksam anonymisierte Testdaten/i)
 assert.match(privacyControls,/Art\. 9 DSGVO/)
 
-// Payment must remain locked during the controlled test
 assert.match(page,/Bezahlfunktion ist vorübergehend deaktiviert/)
 assert.match(page,/keine Zahlung ausgelöst/)
 assert.match(page,/Keine automatische Verlängerung/)
@@ -43,7 +44,6 @@ assert.match(terms,/Keine Zahlung, kein Abo/)
 assert.match(terms,/Bezahlfunktion ist deaktiviert/)
 assert.equal(Boolean(packageJson.dependencies?.stripe),false,'Stripe darf im kontrollierten Test nicht als aktive Abhängigkeit eingebunden sein')
 
-// Legal surface and binding German texts
 for(const path of [
   'app/impressum/page.js','app/datenschutz/page.js','app/datenschutzsteuerung/page.js','app/nutzungsbedingungen/page.js',
   'app/widerruf/page.js','app/cookies/page.js','app/ki-transparenz/page.js','app/rechtliches/page.js','app/kontakt/page.js','app/testen/page.js'
@@ -67,7 +67,6 @@ if(testerPaused){
 }
 assert.match(legalHub,/Vor einem späteren Bezahlbetrieb/)
 
-// Upload, error/empty/busy handling and export routes
 assert.match(page,/maxUploadBytes = 50 \* 1024 \* 1024/)
 assert.match(page,/allowedUploadExtensions/)
 assert.match(page,/tooLarge/)
@@ -79,13 +78,11 @@ assert.match(page,/exportMyData/)
 assert.match(page,/requestAccountDeletion/)
 assert.match(page,/serverAudit/)
 
-// Security headers
 for(const token of ['Content-Security-Policy','Referrer-Policy','X-Content-Type-Options','X-Frame-Options','Cross-Origin-Opener-Policy','Permissions-Policy','Strict-Transport-Security']) assert.match(nextConfig,new RegExp(token))
 assert.match(nextConfig,/frame-ancestors 'none'/)
 assert.match(nextConfig,/object-src 'none'/)
 assert.match(nextConfig,/payment=\(\)/)
 
-// OAuth integration safety: explicit configuration, state protection, encrypted refresh tokens
 assert.match(integrationStatus,/GOOGLE_CLIENT_ID/)
 assert.match(integrationStatus,/MICROSOFT_CLIENT_ID/)
 assert.match(integrationStatus,/INTEGRATION_TOKEN_KEY/)
@@ -100,7 +97,6 @@ assert.match(microsoftCallback,/sealIntegrationToken/)
 assert.match(integrationTokens,/aes-256-gcm/)
 assert.match(integrationTokens,/createHash\('sha256'\)/)
 
-// Existing product/readiness guards must stay mandatory before production builds
 for(const guard of ['test:v37-readiness','test:v38-deadlines','test:v38-assessments','test:v38-next-step','test:v38-simulation','test:v38-mobile','test:v38-accessibility']) assert.match(packageJson.scripts.prebuild,new RegExp(guard.replace(':','\\:')))
 
-console.log('V38 pre-launch guard passed: auth, modular compliance/test-data gates, payment lock, modular paused-or-open tester safety, exports, security headers, modular OAuth safeguards, deletion/audit controls and readiness guards verified.')
+console.log('V38 pre-launch guard passed: workspace-module auth, modular compliance/test-data gates, payment lock, tester safety, exports, security headers, OAuth safeguards, deletion/audit controls and readiness guards verified.')

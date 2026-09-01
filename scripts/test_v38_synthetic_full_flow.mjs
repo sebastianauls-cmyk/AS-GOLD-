@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { analyzeDeadlines } from '../app/lib/v38DeadlineIntelligence.mjs'
-import { prioritizeNextStep, supportedRecommendationLanguages } from '../app/lib/v38NextStepEngine.mjs'
+import { analyzeDeadlines } from '../app/modules/lib/v38DeadlineIntelligence.mjs'
+import { prioritizeNextStep, supportedRecommendationLanguages } from '../app/modules/lib/v38NextStepEngine.mjs'
 
 const now=new Date('2026-09-01T10:00:00Z')
 const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
@@ -46,12 +46,14 @@ for(const lang of expectedLanguages){
 
 const packageJson=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8'))
 for(const token of ['test:v38-deadlines','test:v38-assessments','test:v38-next-step']) assert.match(packageJson.scripts.prebuild,new RegExp(token.replace(':','\\:')))
-const page=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')
-for(const exportToken of ['PDF','DOCX','XLSX','PPTX']) assert.match(page,new RegExp(exportToken,'i'),`Export ${exportToken} fehlt im produktiven Codepfad`)
+const page=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceApp.js',import.meta.url),'utf8')
+const pageEntry=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')
+assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/)
+for(const exportToken of ['PDF','DOCX','XLSX','PPTX']) assert.match(page,new RegExp(exportToken,'i'),`Export ${exportToken} fehlt im produktiven Workspace-Codepfad`)
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 for(const component of ['V38DeadlineCardEnhancer','V38AssessmentExplainability','V38PrimaryNextStep']) assert.match(layout,new RegExp(component))
 
-console.log('V38 synthetic full-flow simulation passed.')
+console.log('V38 synthetic full-flow simulation passed through the workspace module boundary.')
 for(const r of results) console.log(`✓ ${r.name}: deadline=${r.deadline}, next=${r.recommendation}`)
 console.log('✓ Acute/overdue deadlines outrank generic missing-information notices in all 10 languages')
 console.log('✓ V38 UI layers mounted and PDF/DOCX/XLSX/PPTX export code paths present')
