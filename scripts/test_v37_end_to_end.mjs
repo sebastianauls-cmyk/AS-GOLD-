@@ -12,6 +12,10 @@ const analysisService=fs.readFileSync('app/modules/services/documentAnalysis.js'
 const uploadConfig=fs.readFileSync('app/modules/documents/uploadConfig.js','utf8')
 const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')
 const publicLanding=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')
+const documentsSurface=fs.readFileSync('app/modules/documents/DocumentsSurface.js','utf8')
+const approvalsSurface=fs.readFileSync('app/modules/cases/ApprovalsSurface.js','utf8')
+const caseSurfaces=fs.readFileSync('app/modules/cases/WorkspaceCaseSurfaces.js','utf8')
+const dashboardSurface=fs.readFileSync('app/modules/workspace/DashboardSurface.js','utf8')
 
 const mustContain=(source,needle,label)=>{
   if(!source.includes(needle)) throw new Error(`V37 E2E guard: missing ${label}: ${needle}`)
@@ -38,7 +42,8 @@ mustContain(page,'auth.signUp','registration action')
 
 for(const ext of ['pdf','jpg','png','docx','xlsx','pptx','eml','msg']) mustContain(uploadConfig,`'${ext}'`,`upload extension ${ext}`)
 mustContain(page,"action==='scan'||action==='upload'",'quick upload route')
-mustContain(page,'DocumentSection','document workspace')
+mustContain(documentsSurface,'DocumentSection','document workspace module')
+mustContain(page,'DocumentsSurface','document workspace composition')
 
 mustContain(page,'async function analyzeDocument','document analysis')
 mustContain(page,'invokeDocumentAnalysis','OCR/analysis service boundary')
@@ -50,7 +55,7 @@ mustContain(page,"traffic_light:'yellow'",'default case traffic light')
 mustContain(page,"traffic_light:draft.traffic_light",'assessment traffic light')
 
 mustContain(page,'createApproval','approval creation')
-mustContain(page,'ApprovalSection','approval workspace')
+mustContain(approvalsSurface,'ApprovalSection','approval workspace module')
 mustContain(page,'ApprovalDetail','approval detail')
 mustContain(page,'prepareDocumentApproval','prepare approval from document')
 
@@ -58,7 +63,10 @@ mustContain(page,"doExport({kind:'case',item:selectedCase},exportType)",'case ex
 for(const [value,label] of [['pdf','PDF'],['docx','Word (.docx)'],['xlsx','Excel (.xlsx)'],['pptx','PowerPoint (.pptx)'],['csv','CSV (.csv)'],['txt','Text (.txt)']]) mustContain(page,`<option value=\"${value}\">${label}</option>`,`export ${label}`)
 mustContain(page,'function downloadBlob','download delivery')
 
-for(const marker of ['backOverview','backCases','backClients']) mustContain(page,marker,`navigation ${marker}`)
+mustContain(caseSurfaces,'backOverview','cases/clients overview navigation')
+mustContain(page,'backCases','case-detail navigation')
+mustContain(caseSurfaces,'backClients','client-detail navigation')
+mustContain(dashboardSurface,'setSection','dashboard navigation ownership')
 mustContain(authSurface,'backExplanation','navigation backExplanation in auth module')
 
-console.log('V37 code-path end-to-end regression checks passed through the workspace module boundary')
+console.log('V37 code-path end-to-end regression checks passed through the modular workspace surfaces')
