@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/v46-direct-case-completion.yml'
       - 'scripts/v46_direct_case_completion.mjs'
+      - 'scripts/v46_fix_direct_case_guard.mjs'
       - 'app/modules/cases/CaseCompletionPanels.js'
   workflow_dispatch:
 
@@ -25,6 +26,9 @@ jobs:
 
       - name: Migrate V40-V42 to direct case components
         run: node scripts/v46_direct_case_completion.mjs
+
+      - name: Remove obsolete global V42 guard
+        run: node scripts/v46_fix_direct_case_guard.mjs
 
       - name: Install dependencies
         run: npm ci
