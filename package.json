@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch",
+    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch && npm run test:v38-practical-simulation",
     "build": "next build",
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
@@ -24,7 +24,8 @@
     "test:v38-simulation": "node scripts/test_v38_synthetic_full_flow.mjs",
     "test:v38-mobile": "node scripts/test_v38_mobile_resilience.mjs",
     "test:v38-accessibility": "node scripts/test_v38_accessibility_hardening.mjs",
-    "test:v38-prelaunch": "node scripts/test_v38_prelaunch_guard.mjs"
+    "test:v38-prelaunch": "node scripts/test_v38_prelaunch_guard.mjs",
+    "test:v38-practical-simulation": "node scripts/test_v38_practical_simulation.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
