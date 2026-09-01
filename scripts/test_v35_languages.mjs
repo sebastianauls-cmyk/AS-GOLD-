@@ -22,11 +22,7 @@ const requiredComponentCatalogs=[
   'workspaceCopy','approvalCopy','analysisCopy','privacyCopy','aiControlCopy','passwordCopy'
 ]
 
-assert.deepEqual(
-  supportedLanguages.map(({key})=>key),
-  expectedLanguages,
-  'V35 must expose exactly the agreed ten app languages in the agreed order'
-)
+assert.deepEqual(supportedLanguages.map(({key})=>key),expectedLanguages,'V35 must expose exactly the agreed ten app languages in the agreed order')
 assert.equal(new Set(expectedLanguages).size,expectedLanguages.length,'language keys must be unique')
 assert.deepEqual(supportedLanguages.find(({key})=>key==='ro')?.countryCodes,['RO'])
 assert.deepEqual(supportedLanguages.find(({key})=>key==='bg')?.countryCodes,['BG'])
@@ -40,44 +36,18 @@ assert.equal(rtlLanguages.has('fa'),true)
 for(const language of expectedLanguages){
   const names=outputLanguageNames[language]
   assert.ok(names, `missing output-language catalog for ${language}`)
-  for(const outputLanguage of expectedLanguages){
-    assert.ok(
-      typeof names[outputLanguage]==='string'&&names[outputLanguage].trim(),
-      `missing output-language label ${language} -> ${outputLanguage}`
-    )
-  }
+  for(const outputLanguage of expectedLanguages){assert.ok(typeof names[outputLanguage]==='string'&&names[outputLanguage].trim(),`missing output-language label ${language} -> ${outputLanguage}`)}
 }
-
-for(const catalog of requiredPageCatalogs){
-  for(const language of ['ro','bg']){
-    const value=pageTranslations[catalog]?.[language]
-    const populated=typeof value==='string'?Boolean(value.trim()):Boolean(value&&typeof value==='object'&&Object.keys(value).length)
-    assert.ok(populated,`missing or empty ${catalog} page catalog for ${language}`)
-  }
-}
-
-for(const catalog of requiredComponentCatalogs){
-  for(const language of ['ro','bg']){
-    const value=componentTranslations[catalog]?.[language]
-    assert.ok(value&&typeof value==='object',`missing ${catalog} component catalog for ${language}`)
-    assert.ok(Object.keys(value).length>0,`empty ${catalog} component catalog for ${language}`)
-  }
-}
-
-for(const language of ['ro','bg']){
-  const profile=problemLanguageProfiles[language]
-  assert.ok(profile,`missing problem navigator profile for ${language}`)
-  assert.equal(Object.keys(profile.cases||{}).length,8,`problem navigator must expose eight case types for ${language}`)
-  assert.ok(Object.keys(profile.reasons||{}).length>=5,`problem navigator reasons incomplete for ${language}`)
-  assert.ok(profile.ui?.title&&profile.ui?.placeholder&&profile.ui?.analyse,`problem navigator UI incomplete for ${language}`)
-  assert.ok(promoTranslations[language]?.label&&promoTranslations[language]?.apply,`promo UI incomplete for ${language}`)
-}
+for(const catalog of requiredPageCatalogs){for(const language of ['ro','bg']){const value=pageTranslations[catalog]?.[language];const populated=typeof value==='string'?Boolean(value.trim()):Boolean(value&&typeof value==='object'&&Object.keys(value).length);assert.ok(populated,`missing or empty ${catalog} page catalog for ${language}`)}}
+for(const catalog of requiredComponentCatalogs){for(const language of ['ro','bg']){const value=componentTranslations[catalog]?.[language];assert.ok(value&&typeof value==='object',`missing ${catalog} component catalog for ${language}`);assert.ok(Object.keys(value).length>0,`empty ${catalog} component catalog for ${language}`)}}
+for(const language of ['ro','bg']){const profile=problemLanguageProfiles[language];assert.ok(profile,`missing problem navigator profile for ${language}`);assert.equal(Object.keys(profile.cases||{}).length,8,`problem navigator must expose eight case types for ${language}`);assert.ok(Object.keys(profile.reasons||{}).length>=5,`problem navigator reasons incomplete for ${language}`);assert.ok(profile.ui?.title&&profile.ui?.placeholder&&profile.ui?.analyse,`problem navigator UI incomplete for ${language}`);assert.ok(promoTranslations[language]?.label&&promoTranslations[language]?.apply,`promo UI incomplete for ${language}`)}
 
 const switcherSource=await readFile(new URL('../app/modules/language/LanguageSwitcher.js',import.meta.url),'utf8')
 const videoDialogSource=await readFile(new URL('../app/modules/language/ExplainerVideoDialog.js',import.meta.url),'utf8')
 const heroSource=await readFile(new URL('../app/modules/public/HeroTitleStabilizer.js',import.meta.url),'utf8')
 const heroCompatibility=await readFile(new URL('../app/components/HeroTitleStabilizer.js',import.meta.url),'utf8')
-const introSource=await readFile(new URL('../app/components/ProductIntroCompact.js',import.meta.url),'utf8')
+const introSource=await readFile(new URL('../app/modules/public/ProductIntroCompact.js',import.meta.url),'utf8')
+const introCompatibility=await readFile(new URL('../app/components/ProductIntroCompact.js',import.meta.url),'utf8')
 const explainerSource=await readFile(new URL('../app/components/ExplainerVideo.js',import.meta.url),'utf8')
 
 assert.match(switcherSource,/import \{[^}]*\bBG\b[^}]*\bRO\b[^}]*\} from 'country-flag-icons\/react\/3x2'/s)
@@ -95,6 +65,7 @@ assert.match(heroSource,/\bbg:\{title:/)
 assert.match(heroCompatibility,/modules\/public\/HeroTitleStabilizer/)
 assert.match(introSource,/\bro:\{/)
 assert.match(introSource,/\bbg:\{/)
+assert.match(introCompatibility,/modules\/public\/ProductIntroCompact/)
 assert.match(explainerSource,/\['ro','🇷🇴','Română'\]/)
 assert.match(explainerSource,/\['bg','🇧🇬','Български'\]/)
 

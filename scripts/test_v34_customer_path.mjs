@@ -7,39 +7,40 @@ const fail=message=>{throw new Error(`V34: ${message}`)}
 const expect=(condition,message)=>{if(!condition) fail(message)}
 
 const layout=read('app/layout.js')
-const navigator=read('app/components/ProblemNavigator.js')
-const intro=read('app/components/ProductIntroCompact.js')
+const navigator=read('app/modules/public/ProblemNavigator.js')
+const navigatorCompatibility=read('app/components/ProblemNavigator.js')
+const intro=read('app/modules/public/ProductIntroCompact.js')
+const introCompatibility=read('app/components/ProductIntroCompact.js')
 const jump=read('app/modules/public/CaseChoiceJumpEnhancer.js')
 const jumpCompatibility=read('app/components/CaseChoiceJumpEnhancer.js')
 const title=read('app/modules/public/HeroTitleStabilizer.js')
 const titleCompatibility=read('app/components/HeroTitleStabilizer.js')
 const languages=read('app/lib/problemNavigatorLanguagesV36.mjs')
 
-// Public customer path must have exactly one active problem navigator.
 expect((layout.match(/<ProblemNavigator\s*\/>/g)||[]).length===1,'ProblemNavigator must be mounted exactly once')
 expect(!layout.includes('FreeEntryAfterRecommendation'),'legacy free-entry helper must not be mounted')
 expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not be mounted')
 
-// V37 deliberately moves action and problem guidance before the explanatory product intro.
-// Preserve the core path: first-action -> problem navigator -> product intro -> case jump support.
 const firstActionPos=layout.indexOf('<V37FirstAction/>')
 const navPos=layout.indexOf('<ProblemNavigator/>')
 const introPos=layout.indexOf('<ProductIntroCompact/>')
 const jumpPos=layout.indexOf('<CaseChoiceJumpEnhancer/>')
 expect(firstActionPos>=0&&navPos>firstActionPos&&introPos>navPos&&jumpPos>introPos,'layout order must be first action -> problem navigator -> product intro -> case jump enhancer')
+expect(layout.includes("./modules/public/ProblemNavigator"),'problem navigator must be owned by public module')
+expect(layout.includes("./modules/public/ProductIntroCompact"),'product intro must be owned by public module')
 expect(layout.includes("./modules/public/CaseChoiceJumpEnhancer"),'case-choice behavior must be owned by public module')
 expect(layout.includes("./modules/public/HeroTitleStabilizer"),'hero title behavior must be owned by public module')
+expect(navigatorCompatibility.includes("../modules/public/ProblemNavigator"),'legacy problem navigator import must remain a compatibility re-export')
+expect(introCompatibility.includes("../modules/public/ProductIntroCompact"),'legacy product intro import must remain a compatibility re-export')
 expect(jumpCompatibility.includes("../modules/public/CaseChoiceJumpEnhancer"),'legacy case-choice import must remain a compatibility re-export')
 expect(titleCompatibility.includes("../modules/public/HeroTitleStabilizer"),'legacy hero-title import must remain a compatibility re-export')
 
-// Mobile input must be a stable controlled React textarea with explicit help.
 expect(navigator.includes('<textarea ref={textRef} value={value} onChange='),'problem input must remain a controlled textarea')
 expect(navigator.includes('So funktioniert die Eingabe:'),'German input explanation is missing')
 expect(navigator.includes('inputHelp'),'multilingual input help is missing')
 expect((navigator.match(/id=\"asgold-problem-navigator-react\"/g)||[]).length===1,'problem navigator section must exist exactly once in component')
 expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document entry is missing from recommendation flow')
 
-// Product intro is intentionally compact: exactly four benefits per language.
 const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
 for(const code of supported){
   expect(intro.includes(`${code}:{title:`),`compact product intro missing language ${code}`)
@@ -54,7 +55,6 @@ for(const group of itemGroups.slice(0,supported.length)){
   expect(itemCount===4,'each compact product intro language must contain exactly four benefit points')
 }
 
-// Strong headline and direct 01-08 result jump must remain in place.
 expect(title.includes('AS Gold – Klarheit, wenn Vorgänge komplex werden.'),'strong German hero headline is missing')
 expect(jump.includes(".caseChooser .caseChoice"),'01-08 case choice listener is missing')
 expect(jump.includes("#fallarten .caseResult"),'case choice must target the selected result card')
