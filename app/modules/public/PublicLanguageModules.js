@@ -17,9 +17,7 @@ const copy={
   bg:{interfaceTitle:'1. Език на интерфейса',interfaceLabel:'Интерфейс',outputTitle:'2. Език на резултатите и клиентите',outputLabel:'Език на резултата',outputHelp:'Документите, резултатите и писмата за клиенти или други лица се създават на {language}. Интерфейсът остава независим.',presenter:'Кой да обясни AS Gold?',female:'Обяснява жена',male:'Обяснява мъж',play:'Пусни обяснителното видео',back:'Назад'}
 }
 
-const useCustomerText={de:'In dieser Sprache nutzen',en:'Use in this language',fr:'Utiliser dans cette langue',tr:'Bu dilde kullan',pl:'Użyj w tym języku',ru:'Использовать на этом языке',ar:'استخدم بهذه اللغة',fa:'استفاده به این زبان',ro:'Folosește în această limbă',bg:'Използвай на този език'}
-
-export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer}){
+export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer,customerModule}){
   const [presenter,setPresenter]=useState('female')
   const text=copy[language]||copy.de
   const outputName=(outputLanguageNames[language]||outputLanguageNames.de)?.[outputLanguage]||outputLanguage
@@ -34,21 +32,12 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
     localStorage.setItem('asgold-video-presenter',value)
   }
 
-  function playVideo(){
-    onPlayExplainer?.({language,presenter})
-  }
+  function playVideo(){onPlayExplainer?.({language,presenter})}
 
   function returnToStart(){
     const cleanUrl=`${window.location.pathname}${window.location.search}`
     if(window.location.hash)window.history.replaceState(window.history.state,'',cleanUrl)
     window.scrollTo({top:0,left:0,behavior:'instant'})
-  }
-
-  function openCustomerUse(){
-    const target=document.getElementById('asgold-problem-navigator-react')
-    if(!target)return
-    target.scrollIntoView({behavior:'smooth',block:'center'})
-    setTimeout(()=>target.querySelector('textarea')?.focus({preventScroll:true}),350)
   }
 
   return <section className="publicLanguageModules" aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
@@ -70,7 +59,7 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
       <LanguageSwitcher value={outputLanguage} onChange={onOutputLanguageChange} label={text.outputLabel}/>
       <p>{text.outputHelp.replace('{language}',outputName)}</p>
       <span className="outputLanguageStatus" data-output-language-status aria-live="polite">✓ {text.outputLabel}: <b>{outputName}</b></span>
-      <button type="button" className="outputCustomerButton" aria-controls="asgold-problem-navigator-react" onClick={openCustomerUse}>→ {useCustomerText[outputLanguage]||useCustomerText.en}</button>
+      <div id="asgold-customer-module-slot" className="customerModuleSlot">{customerModule}</div>
     </div>
   </section>
 }
