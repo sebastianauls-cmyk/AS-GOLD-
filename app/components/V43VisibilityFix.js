@@ -65,6 +65,7 @@ function reconcile(){
   if(!bar){
     bar=document.createElement('div')
     bar.id='asgold-v43-visible-controls'
+    bar.setAttribute('data-v43-visible-controls','true')
     bar.setAttribute('data-v46-fallback-controls','true')
     document.body.appendChild(bar)
   }
