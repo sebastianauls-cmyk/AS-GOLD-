@@ -13,6 +13,7 @@ on:
       - 'scripts/v46_extract_workspace_shell.mjs'
       - 'scripts/v46_extract_auth_surface.mjs'
       - 'scripts/v46_consolidate_workspace_shell.mjs'
+      - 'scripts/v46_extract_public_landing.mjs'
   workflow_dispatch:
 
 permissions:
@@ -53,6 +54,9 @@ jobs:
       - name: Consolidate protected workspace shell
         run: node scripts/v46_consolidate_workspace_shell.mjs
 
+      - name: Extract public landing
+        run: node scripts/v46_extract_public_landing.mjs
+
       - name: Install dependencies
         run: npm ci
 
@@ -85,6 +89,7 @@ jobs:
                   app/modules/auth/AuthSurface.js \
                   app/modules/public/publicUi.js \
                   app/modules/public/catalog.js \
+                  app/modules/public/PublicLanding.js \
                   app/modules/pricing/catalog.js \
                   app/modules/compliance/workspaceControlText.js \
                   app/modules/documents/uploadConfig.js \
@@ -97,5 +102,5 @@ jobs:
                   scripts/test_v46_modular_boundaries.mjs \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md \
                   app/modules/README.md
-          git commit -m 'V46 consolidate protected workspace shell'
+          git commit -m 'V46 extract public landing from workspace controller'
           git push origin HEAD:v46-navigation-clean
