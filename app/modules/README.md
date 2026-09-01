@@ -35,7 +35,7 @@ This directory is the target ownership structure for the V46 modularization. New
 - `navigation/`: owns accessibility hardening and mobile resilience; root layout imports both modules directly.
 - `tester/`: owns the paused tester state; public tester access remains closed and has no registration start link.
 - `auth/`: owns password policy and password UI; broader login/registration composition is still inside WorkspaceApp.
-- `cases/`: owns V24/V25 case workflow surfaces, V38 assessment/deadline/next-step logic, V39 timeline, V40 handoff, V41 consistency, V42 actionable gaps and their engines. Legacy component/lib paths are compatibility adapters.
+- `cases/`: owns V24/V25 case workflow surfaces, V38 assessment/deadline/next-step logic, V39 timeline, V40 handoff, V41 consistency, V42 actionable gaps and their engines. The V38 deadline warning is now direct React composition inside case/document detail instead of a global DOM observer. Legacy component/lib paths are compatibility adapters.
 - `documents/`: owns V26 document-analysis implementation; upload/orchestration remains to be extracted from WorkspaceApp.
 - `pricing/`: owns PromoCodeControl and promo translations; plan/quote orchestration remains to be extracted from WorkspaceApp.
 - `compliance/`: owns legal documents/footer/privacy controls plus the privacy-dashboard and withdrawal-flow implementations. The route-local PrivacyDashboard/WithdrawalForm files are thin adapters, while the pages import the compliance module directly.
@@ -98,3 +98,5 @@ The workspace controller now delegates repeated shell markup to explicit compone
 - `services/exportService.js`: workspace and account export artifact generation/download is isolated from WorkspaceApp; the controller only applies permissions, audit logging and user feedback.
 
 - `language/useLanguagePreferences.js`: owns persisted interface language, output language, RTL document direction and the existing output-language event compatibility signal.
+
+- `cases/DeadlineWarningCard`: V38 deadline intelligence now renders from explicit case/document props; the legacy V38 enhancer export is a no-op compatibility adapter and is no longer mounted in the root layout.

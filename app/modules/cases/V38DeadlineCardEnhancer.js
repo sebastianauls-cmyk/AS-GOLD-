@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect } from 'react'
 import { analyzeDeadlines } from '../lib/v38DeadlineIntelligence.mjs'
 
-const labels={
+export const deadlineWarningLabels={
   de:{title:'Fristen-Warnung',none:'Keine sichere Frist',basis:'Grundlage',caseBasis:'Im Fall hinterlegte Frist',documentBasis:'Expliziter Fristbezug im Dokument',documentMixedBasis:'Fristbezug erkannt – möglichen Terminbezug zusätzlich prüfen',consequence:'Mögliche Folge',action:'Jetzt tun',verify:'Fristgrundlage und Originaldokument prüfen.',immediate:'Sofort handeln',high:'Hohe Priorität',normal:'Vormerken',overdue:'Frist möglicherweise abgelaufen',uncertain:'Nicht sicher ableitbar',cOverdue:'Die Frist scheint bereits abgelaufen. Mögliche Rechtsfolgen müssen anhand des konkreten Vorgangs geprüft werden.',cImmediate:'Sehr kurzfristiger Handlungsbedarf. Mögliche Versäumnisfolgen müssen am konkreten Vorgang geprüft werden.',cHigh:'Zeitnah handeln und die Fristgrundlage prüfen. Mögliche Versäumnisfolgen hängen vom Vorgang ab.',cNormal:'Frist vormerken und rechtzeitig Grundlage sowie mögliche Folgen prüfen.',cUncertain:'Keine Rechtsfolge wird behauptet, solange die Fristgrundlage nicht verifiziert ist.'},
   en:{title:'Deadline warning',none:'No reliable deadline',basis:'Basis',caseBasis:'Deadline stored in the case',documentBasis:'Explicit deadline context in the document',documentMixedBasis:'Deadline context detected — also verify possible appointment context',consequence:'Possible consequence',action:'Do now',verify:'Verify the deadline basis and original document.',immediate:'Act now',high:'High priority',normal:'Schedule',overdue:'Deadline may have passed',uncertain:'Not reliably derivable',cOverdue:'The deadline appears to have passed. Possible legal consequences must be checked against the specific matter.',cImmediate:'Very short-term action is required. Possible consequences of missing the deadline must be checked for the specific matter.',cHigh:'Act promptly and verify the deadline basis. Possible consequences depend on the specific matter.',cNormal:'Record the deadline and verify its basis and possible consequences in good time.',cUncertain:'No legal consequence is asserted until the deadline basis has been verified.'},
   fr:{title:'Alerte de délai',none:'Aucun délai fiable',basis:'Base',caseBasis:'Délai enregistré dans le dossier',documentBasis:'Contexte de délai explicite dans le document',documentMixedBasis:'Contexte de délai détecté — vérifier aussi un éventuel contexte de rendez-vous',consequence:'Conséquence possible',action:'À faire maintenant',verify:'Vérifier la base du délai et le document original.',immediate:'Agir immédiatement',high:'Priorité élevée',normal:'À planifier',overdue:'Délai peut-être dépassé',uncertain:'Non déterminable avec certitude',cOverdue:'Le délai semble déjà dépassé. Les conséquences juridiques éventuelles doivent être vérifiées selon le dossier concret.',cImmediate:'Une action très rapide est nécessaire. Les conséquences d’un dépassement doivent être vérifiées selon le dossier.',cHigh:'Agir rapidement et vérifier la base du délai. Les conséquences éventuelles dépendent du dossier.',cNormal:'Noter le délai et vérifier à temps sa base ainsi que les conséquences possibles.',cUncertain:'Aucune conséquence juridique n’est affirmée tant que la base du délai n’est pas vérifiée.'},
@@ -16,24 +15,6 @@ const labels={
   bg:{title:'Предупреждение за срок',none:'Няма сигурен срок',basis:'Основание',caseBasis:'Срок, записан по случая',documentBasis:'Ясен контекст за срок в документа',documentMixedBasis:'Открит е контекст за срок — проверете и евентуален контекст на среща',consequence:'Възможна последица',action:'Какво да направите сега',verify:'Проверете основанието за срока и оригиналния документ.',immediate:'Действайте веднага',high:'Висок приоритет',normal:'Планирайте',overdue:'Срокът може да е изтекъл',uncertain:'Не може да се установи надеждно',cOverdue:'Срокът изглежда вече е изтекъл. Възможните правни последици трябва да се проверят според конкретния случай.',cImmediate:'Необходимо е много бързо действие. Възможните последици от пропускане на срока трябва да се проверят за конкретния случай.',cHigh:'Действайте своевременно и проверете основанието на срока. Възможните последици зависят от случая.',cNormal:'Отбележете срока и навреме проверете основанието и възможните последици.',cUncertain:'Не се твърди правна последица, докато основанието на срока не бъде проверено.'}
 }
 
-const languageByName={Deutsch:'de',English:'en','Français':'fr','Türkçe':'tr',Polski:'pl','Русский':'ru','العربية':'ar','فارسی':'fa','Română':'ro','Български':'bg'}
-
-function detectLanguage(){
-  const active=document.querySelector('.flagLanguageTrigger strong,.flagLanguagePublicPicker button strong')?.textContent?.trim()
-  return languageByName[active]||'de'
-}
-
-function readCaseDeadline(){
-  const grid=document.querySelector('.caseCoreGrid')
-  if(!grid) return ''
-  const cards=[...grid.querySelectorAll(':scope > article')]
-  return cards[2]?.querySelector('p')?.textContent?.trim()||''
-}
-
-function readDocumentText(){
-  const field=document.querySelector('.documentReviewForm textarea[id$="-extracted"],textarea[id*="extracted"]')
-  return field?.value?.trim()||''
-}
 
 function consequenceText(result,t){
   if(result.status==='overdue') return t.cOverdue
@@ -49,46 +30,26 @@ function basisText(primary,t){
   return primary.confidence==='medium'?t.documentMixedBasis:t.documentBasis
 }
 
-function buildCard(result,lang,mode){
-  const t=labels[lang]||labels.de
-  const card=document.createElement('section')
-  card.className='detailCard v38DeadlineWarningCard'
-  card.setAttribute('data-v38-deadline-card','true')
-  card.setAttribute('data-v38-deadline-mode',mode)
-  card.style.borderWidth='2px'
-  card.style.marginTop='14px'
-  const status=t[result.status]||t.uncertain
-  const primary=result.primary
-  const deadlineText=primary?new Date(`${primary.date}T12:00:00Z`).toLocaleDateString(lang==='de'?'de-DE':undefined,{timeZone:'UTC'}):t.none
-  card.innerHTML=`<div class="detailCardHead"><div><span class="modeBadge">V38</span><h3 style="margin:.55rem 0 .2rem">${t.title}</h3></div><strong>${status}</strong></div><p style="font-size:1.1rem;font-weight:800;margin:.65rem 0">${deadlineText}</p><p><b>${t.basis}:</b> ${basisText(primary,t)}</p><p><b>${t.consequence}:</b> ${consequenceText(result,t)}</p><p><b>${t.action}:</b> ${t.verify}</p>`
-  return card
+const deadlineLocales={de:'de-DE',en:'en-GB',fr:'fr-FR',tr:'tr-TR',pl:'pl-PL',ru:'ru-RU',ar:'ar-SA',fa:'fa-IR',ro:'ro-RO',bg:'bg-BG'}
+
+function formatDeadline(primary,language,t){
+  if(!primary) return t.none
+  const date=new Date(`${primary.date}T12:00:00Z`)
+  return new Intl.DateTimeFormat(deadlineLocales[language]||deadlineLocales.de,{timeZone:'UTC'}).format(date)
 }
 
-export function V38DeadlineCardEnhancer(){
-  useEffect(()=>{
-    let lastSignature=''
-    function render(){
-      const grid=document.querySelector('.caseCoreGrid')
-      const documentHead=document.querySelector('.documentReviewHead')
-      if(!grid&&!documentHead){document.querySelector('[data-v38-deadline-card="true"]')?.remove();lastSignature='';return}
-      const lang=detectLanguage()
-      const mode=grid?'case':'document'
-      const rawCase=grid?readCaseDeadline():''
-      const rawText=!grid?readDocumentText():''
-      const signature=`${mode}|${rawCase}|${rawText}|${lang}`
-      if(signature===lastSignature&&document.querySelector('[data-v38-deadline-card="true"]')) return
-      document.querySelector('[data-v38-deadline-card="true"]')?.remove()
-      const result=analyzeDeadlines({caseDeadline:rawCase&&rawCase!=='—'?rawCase:'',text:rawText})
-      const card=buildCard(result,lang,mode)
-      if(grid) grid.insertAdjacentElement('afterend',card)
-      else documentHead.insertAdjacentElement('afterend',card)
-      lastSignature=signature
-    }
-    render()
-    const observer=new MutationObserver(()=>render())
-    observer.observe(document.body,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:['value']})
-    document.addEventListener('input',render)
-    return ()=>{observer.disconnect();document.removeEventListener('input',render)}
-  },[])
-  return null
+export function DeadlineWarningCard({language='de',caseDeadline='',text='',mode='case'}){
+  const t=deadlineWarningLabels[language]||deadlineWarningLabels.de
+  const result=analyzeDeadlines({caseDeadline,text})
+  const primary=result.primary
+  const status=t[result.status]||t.uncertain
+  return <section className="detailCard v38DeadlineWarningCard" data-v38-deadline-card="true" data-v38-deadline-mode={mode} style={{borderWidth:'2px',marginTop:'14px'}}>
+    <div className="detailCardHead"><div><span className="modeBadge">V38</span><h3 style={{margin:'.55rem 0 .2rem'}}>{t.title}</h3></div><strong>{status}</strong></div>
+    <p style={{fontSize:'1.1rem',fontWeight:800,margin:'.65rem 0'}}>{formatDeadline(primary,language,t)}</p>
+    <p><b>{t.basis}:</b> {basisText(primary,t)}</p>
+    <p><b>{t.consequence}:</b> {consequenceText(result,t)}</p>
+    <p><b>{t.action}:</b> {t.verify}</p>
+  </section>
 }
+
+export function V38DeadlineCardEnhancer(){ return null }

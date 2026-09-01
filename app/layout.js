@@ -1,5 +1,4 @@
 import './globals.css'
-import { V38DeadlineCardEnhancer } from './modules/cases/V38DeadlineCardEnhancer'
 import { V38AssessmentExplainability } from './modules/cases/V38AssessmentExplainability'
 import { V38PrimaryNextStep } from './modules/cases/V38PrimaryNextStep'
 import { AccessibilityHardening } from './modules/navigation/AccessibilityHardening'
@@ -18,5 +17,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
+  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
 }
