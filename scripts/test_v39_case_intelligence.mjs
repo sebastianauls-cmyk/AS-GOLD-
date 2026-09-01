@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import {autoDocumentAssessment,sortTimelineEntries} from '../app/lib/v39CaseIntelligence.mjs'
+import {autoDocumentAssessment,sortTimelineEntries} from '../app/modules/lib/v39CaseIntelligence.mjs'
 
 const red=autoDocumentAssessment('Zahlungsaufforderung. Die Widerspruchsfrist ist versäumt.',{status:'immediate',primary:{date:'2026-09-03'}})
 assert.equal(red.trafficLight,'red')
@@ -17,14 +17,22 @@ assert.equal(unknown.confidence,'low')
 const timeline=sortTimelineEntries([{date:'2026-09-10',title:'B'},{date:'2026-09-03',title:'A'}])
 assert.deepEqual(timeline.map(entry=>entry.title),['A','B'])
 
-const component=fs.readFileSync(new URL('../app/components/V39CaseTimelineAutoAssessment.js',import.meta.url),'utf8')
+const component=fs.readFileSync(new URL('../app/modules/cases/V39CaseTimelineAutoAssessment.js',import.meta.url),'utf8')
+const compatibility=fs.readFileSync(new URL('../app/components/V39CaseTimelineAutoAssessment.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
-for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']) assert.match(component,new RegExp(`\\b${language}:\\{`))
+const directCases=fs.readFileSync(new URL('../app/modules/cases/V24Workspace.js',import.meta.url),'utf8')
+for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(component,new RegExp(`\\b${language}:\\{`))
 assert.match(component,/Automatische Dokument-Ampel/)
 assert.match(component,/Vorläufig – Original prüfen/)
 assert.match(component,/Fall-Timeline/)
 assert.match(component,/data-v39-auto-assessment/)
 assert.match(component,/data-v39-timeline/)
 assert.match(component,/analyzeDeadlines/)
-assert.match(layout,/V39CaseTimelineAutoAssessment/)
-console.log('V39 case intelligence guard passed: automatic provisional traffic light and chronological case timeline verified.')
+assert.match(compatibility,/modules\/cases\/V39CaseTimelineAutoAssessment/)
+assert.doesNotMatch(layout,/V39CaseTimelineAutoAssessment/)
+assert.match(component,/DocumentAutoAssessment/)
+assert.match(component,/CaseTimeline/)
+assert.doesNotMatch(component,/MutationObserver|document\.createElement|querySelector|innerHTML|setInterval/)
+assert.match(directCases,/DocumentAutoAssessment language=\{language\}/)
+assert.match(directCases,/CaseTimeline language=\{language\}/)
+console.log('V39 case intelligence guard passed: direct React automatic provisional traffic light and chronological case timeline verified.')

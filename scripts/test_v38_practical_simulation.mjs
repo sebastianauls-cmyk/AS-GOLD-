@@ -6,13 +6,20 @@ import { jsPDF } from 'jspdf'
 import { createXlsxBlob, createPptxBlob } from '../app/lib/officeExports.js'
 
 process.env.INTEGRATION_TOKEN_KEY='v38-synthetic-integration-key-only-for-regression'
-const {sealIntegrationToken,openIntegrationToken}=await import('../app/lib/integrationTokens.js')
+const {sealIntegrationToken,openIntegrationToken}=await import('../app/modules/integrations/tokens.js')
 
-const page=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')
+const page=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceApp.js',import.meta.url),'utf8')
+const authRepository=fs.readFileSync(new URL('../app/modules/services/authRepository.js',import.meta.url),'utf8')
+const pageEntry=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')
+const uploadConfig=fs.readFileSync(new URL('../app/modules/documents/uploadConfig.js',import.meta.url),'utf8')
+const documentsSurface=fs.readFileSync(new URL('../app/modules/documents/DocumentsSurface.js',import.meta.url),'utf8')
+const caseSurfaces=fs.readFileSync(new URL('../app/modules/cases/WorkspaceCaseSurfaces.js',import.meta.url),'utf8')
 const googleStart=fs.readFileSync(new URL('../app/api/integrations/google/start/route.js',import.meta.url),'utf8')
 const googleCallback=fs.readFileSync(new URL('../app/api/integrations/google/callback/route.js',import.meta.url),'utf8')
 const microsoftStart=fs.readFileSync(new URL('../app/api/integrations/microsoft/start/route.js',import.meta.url),'utf8')
 const microsoftCallback=fs.readFileSync(new URL('../app/api/integrations/microsoft/callback/route.js',import.meta.url),'utf8')
+
+assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/)
 
 const rows=[
   ['AS Gold synthetischer Testfall',''],
@@ -24,11 +31,12 @@ const rows=[
   ['Nächster Schritt','Fristgrundlage prüfen und Antwort vorbereiten.']
 ]
 
-// Auth-/Registrierungsfluss: reale Produktionspfade bleiben vorhanden und Testdaten-Gate darf nicht umgangen werden.
 for(const token of [
   'supabase.auth.signUp',
   'supabase.auth.signInWithPassword',
-  'supabase.auth.resetPasswordForEmail',
+  'supabase.auth.resetPasswordForEmail'
+]) assert.match(authRepository,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')))
+for(const token of [
   'acceptedLegal',
   'confirmedTestData',
   'validateV29Password',
@@ -36,14 +44,12 @@ for(const token of [
   "test_data_confirmed"
 ]) assert.match(page,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')))
 
-// Fehlerzustände: ungültiges Format, Größenlimit und Upload-Busy-State sind im echten UI geschützt.
-assert.match(page,/tooLarge/)
-assert.match(page,/unsupported/)
-assert.match(page,/maxUploadBytes\s*=\s*50\s*\*\s*1024\s*\*\s*1024/)
-assert.match(page,/disabled=\{uploading\}/)
+assert.match(uploadConfig,/tooLarge/)
+assert.match(uploadConfig,/unsupported/)
+assert.match(uploadConfig,/maxUploadBytes\s*=\s*50\s*\*\s*1024\s*\*\s*1024/)
+assert.match(documentsSurface,/uploading=\{uploading\}/)
 assert.match(page,/if\(!canExport\(type\)\)/)
 
-// Reale Dateierzeugung im Node-Build: DOCX.
 const docxBuffer=await Packer.toBuffer(new Document({sections:[{children:rows.map((r,i)=>new Paragraph({children:[new TextRun({text:i===0?r[0]:`${r[0]}: ${r[1]}`,bold:i===0})]}))}]}))
 assert.ok(docxBuffer.byteLength>1000,'DOCX-Simulation erzeugte keine belastbare Datei')
 const docxZip=await JSZip.loadAsync(docxBuffer)
@@ -51,7 +57,6 @@ assert.ok(docxZip.file('word/document.xml'),'DOCX-Struktur unvollständig')
 const docxXml=await docxZip.file('word/document.xml').async('string')
 assert.match(docxXml,/V38-Simulation/)
 
-// Reale Dateierzeugung im Node-Build: PDF.
 const pdf=new jsPDF()
 let y=18
 for(const [label,value] of rows){pdf.text(`${label}${value?`: ${value}`:''}`,18,y);y+=8}
@@ -59,7 +64,6 @@ const pdfBytes=pdf.output('arraybuffer')
 assert.ok(pdfBytes.byteLength>500,'PDF-Simulation erzeugte keine belastbare Datei')
 assert.equal(Buffer.from(pdfBytes).subarray(0,4).toString(),'%PDF')
 
-// Reale Dateierzeugung im Node-Build: XLSX.
 const xlsxBlob=await createXlsxBlob(rows)
 assert.ok(xlsxBlob.size>1000,'XLSX-Simulation erzeugte keine belastbare Datei')
 const xlsxZip=await JSZip.loadAsync(await xlsxBlob.arrayBuffer())
@@ -67,7 +71,6 @@ assert.ok(xlsxZip.file('xl/workbook.xml'))
 assert.ok(xlsxZip.file('xl/worksheets/sheet1.xml'))
 assert.match(await xlsxZip.file('xl/worksheets/sheet1.xml').async('string'),/V38-Simulation/)
 
-// Reale Dateierzeugung im Node-Build: PPTX.
 const pptxBlob=await createPptxBlob(rows)
 assert.ok(pptxBlob.size>1000,'PPTX-Simulation erzeugte keine belastbare Datei')
 const pptxZip=await JSZip.loadAsync(await pptxBlob.arrayBuffer())
@@ -76,7 +79,6 @@ assert.ok(pptxZip.file('ppt/slides/slide1.xml'))
 const slideNames=Object.keys(pptxZip.files).filter(name=>/^ppt\/slides\/slide\d+\.xml$/.test(name))
 assert.ok(slideNames.length>=1)
 
-// OAuth wird ohne externe Anbieterzugangsdaten vollständig bis zur Sicherheitsgrenze simuliert.
 const syntheticToken={provider:'google',service:'drive',refresh_token:'synthetic-refresh-token',scope:'openid drive.file',connected_at:'2026-09-01T00:00:00.000Z'}
 const sealed=sealIntegrationToken(syntheticToken)
 assert.notEqual(sealed,syntheticToken.refresh_token)
@@ -97,8 +99,9 @@ assert.match(microsoftCallback,/sealIntegrationToken/)
 assert.match(googleCallback,/refresh_token/)
 assert.match(microsoftCallback,/refresh_token/)
 
-// Navigation/Exports sind in der produktiven Oberfläche tatsächlich verdrahtet.
 for(const exportType of ['pdf','docx','xlsx','pptx','csv','txt']) assert.match(page,new RegExp(`value=\\"${exportType}\\"`))
-for(const backToken of ['backCases','backClients','backOverview']) assert.match(page,new RegExp(backToken))
+assert.match(page,/backCases/)
+assert.match(caseSurfaces,/backClients/)
+assert.match(caseSurfaces,/backOverview/)
 
-console.log('V38 practical simulation passed: synthetic auth gates, error paths, real DOCX/PDF/XLSX/PPTX generation, OAuth state/token safeguards and navigation/export wiring verified.')
+console.log('V38 practical simulation passed: modular workspace auth gates, error paths, real DOCX/PDF/XLSX/PPTX generation, OAuth state/token safeguards and navigation/export wiring verified.')

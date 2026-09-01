@@ -1,0 +1,56 @@
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import { caseFrequencyWeight, caseOrder, orderCasesByResearch, researchedCaseVolumes } from '../app/modules/public/casePriorityV56.mjs'
+
+assert.deepEqual(caseOrder,['work','contract','authority','property','insurance','business','dispute','private'])
+assert.ok(researchedCaseVolumes.work>researchedCaseVolumes.insurance)
+assert.ok(caseFrequencyWeight.work>caseFrequencyWeight.insurance)
+assert.deepEqual(orderCasesByResearch(caseOrder.map(key=>({key})).reverse()).map(item=>item.key),caseOrder)
+
+const navigator=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8')
+const landing=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')
+const publicHeader=fs.readFileSync('app/modules/public/PublicHeader.js','utf8')
+const caseDiscovery=fs.readFileSync('app/modules/public/PublicCaseDiscoverySection.js','utf8')
+const languageModules=fs.readFileSync('app/modules/public/PublicLanguageModules.js','utf8')
+const workspace=fs.readFileSync('app/modules/workspace/WorkspaceApp.js','utf8')
+const languagePreferences=fs.readFileSync('app/modules/language/useLanguagePreferences.js','utf8')
+const css=fs.readFileSync('app/globals.css','utf8')
+
+assert.match(navigator,/count\*1000/)
+assert.match(navigator,/data-customer-language=\{customerLanguage\}/)
+assert.match(navigator,/getSpeechLocale\(customerLanguage\)/)
+assert.match(navigator,/textRef\.current\?\.value\?\?value/)
+assert.match(navigator,/onInput=\{event=>updateValue\(event\.currentTarget\.value\)\}/)
+assert.match(navigator,/<form onSubmit=\{event=>\{event\.preventDefault\(\);analyse\(\)\}\}/)
+assert.match(navigator,/textRef\.current\?\.blur\(\)/)
+assert.match(navigator,/resultRef\.current\?\.scrollIntoView/)
+assert.doesNotMatch(navigator,/MutationObserver|createPortal/)
+
+assert.match(languageModules,/1\. Sprache der Oberfläche/)
+assert.match(languageModules,/2\. Sprache für Ausgabe & Kunden/)
+assert.doesNotMatch(languageModules,/asgold-customer-module-slot|customerModuleSlot|\{customerModule\}/)
+assert.match(languageModules,/returnToGerman/)
+assert.match(languageModules,/Back to German \/ Zurück zu Deutsch/)
+assert.doesNotMatch(languageModules,/getElementById|querySelector|MutationObserver|createPortal/)
+assert.match(landing,/PublicHeader/)
+assert.match(publicHeader,/PublicLanguageModules/)
+assert.doesNotMatch(landing,/customerModule=\{customerModule\}/)
+assert.match(landing,/<ProblemNavigator[^>]*outputLanguage=\{outputLanguage\}/)
+assert.match(landing,/onSpeakProblem=\{\(\)=>problemNavigatorRef\.current\?\.speak\(\)\}/)
+assert.match(landing,/PublicCaseDiscoverySection/)
+assert.match(caseDiscovery,/orderedPublicCases\.map/)
+
+assert.match(languagePreferences,/document\.documentElement\.dataset\.outputLanguage=outputLanguage/)
+assert.match(languagePreferences,/CustomEvent\('asgold:output-language'/)
+assert.match(workspace,/getV24Copy\(outputLanguage\)/)
+assert.match(workspace,/getV25ApprovalCopy\(outputLanguage\)/)
+assert.match(workspace,/orderCasesByResearch\(publicCd\.cases\)/)
+assert.match(workspace,/useState\('work'\)/)
+
+assert.match(css,/\.publicTop\{position:relative;top:auto\}/)
+assert.match(css,/\.outputModule p\{display:none\}/)
+assert.match(css,/\.publicLanguageModules\{/)
+assert.match(css,/\.publicWelcome\{/)
+assert.match(css,/#asgold-problem-navigator-react\{scroll-margin-top:16px\}/)
+
+console.log('V58 direct modular parity checks passed: interface language, customer/output language, customer navigator and case discovery are directly owned by modular React components.')

@@ -1,0 +1,60 @@
+name: V46 Direct Deadline Card
+
+on:
+  push:
+    branches: [v46-navigation-clean]
+    paths:
+      - '.github/workflows/v46-direct-deadline-card.yml'
+      - 'scripts/v46_direct_deadline_card.mjs'
+      - 'scripts/v46_align_deadline_guards.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  direct-deadline-card:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout modular branch
+        uses: actions/checkout@v4
+        with:
+          ref: v46-navigation-clean
+          fetch-depth: 1
+
+      - name: Replace global deadline DOM enhancer
+        run: node scripts/v46_direct_deadline_card.mjs
+
+      - name: Align direct deadline regression guards
+        run: node scripts/v46_align_deadline_guards.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full regression chain
+        run: npm run prebuild
+
+      - name: Build production bundle
+        run: npx next build
+
+      - name: Commit verified direct deadline card
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo 'No deadline changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/modules/cases/V38DeadlineCardEnhancer.js \
+                  app/modules/cases/V24Workspace.js \
+                  app/modules/workspace/WorkspaceApp.js \
+                  app/layout.js \
+                  app/modules/README.md \
+                  scripts/test_v38_deadline_intelligence.mjs \
+                  scripts/test_v38_synthetic_full_flow.mjs \
+                  scripts/test_v46_modular_boundaries.mjs
+          git commit -m 'V46 render deadline warnings directly'
+          git push origin HEAD:v46-navigation-clean

@@ -1,1 +1,1 @@
-export * from './v35ComponentTranslations.mjs'
+export * from '../modules/language/v35ComponentTranslations.mjs'

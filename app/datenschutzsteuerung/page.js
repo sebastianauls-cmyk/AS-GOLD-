@@ -1,5 +1,5 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
-import PrivacyDashboard from './PrivacyDashboard'
+import PrivacyDashboard from '../modules/compliance/PrivacyDashboard'
 
 export const metadata={title:'Datenschutz-Steuerung | AS Gold',description:'Persönliche Datenschutz- und KI-Freigaben in AS Gold prüfen und ändern.'}
 

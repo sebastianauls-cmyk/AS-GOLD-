@@ -1,0 +1,62 @@
+name: V46 Sync Vietnamese Main Parity
+
+on:
+  push:
+    branches: [v46-navigation-clean]
+    paths:
+      - '.github/workflows/v46-sync-vietnamese-main.yml'
+      - 'scripts/v46_sync_vietnamese_from_main.mjs'
+      - 'scripts/v46_complete_vietnamese_public_catalogs.mjs'
+      - 'scripts/test_v35_languages.mjs'
+      - 'scripts/test_v36_explainer_video.mjs'
+      - 'scripts/test_v70_tester_sharing.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-vietnamese:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout modular branch
+        uses: actions/checkout@v4
+        with:
+          ref: v46-navigation-clean
+          fetch-depth: 0
+
+      - name: Fetch latest main product state
+        run: git fetch origin main:refs/remotes/origin/main
+
+      - name: Port Vietnamese into modular domain ownership
+        run: node scripts/v46_sync_vietnamese_from_main.mjs
+
+      - name: Complete Vietnamese public catalog ownership
+        run: node scripts/v46_complete_vietnamese_public_catalogs.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify modular Vietnamese coverage
+        run: npm run test:v72-vietnamese
+
+      - name: Run complete regression chain
+        run: npm run prebuild
+
+      - name: Build production bundle
+        run: npx next build
+
+      - name: Commit only verified Vietnamese parity
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo 'No Vietnamese parity changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/modules app/lib/v71VietnamesePageTranslations.mjs app/lib/v71VietnameseComponentTranslations.mjs scripts/test_v35_languages.mjs scripts/test_v36_explainer_video.mjs scripts/test_v70_tester_sharing.mjs scripts/test_v72_vietnamese_modular_coverage.mjs package.json
+          git commit -m 'V46 preserve Vietnamese in modular domains'
+          git push origin HEAD:v46-navigation-clean

@@ -1,0 +1,53 @@
+name: V46 Language Preference Boundary
+
+on:
+  push:
+    branches: [v46-navigation-clean]
+    paths:
+      - '.github/workflows/v46-language-preferences.yml'
+      - 'scripts/v46_extract_language_preferences.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract-language-preferences:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout modular branch
+        uses: actions/checkout@v4
+        with:
+          ref: v46-navigation-clean
+          fetch-depth: 1
+
+      - name: Extract language preference state
+        run: node scripts/v46_extract_language_preferences.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run full regression chain
+        run: npm run prebuild
+
+      - name: Build production bundle
+        run: npx next build
+
+      - name: Commit verified language boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo 'No language preference changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/modules/workspace/WorkspaceApp.js \
+                  app/modules/language/useLanguagePreferences.js \
+                  app/modules/README.md \
+                  scripts/test_v46_modular_boundaries.mjs \
+                  scripts/test_v56_modular_parity.mjs
+          git commit -m 'V46 extract language preference boundary'
+          git push origin HEAD:v46-navigation-clean

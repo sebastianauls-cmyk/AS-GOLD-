@@ -108,7 +108,6 @@ html{scroll-behavior:smooth;scroll-padding-top:92px}
 .legalFooter{margin-top:0;padding:34px 0;background:#20242b;color:#d7dbe1}.legalFooterInner{display:grid;gap:18px}.legalFooterBrand{display:flex;gap:10px 18px;align-items:baseline;flex-wrap:wrap}.legalFooterBrand b{color:#fff;font-size:1.1rem}.legalFooterBrand span,.legalFooter small{color:#aeb5bf}.legalFooter nav{display:flex;gap:8px 16px;align-items:center;flex-wrap:wrap}.legalFooter a{color:#eef0f3;text-decoration:none}.legalFooter a:hover{text-decoration:underline}.legalFooter .withdrawalAction{padding:9px 13px;border:1px solid #d9bd71;border-radius:10px;background:#f3e5ba;color:#46350e;font-weight:850;text-decoration:none}.legalFooter .withdrawalAction:hover{background:#fff0c9;text-decoration:none}
 .legalChecks{display:grid;gap:12px;margin:7px 0}.legalChecks label,.documentPrivacyConfirm{display:flex!important;align-items:flex-start;gap:10px!important;padding:12px;border:1px solid #e0d4b5;border-radius:12px;background:#fffaf0;font-weight:650!important;line-height:1.45}.legalChecks input,.documentPrivacyConfirm input{width:20px;height:20px;flex:0 0 auto;margin-top:1px}.legalChecks a{color:#6c5117}.legalGate{width:min(680px,100%);margin:40px auto;padding:28px;border:1px solid #d9c58f;border-radius:22px;background:#fff;box-shadow:0 18px 48px rgba(44,49,56,.08)}.legalGate h1{margin:10px 0;font-size:clamp(1.8rem,4vw,2.6rem)}.legalGate>p{color:#626c78;line-height:1.55}.legalGate button{margin-top:8px}.documentPrivacyIntro{grid-column:1/-1;padding:15px;border:1px solid #dfd2ad;border-radius:13px;background:#fffaf0}.documentPrivacyIntro b,.documentPrivacyIntro p{display:block}.documentPrivacyIntro p{margin:5px 0 8px;color:#606975;line-height:1.45}.documentPrivacyIntro a,.analysisConsent a{color:#6c5117;font-weight:800}.documentPrivacyConfirm{grid-column:1/-1}.primary:disabled{cursor:not-allowed;opacity:.55}
 .legalSite{min-height:100vh;display:flex;flex-direction:column}.legalHeader{position:sticky;top:0;z-index:20;border-bottom:1px solid #e4e5e8;background:#ffffffed;backdrop-filter:blur(12px)}.legalHeaderInner{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:16px}.legalHome{text-decoration:none;color:#252b33}.legalMain{flex:1;padding-top:54px;padding-bottom:72px}.legalTitle{max-width:900px;padding-bottom:32px;border-bottom:1px solid #e0e2e6}.legalTitle h1{font-size:clamp(2.4rem,6vw,4.6rem);line-height:1.05;margin:14px 0}.legalTitle .lead{font-size:1.12rem}.legalUpdated{margin-top:20px;color:#747d88;font-size:.9rem}.legalBody{max-width:940px}.legalSection{padding:32px 0;border-bottom:1px solid #e3e5e8}.legalSection:last-child{border-bottom:0}.legalSection h2{margin:0 0 16px;font-size:1.55rem}.legalSection h3{margin:22px 0 8px;font-size:1.05rem;color:#5f4a1b}.legalSection p,.legalSection li,.legalSection address{line-height:1.65}.legalSection address{font-style:normal}.legalSection a{color:#695019}.legalSection code{padding:2px 5px;border-radius:5px;background:#eceff2}.legalSection ul,.legalSection ol{padding-inline-start:24px;display:grid;gap:8px}.legalNotice{margin:28px 0 4px;padding:18px 20px;border:1px solid #d9c68f;border-radius:15px;background:#fffaf0;line-height:1.55}.legalNotice p{margin:6px 0 0}.legalNotice-warning{border-color:#e4bd63;background:#fff7dd}.legalNotice-success{border-color:#a9d1b2;background:#eef9f0}.legalCardGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}.legalCard{display:block;padding:20px;border:1px solid #e0e2e6;border-radius:16px;background:#fff;color:#2e353e!important;text-decoration:none;box-shadow:0 8px 24px rgba(27,31,37,.04)}.legalCard:hover{border-color:#c9ad66;transform:translateY(-1px)}.legalCard h2{font-size:1.15rem;margin:0 0 7px}.legalCard p{margin:0 0 12px;color:#65707d}.legalCard span{color:#6b521b;font-weight:800}.legalTableWrap{overflow-x:auto;border:1px solid #e0e2e6;border-radius:14px}.legalTableWrap table{width:100%;border-collapse:collapse;background:#fff}.legalTableWrap th,.legalTableWrap td{padding:13px 15px;border-bottom:1px solid #e7e8eb;text-align:start;vertical-align:top;line-height:1.5}.legalTableWrap th{background:#f6f4ed;color:#5f4a1b}.legalTableWrap tr:last-child td{border-bottom:0}.legalTemplate{padding:20px;border:1px solid #d9dde2;border-radius:14px;background:#fff}.legalTemplate p{margin:0 0 15px}.withdrawalStart,.withdrawalDone,.withdrawalForm{padding:22px;border:1px solid #d9c58f;border-radius:18px;background:#fffaf0}.withdrawalPrimary{min-height:50px;padding-inline:24px;font-size:1.02rem}.withdrawalForm{display:grid;gap:14px}.withdrawalForm>label{display:grid;gap:6px;font-weight:750}.withdrawalForm input{padding:12px;border:1px solid #cfd3d9;border-radius:10px;background:#fff}.withdrawalForm label small{color:#6f7783;font-weight:500}.withdrawalDeclaration{padding:14px;border:1px solid #e0d6bb;border-radius:12px;background:#fff}.withdrawalDeclaration p{margin:5px 0 0}.withdrawalHoneypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}.withdrawalDone{border-color:#a7cfb0;background:#eef9f0}.withdrawalDone small{display:block;margin-top:14px;color:#52625a}.withdrawalDone code{overflow-wrap:anywhere}
-.testerShareBox{margin-top:16px;padding:18px;border:1px solid #d9c68f;border-radius:16px;background:#fffaf0}.testerShareActions{display:flex;gap:10px;flex-wrap:wrap}.testerShareActions .btn{min-height:48px;display:inline-flex;align-items:center;justify-content:center;text-align:center}.testerShareUrl{display:block;margin-top:14px;padding:11px 12px!important;border:1px solid #e1d5b6;border-radius:10px!important;background:#fff!important;overflow-wrap:anywhere}.testerShareStatus{margin:12px 0 0;color:#28623a;font-weight:800}.legalTranslatedText+.testerShareBox{margin-top:18px}
 @media(max-width:700px){.legalFooter nav{display:grid;grid-template-columns:1fr 1fr}.legalFooter .withdrawalAction{grid-column:1/-1;text-align:center}.legalCardGrid{grid-template-columns:1fr}.legalMain{padding-top:34px}.legalGate{padding:20px;margin:20px auto}.documentPrivacyConfirm{grid-column:auto}.legalHeaderInner .btn{padding:9px 12px}}
 @media(max-width:430px){.legalFooter nav{grid-template-columns:1fr}.legalFooter .withdrawalAction{grid-column:auto}.legalFooter a{min-height:38px;display:flex;align-items:center}.legalTitle h1{font-size:2.35rem}}
 
@@ -131,69 +130,6 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 @media(max-width:700px){.flagLanguageMenu{position:fixed;top:auto;right:12px;bottom:12px;left:12px;width:auto;grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.appHeaderTools .flagLanguageLabeled{flex-direction:column;align-items:flex-start;gap:3px}.legalHeaderActions .btn{display:none}.legalHeaderInner{min-height:64px}.outputLanguageControl{justify-content:space-between}.promoForm>div{grid-template-columns:1fr}.promoForm button{width:100%}.promoBoxHead{align-items:flex-start}}
 @media(max-width:420px){.flagLanguageMenu{grid-template-columns:1fr 1fr}.flagLanguageMenu button{min-width:0}.flagLanguageMenu button small{font-size:.7rem}}
 
-/* V51: two independent language modules and directly visible explainer choice */
-.publicHeader{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 20px;align-items:center;padding:12px 0 14px}
-.publicBrand{align-self:start;padding-top:8px}
-.publicActions{display:flex;justify-content:flex-end;align-items:center;gap:9px;flex-wrap:wrap}
-.publicActions a{min-height:42px;display:grid;place-items:center;padding:8px 12px;border:1px solid #e1e3e7;border-radius:10px;background:#fff;color:#374151;text-decoration:none;font-weight:750}
-.publicLanguageModules{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;width:100%}
-.publicWelcome{grid-column:1/-1;display:flex;align-items:center;gap:10px;margin:0;padding:12px 14px;border:1px solid #e2ca8d;border-radius:14px;background:linear-gradient(135deg,#fff7d9,#fffdf7);box-shadow:0 6px 18px rgba(83,63,20,.08);color:#594516;font-size:1.08rem;font-weight:820;line-height:1.45}
-.publicWelcome span{font-size:1.35rem;line-height:1}
-.publicLanguageModule{min-width:0;padding:14px;border:1px solid #d9c792;border-radius:16px;background:#fffdf7;box-shadow:0 5px 18px rgba(27,31,37,.06)}
-.publicLanguageTitle{display:block;margin-bottom:9px;color:#443817;font-size:1rem}
-.publicLanguageMainRow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.publicLanguageModule .flagLanguage{width:100%;max-width:360px}
-.publicLanguageModule .flagLanguageTrigger{width:100%;min-height:50px;justify-content:flex-start;border-color:#c9ad66;padding:9px 12px}
-.publicLanguageModule .flagLanguageTrigger .flagLanguageChevron{margin-inline-start:auto}
-.publicLanguageModule .flagLanguageMenu{inset-inline-start:0;inset-inline-end:auto;z-index:200}
-.publicPresenterLabel{display:block;margin:12px 0 7px;color:#5d4a1e;font-size:.9rem;font-weight:850}
-.publicPresenterRow{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px}
-.publicPresenterRow button,.publicBackButton{min-height:46px;padding:9px 11px;border:1px solid #c9ad66;border-radius:11px;background:#fff;color:#463715;font-weight:850}
-.publicPresenterRow button.active{border:2px solid #8f6e25;background:#fff4cb;box-shadow:0 0 0 2px rgba(143,110,37,.12)}
-.publicPresenterRow .publicVideoButton{background:#2f291b;color:#fff;white-space:normal}
-.publicBackButton{grid-column:1/-1;justify-self:end;max-width:330px;white-space:normal;text-align:center;line-height:1.25;background:#fff8e8}
-.outputModule p{margin:10px 0 8px;color:#596472;line-height:1.45;font-size:.92rem}
-.outputLanguageStatus{display:block;padding:8px 10px;border-radius:10px;background:#eef8ef;color:#285c33;font-size:.9rem}
-.customerModuleSlot{min-height:220px;margin-top:10px}
-.customerModeBadge{display:inline-flex;align-items:center;margin:0 0 9px;padding:5px 10px;border-radius:999px;background:#f5e7b6;color:#5a4516;font-size:.82rem;font-weight:850;letter-spacing:.02em}
-#asgold-problem-navigator-react{scroll-margin-top:16px}
-.heroCapabilities{margin:18px 0;padding:16px;border:1px solid #dccb9f;border-radius:18px;background:#fff}
-.homepageFlow{display:grid;gap:0}.homepageFlow+.heroCapabilities{display:none}
-.heroCapabilities h2{margin:0 0 12px;color:#4d3b14;font-size:1.3rem}
-.heroVoiceShortcut{margin:0 0 12px;border-color:#c9ad66;background:#fffaf0;color:#4f3c12}
-.heroCapabilities .capGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-.heroCapabilities .capCard{padding:12px;border-radius:12px;box-shadow:none}
-.heroCapabilities .capCard h3{margin:0 0 5px;font-size:.98rem}
-.heroCapabilities .capCard p{margin:0;color:#606a76;font-size:.88rem;line-height:1.4}
-.explainerModalBackdrop{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:16px;background:rgba(17,21,28,.72);backdrop-filter:blur(5px)}
-.explainerModal{width:min(900px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:18px;border:1px solid #d9c792;border-radius:18px;background:#fff;box-shadow:0 24px 80px rgba(0,0,0,.42)}
-.explainerModalHead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}
-.explainerModalHead b{display:block;color:#4d3b14;font-size:1.25rem}
-.explainerModalHead p{margin:5px 0 0;color:#596472}
-.explainerModalHead button{min-height:42px;padding:8px 10px;border:1px solid #d8d1bd;border-radius:10px;background:#fff;font-weight:800}
-.explainerLanguage{display:grid;gap:5px;max-width:360px;margin-bottom:12px;color:#5d4a1e;font-weight:800}
-.explainerLanguage select{min-height:46px;padding:10px 11px;border:1px solid #d8d1bd;border-radius:11px;background:#fff}
-.explainerPresenterTitle{display:block;margin-bottom:6px;color:#5d4a1e}
-.explainerPresenterButtons{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.explainerFallback{padding:9px 11px;border:1px solid #ead69e;border-radius:10px;background:#fff8df;color:#65562d;font-size:.9rem}
-.explainerModal video{display:block;width:100%;aspect-ratio:16/9;border-radius:14px;background:#151515}
-@media(max-width:760px){
-  .publicHeader{grid-template-columns:1fr;padding:10px 0 12px}
-  .publicBrand{justify-content:center;padding-top:0}
-  .publicActions{display:grid;grid-template-columns:1fr 1fr;width:100%}
-  .publicActions a,.publicActions button{width:100%;min-height:46px;text-align:center}
-  .publicLanguageModules{grid-column:1;grid-template-columns:1fr}
-  .publicLanguageModule .flagLanguage{max-width:none}
-  .publicPresenterRow{grid-template-columns:1fr 1fr}
-  .publicPresenterRow .publicVideoButton{grid-column:1/-1}
-  .publicBackButton{width:100%;max-width:none;justify-self:stretch}
-  .heroCapabilities .capGrid{grid-template-columns:1fr}
-  .explainerModalBackdrop{padding:8px}
-  .explainerModal{max-height:calc(100dvh - 16px);padding:14px}
-  .explainerModalHead{align-items:stretch;flex-direction:column}
-  .explainerModalHead button{width:100%}
-}
-
 /* V33: vertically ordered language choices and consistently visible back navigation. */
 .backBtn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #c9ad66;color:#4f3c12;box-shadow:0 5px 16px rgba(83,63,20,.09)}
 .backBtn:hover{border-color:#9b792b;background:#fffaf0}
@@ -207,39 +143,6 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .flagLanguageName{overflow:hidden;color:#27303b;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
 .flagLanguageMenu button small{min-width:31px;padding:4px 6px;border-radius:7px;background:#eceff2;text-align:center}
 .flagLanguageMenu button.active small{background:#eadcae;color:#594412}
-.flagLanguageMenu .flagLanguageMenuBack{position:sticky;top:0;z-index:3;justify-content:flex-start;border-color:#c9ad66;background:#2f291b;color:#fff;font-weight:900}
-.flagLanguageMenu .flagLanguageMenuBack:hover{border-color:#c9ad66;background:#453a20}
-
-/* V50: both language controls and a real back action remain visible on public pages. */
-.publicTop .nav{gap:18px;padding-top:10px;padding-bottom:10px}
-.publicLanguageStack{display:grid;gap:7px;min-width:min(100%,310px);padding:9px 10px;border:1px solid #d9c792;border-radius:14px;background:#fffdf7}
-.publicLanguageRow{display:grid;grid-template-columns:minmax(120px,1fr) auto;align-items:center;gap:10px}
-.publicLanguageRow>span{color:#443817;font-size:.78rem;font-weight:850;line-height:1.25}
-.publicLanguageRow .flagLanguageTrigger{justify-self:end}
-.publicNavActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
-.publicBackBtn{white-space:nowrap}
-.legalMarketBar [data-output-language-status]{white-space:nowrap}
-
-@media(max-width:900px){
-  .publicTop .nav{display:grid;grid-template-columns:1fr;align-items:stretch}
-  .publicTop .brand{justify-content:center}
-  .publicLanguageStack{width:100%;min-width:0}
-  .publicNavActions{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
-  .publicNavActions>*{width:100%;min-width:0;min-height:44px;display:grid;place-items:center;text-align:center}
-}
-
-@media(max-width:560px){
-  .publicTop .nav nav.publicNavActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-  .publicTop .nav nav.publicNavActions>a{display:grid}
-  .publicTop .nav nav.publicNavActions>button{grid-column:auto}
-  .publicLanguageRow{grid-template-columns:1fr;align-items:stretch}
-  .publicLanguageRow .flagLanguage,.publicLanguageRow .flagLanguagePublicPicker{width:100%!important}
-  .publicLanguageRow .flagLanguageTrigger{width:100%;justify-content:space-between}
-  .publicLanguageRow .flagLanguagePublicPicker>button:first-child{flex:1;min-width:0!important}
-  .publicLanguageRow .flagLanguagePublicPicker>button:nth-child(2){flex:1}
-  .publicNavActions .publicBackBtn{grid-column:1}
-  .legalMarketBar [data-output-language-status]{white-space:normal}
-}
 
 @media(max-width:760px){
   .appTop{display:grid;grid-template-columns:1fr;align-items:stretch;gap:9px;padding-top:10px;padding-bottom:10px}
@@ -268,25 +171,53 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
   .flagLanguageMenu button small{font-size:.72rem}
 }
 
-/* V52: the expanded public controls must remain part of the page instead of covering it. */
-.publicTop{position:relative;top:auto}
 
-@media(max-width:760px){
-  .publicHeader{gap:9px;padding:8px 0 10px}
-  .publicBrand .logo{width:38px;height:38px;border-radius:12px}
-  .publicLanguageModules{gap:9px}
-  .publicLanguageModule{padding:10px;border-radius:14px}
-  .publicLanguageTitle{margin-bottom:7px;font-size:.9rem}
-  .publicLanguageMainRow{display:block}
-  .publicLanguageMainRow .flagLanguage{width:100%;min-width:0}
-  .publicLanguageModule .flagLanguageTrigger{min-height:44px;padding:7px 10px}
-  .publicBackButton{min-height:44px;padding:9px 12px}
-  .publicPresenterLabel{margin:8px 0 6px;font-size:.82rem}
-  .publicPresenterRow{gap:6px}
-  .publicPresenterRow button{min-height:42px;padding:7px 8px;font-size:.88rem}
-  .outputModule p{display:none}
-  .outputLanguageStatus{margin-top:7px;padding:7px 9px;font-size:.82rem}
-  .publicActions{gap:7px}
-  .publicActions a,.publicActions button{min-height:42px;padding:7px 8px;font-size:.88rem}
-  .legalMarketBar .wrap{padding-top:.5rem;padding-bottom:.5rem}
-}
+/* V50 modular public navigation */
+.flagLanguageMenu .flagLanguageMenuBack{position:sticky;top:0;z-index:3;justify-content:flex-start;border-color:#c9ad66;background:#2f291b;color:#fff;font-weight:900}
+.flagLanguageMenu .flagLanguageMenuBack:hover{border-color:#c9ad66;background:#453a20}
+.flagLanguagePublicText{display:grid;text-align:left;line-height:1.15}
+.flagLanguagePublicText small{font-size:.68rem;color:#6b6250}
+.publicTop .nav{gap:18px;padding-top:10px;padding-bottom:10px}
+.publicLanguageStack{display:grid;gap:7px;min-width:min(100%,310px);padding:9px 10px;border:1px solid #d9c792;border-radius:14px;background:#fffdf7}
+.publicLanguageRow{display:grid;grid-template-columns:minmax(120px,1fr) auto;align-items:center;gap:10px}
+.publicLanguageRow>span{color:#443817;font-size:.78rem;font-weight:850;line-height:1.25}
+.publicLanguageRow .flagLanguageTrigger{justify-self:end}
+.publicNavActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.publicBackBtn{white-space:nowrap}
+.legalMarketBar [data-output-language-status]{white-space:nowrap}
+@media(max-width:900px){.publicTop .nav{display:grid;grid-template-columns:1fr;align-items:stretch}.publicTop .brand{justify-content:center}.publicLanguageStack{width:100%;min-width:0}.publicNavActions{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.publicNavActions>*{width:100%;min-width:0;min-height:44px;display:grid;place-items:center;text-align:center}}
+@media(max-width:560px){.publicLanguageRow{grid-template-columns:1fr}.publicLanguageRow .flagLanguageTrigger{justify-self:stretch;width:100%}.publicNavActions{grid-template-columns:1fr 1fr}.publicBackBtn{grid-column:1/-1}.flagLanguagePublicPicker{width:100%!important}.flagLanguagePublicPicker .flagLanguageTrigger{flex:1 1 150px}}
+
+.customerModuleSlot{min-height:220px;margin-top:10px}
+
+#asgold-problem-navigator-react{scroll-margin-top:16px}
+
+
+/* V58 modular public language shell */
+.publicHeader{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 20px;align-items:center;padding:12px 0 14px}
+.publicBrand{align-self:start;padding-top:8px}
+.publicActions{display:flex;justify-content:flex-end;align-items:center;gap:9px;flex-wrap:wrap}
+.publicActions a{min-height:42px;display:grid;place-items:center;padding:8px 12px;border:1px solid #e1e3e7;border-radius:10px;background:#fff;color:#374151;text-decoration:none;font-weight:750}
+.publicLanguageModules{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;width:100%}
+.publicLanguageModule{min-width:0;padding:14px;border:1px solid #d9c792;border-radius:16px;background:#fffdf7;box-shadow:0 5px 18px rgba(27,31,37,.06)}
+.publicLanguageTitle{display:block;margin-bottom:9px;color:#443817;font-size:1rem}
+.publicLanguageMainRow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.publicLanguageModule .flagLanguage{width:100%;max-width:360px}
+.publicLanguageModule .flagLanguageTrigger{width:100%;min-height:50px;justify-content:flex-start;border-color:#c9ad66;padding:9px 12px}
+.publicLanguageModule .flagLanguageTrigger .flagLanguageChevron{margin-inline-start:auto}
+.publicLanguageModule .flagLanguageMenu{inset-inline-start:0;inset-inline-end:auto;z-index:200}
+.publicPresenterLabel{display:block;margin:12px 0 7px;color:#5d4a1e;font-size:.9rem;font-weight:850}
+.publicPresenterRow{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px}
+.publicPresenterRow button,.publicBackButton{min-height:46px;padding:9px 11px;border:1px solid #c9ad66;border-radius:11px;background:#fff;color:#463715;font-weight:850}
+.publicPresenterRow button.active{border:2px solid #8f6e25;background:#fff4cb;box-shadow:0 0 0 2px rgba(143,110,37,.12)}
+.publicPresenterRow .publicVideoButton{background:#2f291b;color:#fff;white-space:normal}
+.publicBackButton{white-space:nowrap;background:#fff8e8}
+.outputModule p{margin:10px 0 8px;color:#596472;line-height:1.45;font-size:.92rem}
+.outputLanguageStatus{display:block;padding:8px 10px;border-radius:10px;background:#eef8ef;color:#285c33;font-size:.9rem}
+.heroVoiceShortcut{margin:0 0 12px;border-color:#c9ad66;background:#fffaf0;color:#4f3c12}
+.publicTop{position:relative;top:auto}
+@media(max-width:760px){.publicHeader{grid-template-columns:1fr;gap:9px;padding:8px 0 10px}.publicBrand{justify-content:center;padding-top:0}.publicActions{display:grid;grid-template-columns:1fr 1fr;width:100%;gap:7px}.publicActions a,.publicActions button{width:100%;min-height:42px;padding:7px 8px;font-size:.88rem;text-align:center}.publicLanguageModules{grid-column:1;grid-template-columns:1fr;gap:9px}.publicLanguageModule{padding:10px;border-radius:14px}.publicLanguageTitle{margin-bottom:7px;font-size:.9rem}.publicLanguageMainRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}.publicLanguageModule .flagLanguage{width:100%;max-width:none;min-width:0}.publicLanguageModule .flagLanguageTrigger{min-height:44px;padding:7px 10px}.publicBackButton{min-height:44px;padding:7px 10px}.publicPresenterLabel{margin:8px 0 6px;font-size:.82rem}.publicPresenterRow{grid-template-columns:1fr 1fr;gap:6px}.publicPresenterRow button{min-height:42px;padding:7px 8px;font-size:.88rem}.publicPresenterRow .publicVideoButton{grid-column:1/-1}.outputModule p{display:none}.outputLanguageStatus{margin-top:7px;padding:7px 9px;font-size:.82rem}.customerModuleSlot{min-height:0}.legalMarketBar .wrap{padding-top:.5rem;padding-bottom:.5rem}}
+
+/* V69 modular public-language parity */
+.publicWelcome{grid-column:1/-1;margin:0;padding:14px 16px;border:1px solid #e2d6b7;border-radius:14px;background:linear-gradient(135deg,#fff8df,#fff);color:#4d3b14;font-size:1.08rem;font-weight:850;line-height:1.4}.publicWelcome span{font-size:1.35rem}.publicBackButton{grid-column:1/-1;justify-self:end;min-height:42px;padding:9px 12px;border:1px solid #c9ad66;border-radius:11px;background:#fff;color:#4d3b14;font-weight:850}.publicBackButton:hover{background:#fff8e8}
+@media(max-width:760px){.publicBackButton{width:100%;max-width:none;justify-self:stretch}}

@@ -1,0 +1,40 @@
+▲ Next.js 16.3.3 (Turbopack)
+✓ Running next.config.mjs took 13ms
+⚠ No build cache found. Please configure build caching for faster rebuilds. Read more: https://nextjs.org/docs/messages/no-cache
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+
+  Creating an optimized production build ...
+
+> Build error occurred
+Error: Turbopack build failed with 1 error:
+./app/modules/public/HeroCopyEnhancer.js:1:8
+Error: Expected ident
+[31m[1m>[0m [90m1 |[0m [36mexport[0m [36mexport[0m [36mconst[0m heroCopy={
+  [90m  |[0m        [31m[1m^^^^^^[0m
+  [90m2 |[0m   de:{title:[32m'AS Gold – Klarheit, wenn Vorgänge komplex werden.'[0m,lead:[32m'AS Gold bündelt Dokum...[0m
+  [90m3 |[0m   en:{title:[32m'AS Gold – clarity when matters get complex.'[0m,lead:[32m'AS Gold brings documents, e...[0m
+  [90m4 |[0m   fr:{title:[32m'AS Gold – de la clarté quand les dossiers deviennent complexes.'[0m,lead:[32m'AS Gold[0m...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./app/modules/public/HeroCopyEnhancer.js [Client Component Browser]
+    ./app/modules/public/PublicLanding.js [Client Component Browser]
+    ./app/modules/workspace/WorkspaceApp.js [Client Component Browser]
+    ./app/modules/workspace/WorkspaceApp.js [Server Component]
+    ./app/page.js [Server Component]
+
+  Client Component SSR:
+    ./app/modules/public/HeroCopyEnhancer.js [Client Component SSR]
+    ./app/modules/public/PublicLanding.js [Client Component SSR]
+    ./app/modules/workspace/WorkspaceApp.js [Client Component SSR]
+    ./app/modules/workspace/WorkspaceApp.js [Server Component]
+    ./app/page.js [Server Component]
+
+
+    at <unknown> (./app/modules/public/HeroCopyEnhancer.js:1:8)

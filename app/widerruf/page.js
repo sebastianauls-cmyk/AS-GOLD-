@@ -1,5 +1,5 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
-import WithdrawalForm from './WithdrawalForm'
+import WithdrawalForm from '../modules/compliance/WithdrawalForm'
 
 export const metadata={title:'Vertrag widerrufen | AS Gold',description:'Elektronische Widerrufsfunktion und Widerrufsinformation für AS Gold.'}
 

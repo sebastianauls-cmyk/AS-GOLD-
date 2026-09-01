@@ -1,0 +1,41 @@
+name: V46 Direct Public Voice
+
+on:
+  push:
+    branches: [v46-navigation-clean]
+    paths:
+      - '.github/workflows/v46-direct-public-voice.yml'
+      - 'scripts/v46_direct_public_voice.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  direct-public-voice:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout modular branch
+        uses: actions/checkout@v4
+        with:
+          ref: v46-navigation-clean
+          fetch-depth: 1
+      - name: Apply direct public voice composition
+        run: node scripts/v46_direct_public_voice.mjs
+      - name: Install dependencies
+        run: npm ci
+      - name: Run full regression chain
+        run: npm run prebuild
+      - name: Build production bundle
+        run: npx next build
+      - name: Commit verified direct public voice
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/modules/public/PublicLanding.js app/modules/public/ProblemNavigator.js scripts/test_v46_modular_boundaries.mjs
+          git commit -m 'V46 render public voice interaction directly'
+          git push origin HEAD:v46-navigation-clean
