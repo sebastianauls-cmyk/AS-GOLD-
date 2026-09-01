@@ -251,16 +251,19 @@ for(const path of [
 ]) assert.ok(read(path).length<140,`${path} should be a thin compatibility adapter`)
 
 
-// V50 current-behavior guard
-assert.match(publicLanding,/publicBackBtn/)
-assert.match(publicLanding,/returnToPublicTop/)
+// V58 current-behavior guard
+assert.match(publicLanding,/PublicLanguageModules/)
 assert.match(publicLanding,/data-output-language-status/)
-assert.match(publicLanding,/publicNav\.output/)
+assert.match(publicLanguageModules,/publicBackButton/)
+assert.match(publicLanguageModules,/returnToStart/)
+assert.match(publicLanguageModules,/outputLanguageStatus/)
+assert.match(publicLanguageModules,/customerModuleSlot/)
 assert.match(switcher,/publicPicker=false/)
 assert.match(switcher,/active\.label/)
 assert.match(switcher,/flagLanguageMenuBack/)
 const currentCss=read('app/globals.css')
-assert.match(currentCss,/\.publicLanguageStack/)
+assert.match(currentCss,/\.publicLanguageModules/)
+assert.match(currentCss,/\.customerModuleSlot/)
 assert.match(currentCss,/\.flagLanguageMenu \.flagLanguageMenuBack/)
 const currentMicrophone=read('app/modules/public/ProblemNavigator.js')
 assert.match(currentMicrophone,/window\.SpeechRecognition\|\|window\.webkitSpeechRecognition/)
