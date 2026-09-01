@@ -9,6 +9,7 @@ on:
       - 'scripts/v46_align_public_modular_guard.mjs'
       - 'scripts/test_v37_product_reife.mjs'
       - 'scripts/test_v56_modular_parity.mjs'
+      - 'scripts/test_v69_modular_public_parity.mjs'
   workflow_dispatch:
 
 permissions:
