@@ -22,13 +22,15 @@ jobs:
         with:
           node-version: 20
       - name: Apply direct modular V58 parity
-        run: node scripts/v46_port_v58_direct_parity.mjs
+        run: |
+          node scripts/v46_port_v58_direct_parity.mjs
+          node scripts/v46_align_v58_guards.mjs
       - name: Commit parity update
         run: |
           set -euo pipefail
           if [ -z "$(git status --porcelain)" ]; then exit 0; fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app/modules/workspace/WorkspaceApp.js app/globals.css
-          git commit -m 'V46 port V58 direct modular parity'
+          git add app/modules/workspace/WorkspaceApp.js app/globals.css scripts/test_v46_modular_boundaries.mjs
+          git commit -m 'V46 align V58 direct modular guards'
           git push origin HEAD:v46-navigation-clean
