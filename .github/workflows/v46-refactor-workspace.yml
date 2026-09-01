@@ -26,51 +26,25 @@ jobs:
           ref: v46-navigation-clean
           fetch-depth: 1
 
-      - name: Apply deterministic V46 workspace refactor
-        run: node scripts/v46_refactor_workspace_services.mjs
-      - name: Correct precise service-boundary guard
-        run: node scripts/v46_fix_service_guard.mjs
-      - name: Extract document upload configuration
-        run: node scripts/v46_refactor_upload_module.mjs
-      - name: Extract static UI and workspace catalogs
-        run: node scripts/v46_refactor_workspace_catalogs.mjs
-      - name: Extract pricing, public, compliance and state catalogs
-        run: node scripts/v46_extract_domain_catalogs.mjs
-      - name: Extract workspace composition shell
-        run: node scripts/v46_extract_workspace_shell.mjs
-      - name: Extract authentication surface
-        run: node scripts/v46_extract_auth_surface.mjs
-      - name: Consolidate protected workspace shell
-        run: node scripts/v46_consolidate_workspace_shell.mjs
-      - name: Extract public landing
-        run: node scripts/v46_extract_public_landing.mjs
-      - name: Replace global public DOM enhancers with direct React interactions
-        run: node scripts/v46_direct_public_interactions.mjs
-      - name: Normalize public catalog exports
-        run: node scripts/v46_fix_public_catalog_exports.mjs
-      - name: Confirm public modules are already embedded
+      - name: Apply deterministic module refactors
         shell: bash
         run: |
-          node --input-type=module - <<'NODE'
-          import fs from 'node:fs'
-          const publicLanding=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')
-          const problemNavigator=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8')
-          const explainer=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8')
-          for (const marker of [
-            '<V37FirstAction language={language}',
-            '<ProblemNavigator language={language}',
-            '<ExplainerVideo language={language}/>',
-            '<ProductIntroCompact language={language}/>'
-          ]) {
-            if (!publicLanding.includes(marker)) throw new Error(`V46 public embedding missing: ${marker}`)
-          }
-          if (/createPortal|MutationObserver/.test(problemNavigator)) throw new Error('V46 ProblemNavigator must render directly')
-          if (!problemNavigator.includes('voiceStarting')) throw new Error('V50 microphone-start handling was lost')
-          if (/createPortal|MutationObserver/.test(explainer)) throw new Error('V46 ExplainerVideo must render directly')
-          NODE
-      - name: Repair generated public-module guard order
-        run: node scripts/v46_fix_public_guard_order.mjs
-      - name: Align V34 guard with V50 explainer trigger
+          set -euo pipefail
+          node scripts/v46_refactor_workspace_services.mjs
+          node scripts/v46_fix_service_guard.mjs
+          node scripts/v46_refactor_upload_module.mjs
+          node scripts/v46_refactor_workspace_catalogs.mjs
+          node scripts/v46_extract_domain_catalogs.mjs
+          node scripts/v46_extract_workspace_shell.mjs
+          node scripts/v46_extract_auth_surface.mjs
+          node scripts/v46_consolidate_workspace_shell.mjs
+          node scripts/v46_extract_public_landing.mjs
+          node scripts/v46_direct_public_interactions.mjs
+          node scripts/v46_fix_public_catalog_exports.mjs
+          node scripts/v46_fix_public_guard_order.mjs
+          node scripts/v46_finish_workspace_surfaces.mjs
+
+      - name: Align V34 guard with current V50 explainer trigger
         shell: bash
         run: |
           node --input-type=module - <<'NODE'
@@ -84,134 +58,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Guard V34 customer path
-        run: npm run test:v34
-      - name: Guard V35 languages
-        run: npm run test:v35
-      - name: Guard V36 explainer
-        run: npm run test:v36
-      - name: Guard V37 first action
-        run: npm run test:v37
-      - name: Guard V37 end to end
-        run: npm run test:v37-e2e
-      - name: Guard V37 readiness
-        run: npm run test:v37-readiness
-      - name: Guard V38 deadlines
-        run: npm run test:v38-deadlines
-      - name: Guard V38 assessments
-        run: npm run test:v38-assessments
-      - name: Guard V38 next step
-        run: npm run test:v38-next-step
-      - name: Guard V38 simulation
-        run: npm run test:v38-simulation
-      - name: Guard V38 mobile
-        run: npm run test:v38-mobile
-      - name: Guard V38 accessibility
-        run: npm run test:v38-accessibility
-      - name: Guard V38 prelaunch
-        run: npm run test:v38-prelaunch
-      - name: Guard V38 practical simulation
-        run: npm run test:v38-practical-simulation
-      - name: Guard V38 tester guide
-        run: npm run test:v38-tester-guide
-      - name: Guard V38 integrations
-        run: npm run test:v38-integrations
-      - name: Guard V38 Supabase security
-        run: npm run test:v38-supabase-security
-      - name: Guard V39 case intelligence
-        run: npm run test:v39-case-intelligence
-      - name: Guard V40 handoff
-        run: npm run test:v40-handoff
-      - name: Guard V41 consistency
-        run: npm run test:v41-consistency
-      - name: Guard V42 actions
-        run: npm run test:v42-actions
-      - name: Guard V43 visibility
-        run: npm run test:v43-visibility
-      - name: Guard V44 language order
-        run: npm run test:v44-language-order
-      - name: Guard V45 output language
-        run: npm run test:v45-output-language
-      - name: Guard V46 modular boundaries
-        shell: bash
-        run: |
-          set +e
-          npm run test:v46-modules > /tmp/v46-modular-guard.log 2>&1
-          code=$?
-          cat /tmp/v46-modular-guard.log
-          if [ "$code" -ne 0 ]; then
-            cp /tmp/v46-modular-guard.log docs/V46_LAST_GUARD_FAILURE.txt
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add docs/V46_LAST_GUARD_FAILURE.txt
-            git commit -m 'V46 capture modular guard failure' || true
-            git push origin HEAD:v46-navigation-clean
-            exit "$code"
-          fi
+      - name: Run complete regression chain
+        run: npm run prebuild
 
       - name: Build production bundle
-        shell: bash
-        run: |
-          set +e
-          npx next build > /tmp/v46-build.log 2>&1
-          code=$?
-          cat /tmp/v46-build.log
-          if [ "$code" -ne 0 ]; then
-            cp /tmp/v46-build.log docs/V46_LAST_BUILD_FAILURE.txt
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add docs/V46_LAST_BUILD_FAILURE.txt
-            git commit -m 'V46 capture production build failure' || true
-            git push origin HEAD:v46-navigation-clean
-            exit "$code"
-          fi
+        run: npx next build
 
-      - name: Commit verified refactor
+      - name: Commit verified modular result
         shell: bash
         run: |
           set -euo pipefail
           if [ -z "$(git status --porcelain)" ]; then
-            echo 'No refactor changes to commit.'
+            echo 'No modular changes to commit.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app/layout.js \
-                  app/modules/workspace/WorkspaceApp.js \
-                  app/modules/workspace/workspaceText.js \
-                  app/modules/workspace/stateConfig.js \
-                  app/modules/workspace/AppLogo.js \
-                  app/modules/workspace/ProtectedWorkspaceShell.js \
-                  app/modules/workspace/LoadingSurface.js \
-                  app/modules/language/OutputLanguageBridge.js \
-                  app/modules/auth/passwordUi.js \
-                  app/modules/auth/PasswordField.js \
-                  app/modules/auth/AuthSurface.js \
-                  app/modules/public/publicUi.js \
-                  app/modules/public/catalog.js \
-                  app/modules/public/PublicLanding.js \
-                  app/modules/public/HeroCopyEnhancer.js \
-                  app/modules/public/HeroTitleStabilizer.js \
-                  app/modules/public/CaseChoiceJumpEnhancer.js \
-                  app/modules/public/caseNavigation.js \
-                  app/modules/public/V37FirstAction.js \
-                  app/modules/public/ProblemNavigator.js \
-                  app/modules/public/ExplainerVideo.js \
-                  app/modules/public/ProductIntroCompact.js \
-                  app/modules/pricing/catalog.js \
-                  app/modules/compliance/workspaceControlText.js \
-                  app/modules/documents/uploadConfig.js \
-                  app/modules/documents/exportUi.js \
-                  scripts/test_v34_customer_path.mjs \
-                  scripts/test_v36_explainer_video.mjs \
-                  scripts/test_v37_first_action.mjs \
-                  scripts/test_v37_end_to_end.mjs \
-                  scripts/test_v37_product_reife.mjs \
-                  scripts/test_v38_prelaunch_guard.mjs \
-                  scripts/test_v38_practical_simulation.mjs \
-                  scripts/test_v45_output_language.mjs \
-                  scripts/test_v46_modular_boundaries.mjs \
-                  docs/APP_GOLD_MODULARISIERUNG_V46.md \
-                  app/modules/README.md
-          git commit -m 'V46 embed public interaction modules directly'
+          git add app scripts/test_*.mjs docs/APP_GOLD_MODULARISIERUNG_V46.md
+          git commit -m 'V46 finalize modular workspace boundaries'
           git push origin HEAD:v46-navigation-clean
