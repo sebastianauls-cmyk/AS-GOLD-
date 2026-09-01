@@ -1,6 +1,6 @@
 import './globals.css'
 import { HeroCopyEnhancer } from './components/HeroCopyEnhancer'
-import { HeroTitleStabilizer } from './components/HeroTitleStabilizer'
+import { HeroTitleStabilizer } from './modules/public/HeroTitleStabilizer'
 import { V37FirstAction } from './components/V37FirstAction'
 import { ProductIntroCompact } from './components/ProductIntroCompact'
 import { ExplainerVideo } from './components/ExplainerVideo'
