@@ -10,7 +10,7 @@ const flagComponents={AF,AE,BG,DE,FR,GB,IR,PL,RO,RU,SA,TR,US}
 function FlagSet({countryCodes=[],fallback=''}){
   const usable=countryCodes.filter(code=>flagComponents[code])
   return <span className="flagIconSet" aria-hidden="true">
-    {usable.map(code=>{const Flag=flagComponents[code];return <Flag key={code} focusable="false"/>})}
+    {usable.map(code=>{const Flag=flagComponents[code];return <Flag className="flagIcon" key={code} focusable="false"/>})}
     {!usable.length&&<span>{fallback}</span>}
   </span>
 }
@@ -35,14 +35,12 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     return()=>{document.removeEventListener('pointerdown',closeOutside);document.removeEventListener('keydown',closeEscape)}
   },[open])
 
-  const trigger=<button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(v=>!v)}>
-    <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong>{publicPicker?label:active.label}</strong><span className="flagLanguageChevron" aria-hidden="true">{open?'▴':'▾'}</span>
-  </button>
-
   return <div className={`flagLanguage flagLanguageModular ${publicPicker?'flagLanguagePublicPicker':''} ${showLabel?'flagLanguageLabeled':''} ${className}`.trim()} ref={rootRef}>
     {showLabel&&!publicPicker&&<span className="flagLanguageLabel">{label}</span>}
-    {trigger}
-    {publicPicker&&<button type="button" className="explainerVideoTrigger" onClick={()=>setVideoOpen(true)} aria-expanded={videoOpen}>▶ {videoButtonText[value]||videoButtonText.de}</button>}
+    <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(v=>!v)}>
+      <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong>{publicPicker?label:active.label}</strong><span className="flagLanguageChevron" aria-hidden="true">{open?'▴':'▾'}</span>
+    </button>
+    {publicPicker&&<button type="button" className="secondary explainerVideoTrigger" onClick={()=>setVideoOpen(true)} aria-expanded={videoOpen}>▶ {videoButtonText[value]||videoButtonText.de}</button>}
     {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
       <button type="button" className="flagLanguageClose" onClick={()=>setOpen(false)}>← Zurück</button>
       {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}>
