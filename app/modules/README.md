@@ -92,3 +92,5 @@ The workspace controller now delegates repeated shell markup to explicit compone
 - `public/PublicLanding.js`: complete public landing, case-discovery, transparency and pricing composition.
 
 - `services/`: transactional pricing, compliance, approval and document storage/database operations are now isolated behind repository/service boundaries; WorkspaceApp retains workflow state and user-facing validation only.
+
+- `services/authRepository.js`: session lookup/subscription, sign-in, reset, test registration and sign-out are isolated from WorkspaceApp; AuthSurface remains presentation-only.

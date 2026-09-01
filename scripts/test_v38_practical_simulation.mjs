@@ -9,6 +9,7 @@ process.env.INTEGRATION_TOKEN_KEY='v38-synthetic-integration-key-only-for-regres
 const {sealIntegrationToken,openIntegrationToken}=await import('../app/modules/integrations/tokens.js')
 
 const page=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceApp.js',import.meta.url),'utf8')
+const authRepository=fs.readFileSync(new URL('../app/modules/services/authRepository.js',import.meta.url),'utf8')
 const pageEntry=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')
 const uploadConfig=fs.readFileSync(new URL('../app/modules/documents/uploadConfig.js',import.meta.url),'utf8')
 const documentsSurface=fs.readFileSync(new URL('../app/modules/documents/DocumentsSurface.js',import.meta.url),'utf8')
@@ -33,7 +34,9 @@ const rows=[
 for(const token of [
   'supabase.auth.signUp',
   'supabase.auth.signInWithPassword',
-  'supabase.auth.resetPasswordForEmail',
+  'supabase.auth.resetPasswordForEmail'
+]) assert.match(authRepository,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')))
+for(const token of [
   'acceptedLegal',
   'confirmedTestData',
   'validateV29Password',

@@ -7,6 +7,7 @@ import { getUpgradeQuotes, requestUpgradeRecord } from '../services/pricingRepos
 import { acknowledgeLegalSettings, authorizeDocumentAnalysis } from '../services/complianceRepository'
 import { createWorkspaceDocumentSignedUrl, recordExportEntry, updateDocumentRecord, uploadWorkspaceDocument } from '../services/documentRepository'
 import { approveApprovalRecord, createApprovalRecord, rejectApprovalRecord, updateApprovalRecord } from '../services/approvalRepository'
+import { getAuthSession, registerTestAccount, sendPasswordReset, signInSession, signOutSession, watchAuthState } from '../services/authRepository'
 import { invokeDocumentAnalysis } from '../services/documentAnalysis'
 import { allowedUploadAccept, allowedUploadExtensions, maxUploadBytes, uploadUi } from '../documents/uploadConfig'
 import { appText } from './workspaceText'
@@ -265,12 +266,12 @@ export default function Home(){
     setScreen('app')
   }
 
-  async function refresh(){ const {data:{session}} = await supabase.auth.getSession(); if(session) await loadApp(session) }
+  async function refresh(){ const {data:{session}} = await getAuthSession(supabase); if(session) await loadApp(session) }
 
   useEffect(()=>{
     let alive = true
-    supabase.auth.getSession().then(({data:{session}})=>{ if(alive) session ? loadApp(session) : setScreen(new URLSearchParams(window.location.search).get('start')==='register'?'register':'public') })
-    const {data:{subscription}} = supabase.auth.onAuthStateChange((event,session)=>{
+    getAuthSession(supabase).then(({data:{session}})=>{ if(alive) session ? loadApp(session) : setScreen(new URLSearchParams(window.location.search).get('start')==='register'?'register':'public') })
+    const subscription=watchAuthState(supabase,(event,session)=>{
       if(!alive) return
       if(event==='SIGNED_IN' && session) loadApp(session)
       if(event==='SIGNED_OUT'){ setUser(null); setAccess(null); setPrivacySettings(null); setData(emptyData); setSelectedCase(null); setSelectedClient(null); setSelectedDocument(null); setSelectedApproval(null); setApprovalDefaults({caseId:'',documentId:''}); setServerAudit([]); setDeletionRequests([]); setActivityLog([]); setSection('dashboard'); setScreen('public') }
@@ -302,28 +303,30 @@ export default function Home(){
 
   async function signIn(e){
     e.preventDefault(); setMessage('')
-    const {data,error}=await supabase.auth.signInWithPassword({email:email.trim(),password})
+    const {data,error}=await signInSession(supabase,{email:email.trim(),password})
     if(error) return setMessage(error.message)
     await loadApp(data.session)
   }
+
   async function resetPassword(){
     setMessage('')
     if(!email.trim()) return setMessage(language==='de'?'Bitte zuerst Ihre E-Mail-Adresse eingeben.':'Please enter your email address first.')
-    const {error}=await supabase.auth.resetPasswordForEmail(email.trim(),{redirectTo:window.location.origin})
+    const {error}=await sendPasswordReset(supabase,{email:email.trim(),redirectTo:window.location.origin})
     if(error) return setMessage(error.message)
     setMessage(lt.passwordSent)
   }
+
   async function register(e){
     e.preventDefault(); setMessage('')
     if(!acceptedLegal||!confirmedTestData) return setMessage(v28.required)
     if(!validateV29Password(password,{email,displayName}).valid) return setMessage(v29Password.invalid)
     if(password!==password2) return setMessage(n.pwMismatch)
-    const legalAcknowledgedAt=new Date().toISOString()
-    const {data,error}=await supabase.auth.signUp({email:email.trim(),password,options:{data:{display_name:displayName.trim(),privacy_notice_version:PRIVACY_NOTICE_VERSION,terms_version:TERMS_VERSION,legal_acknowledged_at:legalAcknowledgedAt,test_data_only:true},emailRedirectTo:'https://app-gold-workspace.vercel.app'}})
+    const {data,error}=await registerTestAccount(supabase,{email:email.trim(),password,displayName:displayName.trim(),privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,emailRedirectTo:'https://app-gold-workspace.vercel.app'})
     if(error) return setMessage(error.message)
     if(data.session) await loadApp(data.session)
     else { setAcceptedLegal(false);setConfirmedTestData(false);setMessage(n.registered); setScreen('login') }
   }
+
   function applyPromo(event){
     event.preventDefault()
     const next=promoCode.trim()
@@ -620,7 +623,7 @@ export default function Home(){
   }
 
   function protectedWorkspace(content){
-    return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} legalLabel={t.legal} languageLabel={t.language} outputLanguageLabel={t.outputLanguage} logoutLabel={a.logout} onLogout={()=>supabase.auth.signOut()} message={message}>{content}</ProtectedWorkspaceShell>
+    return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} legalLabel={t.legal} languageLabel={t.language} outputLanguageLabel={t.outputLanguage} logoutLabel={a.logout} onLogout={()=>signOutSession(supabase)} message={message}>{content}</ProtectedWorkspaceShell>
   }
 
   if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
