@@ -1,0 +1,1 @@
+V46 build guard verifies output-language listbox detection and fixed-bar suppression while any language list is open.
