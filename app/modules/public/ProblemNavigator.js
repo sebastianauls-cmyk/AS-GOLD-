@@ -2,6 +2,7 @@
 
 import { useMemo, useRef, useState } from 'react'
 import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from './problemNavigatorLanguagesV36.mjs'
+import { caseFrequencyWeight } from './casePriorityV56.mjs'
 import { jumpToPublicCaseResult } from './caseNavigation'
 
 const plans={start:'AS Gold Start',klar:'AS Gold Klar',analyse:'AS Gold Analyse',komplett:'AS Gold Komplett',business:'AS Gold Business'}
@@ -32,13 +33,14 @@ const voiceMessages={
   bg:{starting:'Микрофонът се включва …',done:'Речта е добавена.',noSpeech:'Не е разпозната реч. Натиснете микрофона отново и говорете след стартирането.',audio:'Микрофонът не е наличен или се използва от друго приложение.',denied:'Достъпът до микрофона е блокиран. Разрешете микрофона за AS Gold в настройките на приложението или браузъра.',network:'Разпознаването на реч временно не е налично. Опитайте отново или използвайте микрофона на клавиатурата.',insecure:'Гласовото въвеждане изисква защитена HTTPS връзка.'}
 }
 
-function normalize(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
-function hits(text,arr){return arr.reduce((n,w)=>n+(text.includes(normalize(w))?1:0),0)}
+function normalize(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
+function hits(text,words){return words.reduce((total,word)=>total+(text.includes(normalize(word))?1:0),0)}
 function recommend(value,profile){
   const text=normalize(value)
-  const scores=Object.fromEntries(Object.entries(multilingualKeywords).map(([k,v])=>[k,hits(text,v)]))
-  let caseKey=Object.entries(scores).sort((a,b)=>b[1]-a[1])[0]?.[0]||'private'
-  if(Math.max(...Object.values(scores))===0)caseKey=text.length>180?'dispute':'private'
+  const matches=Object.fromEntries(Object.entries(multilingualKeywords).map(([key,words])=>[key,hits(text,words)]))
+  const weightedScores=Object.fromEntries(Object.entries(matches).map(([key,count])=>[key,(count*1000)+(caseFrequencyWeight[key]||0)]))
+  let caseKey=Object.entries(weightedScores).sort((left,right)=>right[1]-left[1])[0]?.[0]||'private'
+  if(Math.max(...Object.values(matches))===0)caseKey=text.length>180?'dispute':'private'
   let planKey='start'
   const has=terms=>terms.some(term=>text.includes(normalize(term)))
   if(has(['mehrere kunden','team','wiederkehr','mandanten','portfolio','multiple clients','recurring','plusieurs clients','équipe','müşteri','ekip','klienci','zespół','клиент','команда','عملاء','فريق','مشتری','تیم','mai mulți clienți','echipă','recurent','няколко клиента','екип','повтарящ']))planKey='business'
@@ -48,7 +50,7 @@ function recommend(value,profile){
   return {caseKey,planKey,reason:profile.reasons[planKey]||profile.reasons.start}
 }
 
-export function ProblemNavigator({language='de',onRegister,onSelectCase}){
+export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase}){
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
   const [result,setResult]=useState(null)
@@ -56,18 +58,36 @@ export function ProblemNavigator({language='de',onRegister,onSelectCase}){
   const [voiceStarting,setVoiceStarting]=useState(false)
   const recognitionRef=useRef(null)
   const textRef=useRef(null)
-  const normalizedLanguage=normalizeProblemLanguage(language)
-  const profile=getProblemLanguageProfile(normalizedLanguage)
+  const statusRef=useRef(null)
+  const resultRef=useRef(null)
+  const customerLanguage=normalizeProblemLanguage(outputLanguage)
+  const profile=getProblemLanguageProfile(customerLanguage)
   const c=profile.ui
-  const recommendation=useMemo(()=>result?recommend(value,profile):null,[result,value,profile])
+  const recommendation=useMemo(()=>result?recommend(result.value,profile):null,[result,profile])
 
   function analyse(){
-    if(!value.trim()){setStatus(c.empty);setResult(null);return}
-    setStatus('');setResult(Date.now())
+    const currentValue=String(textRef.current?.value??value).trim()
+    if(!currentValue){
+      setStatus(c.empty)
+      setResult(null)
+      setTimeout(()=>statusRef.current?.scrollIntoView({behavior:'smooth',block:'nearest'}),0)
+      return
+    }
+    if(currentValue!==value)setValue(currentValue)
+    setStatus('')
+    setResult({at:Date.now(),value:currentValue})
+    textRef.current?.blur()
+    setTimeout(()=>resultRef.current?.scrollIntoView({behavior:'smooth',block:'center'}),250)
+  }
+
+  function updateValue(nextValue){
+    setValue(nextValue)
+    setResult(null)
+    if(status)setStatus('')
   }
 
   async function voice(){
-    const messages=voiceMessages[normalizedLanguage]||voiceMessages.de
+    const messages=voiceMessages[customerLanguage]||voiceMessages.de
     if(!window.isSecureContext){setStatus(messages.insecure);return}
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition
     if(!SpeechRecognition){setStatus(c.unsupported);textRef.current?.focus();return}
@@ -75,29 +95,44 @@ export function ProblemNavigator({language='de',onRegister,onSelectCase}){
     try{
       const permission=await navigator.permissions?.query?.({name:'microphone'}).catch(()=>null)
       if(permission?.state==='denied'){setStatus(messages.denied);textRef.current?.focus();return}
-      setVoiceStarting(true);setStatus(messages.starting)
-      const rec=new SpeechRecognition()
-      recognitionRef.current=rec
-      rec.lang=getSpeechLocale(normalizedLanguage)
-      rec.interimResults=true
-      rec.continuous=false
+      setVoiceStarting(true)
+      setStatus(messages.starting)
+      const recognition=new SpeechRecognition()
+      recognitionRef.current=recognition
+      recognition.lang=getSpeechLocale(customerLanguage)
+      recognition.interimResults=true
+      recognition.continuous=false
       const base=value.trim()
       let receivedText=false
       let recognitionError=''
-      rec.onstart=()=>{setVoiceStarting(false);setListening(true);setStatus(c.listening)}
-      rec.onaudiostart=()=>setStatus(c.listening)
-      rec.onresult=e=>{const spoken=Array.from(e.results).map(x=>x[0]?.transcript||'').join(' ').trim();if(spoken){receivedText=true;setValue([base,spoken].filter(Boolean).join(base?' ':''))}}
-      rec.onerror=e=>{
-        recognitionError=e?.error||'unknown';setVoiceStarting(false);setListening(false)
+      recognition.onstart=()=>{setVoiceStarting(false);setListening(true);setStatus(c.listening)}
+      recognition.onaudiostart=()=>setStatus(c.listening)
+      recognition.onresult=event=>{
+        const spoken=Array.from(event.results).map(item=>item[0]?.transcript||'').join(' ').trim()
+        if(spoken){receivedText=true;updateValue([base,spoken].filter(Boolean).join(base?' ':''))}
+      }
+      recognition.onerror=event=>{
+        recognitionError=event?.error||'unknown'
+        setVoiceStarting(false)
+        setListening(false)
         if(recognitionError==='not-allowed'||recognitionError==='service-not-allowed')setStatus(messages.denied)
         else if(recognitionError==='audio-capture')setStatus(messages.audio)
         else if(recognitionError==='no-speech')setStatus(messages.noSpeech)
         else if(recognitionError==='network')setStatus(messages.network)
         else setStatus(c.unsupported)
       }
-      rec.onend=()=>{setVoiceStarting(false);setListening(false);recognitionRef.current=null;if(!recognitionError)setStatus(receivedText?messages.done:messages.noSpeech)}
-      rec.start()
-    }catch(e){setVoiceStarting(false);setListening(false);setStatus(e?.name==='NotAllowedError'?messages.denied:c.unsupported)}
+      recognition.onend=()=>{
+        setVoiceStarting(false)
+        setListening(false)
+        recognitionRef.current=null
+        if(!recognitionError)setStatus(receivedText?messages.done:messages.noSpeech)
+      }
+      recognition.start()
+    }catch(error){
+      setVoiceStarting(false)
+      setListening(false)
+      setStatus(error?.name==='NotAllowedError'?messages.denied:c.unsupported)
+    }
   }
 
   function showCase(){onSelectCase?.(recommendation.caseKey);jumpToPublicCaseResult()}
@@ -105,21 +140,23 @@ export function ProblemNavigator({language='de',onRegister,onSelectCase}){
   function startFree(){onRegister?.()}
 
   const secondary={padding:'10px 13px',border:'1px solid #d5c38f',borderRadius:11,background:'#fffaf0',color:'#5b4618',fontWeight:800,textDecoration:'none',display:'inline-flex',alignItems:'center'}
-  const freeText=freeLabels[normalizedLanguage]||freeLabels.en
-  const helpText=inputHelp[normalizedLanguage]||inputHelp.en
-  const inputTitle=inputTitles[normalizedLanguage]||inputTitles.en
+  const freeText=freeLabels[customerLanguage]||freeLabels.en
+  const helpText=inputHelp[customerLanguage]||inputHelp.en
+  const inputTitle=inputTitles[customerLanguage]||inputTitles.en
 
-  return <section id="asgold-problem-navigator-react" dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
+  return <section id="asgold-problem-navigator-react" data-customer-language={customerLanguage} lang={customerLanguage} dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
-    <div style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
-    <textarea ref={textRef} value={value} onChange={e=>{setValue(e.target.value);setResult(null)}} rows={4} placeholder={c.placeholder} dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
-    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
-      <button type="button" onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting?.7:1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[normalizedLanguage]||voiceMessages.de).starting:c.voice}</button>
-      <button type="button" onClick={analyse} style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
-    </div>
-    {status&&<div role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
-    {recommendation&&<article style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
+    <div id="asgold-problem-input-help" style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
+    <form onSubmit={event=>{event.preventDefault();analyse()}} noValidate>
+      <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={c.title} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
+        <button type="button" data-problem-voice onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting?.7:1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[customerLanguage]||voiceMessages.de).starting:c.voice}</button>
+        <button type="submit" aria-controls="asgold-problem-result" style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
+      </div>
+      {status&&<div id="asgold-problem-status" ref={statusRef} role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
+    </form>
+    {recommendation&&<article id="asgold-problem-result" ref={resultRef} tabIndex={-1} lang={customerLanguage} dir={profile.rtl?'rtl':'ltr'} style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
       <small style={{display:'block',fontWeight:850,color:'#79601f',marginBottom:6}}>{c.recommendation}</small>
       <div style={{padding:'12px 13px',borderRadius:12,background:'#fff',border:'1px solid #ead69e',marginBottom:10}}><span style={{display:'block',fontSize:'.78rem',fontWeight:800,color:'#707986',marginBottom:3}}>{c.caseLabel}</span><strong style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{profile.cases[recommendation.caseKey]}</strong></div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10}}><div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.planLabel}</span><b>{plans[recommendation.planKey]}</b></div><div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.why}</span><span style={{color:'#596472'}}>{recommendation.reason}</span></div></div>
