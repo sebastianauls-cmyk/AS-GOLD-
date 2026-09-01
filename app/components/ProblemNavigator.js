@@ -57,6 +57,7 @@ function recommend(value,profile){
 
 export function ProblemNavigator(){
   const [host,setHost]=useState(null)
+  const [visible,setVisible]=useState(false)
   const [outputLanguage,setOutputLanguage]=useState('de')
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
@@ -92,6 +93,12 @@ export function ProblemNavigator(){
       bodyObserver.observe(document.body,{subtree:true,childList:true})
     }
     return ()=>bodyObserver?.disconnect()
+  },[])
+
+  useEffect(()=>{
+    const openProblem=()=>setVisible(true)
+    document.addEventListener('asgold:open-problem',openProblem)
+    return()=>document.removeEventListener('asgold:open-problem',openProblem)
   },[])
 
   useEffect(()=>{
@@ -173,6 +180,11 @@ export function ProblemNavigator(){
     }catch(e){setVoiceStarting(false);setListening(false);setStatus(e?.name==='NotAllowedError'?messages.denied:c.unsupported)}
   }
 
+  function closeProblem(){
+    setVisible(false)
+    document.dispatchEvent(new CustomEvent('asgold:return-start'))
+  }
+
   function showCase(){
     const buttons=[...document.querySelectorAll('.caseChooser .caseChoice')]
     const index=caseOrder.indexOf(recommendation.caseKey)
@@ -187,7 +199,7 @@ export function ProblemNavigator(){
   const helpText=inputHelp[outputLanguage]||inputHelp.en
   const inputTitle=inputTitles[outputLanguage]||inputTitles.en
 
-  return createPortal(<section id="asgold-problem-navigator-react" data-customer-language={outputLanguage} lang={outputLanguage} dir={outputProfile.rtl?'rtl':'ltr'} style={{margin:'12px 0 0',padding:14,border:'1px solid #dccb9f',borderRadius:14,background:'#fff',boxShadow:'0 8px 24px rgba(72,55,18,.07)'}}>
+  return createPortal(<section id="asgold-problem-navigator-react" hidden={!visible} data-customer-language={outputLanguage} lang={outputLanguage} dir={outputProfile.rtl?'rtl':'ltr'} style={{margin:'12px 0 0',padding:14,border:'1px solid #dccb9f',borderRadius:14,background:'#fff',boxShadow:'0 8px 24px rgba(72,55,18,.07)'}}>
     <span className="customerModeBadge">{customerModeLabels[outputLanguage]||customerModeLabels.en}</span>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{concernTitle}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
@@ -215,6 +227,6 @@ export function ProblemNavigator(){
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}><button type="button" onClick={showCase} style={{padding:'9px 12px',border:0,borderRadius:10,background:'#8f6e25',color:'#fff',fontWeight:800}}>{resultUi.showCase}</button><button type="button" onClick={showPlans} style={secondary}>{resultUi.showPlans}</button></div>
     </article>}
 
-    <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid #ece7d8'}}><a href="#fallarten" style={secondary}>{c.back}</a></div>
+    <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid #ece7d8'}}><button type="button" onClick={closeProblem} style={secondary}>{c.back}</button></div>
   </section>,host)
 }
