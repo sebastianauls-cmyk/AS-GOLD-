@@ -1,0 +1,1 @@
+Scope locked to the two defects visible in the real Android screenshot.
