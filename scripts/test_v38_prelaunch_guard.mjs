@@ -5,7 +5,7 @@ const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
 const exists=path=>fs.existsSync(new URL(`../${path}`,import.meta.url))
 
 const page=read('app/page.js')
-const privacyControls=read('app/components/V28PrivacyControls.js')
+const privacyControls=read('app/modules/compliance/PrivacyControls.js')
 const legalFooter=read('app/modules/compliance/LegalFooter.js')
 const nextConfig=read('next.config.mjs')
 const packageJson=JSON.parse(read('package.json'))
@@ -103,4 +103,4 @@ assert.match(integrationTokens,/createHash\('sha256'\)/)
 // Existing product/readiness guards must stay mandatory before production builds
 for(const guard of ['test:v37-readiness','test:v38-deadlines','test:v38-assessments','test:v38-next-step','test:v38-simulation','test:v38-mobile','test:v38-accessibility']) assert.match(packageJson.scripts.prebuild,new RegExp(guard.replace(':','\\:')))
 
-console.log('V38 pre-launch guard passed: auth, modular legal/test-data gates, payment lock, modular paused-or-open tester safety, exports, security headers, modular OAuth safeguards, deletion/audit controls and readiness guards verified.')
+console.log('V38 pre-launch guard passed: auth, modular compliance/test-data gates, payment lock, modular paused-or-open tester safety, exports, security headers, modular OAuth safeguards, deletion/audit controls and readiness guards verified.')
