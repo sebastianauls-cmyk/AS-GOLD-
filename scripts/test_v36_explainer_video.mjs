@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 
-const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
+const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 const explainerSource=await readFile(new URL('../app/components/ExplainerVideo.js',import.meta.url),'utf8')
 const configSource=await readFile(new URL('../next.config.mjs',import.meta.url),'utf8')
 
@@ -31,8 +31,10 @@ for(const language of expectedLanguages){
     new RegExp(`\\b${language}:\\{[^\\n]*voice:'[^']+'[^\\n]*female:'[^']+'[^\\n]*male:'[^']+'[^\\n]*maleFallback:'[^']+'`),
     `missing presenter or fallback controls for ${language}`
   )
-  const expectedFemale=language==='de'?'as-gold-explainer-de-female':`as-gold-v35-${language}`
-  assert.match(femaleLocalBlock,new RegExp(`\\b${language}:'/videos/${expectedFemale}\\.mp4'`),`missing local female video for ${language}`)
+  if(language!=='vi'){
+    const expectedFemale=language==='de'?'as-gold-explainer-de-female':`as-gold-v35-${language}`
+    assert.match(femaleLocalBlock,new RegExp(`\\b${language}:'/videos/${expectedFemale}\\.mp4'`),`missing local female video for ${language}`)
+  }
   assert.match(
     femaleRemoteBlock,
     new RegExp(`\\b${language}:'https://resource2\\.heygen\\.ai/video_translate/[^']+/original\\.mp4'`),
@@ -47,19 +49,19 @@ for(const language of expectedLanguages){
 
 assert.equal(
   (femaleLocalBlock.match(/\/videos\/as-gold-(?:v35-[a-z]{2}|explainer-de-female)\.mp4/g)||[]).length,
-  expectedLanguages.length,
-  'local female catalog must contain exactly ten videos'
+  expectedLanguages.length-1,
+  'local female catalog must contain the ten existing videos'
 )
 assert.match(maleLocalBlock,/de:'\/videos\/as-gold-explainer-de-male\.mp4'/)
 assert.equal(
   (femaleRemoteBlock.match(/https:\/\/resource2\.heygen\.ai\/video_translate\//g)||[]).length,
   expectedLanguages.length,
-  'female fallback catalog must contain exactly ten videos'
+  'female fallback catalog must contain exactly eleven videos'
 )
 assert.equal(
   (maleRemoteBlock.match(/https:\/\/(?:resource2|files2)\.heygen\.ai\//g)||[]).length,
   expectedLanguages.length,
-  'male catalog must contain exactly ten videos'
+  'male catalog must contain exactly eleven videos'
 )
 assert.doesNotMatch(
   femaleRemoteBlock+maleRemoteBlock,
@@ -77,7 +79,7 @@ assert.match(explainerSource,/onClick=\{\(\)=>setPresenter\('female'\)\}/)
 assert.match(explainerSource,/onClick=\{\(\)=>setPresenter\('male'\)\}/)
 assert.match(explainerSource,/presenter==='male'&&videoLanguage!=='de'/)
 assert.match(explainerSource,/\{c\.maleFallback\}/)
-assert.match(explainerSource,/presenter==='female'&&<source src=\{femaleLocal\}/)
+assert.match(explainerSource,/presenter==='female'&&femaleLocal&&<source src=\{femaleLocal\}/)
 assert.match(explainerSource,/presenter==='male'&&maleLocal&&<source src=\{maleLocal\}/)
 assert.match(explainerSource,/<source src=\{presenter==='male'\?maleRemote:femaleRemote\}/)
 assert.match(explainerSource,/presenter==='male'&&<source src=\{femaleRemote\}/)
@@ -87,4 +89,4 @@ assert.match(configSource,/https:\/\/resource2\.heygen\.ai https:\/\/files2\.hey
 assert.match(configSource,/media-src 'self' blob: \$\{heygenMediaOrigins\}/)
 assert.match(configSource,/Permissions-Policy'.*payment=\(\)/)
 
-console.log('V36 explainer guard: ten languages, accessible presenter controls, fallbacks and payment lock verified.')
+console.log('V71 explainer guard: eleven languages, accessible presenter controls, fallbacks and payment lock verified.')

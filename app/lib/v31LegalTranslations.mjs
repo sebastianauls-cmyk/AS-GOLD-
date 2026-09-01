@@ -11,7 +11,8 @@ export const legalShellCopy={
   pl:{eyebrow:'AS Gold · Informacje prawne',back:'Wróć do aplikacji',updated:'Aktualizacja',binding:'Wersja wiążąca: niemiecka',note:'Treść jest automatycznie wyświetlana w języku aplikacji. Prawnie wiążąca pozostaje wersja niemiecka.'},
   ru:{eyebrow:'AS Gold · Правовая информация',back:'В приложение',updated:'Обновлено',binding:'Юридически обязательная версия: немецкая',note:'Автоматически показывается на языке приложения. Юридическую силу сохраняет немецкая версия.'},
   ar:{eyebrow:'AS Gold · المعلومات القانونية',back:'العودة إلى التطبيق',updated:'آخر تحديث',binding:'النسخة الملزمة: الألمانية',note:'يُعرض النص تلقائياً بلغة التطبيق. تبقى النسخة الألمانية هي الملزمة قانوناً.'},
-  fa:{eyebrow:'AS Gold · اطلاعات حقوقی',back:'بازگشت به برنامه',updated:'به‌روزرسانی',binding:'نسخه لازم‌الاجرا: آلمانی',note:'متن به‌صورت خودکار به زبان برنامه نمایش داده می‌شود. نسخه آلمانی از نظر حقوقی ملاک است.'}
+  fa:{eyebrow:'AS Gold · اطلاعات حقوقی',back:'بازگشت به برنامه',updated:'به‌روزرسانی',binding:'نسخه لازم‌الاجرا: آلمانی',note:'متن به‌صورت خودکار به زبان برنامه نمایش داده می‌شود. نسخه آلمانی از نظر حقوقی ملاک است.'},
+  vi:{eyebrow:'AS Gold · Pháp lý',back:'Quay lại ứng dụng',updated:'Cập nhật',binding:'Bản có giá trị pháp lý: tiếng Đức',note:'Nội dung tự động hiển thị theo ngôn ngữ ứng dụng. Bản tiếng Đức vẫn là bản có giá trị pháp lý ràng buộc.'}
 }
 
 const en={
@@ -257,7 +258,81 @@ const fa=compactLegal({
   electronic:'امکان انصراف الکترونیکی',withdrawalInfo:'اطلاعات حق انصراف',withdrawalInfoText:'مصرف‌کننده معمولاً چهارده روز فرصت دارد بدون ذکر دلیل از قرارداد از راه دور منصرف شود، مگر استثنا یا پایان قانونی اعمال شود. اعلام روشن به Sebastian Auls کافی است. پس از انصراف معتبر، خدمات طبق قانون بازگردانده می‌شود؛ در آزمایش رایگان مبلغی برای استرداد نیست.',model:'نمونه فرم انصراف',modelText:'به Sebastian Auls، Chrysanderstraße 75، 21029 Hamburg، ایمیل: sebastian.auls@gmail.com. بدین‌وسیله از قرارداد استفاده از AS Gold منصرف می‌شوم. مرجع قرارداد/حساب، نام و تاریخ: ____________________.',currentTest:['آزمایش فعلی','ثبت‌نام رایگان و بدون پرداخت یا اشتراک است. انصراف معتبر بااین‌حال رابطه قراردادی را روشن پایان می‌دهد.'],personalStatus:'وضعیت شخصی شما',voluntary:['تصمیم شما داوطلبانه است','بدون مجوز هوش مصنوعی می‌توان فیلدها را دستی ویرایش کرد. انتقال برای هر سند تأیید صریح تازه می‌خواهد.']
 })
 
-export const legalTranslations={en,fr,tr,pl,ru,ar,fa}
+const vi={
+  impressum:p('Thông tin nhà cung cấp','Thông tin về nhà cung cấp AS Gold theo § 5 Luật Dịch vụ Kỹ thuật số Đức (DDG).',[
+    s('Nhà cung cấp dịch vụ',['Sebastian Auls – Unternehmens- und Konzeptberatung\nChrysanderstraße 75\n21029 Hamburg\nĐức']),
+    s('Liên hệ',['Email: sebastian.auls@gmail.com','Về quyền riêng tư, dùng tiêu đề “Datenschutz – AS Gold”.'],[],[['mailto:sebastian.auls@gmail.com','Gửi email']]),
+    s('Chịu trách nhiệm nội dung',['Sebastian Auls, địa chỉ như trên.']),
+    s('Giải quyết tranh chấp người tiêu dùng',['Nhà cung cấp không có nghĩa vụ và không sẵn sàng tham gia thủ tục hòa giải trước cơ quan trọng tài người tiêu dùng. Nền tảng ODR của EU đã ngừng hoạt động ngày 20 tháng 7 năm 2025.']),
+    s('Dịch vụ hiện tại',['AS Gold đang là thử nghiệm miễn phí có kiểm soát. Giá chỉ là bản xem trước minh bạch; thanh toán bị tắt và đăng ký không tạo thuê bao trả phí.'])
+  ]),
+  datenschutz:p('Chính sách quyền riêng tư','Chính sách này mô tả luồng dữ liệu thực tế trong thử nghiệm AS Gold có kiểm soát.',[
+    s('1. Bên kiểm soát dữ liệu',['Sebastian Auls – Unternehmens- und Konzeptberatung\nChrysanderstraße 75\n21029 Hamburg\nĐức\nEmail: sebastian.auls@gmail.com']),
+    s('2. Dữ liệu được xử lý',[],['Dữ liệu kỹ thuật về truy cập, bảo mật và lỗi','Tài khoản, phiên, vai trò và trạng thái truy cập','Hồ sơ, khách hàng thử nghiệm, tệp, đánh giá, phê duyệt, bản xuất và sự kiện kiểm toán','Cài đặt quyền riêng tư, phân loại dữ liệu và phê duyệt AI cho từng tài liệu','Lựa chọn ngôn ngữ và lịch sử cục bộ cần thiết']),
+    s('3. Mục đích và cơ sở pháp lý',['Vận hành an toàn dựa trên Điều 6(1)(f) GDPR; tài khoản và chức năng được yêu cầu dựa trên Điều 6(1)(b). Nghĩa vụ và bằng chứng pháp lý dựa trên Điều 6(1)(c) và (f). Phân tích AI do người dùng chủ động bắt đầu dựa trên Điều 6(1)(b) hoặc (a) khi sự đồng ý là cơ sở quyết định.']),
+    s('4. Lưu trữ và bên nhận',['Vercel cung cấp ứng dụng. Supabase cung cấp xác thực, PostgreSQL, lưu trữ tệp riêng tư và Edge Functions; dự án chính đặt tại London. Chỉ khi người dùng chủ động xác nhận phân tích tài liệu, OpenAI API mới nhận tệp thử nghiệm đã được phê duyệt. Yêu cầu dùng store: false.']),
+    s('5. Truyền dữ liệu quốc tế',['Tùy luồng dữ liệu, các quyết định về mức bảo vệ phù hợp, EU-US Data Privacy Framework, điều khoản hợp đồng tiêu chuẩn và biện pháp bổ sung sẽ được áp dụng. Dữ liệu cá nhân thật vẫn bị chặn trong thử nghiệm.']),
+    s('6. Tài liệu và bảo vệ AI',['Tệp được lưu riêng tư. Máy chủ kiểm tra đăng nhập, quyền sở hữu, phiên bản thông báo, loại dữ liệu, phê duyệt tài khoản và tài liệu, loại tệp cùng dung lượng.']),
+    s('7. Thời gian lưu giữ',['Dữ liệu tài khoản và không gian làm việc được giữ trong thử nghiệm và thường tối đa ba tháng sau khi tạm dừng. Bằng chứng kiểm toán, hợp đồng và rút khỏi hợp đồng chỉ được giữ trong thời gian cần thiết.']),
+    s('8. Lưu trữ trình duyệt',['Bộ nhớ cục bộ cần thiết duy trì phiên, lựa chọn ngôn ngữ và lịch sử thiết bị. Hiện không tích hợp trình theo dõi quảng cáo hoặc đo lường đối tượng.'],[],[['/cookies','Cookie và lưu trữ trình duyệt']]),
+    s('9. Quyền của bạn',['Theo GDPR, bạn có thể yêu cầu truy cập, sửa, xóa, hạn chế, chuyển dữ liệu, phản đối và rút lại sự đồng ý cho tương lai. Liên hệ: sebastian.auls@gmail.com.']),
+    s('10. Khiếu nại',['Bạn có thể khiếu nại đến cơ quan bảo vệ dữ liệu, đặc biệt là Cơ quan Bảo vệ Dữ liệu và Tự do Thông tin Hamburg.'],[],[['https://datenschutz-hamburg.de/service-information/beschwerde-oder-hinweis-einreichen','Gửi khiếu nại']]),
+    s('11. Quyết định tự động',['AS Gold không đưa ra quyết định hoàn toàn tự động có hiệu lực pháp lý tương đương. Kết quả AI là tạm thời, có thể chỉnh sửa và chỉ được lưu sau kiểm tra của con người.']),
+    s('12. Thông tin bắt buộc',['Tên, email, mật khẩu và xác nhận điều kiện thử nghiệm là cần thiết để đăng ký. Có thể sử dụng thử nghiệm mà không phân tích AI.']),
+    s('13. Thay đổi',['Thay đổi quan trọng có số phiên bản mới và cần được xác nhận lại.'])
+  ],{tone:'warning',title:'Chỉ dùng dữ liệu thử nghiệm',text:'Hiện chỉ được dùng dữ liệu tổng hợp hoặc đã ẩn danh hiệu quả. Không được dùng dữ liệu cá nhân thật của bên thứ ba hoặc dữ liệu đặc biệt theo Điều 9 GDPR.'}),
+  nutzungsbedingungen:p('Điều khoản sử dụng','Điều khoản cho thử nghiệm AS Gold miễn phí và có kiểm soát hiện tại.',[
+    s('1. Nhà cung cấp và phạm vi',['Nhà cung cấp là Sebastian Auls – Unternehmens- und Konzeptberatung. Các điều khoản này áp dụng cho đăng ký và sử dụng thử nghiệm có kiểm soát.']),
+    s('2. Quyền truy cập thử nghiệm',['Quyền truy cập dùng để thử cấu trúc hồ sơ, lưu tài liệu, kiểm tra thủ công, phê duyệt, xuất và phân tích AI tùy chọn. Phạm vi có thể được điều chỉnh hoặc kết thúc hợp lý.']),
+    s('3. Đăng ký và bảo mật',['Người dùng phải cung cấp thông tin đúng, dùng mật khẩu mạnh, giữ bí mật thông tin đăng nhập và báo ngay truy cập đáng ngờ.']),
+    s('4. Quy tắc dữ liệu thử nghiệm nghiêm ngặt',['Chỉ được dùng dữ liệu tổng hợp tự tạo hoặc đã ẩn danh hiệu quả. Dữ liệu khách hàng thật, dữ liệu sức khỏe, nhân sự, thông tin đăng nhập và dữ liệu nhạy cảm đều bị cấm.']),
+    s('5. Phân tích AI',['AI chỉ bắt đầu sau xác nhận riêng cho từng tài liệu. Tệp thử nghiệm đã phê duyệt được gửi đến OpenAI API; kết quả là tạm thời và cần kiểm tra chuyên môn.'],[],[['/ki-transparenz','Minh bạch AI']]),
+    s('6. Không tư vấn và không hành động tự động',['AS Gold sắp xếp thông tin nhưng không thay thế tư vấn pháp lý, thuế, tài chính hoặc chuyên môn. Ứng dụng không tự động gửi tin nhắn, thanh toán hay gia hạn.']),
+    s('7. Sử dụng được phép',['Quyền sử dụng không chuyển nhượng và chỉ dành cho thử nghiệm hợp pháp. Cấm vượt bảo mật, mã độc, gây quá tải và vi phạm quyền.']),
+    s('8. Giá chỉ là bản xem trước',['Các gói mô tả sản phẩm dự kiến. Khi thanh toán bị tắt, chúng không phải đơn đặt hàng trả phí. Không có kế hoạch tự động gia hạn.']),
+    s('9. Kết thúc và dữ liệu',['Thử nghiệm tiếp tục cho đến khi một bên kết thúc. Người dùng có thể rút khỏi hợp đồng, gửi email hoặc yêu cầu xóa; danh tính, phụ thuộc và nghĩa vụ lưu giữ sẽ được kiểm tra.'],[],[['/widerruf','Rút khỏi hợp đồng']]),
+    s('10. Bảo đảm và trách nhiệm',['Áp dụng quy định pháp luật bắt buộc; quyền người tiêu dùng và trách nhiệm về cố ý, bất cẩn nghiêm trọng, tính mạng, thân thể hoặc sức khỏe không bị ảnh hưởng.']),
+    s('11. Quyền riêng tư',['Việc xử lý được mô tả trong chính sách quyền riêng tư; chính sách này không phải sự đồng ý chung.'],[],[['/datenschutz','Chính sách quyền riêng tư']]),
+    s('12. Luật áp dụng và tranh chấp',['Áp dụng pháp luật Đức, đồng thời bảo lưu bảo vệ người tiêu dùng bắt buộc tại nơi cư trú thông thường.'])
+  ],{tone:'warning',title:'Không thanh toán, không thuê bao',text:'Thanh toán bị tắt. Đăng ký và thử nghiệm không tạo thanh toán, thuê bao trả phí hoặc tự động gia hạn.'}),
+  cookies:p('Cookie và lưu trữ trình duyệt','AS Gold hiện không dùng cookie quảng cáo, đo lường hoặc lập hồ sơ.',[
+    s('Lưu trữ phiên cần thiết',['Supabase lưu token truy cập và làm mới để duy trì phiên được bảo vệ. Đăng xuất kết thúc phiên xác thực.']),
+    s('Ngôn ngữ và ngôn ngữ kết quả',['asgold-language và asgold-output-language chỉ lưu lựa chọn ngôn ngữ trên thiết bị.']),
+    s('Lịch sử cục bộ',['Tối đa 50 hoạt động ngắn có thể được lưu cục bộ cho người dùng đã đăng nhập. Chúng không thay thế nhật ký máy chủ.']),
+    s('Cơ sở pháp lý',['Lưu trữ cần thiết cung cấp các chức năng được yêu cầu. Phân tích hoặc tiếp thị tùy chọn trong tương lai sẽ cần sự đồng ý riêng.'],[],[['/datenschutz','Chính sách quyền riêng tư']])
+  ],{tone:'success',title:'Không theo dõi tiếp thị',text:'Ứng dụng hiện không có trình theo dõi phân tích, quảng cáo hoặc mạng xã hội.'}),
+  kiTransparenz:p('Minh bạch AI','Phân tích tài liệu là đề xuất tổ chức tạm thời do người dùng chủ động bắt đầu — không phải quyết định tự động hoặc tư vấn pháp lý.',[
+    s('Khi dữ liệu được truyền',[],['Tệp thử nghiệm riêng tư được tải lên','Tệp được phân loại là tổng hợp hoặc đã ẩn danh','Người dùng chủ động bắt đầu phân tích','Máy chủ kiểm tra quyền và phê duyệt','Chỉ sau đó tệp mới được gửi đến OpenAI API']),
+    s('Nhà cung cấp và cài đặt',['Responses API được dùng với store: false. Dữ liệu API doanh nghiệp mặc định không dùng để huấn luyện; nhật ký an toàn có thể được giữ tối đa 30 ngày.']),
+    s('Hệ thống cung cấp gì',['Mô hình có thể đề xuất văn bản, loại tài liệu, ngày, các bên, tham chiếu, thời hạn và khoản tiền. Sai sót vẫn có thể xảy ra.']),
+    s('Kiểm soát của con người',['Mọi kết quả bắt đầu dưới dạng đề xuất chưa lưu. Các trường có thể chỉnh sửa và chỉ hành động lưu riêng mới tiếp nhận dữ liệu đã kiểm tra.']),
+    s('Giới hạn',[],['Không tư vấn pháp lý, thuế hoặc tài chính','Không tính thời hạn ràng buộc khi chưa kiểm tra chuyên môn','Không tự động liên lạc hoặc gửi','Không dùng dữ liệu thật hoặc đặc biệt nhạy cảm'])
+  ],{tone:'warning',title:'Chỉ dùng dữ liệu thử nghiệm',text:'Phân tích AI chỉ được phép cho tệp tổng hợp hoặc đã ẩn danh hiệu quả.'}),
+  kontakt:p('Liên hệ','Liên hệ trực tiếp, không qua biểu mẫu bổ sung hoặc dịch vụ theo dõi.',[
+    s('Sebastian Auls – Unternehmens- und Konzeptberatung',['Chrysanderstraße 75\n21029 Hamburg\nĐức','Email: sebastian.auls@gmail.com'],[],[['mailto:sebastian.auls@gmail.com','Gửi email']]),
+    s('Không gửi dữ liệu khách hàng bí mật',['Trong thử nghiệm, không gửi qua email tài liệu khách hàng thật, dữ liệu nhạy cảm, mật khẩu hoặc token truy cập.'])
+  ],{tone:'info',title:'Tiêu đề email hữu ích',text:'Chung: “AS Gold” · Quyền riêng tư: “Datenschutz – AS Gold” · Rút khỏi hợp đồng: nên dùng chức năng công khai.'}),
+  rechtliches:p('Thông tin pháp lý','Tất cả thông tin và kiểm soát cần thiết cho thử nghiệm AS Gold miễn phí ở một nơi.',[
+    s('Tài liệu và chức năng',[],[],[['/impressum','Thông tin nhà cung cấp','Nhà cung cấp, địa chỉ và liên hệ.'],['/datenschutz','Chính sách quyền riêng tư','Xử lý, cơ sở, bên nhận, thời gian và quyền.'],['/datenschutzsteuerung','Kiểm soát quyền riêng tư','Trạng thái tài khoản và tắt AI.'],['/nutzungsbedingungen','Điều khoản sử dụng','Quy tắc thử nghiệm miễn phí.'],['/widerruf','Rút khỏi hợp đồng','Thông tin, mẫu và chức năng điện tử.'],['/cookies','Cookie và lưu trữ','Phiên, ngôn ngữ và lịch sử thiết bị.'],['/ki-transparenz','Minh bạch AI','Truyền dữ liệu và biện pháp bảo vệ.'],['/kontakt','Liên hệ','Liên hệ chung, pháp lý và quyền riêng tư.']]),
+    s('Trước khi vận hành trả phí',['Nghĩa vụ thông tin, hợp đồng xử lý, truyền quốc tế, quy trình xóa và đánh giá tác động cần thiết phải được ghi nhận và phê duyệt.'])
+  ],{tone:'warning',title:'Thử nghiệm có kiểm soát',text:'Thanh toán bị tắt. Chỉ được dùng dữ liệu thử nghiệm tổng hợp hoặc đã ẩn danh hiệu quả.'}),
+  testen:p('Thử AS Gold an toàn','Quy trình này cho phép người thử nghiệm khám phá ứng dụng mà không dùng dữ liệu khách hàng thật.',[
+    s('Thử nghiệm an toàn trong bốn bước',[],['Đăng ký miễn phí với mật khẩu mạnh duy nhất','Xác nhận email và đăng nhập','Tải PDF mẫu tổng hợp','Tạo hồ sơ, tải lên dưới dạng dữ liệu tổng hợp, chủ động bắt đầu phân tích, kiểm tra rồi mới lưu'],[['/testdaten/AS_Gold_Synthetischer_Testfall_V29.pdf','Tải PDF mẫu']]),
+    s('Nội dung nên kiểm tra',[],['Đăng ký, đăng nhập và đăng xuất','Hiển thị trên điện thoại, máy tính bảng và máy tính','Ngôn ngữ ứng dụng và ngôn ngữ kết quả riêng biệt','Khách hàng và hồ sơ giả định','Tải lên, phân loại và xác nhận AI','Tham chiếu, thời hạn, khoản tiền và điểm còn thiếu','Sửa thủ công, phê duyệt và xuất','Truy cập dữ liệu, nhật ký, tắt AI và yêu cầu xóa']),
+    s('Gửi phản hồi',['Chỉ mô tả trang, bước, thiết bị và lỗi nhìn thấy. Không gửi nội dung đã tải lên hoặc thông tin đăng nhập.'],[],[['/?start=register','Thử miễn phí'],['mailto:sebastian.auls@gmail.com?subject=AS%20Gold%20V71%20Test','Gửi phản hồi qua email']]),
+    s('Ranh giới rõ ràng',['Đây là thử nghiệm sản phẩm có kiểm soát. Không được dùng dữ liệu khách hàng thật, dữ liệu đặc biệt nhạy cảm, thanh toán hoặc coi ứng dụng là thay thế cho tư vấn cá nhân.'])
+  ],{tone:'success',title:'Thử nghiệm miễn phí',text:'Không thanh toán, không thuê bao và không tự động gia hạn. Chỉ dùng mẫu đã chuẩn bị hoặc dữ liệu hoàn toàn giả định.'}),
+  widerruf:p('Rút khỏi hợp đồng','Chức năng rút khỏi hợp đồng điện tử công khai hai bước theo § 356a BGB.',[
+    s('Chức năng rút khỏi hợp đồng điện tử'),
+    s('Thông tin rút khỏi hợp đồng',['Người tiêu dùng thường có mười bốn ngày để rút khỏi hợp đồng từ xa mà không cần nêu lý do, trừ khi pháp luật quy định ngoại lệ hoặc quyền đã hết. Một tuyên bố rõ ràng gửi Sebastian Auls là đủ. Trong thử nghiệm miễn phí không có khoản thanh toán cần hoàn lại.']),
+    s('Mẫu tuyên bố',['Gửi Sebastian Auls, Chrysanderstraße 75, 21029 Hamburg, email: sebastian.auls@gmail.com. Tôi xin rút khỏi hợp đồng sử dụng AS Gold. Mã hợp đồng/tài khoản, họ tên và ngày: ____________________.'])
+  ],{tone:'success',title:'Thử nghiệm hiện tại',text:'Đăng ký miễn phí, không thanh toán hoặc thuê bao. Việc rút hợp đồng hợp lệ vẫn chấm dứt rõ ràng quan hệ hợp đồng.'}),
+  datenschutzsteuerung:p('Kiểm soát quyền riêng tư','Kiểm tra trạng thái tài khoản và tắt xử lý AI cùng các phê duyệt tài liệu đang mở.',[
+    s('Trạng thái cá nhân của bạn')
+  ],{tone:'info',title:'Lựa chọn vẫn tự nguyện',text:'Không có phê duyệt AI, bạn vẫn có thể sửa trường tài liệu thủ công. Mỗi lần truyền cần một xác nhận mới cho tài liệu.'})
+}
+
+export const legalTranslations={en,fr,tr,pl,ru,ar,fa,vi}
 
 export function getLegalPage(pageId,language){
   if(language==='de') return null

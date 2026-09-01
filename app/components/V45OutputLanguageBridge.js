@@ -2,8 +2,8 @@
 
 import { useEffect } from 'react'
 
-const supported=new Set(['de','en','fr','tr','pl','ru','ar','fa','ro','bg'])
-const names={de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български'}
+const supported=new Set(['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])
+const names={de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български',vi:'Tiếng Việt'}
 
 export function V45OutputLanguageBridge(){
   useEffect(()=>{

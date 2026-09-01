@@ -60,7 +60,7 @@ assert.match(card,/documentBasis/)
 assert.match(card,/cImmediate/)
 assert.match(card,/cUncertain/)
 assert.match(card,/de:.*Fristen-Warnung/)
-for(const language of ['en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(card,new RegExp(`${language}:\\{`))
+for(const language of ['en','fr','tr','pl','ru','ar','fa','ro','bg','vi']) assert.match(card,new RegExp(`${language}:\\{`))
 assert.match(layout,/V38DeadlineCardEnhancer/)
 
 console.log('V38 deadline intelligence guard passed: semantic deadline cues, false-positive rejection, document-view wiring, localized consequences, prioritization and uncertainty verified.')

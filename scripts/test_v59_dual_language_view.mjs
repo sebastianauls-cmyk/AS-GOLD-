@@ -18,13 +18,14 @@ assert.match(page,/screen==='public'\?outputLanguage:language/)
 assert.match(modules,/lang=\{language\}/)
 assert.doesNotMatch(modules,/id="asgold-customer-module-slot"/)
 
-assert.deepEqual(supportedLanguages.map(item=>item.key),['de','en','fr','tr','pl','ru','ar','fa','ro','bg'])
-for(const key of ['fr','fa','ro','bg']){
+assert.deepEqual(supportedLanguages.map(item=>item.key),['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])
+for(const key of ['fr','fa','ro','bg','vi']){
   for(const catalog of ['ui','appText','planJourney','planText','transparencyText','caseDiscoveryText','publicAudienceText','testerLinkText','periodText','journeyLabels','recommendationText']){
     assert.ok(pageTranslations[catalog]?.[key],`${catalog}.${key} must be translated`)
   }
 }
 assert.match(footer,/ro:\{nav:'Informații juridice'/)
 assert.match(footer,/bg:\{nav:'Правна информация'/)
+assert.match(footer,/vi:\{nav:'Thông tin pháp lý'/)
 
-console.log('V59 dual-language guard passed: interface language stays independent while every public customer section follows the selected output language in all ten languages.')
+console.log('V71 dual-language guard passed: interface language stays independent while every public customer section follows the selected output language in all eleven languages.')

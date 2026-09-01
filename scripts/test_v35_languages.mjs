@@ -11,7 +11,7 @@ import {
 import { problemLanguageProfiles } from '../app/lib/problemNavigatorLanguagesV36.mjs'
 import { promoTranslations } from '../app/lib/v31PromoTranslations.mjs'
 
-const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
+const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 const requiredPageCatalogs=[
   'passwordUi','uploadUi','ui','exportUi','appText','planJourney','planText','notices',
   'journeyLabels','dashboardGuide','recommendationText','transparencyText',
@@ -25,13 +25,15 @@ const requiredComponentCatalogs=[
 assert.deepEqual(
   supportedLanguages.map(({key})=>key),
   expectedLanguages,
-  'V35 must expose exactly the agreed ten app languages in the agreed order'
+  'V71 must expose exactly the agreed eleven app languages in the agreed order'
 )
 assert.equal(new Set(expectedLanguages).size,expectedLanguages.length,'language keys must be unique')
 assert.deepEqual(supportedLanguages.find(({key})=>key==='ro')?.countryCodes,['RO'])
 assert.deepEqual(supportedLanguages.find(({key})=>key==='bg')?.countryCodes,['BG'])
+assert.deepEqual(supportedLanguages.find(({key})=>key==='vi')?.countryCodes,['VN'])
 assert.equal(localeForLanguage.ro,'ro-RO')
 assert.equal(localeForLanguage.bg,'bg-BG')
+assert.equal(localeForLanguage.vi,'vi-VN')
 assert.equal(rtlLanguages.has('ro'),false)
 assert.equal(rtlLanguages.has('bg'),false)
 assert.equal(rtlLanguages.has('ar'),true)
@@ -49,7 +51,7 @@ for(const language of expectedLanguages){
 }
 
 for(const catalog of requiredPageCatalogs){
-  for(const language of ['ro','bg']){
+  for(const language of ['ro','bg','vi']){
     const value=pageTranslations[catalog]?.[language]
     const populated=typeof value==='string'?Boolean(value.trim()):Boolean(value&&typeof value==='object'&&Object.keys(value).length)
     assert.ok(populated,`missing or empty ${catalog} page catalog for ${language}`)
@@ -57,14 +59,14 @@ for(const catalog of requiredPageCatalogs){
 }
 
 for(const catalog of requiredComponentCatalogs){
-  for(const language of ['ro','bg']){
+  for(const language of ['ro','bg','vi']){
     const value=componentTranslations[catalog]?.[language]
     assert.ok(value&&typeof value==='object',`missing ${catalog} component catalog for ${language}`)
     assert.ok(Object.keys(value).length>0,`empty ${catalog} component catalog for ${language}`)
   }
 }
 
-for(const language of ['ro','bg']){
+for(const language of ['ro','bg','vi']){
   const profile=problemLanguageProfiles[language]
   assert.ok(profile,`missing problem navigator profile for ${language}`)
   assert.equal(Object.keys(profile.cases||{}).length,8,`problem navigator must expose eight case types for ${language}`)
@@ -94,14 +96,17 @@ assert.match(introSource,/\bro:\{/)
 assert.match(introSource,/\bbg:\{/)
 assert.match(explainerSource,/\['ro','🇷🇴','Română'\]/)
 assert.match(explainerSource,/\['bg','🇧🇬','Български'\]/)
+assert.match(explainerSource,/\['vi','🇻🇳','Tiếng Việt'\]/)
 
 for(const language of expectedLanguages){
-  const path=new URL(`../public/videos/as-gold-v35-${language}.mp4`,import.meta.url)
+  if(language==='vi') continue
+  const filename=`as-gold-v35-${language}.mp4`
+  const path=new URL(`../public/videos/${filename}`,import.meta.url)
   const info=await stat(path)
   assert.ok(info.isFile()&&info.size>1_000_000,`missing or incomplete local explainer video for ${language}`)
-  if(language!=='de') assert.match(explainerSource,new RegExp(`\\/videos\\/as-gold-v35-${language}\\.mp4`))
+  if(language!=='de') assert.ok(explainerSource.includes(`/videos/${filename}`),`missing local explainer source for ${language}`)
 }
 assert.match(explainerSource,/\/videos\/as-gold-explainer-de-female\.mp4/)
 assert.match(explainerSource,/\/videos\/as-gold-explainer-de-male\.mp4/)
 
-console.log('V35 language guard: 10 app languages, RO/BG catalogs, SVG flags and local videos verified.')
+console.log('V71 language guard: 11 app languages, Vietnamese catalogs, SVG flag and local videos verified.')

@@ -12,7 +12,8 @@ const labels={
  ar:{title:'ما يجب فعله الآن',lead:'يحوّل AS Gold النقاط المفتوحة إلى مهام واضحة.',edit:'تعديل الحالة',upload:'إضافة مستند',reviewDoc:'مراجعة المستند',assess:'إضافة تقييم',followup:'تحديد الإجراء التالي',deviation:'مراجعة الاختلاف',done:'لا يوجد إجراء فوري مطلوب من النواقص المكتشفة.'},
  fa:{title:'اقدام بعدی',lead:'AS Gold موارد باز را به کارهای مشخص تبدیل می‌کند.',edit:'ویرایش پرونده',upload:'افزودن سند',reviewDoc:'بررسی سند',assess:'افزودن ارزیابی',followup:'تعیین اقدام بعدی',deviation:'بررسی اختلاف',done:'از نواقص شناسایی‌شده اقدام فوری لازم نیست.'},
  ro:{title:'Ce faceți acum',lead:'AS Gold transformă punctele deschise în sarcini concrete.',edit:'Editați cazul',upload:'Adăugați document',reviewDoc:'Verificați documentul',assess:'Adăugați evaluare',followup:'Stabiliți următoarea acțiune',deviation:'Verificați diferența',done:'Nu există acțiuni imediate rezultate din lipsurile detectate.'},
- bg:{title:'Какво да направите сега',lead:'AS Gold превръща отворените точки в конкретни задачи.',edit:'Редактирайте случая',upload:'Добавете документ',reviewDoc:'Проверете документа',assess:'Добавете оценка',followup:'Задайте следващо действие',deviation:'Проверете разликата',done:'Няма непосредствено действие по откритите липси.'}
+ bg:{title:'Какво да направите сега',lead:'AS Gold превръща отворените точки в конкретни задачи.',edit:'Редактирайте случая',upload:'Добавете документ',reviewDoc:'Проверете документа',assess:'Добавете оценка',followup:'Задайте следващо действие',deviation:'Проверете разликата',done:'Няма непосредствено действие по откритите липси.'},
+ vi:{title:'Việc cần làm ngay',lead:'AS Gold biến các điểm còn mở thành nhiệm vụ cụ thể.',edit:'Chỉnh sửa hồ sơ',upload:'Thêm tài liệu',reviewDoc:'Kiểm tra tài liệu',assess:'Thêm đánh giá',followup:'Xác định hành động tiếp theo',deviation:'Kiểm tra khác biệt',done:'Không có hành động tức thời từ các thiếu sót đã nhận diện.'}
 }
 
 function lang(){const v=(document.documentElement.lang||'de').toLowerCase().slice(0,2);return labels[v]?v:'de'}
@@ -21,13 +22,13 @@ function focusSelector(selector){const el=document.querySelector(selector);if(el
 
 function taskFromGap(text,t){
  const lower=text.toLowerCase()
- if(/ziel|goal|objectif|hedef|cel|цель|هدف|obiectiv|цел/.test(lower))return {label:text,action:t.edit,run:()=>clickButton(t.edit)||focusSelector('.caseTitleRow button.secondary')}
- if(/sachstand|summary|résumé|özet|opis|опис|ملخص|وضعیت|situația|описание/.test(lower))return {label:text,action:t.edit,run:()=>clickButton(t.edit)||focusSelector('.caseTitleRow button.secondary')}
- if(/frist|deadline|délai|süre|termin|срок|مهلة|termen|срок/.test(lower))return {label:text,action:t.edit,run:()=>clickButton(t.edit)||focusSelector('.caseTitleRow button.secondary')}
- if(/nächster schritt|next action|étape suivante|sonraki adım|następ|следующ|الخطوة التالية|گام بعدی|pasul următor|следваща/.test(lower))return {label:text,action:t.edit,run:()=>clickButton(t.edit)||focusSelector('.caseTitleRow button.secondary')}
- if(/keine dokument|no documents|aucun document|belge yok|brak dokument|документ|مستند|سند|documente|документ/.test(lower)&&!/ohne|without|sans|metni|bez odczyt|извлеч|بلا نص|بدون متن|fără text|без извлеч/.test(lower))return {label:text,action:t.upload,run:()=>clickButton(t.upload)||focusSelector('.detailCardHead button.secondary')}
- if(/ohne ausgelesenen|without extracted|sans texte extrait|metni çıkarılmamış|bez odczytanej|без извлечённого|بلا نص|بدون متن|fără text extras|без извлечен/.test(lower))return {label:text,action:t.reviewDoc,run:()=>focusSelector('.sourceList button')}
- if(/bewertung|assessment|évaluation|değerlendirme|ocen|оцен|تقييم|ارزیابی|evaluare|оценка/.test(lower))return {label:text,action:t.assess,run:()=>focusSelector('.inlineAssessment')}
+ if(/ziel|goal|objectif|hedef|cel|цель|هدف|obiectiv|цел|mục tiêu/.test(lower))return {label:text,action:t.edit,run:()=>clickButton(t.edit)||focusSelector('.caseTitleRow button.secondary')}
+ if(/sachstand|summary|résumé|özet|opis|опис|ملخص|وضعیت|situația|описание|tình trạng/.test(lower))return {label:text,action:t.edit,run:()=>clickButton(t.edit)||focusSelector('.caseTitleRow button.secondary')}
+ if(/frist|deadline|délai|süre|termin|срок|مهلة|termen|срок|thời hạn/.test(lower))return {label:text,action:t.edit,run:()=>clickButton(t.edit)||focusSelector('.caseTitleRow button.secondary')}
+ if(/nächster schritt|next action|étape suivante|sonraki adım|następ|следующ|الخطوة التالية|گام بعدی|pasul următor|следваща|bước tiếp theo/.test(lower))return {label:text,action:t.edit,run:()=>clickButton(t.edit)||focusSelector('.caseTitleRow button.secondary')}
+ if(/keine dokument|no documents|aucun document|belge yok|brak dokument|документ|مستند|سند|documente|документ|chưa có tài liệu/.test(lower)&&!/ohne|without|sans|metni|bez odczyt|извлеч|بلا نص|بدون متن|fără text|без извлеч|văn bản trích xuất/.test(lower))return {label:text,action:t.upload,run:()=>clickButton(t.upload)||focusSelector('.detailCardHead button.secondary')}
+ if(/ohne ausgelesenen|without extracted|sans texte extrait|metni çıkarılmamış|bez odczytanej|без извлечённого|بلا نص|بدون متن|fără text extras|без извлечен|chưa có văn bản trích xuất/.test(lower))return {label:text,action:t.reviewDoc,run:()=>focusSelector('.sourceList button')}
+ if(/bewertung|assessment|évaluation|değerlendirme|ocen|оцен|تقييم|ارزیابی|evaluare|оценка|đánh giá/.test(lower))return {label:text,action:t.assess,run:()=>focusSelector('.inlineAssessment')}
  return {label:text,action:t.followup,run:()=>focusSelector('.inlineAssessment')}
 }
 

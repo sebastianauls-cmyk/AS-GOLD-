@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom'
 const languages=[
   ['de','🇩🇪','Deutsch'],['en','🇬🇧','English'],['fr','🇫🇷','Français'],['tr','🇹🇷','Türkçe'],
   ['pl','🇵🇱','Polski'],['ru','🇷🇺','Русский'],['ar','🇸🇦','العربية'],['fa','🇮🇷','فارسی'],
-  ['ro','🇷🇴','Română'],['bg','🇧🇬','Български']
+  ['ro','🇷🇴','Română'],['bg','🇧🇬','Български'],['vi','🇻🇳','Tiếng Việt']
 ]
 
 const copy={
@@ -19,7 +19,8 @@ const copy={
   ar:{title:'شرح مختصر لـ AS Gold',lead:'الفيديو التوضيحي الحالي لأحدث إصدار من AS Gold.',language:'لغة الفيديو',voice:'مقدم الفيديو',female:'امرأة',male:'رجل',loading:'جارٍ تحميل الفيديو …',show:'▶ شاهد AS Gold في 90 ثانية',hide:'إغلاق الفيديو',maleFallback:'لا تزال النسخة الرجالية بهذه اللغة قيد المعالجة. حتى تكتمل قد تظهر مؤقتاً النسخة الحالية باللغة المختارة.'},
   fa:{title:'معرفی کوتاه AS Gold',lead:'ویدیوی توضیحی فعلی برای جدیدترین نسخه AS Gold.',language:'زبان ویدیو',voice:'ارائه‌دهنده ویدیو',female:'زن',male:'مرد',loading:'در حال بارگذاری ویدیو …',show:'▶ AS Gold را در ۹۰ ثانیه ببینید',hide:'بستن ویدیو',maleFallback:'نسخه مردانه در این زبان هنوز در حال پردازش است. تا آماده‌شدن آن ممکن است موقتاً نسخه فعلی همان زبان نمایش داده شود.'},
   ro:{title:'AS Gold explicat pe scurt',lead:'Videoclipul explicativ actual pentru cea mai nouă versiune AS Gold.',language:'Limba videoclipului',voice:'Prezentator',female:'Femeie',male:'Bărbat',loading:'Se încarcă videoclipul …',show:'▶ Vedeți AS Gold în 90 de secunde',hide:'Închideți videoclipul',maleFallback:'Versiunea masculină în această limbă este încă în procesare. Până când este gata, poate fi afișată temporar versiunea curentă în limba selectată.'},
-  bg:{title:'AS Gold накратко',lead:'Актуалното обяснително видео за най-новата версия на AS Gold.',language:'Език на видеото',voice:'Водещ',female:'Жена',male:'Мъж',loading:'Видеото се зарежда …',show:'▶ Вижте AS Gold за 90 секунди',hide:'Затворете видеото',maleFallback:'Мъжката версия на този език все още се обработва. Докато стане готова, временно може да се показва текущата версия на избрания език.'}
+  bg:{title:'AS Gold накратко',lead:'Актуалното обяснително видео за най-новата версия на AS Gold.',language:'Език на видеото',voice:'Водещ',female:'Жена',male:'Мъж',loading:'Видеото се зарежда …',show:'▶ Вижте AS Gold за 90 секунди',hide:'Затворете видеото',maleFallback:'Мъжката версия на този език все още се обработва. Докато стане готова, временно може да се показва текущата версия на избрания език.'},
+  vi:{title:'Giới thiệu ngắn về AS Gold',lead:'Video giải thích hiện tại cho phiên bản AS Gold mới nhất.',language:'Ngôn ngữ video',voice:'Người thuyết trình',female:'Nữ',male:'Nam',loading:'Đang tải video …',show:'▶ Xem AS Gold trong 90 giây',hide:'Đóng video',maleFallback:'Phiên bản nam bằng ngôn ngữ này vẫn đang được xử lý. Trong thời gian chờ, phiên bản hiện có của ngôn ngữ đã chọn có thể được hiển thị tạm thời.'}
 }
 
 const femaleLocalVideos={
@@ -30,11 +31,11 @@ const femaleLocalVideos={
 const maleLocalVideos={de:'/videos/as-gold-explainer-de-male.mp4'}
 
 const femaleRemoteVideos={
-  de:'https://resource2.heygen.ai/video_translate/6b18109b292448afb9fedf930f8ccdbb-de/original.mp4',en:'https://resource2.heygen.ai/video_translate/3ccf94ed801641f585cd0620cc97de38-en/original.mp4',fr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-fr/original.mp4',tr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-tr/original.mp4',pl:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-pl/original.mp4',ru:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ru/original.mp4',ar:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ar/original.mp4',fa:'https://resource2.heygen.ai/video_translate/4378b94dc0e84ad598a3742c105bbda7-fa_fa-IR/original.mp4',ro:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-ro/original.mp4',bg:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-bg/original.mp4'
+  de:'https://resource2.heygen.ai/video_translate/6b18109b292448afb9fedf930f8ccdbb-de/original.mp4',en:'https://resource2.heygen.ai/video_translate/3ccf94ed801641f585cd0620cc97de38-en/original.mp4',fr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-fr/original.mp4',tr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-tr/original.mp4',pl:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-pl/original.mp4',ru:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ru/original.mp4',ar:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ar/original.mp4',fa:'https://resource2.heygen.ai/video_translate/4378b94dc0e84ad598a3742c105bbda7-fa_fa-IR/original.mp4',ro:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-ro/original.mp4',bg:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-bg/original.mp4',vi:'https://resource2.heygen.ai/video_translate/c853c1c7508249c9933e9ecf2fa664c1-vi_vi-VN/original.mp4'
 }
 
 const maleRemoteVideos={
-  de:'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/b780eebf3d4ac79f61de519984d98f8c.mp4',en:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-en/original.mp4',fr:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-fr/original.mp4',tr:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-tr/original.mp4',pl:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-pl/original.mp4',ru:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-ru/original.mp4',ar:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-ar/original.mp4',fa:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-fa_fa-IR/original.mp4',ro:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-ro/original.mp4',bg:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-bg/original.mp4'
+  de:'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/b780eebf3d4ac79f61de519984d98f8c.mp4',en:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-en/original.mp4',fr:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-fr/original.mp4',tr:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-tr/original.mp4',pl:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-pl/original.mp4',ru:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-ru/original.mp4',ar:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-ar/original.mp4',fa:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-fa_fa-IR/original.mp4',ro:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-ro/original.mp4',bg:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-bg/original.mp4',vi:'https://resource2.heygen.ai/video_translate/d61639497f924841be3bdf8058881470-vi_vi-VN/original.mp4'
 }
 
 export function ExplainerVideo(){
@@ -76,7 +77,7 @@ export function ExplainerVideo(){
   if(!mounted||!open)return null
   const c=copy[uiLanguage]||copy.de
   const rtl=uiLanguage==='ar'||uiLanguage==='fa'
-  const femaleLocal=femaleLocalVideos[videoLanguage]||femaleLocalVideos.de
+  const femaleLocal=femaleLocalVideos[videoLanguage]
   const femaleRemote=femaleRemoteVideos[videoLanguage]||femaleRemoteVideos.de
   const maleLocal=maleLocalVideos[videoLanguage]
   const maleRemote=maleRemoteVideos[videoLanguage]||maleRemoteVideos.de
@@ -89,7 +90,7 @@ export function ExplainerVideo(){
       <b className="explainerPresenterTitle">{c.voice}</b>
       <div className="explainerPresenterButtons" role='group' aria-label={c.voice}><button type="button" aria-pressed={presenter==='female'} onClick={()=>setPresenter('female')} style={buttonStyle(presenter==='female')}>👩 {c.female}</button><button type="button" aria-pressed={presenter==='male'} onClick={()=>setPresenter('male')} style={buttonStyle(presenter==='male')}>👨 {c.male}</button></div>
       {presenter==='male'&&videoLanguage!=='de'&&<p className="explainerFallback">{c.maleFallback}</p>}
-      <video data-explainer-presenter={presenter} key={`${videoLanguage}-${presenter}`} controls autoPlay playsInline preload="metadata">{presenter==='female'&&<source src={femaleLocal} type="video/mp4"/>}{presenter==='male'&&maleLocal&&<source src={maleLocal} type="video/mp4"/>}<source src={presenter==='male'?maleRemote:femaleRemote} type="video/mp4"/>{presenter==='male'&&<source src={femaleRemote} type="video/mp4"/>}{c.loading}</video>
+      <video data-explainer-presenter={presenter} key={`${videoLanguage}-${presenter}`} controls autoPlay playsInline preload="metadata">{presenter==='female'&&femaleLocal&&<source src={femaleLocal} type="video/mp4"/>}{presenter==='male'&&maleLocal&&<source src={maleLocal} type="video/mp4"/>}<source src={presenter==='male'?maleRemote:femaleRemote} type="video/mp4"/>{presenter==='male'&&<source src={femaleRemote} type="video/mp4"/>}{c.loading}</video>
     </section>
   </div>,document.body)
 }

@@ -19,7 +19,7 @@ assert.deepEqual(timeline.map(entry=>entry.title),['A','B'])
 
 const component=fs.readFileSync(new URL('../app/components/V39CaseTimelineAutoAssessment.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
-for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(component,new RegExp(`\\b${language}:\\{`))
+for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']) assert.match(component,new RegExp(`\\b${language}:\\{`))
 assert.match(component,/Automatische Dokument-Ampel/)
 assert.match(component,/Vorläufig – Original prüfen/)
 assert.match(component,/Fall-Timeline/)

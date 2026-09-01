@@ -4,7 +4,7 @@ import { analyzeDeadlines } from '../app/lib/v38DeadlineIntelligence.mjs'
 import { prioritizeNextStep, supportedRecommendationLanguages } from '../app/lib/v38NextStepEngine.mjs'
 
 const now=new Date('2026-09-01T10:00:00Z')
-const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
+const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 assert.deepEqual(supportedRecommendationLanguages.sort(),expectedLanguages.sort())
 
 function simulate(name,{text='',caseDeadline='',missing=false,assessments=[],caseNext='',expectedDeadline,expectedKind,expectedWhen}){
@@ -53,5 +53,5 @@ for(const component of ['V38DeadlineCardEnhancer','V38AssessmentExplainability',
 
 console.log('V38 synthetic full-flow simulation passed.')
 for(const r of results) console.log(`✓ ${r.name}: deadline=${r.deadline}, next=${r.recommendation}`)
-console.log('✓ Acute/overdue deadlines outrank generic missing-information notices in all 10 languages')
+console.log('✓ Acute/overdue deadlines outrank generic missing-information notices in all 11 languages')
 console.log('✓ V38 UI layers mounted and PDF/DOCX/XLSX/PPTX export code paths present')

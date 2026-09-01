@@ -20,10 +20,10 @@ for(const key of ['goal','summary','deadline','next_action','unread_documents','
 
 const component=fs.readFileSync(new URL('../app/components/V41CaseConsistency.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
-for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(component,new RegExp(`\\b${language}:\\{`))
+for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']) assert.match(component,new RegExp(`\\b${language}:\\{`))
 assert.match(component,/Nicht automatisch als Widerspruch gewertet/)
 assert.match(component,/data-v41-consistency/)
 assert.match(component,/from\('documents'\)/)
 assert.match(component,/from\('assessments'\)/)
 assert.match(layout,/V41CaseConsistency/)
-console.log('V41 case consistency guard passed: evidence gaps, cautious cross-document deviations, score and 10-language UI verified.')
+console.log('V71 case consistency guard passed: evidence gaps, cautious cross-document deviations, score and 11-language UI verified.')

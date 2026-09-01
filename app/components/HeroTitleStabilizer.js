@@ -13,7 +13,8 @@ const copy={
   ar:{title:'ما هو AS Gold؟',lead:'AS Gold تطبيق رقمي يجمع المستندات والبريد الإلكتروني ووصفك الشخصي في حالة واحدة واضحة. يحدد المعلومات المهمة والمواعيد والمخاطر ويعرض الخطوة المنطقية التالية.'},
   fa:{title:'AS Gold چیست؟',lead:'AS Gold یک برنامه دیجیتال است که اسناد، ایمیل‌ها و توضیحات شما را در یک پرونده روشن کنار هم قرار می‌دهد. اطلاعات مهم، مهلت‌ها و ریسک‌ها را شناسایی می‌کند و گام منطقی بعدی را نشان می‌دهد.'},
   ro:{title:'Ce este AS Gold?',lead:'AS Gold este o aplicație digitală ce reunește documentele, e-mailurile și descrierea dvs. într-un caz ușor de înțeles. Identifică informațiile importante, termenele și riscurile și arată următorul pas potrivit.'},
-  bg:{title:'Какво е AS Gold?',lead:'AS Gold е цифрово приложение, което обединява документи, имейли и вашето описание в един разбираем случай. То открива важната информация, сроковете и рисковете и показва следващата разумна стъпка.'}
+  bg:{title:'Какво е AS Gold?',lead:'AS Gold е цифрово приложение, което обединява документи, имейли и вашето описание в един разбираем случай. То открива важната информация, сроковете и рисковете и показва следващата разумна стъпка.'},
+  vi:{title:'AS Gold là gì?',lead:'AS Gold là ứng dụng số kết hợp tài liệu, email và mô tả của bạn thành một hồ sơ dễ hiểu. Ứng dụng nhận diện thông tin quan trọng, thời hạn và rủi ro, rồi chỉ ra bước hợp lý tiếp theo.'}
 }
 
 export function HeroTitleStabilizer(){

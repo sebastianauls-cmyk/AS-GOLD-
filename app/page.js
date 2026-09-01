@@ -317,7 +317,8 @@ const lightText = s => s === 'yellow' ? '🟡 Gelb' : s === 'green' ? '🟢 Grü
 const accessPendingMessages = {
   de:'Zugang noch nicht freigegeben.',en:'Access not yet approved.',fr:'Accès pas encore validé.',
   tr:'Erişim henüz onaylanmadı.',pl:'Dostęp nie został jeszcze zatwierdzony.',
-  ru:'Доступ ещё не подтверждён.',ar:'لم تتم الموافقة على الوصول بعد.',fa:'دسترسی هنوز تأیید نشده است.'
+  ru:'Доступ ещё не подтверждён.',ar:'لم تتم الموافقة على الوصول بعد.',fa:'دسترسی هنوز تأیید نشده است.',
+  vi:'Quyền truy cập chưa được phê duyệt.'
 }
 
 function Logo(){ return <div className="logo">AS</div> }

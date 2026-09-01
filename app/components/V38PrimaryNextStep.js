@@ -13,7 +13,8 @@ const labels={
   ar:{title:'خطوتك التالية',why:'لماذا الآن؟',when:'متى؟',action:'ما يجب فعله الآن'},
   fa:{title:'گام بعدی شما',why:'چرا اکنون؟',when:'چه زمانی؟',action:'اقدام فعلی'},
   ro:{title:'Următorul pas',why:'De ce acum?',when:'Când?',action:'Ce trebuie făcut acum'},
-  bg:{title:'Следващата ви стъпка',why:'Защо сега?',when:'Кога?',action:'Какво да направите сега'}
+  bg:{title:'Следващата ви стъпка',why:'Защо сега?',when:'Кога?',action:'Какво да направите сега'},
+  vi:{title:'Bước tiếp theo của bạn',why:'Tại sao lúc này?',when:'Khi nào?',action:'Việc cần làm ngay'}
 }
 const languageByName={Deutsch:'de',English:'en','Français':'fr','Türkçe':'tr',Polski:'pl','Русский':'ru','العربية':'ar','فارسی':'fa','Română':'ro','Български':'bg'}
 function language(){return languageByName[document.querySelector('.flagLanguageTrigger strong')?.textContent?.trim()]||'de'}

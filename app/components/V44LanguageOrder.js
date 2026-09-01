@@ -2,14 +2,14 @@
 
 import { useEffect } from 'react'
 
-const outputLabels=['Ausgabesprache','Output language','Langue de sortie','Çıktı dili','Język wyniku','Язык результата','لغة الإخراج','زبان خروجی','Limba rezultatului','Език на резултата']
+const outputLabels=['Ausgabesprache','Output language','Langue de sortie','Çıktı dili','Język wyniku','Язык результата','لغة الإخراج','زبان خروجی','Limba rezultatului','Език на резултата','Ngôn ngữ kết quả']
 const headings={
   de:['1. Sprache der Oberfläche','2. Ausgabesprache'],
   en:['1. Interface language','2. Output language'],fr:["1. Langue de l’interface","2. Langue de sortie"],
   tr:['1. Arayüz dili','2. Çıktı dili'],pl:['1. Język interfejsu','2. Język wyniku'],
   ru:['1. Язык интерфейса','2. Язык результата'],ar:['1. لغة الواجهة','2. لغة الإخراج'],
   fa:['1. زبان رابط','2. زبان خروجی'],ro:['1. Limba interfeței','2. Limba rezultatului'],
-  bg:['1. Език на интерфейса','2. Език на резултата']
+  bg:['1. Език на интерфейса','2. Език на резултата'],vi:['1. Ngôn ngữ giao diện','2. Ngôn ngữ kết quả']
 }
 
 function lang(){const v=(document.documentElement.lang||'de').toLowerCase().slice(0,2);return headings[v]?v:'de'}

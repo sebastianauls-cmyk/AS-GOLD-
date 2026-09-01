@@ -13,7 +13,7 @@ assert.match(component,/assessment/)
 assert.match(component,/caseCoreGrid/)
 assert.match(component,/missing/)
 assert.match(component,/uncertain/)
-for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(component,new RegExp(`\\b${lang}:\\{`))
+for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']) assert.match(component,new RegExp(`\\b${lang}:\\{`))
 assert.match(layout,/V38PrimaryNextStep/)
 
 const acuteWithMissing=prioritizeNextStep({language:'de',missing:true,deadlineStatus:'immediate',deadlineAction:'Frist prüfen'})

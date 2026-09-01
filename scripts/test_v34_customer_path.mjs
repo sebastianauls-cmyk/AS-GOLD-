@@ -38,15 +38,15 @@ expect((navigator.match(/id=\"asgold-problem-navigator-react\"/g)||[]).length===
 expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document entry is missing from recommendation flow')
 
 // Product intro is intentionally compact: exactly four benefits per language.
-const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
+const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 for(const code of supported){
   expect(intro.includes(`${code}:{title:`),`compact product intro missing language ${code}`)
-  if(code==='ro'||code==='bg') expect(languages.includes(`${code}:{locale:`),`problem language profile missing ${code}`)
+  if(['ro','bg','vi'].includes(code)) expect(languages.includes(`${code}:{locale:`),`problem language profile missing ${code}`)
 }
 expect(languages.includes("import {problemLanguageProfiles as baseProfiles"),'V36 profile layer must include the base eight languages')
 expect(languages.includes('problemLanguageProfiles={...baseProfiles,...extraProfiles}'),'V36 profile layer must merge base and extra languages')
 const itemGroups=[...intro.matchAll(/items:\[(.*?)\]\}/gs)]
-expect(itemGroups.length>=supported.length,'compact product intro must define benefit lists for all ten languages')
+expect(itemGroups.length>=supported.length,'compact product intro must define benefit lists for all eleven languages')
 for(const group of itemGroups.slice(0,supported.length)){
   const itemCount=(group[1].match(/','/g)||[]).length+1
   expect(itemCount===4,'each compact product intro language must contain exactly four benefit points')
