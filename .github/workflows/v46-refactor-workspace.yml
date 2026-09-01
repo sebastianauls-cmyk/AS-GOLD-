@@ -48,6 +48,8 @@ jobs:
         run: node scripts/v46_direct_public_interactions.mjs
       - name: Embed public modules directly in PublicLanding
         run: node scripts/v46_embed_public_modules.mjs
+      - name: Repair generated public-module guard order
+        run: node scripts/v46_fix_public_guard_order.mjs
 
       - name: Install dependencies
         run: npm ci
