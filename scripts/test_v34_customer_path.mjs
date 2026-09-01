@@ -19,15 +19,15 @@ const titleCompatibility=read('app/components/HeroTitleStabilizer.js')
 const languages=read('app/modules/public/problemNavigatorLanguagesV36.mjs')
 const languagesCompatibility=read('app/lib/problemNavigatorLanguagesV36.mjs')
 
-expect((publicLanding.match(/<ProblemNavigator language=\{language\}/g)||[]).length===1,'ProblemNavigator must be rendered exactly once by PublicLanding')
+expect((publicLanding.match(/<ProblemNavigator outputLanguage=\{outputLanguage\}/g)||[]).length===1,'ProblemNavigator must be rendered exactly once by PublicLanding with the customer/output language')
 expect(!layout.includes('FreeEntryAfterRecommendation'),'legacy free-entry helper must not be mounted')
 expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not be mounted')
 
 const firstActionPos=publicLanding.indexOf('<V37FirstAction language={language}')
-const navPos=publicLanding.indexOf('<ProblemNavigator language={language}')
-const videoPos=publicLanding.indexOf('<ExplainerVideo language={language} openSignal={explainerSignal}/>')
+const navPos=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
+const videoPos=publicLanding.indexOf('<ExplainerVideo key={`${language}-${explainerSignal}`} language={language} openSignal={explainerSignal}/>')
 const introPos=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
-expect(firstActionPos>=0&&navPos>firstActionPos&&videoPos>navPos&&introPos>videoPos,'public module order must be first action -> problem navigator -> explainer video -> product intro')
+expect(firstActionPos>=0&&navPos>firstActionPos&&videoPos>navPos&&introPos>videoPos,'public module order must be first action -> customer-language problem navigator -> explainer video -> product intro')
 expect(!layout.includes('V37FirstAction')&&!layout.includes('ProblemNavigator')&&!layout.includes('ExplainerVideo')&&!layout.includes('ProductIntroCompact'),'public hero modules must not be mounted globally')
 expect(!layout.includes('<CaseChoiceJumpEnhancer/>'),'case-choice navigation must no longer be a global enhancer')
 expect(!layout.includes('<HeroCopyEnhancer/>')&&!layout.includes('<HeroTitleStabilizer/>'),'hero copy must be rendered directly by PublicLanding')
@@ -42,9 +42,12 @@ expect(titleCompatibility.includes("../modules/public/HeroTitleStabilizer"),'leg
 expect(languagesCompatibility.includes("../modules/public/problemNavigatorLanguagesV36.mjs"),'legacy problem-language path must remain a compatibility re-export')
 
 expect(navigator.includes('<textarea ref={textRef} value={value} onChange='),'problem input must remain a controlled textarea')
+expect(navigator.includes('onInput={event=>updateValue(event.currentTarget.value)}'),'mobile input events must update the controlled problem value immediately')
 expect(navigator.includes('So funktioniert die Eingabe:'),'German input explanation is missing')
 expect(navigator.includes('inputHelp'),'multilingual input help is missing')
 expect((navigator.match(/id=\"asgold-problem-navigator-react\"/g)||[]).length===1,'problem navigator section must exist exactly once in component')
+expect(navigator.includes('data-customer-language={customerLanguage}'),'problem navigator must expose the selected customer language')
+expect(navigator.includes('getSpeechLocale(customerLanguage)'),'speech recognition must follow the customer language')
 expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document entry is missing from recommendation flow')
 
 const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
@@ -67,8 +70,8 @@ expect(publicLanding.includes('id="asgold-user-audience"'),'audience content mus
 expect(publicLanding.includes('jumpToPublicCaseResult()'),'case choice must invoke direct navigation from its React click handler')
 expect(jump.includes("getElementById('asgold-public-case-result')"),'case navigation must target the selected result card')
 expect(jump.includes("behavior:'auto'"),'case choice navigation must use a direct jump instead of slow scrolling')
-expect(jump.includes('publicTop'),'case jump must account for the sticky mobile header')
+expect(jump.includes('publicTop'),'case jump must account for the mobile header')
 expect(!jump.includes('addEventListener'),'case navigation must not install a global click listener')
 expect(!title.includes('MutationObserver')&&!title.includes('querySelector'),'hero title module must not patch the rendered DOM')
 
-console.log('V34 customer-path regression checks passed')
+console.log('V34 customer-path regression checks passed for the modular V51–V56 customer-language flow')
