@@ -28,45 +28,83 @@ jobs:
 
       - name: Apply deterministic V46 workspace refactor
         run: node scripts/v46_refactor_workspace_services.mjs
-
       - name: Correct precise service-boundary guard
         run: node scripts/v46_fix_service_guard.mjs
-
       - name: Extract document upload configuration
         run: node scripts/v46_refactor_upload_module.mjs
-
       - name: Extract static UI and workspace catalogs
         run: node scripts/v46_refactor_workspace_catalogs.mjs
-
       - name: Extract pricing, public, compliance and state catalogs
         run: node scripts/v46_extract_domain_catalogs.mjs
-
       - name: Extract workspace composition shell
         run: node scripts/v46_extract_workspace_shell.mjs
-
       - name: Extract authentication surface
         run: node scripts/v46_extract_auth_surface.mjs
-
       - name: Consolidate protected workspace shell
         run: node scripts/v46_consolidate_workspace_shell.mjs
-
       - name: Extract public landing
         run: node scripts/v46_extract_public_landing.mjs
-
       - name: Replace global public DOM enhancers with direct React interactions
         run: node scripts/v46_direct_public_interactions.mjs
-
       - name: Embed public modules directly in PublicLanding
         run: node scripts/v46_embed_public_modules.mjs
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Run complete regression guard
-        run: npm run prebuild
+      - name: Guard V34 customer path
+        run: npm run test:v34
+      - name: Guard V35 languages
+        run: npm run test:v35
+      - name: Guard V36 explainer
+        run: npm run test:v36
+      - name: Guard V37 first action
+        run: npm run test:v37
+      - name: Guard V37 end to end
+        run: npm run test:v37-e2e
+      - name: Guard V37 readiness
+        run: npm run test:v37-readiness
+      - name: Guard V38 deadlines
+        run: npm run test:v38-deadlines
+      - name: Guard V38 assessments
+        run: npm run test:v38-assessments
+      - name: Guard V38 next step
+        run: npm run test:v38-next-step
+      - name: Guard V38 simulation
+        run: npm run test:v38-simulation
+      - name: Guard V38 mobile
+        run: npm run test:v38-mobile
+      - name: Guard V38 accessibility
+        run: npm run test:v38-accessibility
+      - name: Guard V38 prelaunch
+        run: npm run test:v38-prelaunch
+      - name: Guard V38 practical simulation
+        run: npm run test:v38-practical-simulation
+      - name: Guard V38 tester guide
+        run: npm run test:v38-tester-guide
+      - name: Guard V38 integrations
+        run: npm run test:v38-integrations
+      - name: Guard V38 Supabase security
+        run: npm run test:v38-supabase-security
+      - name: Guard V39 case intelligence
+        run: npm run test:v39-case-intelligence
+      - name: Guard V40 handoff
+        run: npm run test:v40-handoff
+      - name: Guard V41 consistency
+        run: npm run test:v41-consistency
+      - name: Guard V42 actions
+        run: npm run test:v42-actions
+      - name: Guard V43 visibility
+        run: npm run test:v43-visibility
+      - name: Guard V44 language order
+        run: npm run test:v44-language-order
+      - name: Guard V45 output language
+        run: npm run test:v45-output-language
+      - name: Guard V46 modular boundaries
+        run: npm run test:v46-modules
 
       - name: Build production bundle
-        run: npm run build
+        run: npx next build
 
       - name: Commit verified refactor
         shell: bash
