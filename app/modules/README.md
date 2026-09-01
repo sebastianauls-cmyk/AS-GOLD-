@@ -4,103 +4,62 @@ This directory is the target ownership structure for the V46 modularization. New
 
 ## Domains
 
-- `language/` — interface language, output language, flags, language-menu state, explainer-video language and language/translation catalogs.
+- `language/` — interface language, output language, flags, language-menu state, explainer-video language and translation catalogs.
 - `navigation/` — page/back/menu navigation, accessibility and mobile resilience.
-- `public/` — public landing surface, case discovery and pricing presentation.
-- `tester/` — controlled tester-access state and tester guidance.
+- `public/` — public landing, public header, case discovery, first-action/problem entry, explainer and public product presentation.
+- `tester/` — controlled tester-access state, tester guidance and staged share UI.
 - `auth/` — login, registration, password policy and session-facing UI.
-- `cases/` — clients, cases, deadlines, timeline, assessments and approvals.
-- `documents/` — upload/camera, document processing, analysis and document-facing exports.
+- `cases/` — clients, cases, deadlines, timeline, assessments, completion guidance and approvals.
+- `documents/` — upload/camera configuration, document processing, analysis and document-facing exports.
 - `pricing/` — plans, terms, upgrade calculations, promo-code UI and promo translations.
 - `compliance/` — privacy, legal acceptance, withdrawal, AI controls and audit/deletion controls.
 - `integrations/` — email/cloud integrations and provider-specific services.
-- `services/` — shared Supabase, export and analysis services that contain no presentation logic.
-- `workspace/` — temporary application composition boundary while the protected/public workspace is split into smaller domain surfaces.
+- `services/` — shared Supabase, repositories, export and analysis services with no presentation logic.
+- `workspace/` — application composition/controller boundary while remaining workflow orchestration is moved behind domain/service APIs.
 
 ## Rules
 
-1. A module may expose components, hooks and services through explicit imports/props.
-2. A module must not rearrange another module after render with `MutationObserver`, periodic DOM polling, `prepend`, `append`, or synthetic browser-history actions.
+1. A module exposes behavior through explicit imports, props, hooks or service functions.
+2. A module must not rearrange another module after render with `MutationObserver`, periodic DOM polling, `prepend`, `append`, synthetic browser-history actions or global click interception.
 3. UI state such as an open language menu stays local or in an explicit state provider; it is not inferred from duplicated DOM controls.
-4. Output-language selection is application state and must be passed directly to analysis/export services; global `window.fetch` interception is migration-only and remains a release blocker.
+4. Output-language selection is application state and is passed directly to analysis/export services; global `window.fetch` interception is forbidden.
 5. Existing functionality is preserved while code moves. Compatibility re-exports may remain temporarily so migration can be incremental and regression-safe.
-6. Every removal of a legacy enhancer must be accompanied by a guard that verifies the replacement behavior rather than the old file location.
+6. Every removal of a legacy enhancer is accompanied by a guard that verifies the replacement behavior rather than the old file location.
 7. Legacy compatibility files stay intentionally small. Domain implementation must not drift back into `app/components`, `app/lib`, or route-local helper files.
-8. Shared provider clients belong in `services/`; page or compliance components should not create their own duplicate Supabase client.
-9. `main` is updated only after the modular branch builds successfully and the relevant navigation/functionality guards pass.
+8. Shared provider clients belong in `services/`; page or compliance components must not create duplicate Supabase clients.
+9. `main` is updated only after the modular branch builds successfully and all release/navigation/functionality guards pass.
 
 ## Migration status — 1 September 2026
 
-- `language/`: owns LanguageSwitcher, ExplainerVideoDialog, LegalLanguageContext, persisted interface/output language preferences, output-language helpers, the complete language catalog chain and component translation catalogs. V43/V44 DOM correction layers are removed. WorkspaceApp no longer owns localStorage/document language synchronization, and output-language transport no longer relies on DOM polling or global fetch interception.
-- `navigation/`: owns accessibility hardening and mobile resilience; root layout imports both modules directly.
-- `tester/`: owns the paused tester state; public tester access remains closed and has no registration start link.
-- `auth/`: owns password policy and password UI; broader login/registration composition is still inside WorkspaceApp.
-- `cases/`: owns V24/V25 case workflow surfaces, V38 assessment/deadline/next-step logic, V39 timeline, V40 handoff, V41 consistency, V42 actionable gaps and their engines. The V38 deadline warning is now direct React composition inside case/document detail instead of a global DOM observer. Legacy component/lib paths are compatibility adapters.
-- `documents/`: owns V26 document-analysis implementation; upload/orchestration remains to be extracted from WorkspaceApp.
-- `pricing/`: owns PromoCodeControl and promo translations; plan/quote orchestration remains to be extracted from WorkspaceApp.
-- `compliance/`: owns legal documents/footer/privacy controls plus the privacy-dashboard and withdrawal-flow implementations. The route-local PrivacyDashboard/WithdrawalForm files are thin adapters, while the pages import the compliance module directly.
-- `integrations/`: IntegrationHub renders OAuth availability directly. The former global V38 integration DOM guard is deleted.
-- `services/`: owns Office export implementation, the shared Supabase client and explicit document-analysis invocation. Workspace and compliance surfaces share the same Supabase client, and OCR receives the selected output language through the service boundary. Remaining CRUD/export orchestration still needs extraction.
-- `public/`: public enhancers are module-owned and legacy component paths are adapters, but several still use DOM enhancement internally and must be replaced by direct component composition.
-- `workspace/`: `app/page.js` is already a thin entry point. The remaining large composition file is `app/modules/workspace/WorkspaceApp.js`, which still needs to be decomposed into public/auth/dashboard/document/pricing/account surfaces.
+- `language/`: complete domain owner for LanguageSwitcher, ExplainerVideoDialog, LegalLanguageContext, persisted interface/output-language preferences and all language/translation catalogs. V43/V44 DOM correction layers are gone. Output-language transport is explicit and no longer uses DOM polling or fetch interception.
+- `navigation/`: owns accessibility hardening and mobile resilience; root layout imports both modules directly. Current guards verify one localized back/close control per language menu, Escape handling and no browser-history hacks.
+- `public/`: direct React composition is now split across `PublicLanding`, `PublicHeader`, `PublicCaseDiscoverySection`, `PublicLanguageModules`, `V37FirstAction`, `ProblemNavigator`, `ExplainerVideo` and `ProductIntroCompact`. The former public DOM-enhancer behavior has been replaced by explicit component ownership and direct callbacks. Public case navigation is owned by `caseNavigation` and invoked from the case-discovery component.
+- `tester/`: owns paused tester state and staged tester-share UI. Public tester access remains closed until final release gates are satisfied.
+- `auth/`: `AuthSurface`, PasswordField, password policy/UI and `authRepository` own authentication presentation/service boundaries. WorkspaceApp supplies workflow state and handlers.
+- `cases/`: V24/V25 case workflow plus V38 deadline/assessment/next-step, V39 timeline, V40 handoff, V41 consistency and V42 actionable gaps render directly from React-owned case state. Legacy global enhancer exports are compatibility adapters/no-ops.
+- `documents/`: owns document surfaces, V26 analysis UI, upload configuration and export UI. Database/file operations and analysis invocation are behind services/repositories; some workflow sequencing still lives in WorkspaceApp.
+- `pricing/`: owns pricing catalogs, pricing surface, upgrade panel, promo-code control/translations and pricing repository boundaries. Remaining workflow sequencing is controller-level only.
+- `compliance/`: owns legal documents/footer, privacy controls/dashboard, withdrawal flow, account surface/control panel and compliance repository text/operations.
+- `integrations/`: IntegrationHub renders availability/OAuth paths directly; no global post-render integration enhancer remains.
+- `services/`: owns shared Supabase client, document analysis, office/export services plus auth/workspace/pricing/compliance/approval/document repositories. Presentation modules do not create duplicate provider clients.
+- `workspace/`: `app/page.js` is a thin entry point. `WorkspaceApp.js` is now primarily a controller/composition layer delegating to PublicLanding, AuthSurface, DashboardSurface, WorkspaceCaseSurfaces, DocumentsSurface, UpgradePanel, AccountSurface and ProtectedWorkspaceShell, but it remains large and still contains workflow orchestration that should be reduced before final release.
 
-## Automated boundary guard
+## Public-surface split completed in this phase
 
-`scripts/test_v46_modular_boundaries.mjs` is part of the normal prebuild chain. It verifies the thin root entry, required domain files, direct layout ownership, single language-menu back/close control, absence of browser-history navigation hacks, tester lock, domain-owned language/public/auth/compliance/pricing/services catalogs, direct compliance-route ownership, shared Supabase service use and thin legacy adapters.
+`PublicLanding.js` no longer owns all public markup itself. Header/language navigation moved to `PublicHeader.js`; audience/case chooser/result/process moved to `PublicCaseDiscoverySection.js`. Existing customer-flow, V44 language-order, V56 parity and V69 public-parity guards were updated to validate the new ownership boundaries rather than requiring markup to remain in one file.
+
+The preview build for commit `fe9f45d6747edf9379116b7b25e2f0327aac7235` completed the full prebuild chain and Next.js production build successfully. The V38 mobile-resilience guard, accessibility guard, V43 navigation replacement guard, V44 language-order guard, V45 output-language guard, V46 modular-boundary guard, V56 parity guard, V69 public-parity guard and V70 tester-lock guard all passed. The tester route remains closed.
+
+## Automated boundary guards
+
+The normal prebuild chain includes dedicated guards for customer flow, language/menu navigation, mobile resilience, accessibility, output-language transport, modular boundaries, current public parity and tester staging. `scripts/test_v46_modular_boundaries.mjs` verifies the thin root entry, required domain files, direct layout ownership, single language-menu back/close control, absence of browser-history navigation hacks, tester lock, domain-owned catalogs/services, direct compliance ownership, shared Supabase service use and thin legacy adapters.
 
 ## Remaining release blockers
 
-- Replace remaining public/case DOM enhancers with direct React component composition where they still mutate rendered markup.
-- Decompose WorkspaceApp.js into public, auth, dashboard/cases, documents, pricing and account/compliance composition surfaces.
-- Move the remaining WorkspaceApp CRUD, upload and export orchestration behind service/domain boundaries.
-- Run the final full preview build plus mobile/navigation regression and functional smoke checks before touching main or reopening tester access.
+- Reduce the remaining `WorkspaceApp.js` controller by moving workflow orchestration (especially CRUD/upload/analysis/export sequencing) behind explicit domain/service functions where practical without changing behavior.
+- Remove or retire workspace-local compatibility adapter imports once no runtime code depends on them; canonical domain imports should be used directly.
+- Run a final preview smoke pass against the fully reduced controller, including mobile language-menu/back navigation, public problem entry, auth entry/back path, protected cases/documents flows and export entry points.
+- Compare/synchronize latest `main` immediately before release, rerun the complete regression/build gate, and only then merge.
+- Reopen tester access only after the final synchronized release candidate is green; until then `/testen` stays paused.
 
-Current gate: latest V46 compliance/service modularization build is green; `main` remains unchanged and tester access remains closed until all release blockers above are cleared.
-
-- `documents/uploadConfig.js`: owns upload limits, accepted file extensions and localized upload validation copy; WorkspaceApp only consumes this domain configuration.
-
-### Workspace catalog boundaries
-
-- `auth/passwordUi.js`: password visibility copy.
-- `public/publicUi.js`: public landing and language-control copy.
-- `documents/exportUi.js`: export labels and status copy.
-- `workspace/workspaceText.js`: protected-workspace application copy.
-
-WorkspaceApp consumes these catalogs; it no longer owns their leading definitions.
-
-### Extracted domain catalogs
-
-- `pricing/catalog.js`: plans, terms, plan journey and recommendation mappings.
-- `public/catalog.js`: public discovery, transparency and tester-link copy.
-- `compliance/workspaceControlText.js`: account-control, audit and deletion copy.
-- `workspace/stateConfig.js`: initial workspace data/case/section state.
-
-These declarations no longer live in `WorkspaceApp.js`; the composition layer consumes them through explicit domain imports.
-
-### Workspace composition components
-
-- `auth/PasswordField.js`: reusable authentication password control.
-- `workspace/AppLogo.js`: shared product mark.
-- `workspace/ProtectedWorkspaceShell.js`: protected header/language/logout/message/footer composition.
-
-The workspace controller now delegates repeated shell markup to explicit components.
-
-- `auth/AuthSurface.js`: login and registration composition; the workspace controller supplies state and handlers only.
-
-- `workspace/LoadingSurface.js`: isolated loading state. The protected application has a single shell owner in `ProtectedWorkspaceShell.js`.
-
-- `public/PublicLanding.js`: complete public landing, case-discovery, transparency and pricing composition.
-
-- `services/`: transactional pricing, compliance, approval and document storage/database operations are now isolated behind repository/service boundaries; WorkspaceApp retains workflow state and user-facing validation only.
-
-- `services/authRepository.js`: session lookup/subscription, sign-in, reset, test registration and sign-out are isolated from WorkspaceApp; AuthSurface remains presentation-only.
-
-- `services/exportService.js`: workspace and account export artifact generation/download is isolated from WorkspaceApp; the controller only applies permissions, audit logging and user feedback.
-
-- `language/useLanguagePreferences.js`: owns persisted interface language, output language, RTL document direction and the existing output-language event compatibility signal.
-
-- `cases/DeadlineWarningCard`: V38 deadline intelligence now renders from explicit case/document props; the legacy V38 enhancer export is a no-op compatibility adapter and is no longer mounted in the root layout.
-
-- `cases/AssessmentExplainability` and `cases/PrimaryNextStepCard`: V38 explanation and prioritised next-step UI now render directly from case state; their legacy global enhancer exports remain no-op compatibility adapters only.
-
-- `cases/DocumentAutoAssessment` and `cases/CaseTimeline`: V39 document traffic-light and timeline UI render directly from document/case props; the former global MutationObserver/polling enhancer is now a no-op compatibility export.
+Current gate: the modular branch is green after the public-surface split, `main` remains unchanged, and tester access remains closed. The next work is controller/orchestration reduction rather than further public DOM cleanup.
