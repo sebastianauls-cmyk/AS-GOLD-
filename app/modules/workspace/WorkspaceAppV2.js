@@ -2,10 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
-import { cancelDeletionRecord, ensureRegistrationPrivacy, getWorkspaceAccess, listDeletionRequests, loadWorkspaceBundle, recordAuditEvent, requestDeletionRecord } from '../services/workspaceRepository'
-import { getUpgradeQuotes, requestUpgradeRecord } from '../services/pricingRepository'
-import { acknowledgeLegalSettings } from '../services/complianceRepository'
-import { getAuthSession, registerTestAccount, sendPasswordReset, signInSession, signOutSession, watchAuthState } from '../services/authRepository'
+import { recordAuditEvent } from '../services/workspaceRepository'
+import { getAuthSession, signOutSession, watchAuthState } from '../services/authRepository'
 import { allowedUploadAccept, uploadUi } from '../documents/uploadConfig'
 import { exportUi } from '../documents/exportUi'
 import { appText } from './workspaceText'
@@ -38,6 +36,9 @@ import { createCaseWorkflowActions } from '../cases/caseWorkflow'
 import { createApprovalWorkflowActions } from '../cases/approvalWorkflow'
 import { createDocumentWorkflowActions } from '../documents/documentWorkflow'
 import { createExportWorkflowActions } from '../documents/exportWorkflow'
+import { createWorkspaceAuthActions } from '../auth/workspaceAuthWorkflow'
+import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
+import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 
 const eur=value=>`${Number(value||0).toFixed(2).replace('.',',')} €`
 
@@ -204,60 +205,17 @@ export default function WorkspaceAppV2(){
     supabase,access,data,outputLanguage,appCopy:a,notices:n,serverCopy:sct,trustCopy:lt,user,currentTier,currentPlan,privacySettings,setMessage,recordLocalAction,recordServerAudit
   })
 
-  async function requestAccountDeletion(){
-    if(!user?.id||deletionBusy) return
-    setDeletionBusy(true)
-    setMessage('')
-    const {error}=await requestDeletionRecord(supabase,user.id)
-    if(error){setDeletionBusy(false);return setMessage(error.code==='23505'?sct.deletionPending:error.message)}
-    await recordServerAudit('account_deletion_requested',{status:'requested'},'account',null)
-    const {data:rows}=await listDeletionRequests(supabase,user.id)
-    setDeletionRequests(rows||[])
-    setDeletionBusy(false)
-    setMessage(sct.deletionRequested)
-  }
+  const {acknowledgeCurrentLegal,requestAccountDeletion,cancelAccountDeletion}=createAccountWorkflowActions({
+    supabase,ownerId:user?.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,deletionRequests,deletionBusy,privacyBusy,privacyCopy:v28,serverCopy:sct,setDeletionBusy,setPrivacyBusy,setDeletionRequests,setPrivacySettings,setMessage,recordServerAudit
+  })
 
-  async function cancelAccountDeletion(){
-    const pending=deletionRequests.find(request=>request.scope==='account'&&request.status==='requested')
-    if(!pending||deletionBusy) return
-    setDeletionBusy(true)
-    setMessage('')
-    const {error}=await cancelDeletionRecord(supabase,{ownerId:user.id,requestId:pending.id})
-    if(error){setDeletionBusy(false);return setMessage(error.message)}
-    await recordServerAudit('account_deletion_cancelled',{status:'cancelled'},'account',null)
-    const {data:rows}=await listDeletionRequests(supabase,user.id)
-    setDeletionRequests(rows||[])
-    setDeletionBusy(false)
-    setMessage(sct.deletionCancelled)
-  }
+  const {loadApp,signIn,resetPassword,register}=createWorkspaceAuthActions({
+    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage
+  })
 
-  async function loadApp(session){
-    setMessage('')
-    const accessSnapshot=await getWorkspaceAccess(supabase)
-    if(accessSnapshot.error){setMessage(accessSnapshot.error.message);setScreen('login');return}
-    const row=accessSnapshot.access
-    if(!row?.active||row?.status!=='approved'){
-      setMessage(accessPendingMessages[language]||accessPendingMessages.de)
-      setScreen('login')
-      return
-    }
-    setAccess(row)
-    setUpgrades(accessSnapshot.upgrades||[])
-    const ownerId=session.user.id
-    const bundle=await loadWorkspaceBundle(supabase,ownerId)
-    if(bundle.error) setMessage(bundle.error.message)
-    let nextPrivacy=bundle.privacy
-    if(!nextPrivacy){
-      const createdPrivacy=await ensureRegistrationPrivacy(supabase,{ownerId,registrationMeta:session.user?.user_metadata||{},privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
-      if(!createdPrivacy.error&&createdPrivacy.data) nextPrivacy=createdPrivacy.data
-    }
-    setData(bundle.data)
-    setServerAudit(bundle.audit)
-    setDeletionRequests(bundle.deletionRequests)
-    setPrivacySettings(nextPrivacy)
-    setUser(session.user)
-    setScreen('app')
-  }
+  const {loadQuotes,applyPromo,clearPromo,requestUpgrade}=createPricingWorkflowActions({
+    supabase,upgrades,termMonths,promoCode,appliedPromoCode,quotes,promoCopy:promo,notices:n,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setMessage,recordServerAudit
+  })
 
   useEffect(()=>{
     let alive=true
@@ -290,85 +248,9 @@ export default function WorkspaceAppV2(){
   useEffect(()=>{
     if(screen!=='app'||!upgrades.length) return
     let cancelled=false
-    ;(async()=>{
-      setQuoteLoading(true)
-      const nextQuotes=await getUpgradeQuotes(supabase,{upgrades,termMonths,promoCode:appliedPromoCode})
-      if(!cancelled){setQuotes(nextQuotes);setQuoteLoading(false)}
-    })()
+    loadQuotes({isCancelled:()=>cancelled})
     return ()=>{cancelled=true}
   },[screen,termMonths,upgrades.length,appliedPromoCode,promoRevision])
-
-  async function acknowledgeCurrentLegal(){
-    if(!user?.id||privacyBusy) return false
-    setPrivacyBusy(true)
-    setMessage('')
-    const {data:stored,error}=await acknowledgeLegalSettings(supabase,{ownerId:user.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
-    if(error){setPrivacyBusy(false);setMessage(error.message);return false}
-    setPrivacySettings(stored)
-    await recordServerAudit('legal_notices_acknowledged',{},'account',null)
-    setPrivacyBusy(false)
-    setMessage(v28.saved)
-    return true
-  }
-
-  async function signIn(event){
-    event.preventDefault()
-    setMessage('')
-    const {data:authData,error}=await signInSession(supabase,{email:email.trim(),password})
-    if(error) return setMessage(error.message)
-    await loadApp(authData.session)
-  }
-
-  async function resetPassword(){
-    setMessage('')
-    if(!email.trim()) return setMessage(language==='de'?'Bitte zuerst Ihre E-Mail-Adresse eingeben.':'Please enter your email address first.')
-    const {error}=await sendPasswordReset(supabase,{email:email.trim(),redirectTo:window.location.origin})
-    if(error) return setMessage(error.message)
-    setMessage(lt.passwordSent)
-  }
-
-  async function register(event){
-    event.preventDefault()
-    setMessage('')
-    if(!acceptedLegal||!confirmedTestData) return setMessage(v28.required)
-    if(!validateV29Password(password,{email,displayName}).valid) return setMessage(v29Password.invalid)
-    if(password!==password2) return setMessage(n.pwMismatch)
-    const {data:authData,error}=await registerTestAccount(supabase,{email:email.trim(),password,displayName:displayName.trim(),privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,emailRedirectTo:'https://app-gold-workspace.vercel.app'})
-    if(error) return setMessage(error.message)
-    if(authData.session) await loadApp(authData.session)
-    else{
-      setAcceptedLegal(false)
-      setConfirmedTestData(false)
-      setMessage(n.registered)
-      setScreen('login')
-    }
-  }
-
-  function applyPromo(event){
-    event.preventDefault()
-    const next=promoCode.trim()
-    if(!next) return clearPromo()
-    setQuotes({})
-    setAppliedPromoCode(next)
-    setPromoRevision(value=>value+1)
-  }
-
-  function clearPromo(){
-    setPromoCode('')
-    setQuotes({})
-    setAppliedPromoCode('')
-    setPromoRevision(value=>value+1)
-  }
-
-  async function requestUpgrade(plan){
-    setMessage('')
-    const selectedQuote=quotes[plan.plan_key]
-    if(appliedPromoCode&&selectedQuote?.promo_code_state!=='valid') return setMessage(promo.invalid)
-    const {data:upgradeData,error}=await requestUpgradeRecord(supabase,{planKey:plan.plan_key,termMonths,promoCode:appliedPromoCode})
-    if(error) return setMessage(appliedPromoCode?promo.invalid:error.message)
-    await recordServerAudit('upgrade_requested',{plan_key:plan.plan_key,term_months:Number(termMonths),promo_applied:upgradeData?.promo_code_state==='valid'},'account',null)
-    setMessage(`${n.upgradeReserved} ${n.selected}: ${upgradeData?.to_plan_name||plan.plan_name}, ${termMonths} ${termMonths===1?n.monthOne:n.monthMany}.`)
-  }
 
   function handleQuickAction(action,item=null){
     setSelectedClient(null)

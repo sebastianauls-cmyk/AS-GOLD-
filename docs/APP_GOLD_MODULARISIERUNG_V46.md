@@ -209,3 +209,8 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - TesterGuide enthält den V70-Teilen-, WhatsApp-, Musterfall- und Feedback-Flow, ist aber noch nicht öffentlich geroutet.
 - app/testen/page.js rendert bis zum finalen Release-Gate ausdrücklich TesterPaused.
 - Ein eigener V70-Staging-Guard verhindert eine versehentliche vorzeitige Testerfreigabe.
+
+
+## Controller-Orchestrierung: Auth, Tarife und Konto delegiert
+
+Der aktive Workspace-Controller delegiert nun zusätzlich Login/Registrierung/Workspace-Bootstrap an `auth/workspaceAuthWorkflow.js`, Angebots-/Promo-/Upgrade-Sequenzen an `pricing/pricingWorkflow.js` und Datenschutz-/Löschabläufe an `compliance/accountWorkflow.js`. Damit verbleiben in `WorkspaceAppV2.js` primär Screen-State, Auswahlzustände und die Komposition der Domain-Surfaces. Direkte Repository-Aufrufe für diese drei Abläufe wurden aus dem Controller entfernt. Der Testerzugang bleibt während der verbleibenden Release-Prüfungen geschlossen.
