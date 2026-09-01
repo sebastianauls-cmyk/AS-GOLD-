@@ -55,6 +55,18 @@ prelaunch=prelaunch.replace('assert.match(page,/tooLarge/)','assert.match(upload
 prelaunch=prelaunch.replace('assert.match(page,/unsupported/)','assert.match(uploadConfig,/unsupported/)')
 write(prelaunchPath,prelaunch)
 
+const practicalPath='scripts/test_v38_practical_simulation.mjs'
+let practical=read(practicalPath)
+if(!practical.includes("const uploadConfig=fs.readFileSync(new URL('../app/modules/documents/uploadConfig.js',import.meta.url),'utf8')")){
+  const anchor="const pageEntry=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')"
+  if(!practical.includes(anchor)) throw new Error('V46 upload refactor: practical simulation source anchor missing')
+  practical=practical.replace(anchor,`${anchor}\nconst uploadConfig=fs.readFileSync(new URL('../app/modules/documents/uploadConfig.js',import.meta.url),'utf8')`)
+}
+practical=practical.replace('assert.match(page,/tooLarge/)','assert.match(uploadConfig,/tooLarge/)')
+practical=practical.replace('assert.match(page,/unsupported/)','assert.match(uploadConfig,/unsupported/)')
+practical=practical.replace('assert.match(page,/maxUploadBytes\\s*=\\s*50\\s*\\*\\s*1024\\s*\\*\\s*1024/)','assert.match(uploadConfig,/maxUploadBytes\\s*=\\s*50\\s*\\*\\s*1024\\s*\\*\\s*1024/)')
+write(practicalPath,practical)
+
 const v46Path='scripts/test_v46_modular_boundaries.mjs'
 let v46=read(v46Path)
 if(!v46.includes("  'app/modules/documents/uploadConfig.js',")){
@@ -72,7 +84,7 @@ write(v46Path,v46)
 const docsPath='docs/APP_GOLD_MODULARISIERUNG_V46.md'
 let docs=read(docsPath)
 if(!docs.includes('Upload-Konfiguration wurde aus WorkspaceApp herausgelöst')){
-  docs += '\n\n### V46 Dokumentmodul – Upload-Konfiguration\n\n- Die Upload-Konfiguration wurde aus WorkspaceApp herausgelöst und liegt führend unter app/modules/documents/uploadConfig.js.\n- Dateigrenze, unterstützte Dateiendungen, Accept-Liste und lokalisierte Upload-Hinweise besitzen damit eine eindeutige fachliche Zuständigkeit im Dokumentmodul.\n- WorkspaceApp konsumiert diese Werte nur noch über die Modulgrenze.\n- Die End-to-End-, Prelaunch- und V46-Modulguards wurden auf die neue Zuständigkeit umgestellt.\n'
+  docs += '\n\n### V46 Dokumentmodul – Upload-Konfiguration\n\n- Die Upload-Konfiguration wurde aus WorkspaceApp herausgelöst und liegt führend unter app/modules/documents/uploadConfig.js.\n- Dateigrenze, unterstützte Dateiendungen, Accept-Liste und lokalisierte Upload-Hinweise besitzen damit eine eindeutige fachliche Zuständigkeit im Dokumentmodul.\n- WorkspaceApp konsumiert diese Werte nur noch über die Modulgrenze.\n- Die End-to-End-, Prelaunch-, Praxis-Simulations- und V46-Modulguards wurden auf die neue Zuständigkeit umgestellt.\n'
 }
 write(docsPath,docs)
 
