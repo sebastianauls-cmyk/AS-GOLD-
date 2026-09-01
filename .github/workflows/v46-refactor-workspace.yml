@@ -7,6 +7,7 @@ on:
       - '.github/workflows/v46-refactor-workspace.yml'
       - 'scripts/v46_refactor_workspace_services.mjs'
       - 'scripts/v46_fix_service_guard.mjs'
+      - 'scripts/v46_refactor_upload_module.mjs'
   workflow_dispatch:
 
 permissions:
@@ -28,6 +29,9 @@ jobs:
 
       - name: Correct precise service-boundary guard
         run: node scripts/v46_fix_service_guard.mjs
+
+      - name: Extract document upload configuration
+        run: node scripts/v46_refactor_upload_module.mjs
 
       - name: Install dependencies
         run: npm ci
@@ -51,10 +55,11 @@ jobs:
           git add app/layout.js \
                   app/modules/workspace/WorkspaceApp.js \
                   app/modules/language/OutputLanguageBridge.js \
+                  app/modules/documents/uploadConfig.js \
                   scripts/test_v37_end_to_end.mjs \
                   scripts/test_v45_output_language.mjs \
                   scripts/test_v46_modular_boundaries.mjs \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md \
                   app/modules/README.md
-          git commit -m 'V46 route workspace OCR through explicit services'
+          git commit -m 'V46 extract document upload configuration module'
           git push origin HEAD:v46-navigation-clean
