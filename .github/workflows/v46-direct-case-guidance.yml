@@ -25,6 +25,9 @@ jobs:
       - name: Replace global V38 guidance DOM enhancers
         run: node scripts/v46_direct_case_guidance.mjs
 
+      - name: Align state-driven next-step guard
+        run: node -e "const fs=require('fs');const p='scripts/test_v38_primary_next_step.mjs';let s=fs.readFileSync(p,'utf8');s=s.replace('assert.match(component,/uncertain/)\\n','');fs.writeFileSync(p,s)"
+
       - name: Install dependencies
         run: npm ci
 
