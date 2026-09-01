@@ -6,22 +6,33 @@ const ensureDir=path=>fs.mkdirSync(path,{recursive:true})
 
 const workspacePath='app/modules/workspace/WorkspaceApp.js'
 let workspace=read(workspacePath)
+const authPath='app/modules/auth/AuthSurface.js'
 const startMarker="  if(screen==='login'||screen==='register') return "
 const endMarker="\n\n  if(screen==='app'&&!privacyCurrent)"
+const alreadyExtracted=workspace.includes("if(screen==='login'||screen==='register') return <AuthSurface ")
 const start=workspace.indexOf(startMarker)
-if(start<0 && !workspace.includes('<AuthSurface ')) throw new Error('V46 auth surface: auth start marker missing')
-if(start>=0){
+if(start<0 && !alreadyExtracted) throw new Error('V46 auth surface: auth start marker missing')
+
+if(!alreadyExtracted){
   const end=workspace.indexOf(endMarker,start)
   if(end<0) throw new Error('V46 auth surface: auth end marker missing')
   const expression=workspace.slice(start+startMarker.length,end).trim()
   const props=[
-    'screen','t','a','language','setLanguage','tt','displayName','setDisplayName','email','setEmail','password','setPassword','password2','setPassword2','showPassword','setShowPassword','showPassword2','setShowPassword2','pui','v28','acceptedLegal','setAcceptedLegal','confirmedTestData','setConfirmedTestData','registerReady','register','signIn','resetPassword','message','setScreen'
+    'screen','t','a','language','setLanguage','tt','displayName','setDisplayName','email','setEmail','password','setPassword','password2','setPassword2','showPassword','setShowPassword','showPassword2','setShowPassword2','pui','v28','acceptedLegal','setAcceptedLegal','confirmedTestData','setConfirmedTestData','registerReady','register','signIn','resetPassword','message','lt','setScreen'
   ]
   ensureDir('app/modules/auth')
-  write('app/modules/auth/AuthSurface.js',`import { AppLogo } from '../workspace/AppLogo'\nimport { LanguageSwitcher } from '../language/LanguageSwitcher'\nimport { LegalFooter } from '../compliance/LegalFooter'\nimport { RegistrationLegalFields } from '../compliance/PrivacyControls'\nimport { PasswordPolicyChecklist } from './PasswordPolicy'\nimport { PasswordField } from './PasswordField'\n\nexport function AuthSurface({${props.join(',')}}){\n  return ${expression}\n}\n`)
-  const invocation=`  if(screen==='login'||screen==='register') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} register={register} signIn={signIn} resetPassword={resetPassword} message={message} setScreen={setScreen}/>`
+  write(authPath,`import { AppLogo } from '../workspace/AppLogo'\nimport { LanguageSwitcher } from '../language/LanguageSwitcher'\nimport { LegalFooter } from '../compliance/LegalFooter'\nimport { RegistrationLegalFields } from '../compliance/PrivacyControls'\nimport { PasswordPolicyChecklist } from './PasswordPolicy'\nimport { PasswordField } from './PasswordField'\n\nexport function AuthSurface({${props.join(',')}}){\n  return ${expression}\n}\n`)
+  const invocation=`  if(screen==='login'||screen==='register') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} register={register} signIn={signIn} resetPassword={resetPassword} message={message} lt={lt} setScreen={setScreen}/>`
   workspace=workspace.slice(0,start)+invocation+workspace.slice(end)
+}else{
+  if(!fs.existsSync(authPath)) throw new Error('V46 auth surface: extracted module missing')
+  let authSource=read(authPath)
+  if(!authSource.includes('backExplanation')) throw new Error('V46 auth surface: extracted module lost back navigation')
+  if(!authSource.includes(',lt,setScreen}')) authSource=authSource.replace(',resetPassword,message,setScreen})',',resetPassword,message,lt,setScreen})')
+  write(authPath,authSource)
+  if(!workspace.includes(' lt={lt} setScreen={setScreen}')) workspace=workspace.replace(' message={message} setScreen={setScreen}/>',' message={message} lt={lt} setScreen={setScreen}/>')
 }
+
 const importAnchor="import { PasswordField } from '../auth/PasswordField'"
 if(!workspace.includes("import { AuthSurface } from '../auth/AuthSurface'")){
   if(!workspace.includes(importAnchor)) throw new Error('V46 auth surface: import anchor missing')
@@ -63,6 +74,9 @@ if(!guard.includes("assert.match(workspace,/AuthSurface/)")){
   if(!guard.includes(assertionAnchor)) throw new Error('V46 auth surface: guard assertion anchor missing')
   guard=guard.replace(assertionAnchor,`${assertionAnchor}\nassert.match(workspace,/AuthSurface/)\nassert.doesNotMatch(workspace,/className=\\\"card authCard\\\"/)`)
 }
+if(!guard.includes("assert.match(read('app/modules/auth/AuthSurface.js'),/backExplanation/)")){
+  guard += "\nassert.match(read('app/modules/auth/AuthSurface.js'),/backExplanation/)\nassert.match(read('app/modules/auth/AuthSurface.js'),/lt\\.passwordReset/)\nassert.match(workspace,/lt=\\{lt\\}/)\n"
+}
 write(guardPath,guard)
 
 const docsPath='docs/APP_GOLD_MODULARISIERUNG_V46.md'
@@ -75,4 +89,4 @@ let readme=read(readmePath)
 if(!readme.includes('auth/AuthSurface.js')) readme += '\n- `auth/AuthSurface.js`: login and registration composition; the workspace controller supplies state and handlers only.\n'
 write(readmePath,readme)
 
-console.log('V46 authentication surface extracted from WorkspaceApp and V37 guards aligned to module ownership.')
+console.log('V46 authentication surface is idempotent, keeps back navigation and receives trust-copy dependencies explicitly.')
