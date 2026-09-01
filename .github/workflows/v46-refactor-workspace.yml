@@ -43,6 +43,7 @@ jobs:
           node scripts/v46_fix_public_catalog_exports.mjs
           node scripts/v46_fix_public_guard_order.mjs
           node scripts/v46_finish_workspace_surfaces.mjs
+          node scripts/v46_align_final_surface_guards.mjs
 
       - name: Align V34 guard with current V50 explainer trigger
         shell: bash
