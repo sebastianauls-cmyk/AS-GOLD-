@@ -169,3 +169,12 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Der Problem-Navigator wechselt Fallart und Registrierung über explizite Callback-Props; Preis- und Ergebnisnavigation bleiben lokale, nutzerinitiierte Scroll-Aktionen.
 - Das Root-Layout enthält damit keine Public-Hero-Portalmodule mehr.
 - Regressionstests prüfen die direkte Reihenfolge und verhindern die Rückkehr globaler Mount-Observer.
+
+
+### V46 Dashboard, Tarif und Kontosteuerung getrennt
+
+- Das Dashboard rendert nur noch Übersicht, Schnellaktionen, Empfehlung und Bereichsnavigation.
+- Tarif-/Upgrade-Funktionen besitzen mit `pricing/PricingSurface.js` eine eigene geschützte Oberfläche.
+- Konto-, Audit-, Datenexport- und Löschsteuerung besitzen mit `compliance/AccountSurface.js` eine eigene geschützte Oberfläche.
+- `WorkspaceApp.js` routet die beiden Bereiche explizit über `section='pricing'` und `section='account'`; das Dashboard importiert deren Fachkomponenten nicht mehr.
+- Dadurch können Tarif- und Compliance-Änderungen unabhängig vom Dashboard umgesetzt werden.

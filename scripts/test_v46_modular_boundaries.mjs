@@ -39,6 +39,8 @@ for(const path of [
   'app/modules/workspace/LoadingSurface.js',
   'app/modules/workspace/AppLogo.js',
   'app/modules/workspace/WorkspaceApp.js',
+  'app/modules/compliance/AccountSurface.js',
+  'app/modules/pricing/PricingSurface.js',
   'app/modules/compliance/workspaceControlText.js',
   'app/modules/compliance/LegalDocument.js',
   'app/modules/compliance/PrivacyDashboard.js',
@@ -320,8 +322,6 @@ assert.doesNotMatch(workspace,/className=\"accountControl\"/,'account-control pr
 assert.doesNotMatch(workspace,/className=\"detailCard upgradeBox\"/,'upgrade presentation belongs to pricing module')
 assert.match(read('app/modules/compliance/AccountControlPanel.js'),/accountControl/)
 assert.match(read('app/modules/pricing/UpgradePanel.js'),/PromoCodeControl/)
-assert.match(read('app/modules/workspace/DashboardSurface.js'),/AccountControlPanel/)
-assert.match(read('app/modules/workspace/DashboardSurface.js'),/UpgradePanel/)
 console.log('V46 final protected surface boundaries verified: dashboard, cases, clients, documents, approvals, pricing and compliance presentation are explicitly owned.')
 
 console.log('V46 modular-boundary guard passed: thin root entry, extracted public/auth/workspace surfaces, domain-owned catalogs and services, direct output-language flow, single language-menu back control, tester lock and thin compatibility adapters verified.')
@@ -362,3 +362,14 @@ assert.match(directProblemNavigator,/voiceSignal/)
 assert.match(directProblemNavigator,/rootRef/)
 assert.match(directProblemNavigator,/useEffect/)
 console.log('V46 direct public voice boundary verified.')
+
+const dashboardSurface=read('app/modules/workspace/DashboardSurface.js')
+assert.doesNotMatch(dashboardSurface,/AccountControlPanel|UpgradePanel/,'dashboard must not own account or pricing controls')
+assert.match(dashboardSurface,/setSection\('pricing'\)/)
+assert.match(dashboardSurface,/setSection\('account'\)/)
+assert.match(read('app/modules/pricing/PricingSurface.js'),/UpgradePanel/)
+assert.match(read('app/modules/compliance/AccountSurface.js'),/AccountControlPanel/)
+assert.match(workspace,/PricingSurface/)
+assert.match(workspace,/AccountSurface/)
+assert.match(workspace,/section==='pricing'/)
+assert.match(workspace,/section==='account'/)
