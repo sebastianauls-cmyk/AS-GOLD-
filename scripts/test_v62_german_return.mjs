@@ -5,9 +5,9 @@ const modules=fs.readFileSync(new URL('../app/components/PublicLanguageModules.j
 
 assert.match(modules,/function returnToGerman\(\)/)
 assert.match(modules,/onLanguageChange\('de'\)/)
+assert.match(modules,/onOutputLanguageChange\('de'\)/)
 assert.match(modules,/onClick=\{returnToGerman\}/)
 assert.match(modules,/🇩🇪 Deutsch/)
 assert.match(modules,/aria-label="Oberfläche auf Deutsch zurückstellen"/)
-assert.doesNotMatch(modules,/onOutputLanguageChange\('de'\)/)
 
-console.log('V62 German-return guard passed: interface returns to German without changing the customer language.')
+console.log('V63 German-reset guard passed: interface and customer output return to German together.')

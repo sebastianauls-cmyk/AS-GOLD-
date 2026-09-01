@@ -38,6 +38,7 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
 
   function returnToGerman(){
     onLanguageChange('de')
+    onOutputLanguageChange('de')
     const cleanUrl=`${window.location.pathname}${window.location.search}`
     if(window.location.hash)window.history.replaceState(window.history.state,'',cleanUrl)
     window.scrollTo({top:0,left:0,behavior:'instant'})
