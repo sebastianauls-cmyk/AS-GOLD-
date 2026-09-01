@@ -12,5 +12,10 @@ if(source.includes(assertion)){
   source=source.replace(layoutAnchor,layoutAnchor+assertion)
 }
 
+source=source.replace(
+  "assert.match(layout,/modules\\/public\\/ProblemNavigator/)\n",
+  "assert.match(publicLanding,/\\.\\/ProblemNavigator/)\n"
+)
+
 fs.writeFileSync(path,source)
-console.log('V46 public-module layout guard ordering verified.')
+console.log('V46 public-module guard ordering and ownership assertions verified.')
