@@ -21,25 +21,28 @@ if(!workspace.includes("import { LoadingSurface } from './LoadingSurface'")){
   workspace=workspace.replace(anchor,`${anchor}\nimport { LoadingSurface } from './LoadingSurface'`)
 }
 
-const appBlockMarker="  if(screen==='app'){"
-const publicMarker='\n\n  return <>\n    <header className="publicTop">'
-const appStart=workspace.indexOf(appBlockMarker)
-const publicStart=workspace.indexOf(publicMarker,appStart)
-if(appStart<0||publicStart<0) throw new Error('V46 single shell: app/public block markers missing')
-let appBlock=workspace.slice(appStart,publicStart)
+const alreadyConsolidated=workspace.includes("return <PublicLanding")&&!workspace.includes('<header className="appTop">')
+if(!alreadyConsolidated){
+  const appBlockMarker="  if(screen==='app'){"
+  const publicMarker='\n\n  return <>\n    <header className="publicTop">'
+  const appStart=workspace.indexOf(appBlockMarker)
+  const publicStart=workspace.indexOf(publicMarker,appStart)
+  if(appStart<0||publicStart<0) throw new Error('V46 single shell: app/public block markers missing')
+  let appBlock=workspace.slice(appStart,publicStart)
 
-if(appBlock.includes('<header className="appTop">')){
-  const returnStart=appBlock.indexOf('    return <><header className="appTop">')
-  const mainMarker='<main className="appMain">{message&&<div className="note">{message}</div>}'
-  const mainStart=appBlock.indexOf(mainMarker,returnStart)
-  const closeMarker='</main><LegalFooter language={language}/></>'
-  const closeStart=appBlock.lastIndexOf(closeMarker)
-  if(returnStart<0||mainStart<0||closeStart<mainStart) throw new Error('V46 single shell: legacy shell boundaries missing')
-  const innerStart=mainStart+mainMarker.length
-  const inner=appBlock.slice(innerStart,closeStart)
-  const replacement=`    return protectedWorkspace(<>${inner}</>)`
-  appBlock=appBlock.slice(0,returnStart)+replacement+appBlock.slice(closeStart+closeMarker.length)
-  workspace=workspace.slice(0,appStart)+appBlock+workspace.slice(publicStart)
+  if(appBlock.includes('<header className="appTop">')){
+    const returnStart=appBlock.indexOf('    return <><header className="appTop">')
+    const mainMarker='<main className="appMain">{message&&<div className="note">{message}</div>}'
+    const mainStart=appBlock.indexOf(mainMarker,returnStart)
+    const closeMarker='</main><LegalFooter language={language}/></>'
+    const closeStart=appBlock.lastIndexOf(closeMarker)
+    if(returnStart<0||mainStart<0||closeStart<mainStart) throw new Error('V46 single shell: legacy shell boundaries missing')
+    const innerStart=mainStart+mainMarker.length
+    const inner=appBlock.slice(innerStart,closeStart)
+    const replacement=`    return protectedWorkspace(<>${inner}</>)`
+    appBlock=appBlock.slice(0,returnStart)+replacement+appBlock.slice(closeStart+closeMarker.length)
+    workspace=workspace.slice(0,appStart)+appBlock+workspace.slice(publicStart)
+  }
 }
 
 if(workspace.includes('<header className="appTop">')) throw new Error('V46 single shell: duplicate protected app header remains in WorkspaceApp')
@@ -74,4 +77,4 @@ if(!readme.includes('workspace/LoadingSurface.js')){
 }
 write(readmePath,readme)
 
-console.log('V46 protected workspace shell consolidated and loading surface extracted.')
+console.log(alreadyConsolidated?'V46 protected workspace shell already consolidated; idempotent guard confirmed.':'V46 protected workspace shell consolidated and loading surface extracted.')
