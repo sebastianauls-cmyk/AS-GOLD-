@@ -151,9 +151,9 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .publicBackButton{white-space:nowrap;background:#fff8e8}
 .outputModule p{margin:10px 0 8px;color:#596472;line-height:1.45;font-size:.92rem}
 .outputLanguageStatus{display:block;padding:8px 10px;border-radius:10px;background:#eef8ef;color:#285c33;font-size:.9rem}
-.outputCustomerButton{width:100%;min-height:44px;margin-top:8px;padding:8px 10px;border:1px solid #8f6e25;border-radius:11px;background:#8f6e25;color:#fff;font-weight:850}
+.customerModuleSlot{min-height:220px;margin-top:10px}
 .customerModeBadge{display:inline-flex;align-items:center;margin:0 0 9px;padding:5px 10px;border-radius:999px;background:#f5e7b6;color:#5a4516;font-size:.82rem;font-weight:850;letter-spacing:.02em}
-#asgold-problem-navigator-react[data-customer-use-active="true"]{outline:4px solid #b9912e;outline-offset:4px;box-shadow:0 18px 46px rgba(126,91,17,.22)!important}
+#asgold-problem-navigator-react{scroll-margin-top:16px}
 .heroCapabilities{margin:18px 0;padding:16px;border:1px solid #dccb9f;border-radius:18px;background:#fff}
 .heroCapabilities h2{margin:0 0 12px;color:#4d3b14;font-size:1.3rem}
 .heroVoiceShortcut{margin:0 0 12px;border-color:#c9ad66;background:#fffaf0;color:#4f3c12}

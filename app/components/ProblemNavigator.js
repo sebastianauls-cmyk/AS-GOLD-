@@ -74,6 +74,8 @@ export function ProblemNavigator(){
     if(location.pathname!=='/') return
     let bodyObserver
     const mount=()=>{
+      const customerSlot=document.getElementById('asgold-customer-module-slot')
+      if(customerSlot){setHost(customerSlot);return true}
       const heroMain=document.querySelector('.heroLayout > div:first-child')||document.querySelector('.hero .wrap > div:first-child')
       const actions=heroMain?.querySelector('.actions')
       const capabilities=heroMain?.querySelector('.heroCapabilities')
@@ -183,7 +185,7 @@ export function ProblemNavigator(){
   const helpText=inputHelp[outputLanguage]||inputHelp.en
   const inputTitle=inputTitles[outputLanguage]||inputTitles.en
 
-  return createPortal(<section id="asgold-problem-navigator-react" data-customer-language={outputLanguage} lang={outputLanguage} dir={outputProfile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
+  return createPortal(<section id="asgold-problem-navigator-react" data-customer-language={outputLanguage} lang={outputLanguage} dir={outputProfile.rtl?'rtl':'ltr'} style={{margin:'12px 0 0',padding:14,border:'1px solid #dccb9f',borderRadius:14,background:'#fff',boxShadow:'0 8px 24px rgba(72,55,18,.07)'}}>
     <span className="customerModeBadge">{customerModeLabels[outputLanguage]||customerModeLabels.en}</span>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>

@@ -5,13 +5,13 @@ const modules=fs.readFileSync(new URL('../app/components/PublicLanguageModules.j
 const navigator=fs.readFileSync(new URL('../app/components/ProblemNavigator.js',import.meta.url),'utf8')
 const css=fs.readFileSync(new URL('../app/globals.css',import.meta.url),'utf8')
 
-assert.match(modules,/window\.scrollTo\(\{top,left:0,behavior:'instant'\}\)/)
-assert.doesNotMatch(modules,/target\.scrollIntoView\(\{behavior:'smooth'/)
+assert.match(modules,/id="asgold-customer-module-slot"/)
+assert.match(modules,/className="customerModuleSlot"/)
+assert.doesNotMatch(modules,/outputCustomerButton/)
 assert.doesNotMatch(modules,/querySelector\('textarea'\)\?\.focus/)
-assert.match(modules,/target\.focus\(\{preventScroll:true\}\)/)
-assert.match(modules,/customerOpenedText/)
+assert.match(navigator,/getElementById\('asgold-customer-module-slot'\)/)
 assert.match(navigator,/Strefa klienta · Polski/)
 assert.match(navigator,/data-customer-language=\{outputLanguage\}/)
-assert.match(css,/data-customer-use-active="true"/)
+assert.match(css,/\.customerModuleSlot\{/)
 
 console.log('V57 customer-language jump checks passed')
