@@ -54,3 +54,5 @@ jobs:
                   app/modules/compliance/AccountControlPanel.js
           git commit -m 'V46 finish protected workspace surface boundaries'
           git push origin HEAD:v46-navigation-clean
+
+# Validation trigger: rerun full V46 regression and production build after surface-boundary fixes.
