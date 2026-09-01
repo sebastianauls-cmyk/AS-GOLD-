@@ -1,1 +1,1 @@
-export * from '../../lib/v40ProfessionalHandoff.mjs'
+export * from '../cases/lib/v40ProfessionalHandoff.mjs'
