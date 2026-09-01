@@ -170,3 +170,20 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
   .flagLanguageMenu button{min-width:0}
   .flagLanguageMenu button small{font-size:.72rem}
 }
+
+
+/* V50 modular public navigation */
+.flagLanguageMenu .flagLanguageMenuBack{position:sticky;top:0;z-index:3;justify-content:flex-start;border-color:#c9ad66;background:#2f291b;color:#fff;font-weight:900}
+.flagLanguageMenu .flagLanguageMenuBack:hover{border-color:#c9ad66;background:#453a20}
+.flagLanguagePublicText{display:grid;text-align:left;line-height:1.15}
+.flagLanguagePublicText small{font-size:.68rem;color:#6b6250}
+.publicTop .nav{gap:18px;padding-top:10px;padding-bottom:10px}
+.publicLanguageStack{display:grid;gap:7px;min-width:min(100%,310px);padding:9px 10px;border:1px solid #d9c792;border-radius:14px;background:#fffdf7}
+.publicLanguageRow{display:grid;grid-template-columns:minmax(120px,1fr) auto;align-items:center;gap:10px}
+.publicLanguageRow>span{color:#443817;font-size:.78rem;font-weight:850;line-height:1.25}
+.publicLanguageRow .flagLanguageTrigger{justify-self:end}
+.publicNavActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.publicBackBtn{white-space:nowrap}
+.legalMarketBar [data-output-language-status]{white-space:nowrap}
+@media(max-width:900px){.publicTop .nav{display:grid;grid-template-columns:1fr;align-items:stretch}.publicTop .brand{justify-content:center}.publicLanguageStack{width:100%;min-width:0}.publicNavActions{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.publicNavActions>*{width:100%;min-width:0;min-height:44px;display:grid;place-items:center;text-align:center}}
+@media(max-width:560px){.publicLanguageRow{grid-template-columns:1fr}.publicLanguageRow .flagLanguageTrigger{justify-self:stretch;width:100%}.publicNavActions{grid-template-columns:1fr 1fr}.publicBackBtn{grid-column:1/-1}.flagLanguagePublicPicker{width:100%!important}.flagLanguagePublicPicker .flagLanguageTrigger{flex:1 1 150px}}

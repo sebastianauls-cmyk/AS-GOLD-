@@ -63,8 +63,14 @@ assert.ok(pageEntry.length<500,'root page must remain a thin workspace-module en
 
 const workspace=read('app/modules/workspace/WorkspaceApp.js')
 assert.match(workspace,/signInWithPassword/)
-assert.match(workspace,/DocumentSection/)
+assert.match(read('app/modules/documents/DocumentsSurface.js'),/DocumentSection/)
+assert.match(workspace,/DocumentsSurface/)
 assert.match(workspace,/doExport/)
+assert.match(workspace,/\.\.\/services\/supabaseClient/)
+assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
+assert.doesNotMatch(workspace,/const supabase = createClient\(/)
+assert.match(workspace,/invokeDocumentAnalysis/)
 assert.match(workspace,/\.\.\/services\/supabaseClient/)
 assert.match(workspace,/\.\.\/services\/documentAnalysis/)
 assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
@@ -256,6 +262,28 @@ assert.match(currentMicrophone,/aria-live="polite"/)
 const currentExplainer=read('app/modules/public/ExplainerVideo.js')
 assert.match(currentExplainer,/as-gold-explainer-de-female\.mp4/)
 assert.match(currentExplainer,/as-gold-explainer-de-male\.mp4/)
+
+
+for(const path of [
+  'app/modules/workspace/DashboardSurface.js',
+  'app/modules/cases/WorkspaceCaseSurfaces.js',
+  'app/modules/cases/ApprovalsSurface.js',
+  'app/modules/documents/DocumentsSurface.js',
+  'app/modules/pricing/UpgradePanel.js',
+  'app/modules/compliance/AccountControlPanel.js'
+]) exists(path)
+assert.match(workspace,/DashboardSurface/)
+assert.match(workspace,/CasesSurface/)
+assert.match(workspace,/ClientsSurface/)
+assert.match(workspace,/DocumentsSurface/)
+assert.match(workspace,/ApprovalsSurface/)
+assert.doesNotMatch(workspace,/className=\"accountControl\"/,'account-control presentation belongs to compliance module')
+assert.doesNotMatch(workspace,/className=\"detailCard upgradeBox\"/,'upgrade presentation belongs to pricing module')
+assert.match(read('app/modules/compliance/AccountControlPanel.js'),/accountControl/)
+assert.match(read('app/modules/pricing/UpgradePanel.js'),/PromoCodeControl/)
+assert.match(read('app/modules/workspace/DashboardSurface.js'),/AccountControlPanel/)
+assert.match(read('app/modules/workspace/DashboardSurface.js'),/UpgradePanel/)
+console.log('V46 final protected surface boundaries verified: dashboard, cases, clients, documents, approvals, pricing and compliance presentation are explicitly owned.')
 
 console.log('V46 modular-boundary guard passed: thin root entry, extracted public/auth/workspace surfaces, domain-owned catalogs and services, direct output-language flow, single language-menu back control, tester lock and thin compatibility adapters verified.')
 
