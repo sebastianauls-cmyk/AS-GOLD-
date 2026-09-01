@@ -178,3 +178,13 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Konto-, Audit-, Datenexport- und Löschsteuerung besitzen mit `compliance/AccountSurface.js` eine eigene geschützte Oberfläche.
 - `WorkspaceApp.js` routet die beiden Bereiche explizit über `section='pricing'` und `section='account'`; das Dashboard importiert deren Fachkomponenten nicht mehr.
 - Dadurch können Tarif- und Compliance-Änderungen unabhängig vom Dashboard umgesetzt werden.
+
+
+### V46 Direkte Fall-Abschlussmodule V40–V42
+
+- Professionelle Übergabe, Fall-Konsistenz/Nachweise und konkrete Lücken-Aufgaben werden direkt in CaseDetail gerendert.
+- Die drei globalen Komponenten V40ProfessionalHandoff, V41CaseConsistency und V42ActionableGaps sind aus app/layout.js entfernt.
+- V41 verwendet die bereits geladenen Fall-, Dokument- und Bewertungsdaten und erzeugt keine zweite Supabase-Abfrage mehr.
+- V42 erhält explizite React-Callbacks für Fallbearbeitung, Dokumentupload, Dokumentprüfung und Bewertung statt querySelector-/Click-Weiterleitung.
+- V40 behält lokale PDF-/DOCX-Exporte, ohne MutationObserver oder nachträgliche UI-Montage.
+- Die alten Modulpfade bleiben nur als dünne Kompatibilitäts-Re-Exports erhalten.

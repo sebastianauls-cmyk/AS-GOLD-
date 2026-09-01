@@ -6,6 +6,7 @@ import { DeadlineWarningCard } from './V38DeadlineCardEnhancer'
 import { AssessmentExplainability } from './V38AssessmentExplainability'
 import { PrimaryNextStepCard } from './V38PrimaryNextStep'
 import { CaseTimeline, DocumentAutoAssessment } from './V39CaseTimelineAutoAssessment'
+import { CaseCompletionPanels } from './CaseCompletionPanels'
 import { componentTranslations } from '../lib/v30ComponentTranslations.mjs'
 
 const copy = {
@@ -79,6 +80,7 @@ export function CaseDetail({copy:on, analysis, language='de', item, clients, doc
     <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case"/>
     <PrimaryNextStepCard language={language} item={item} documents={documents} assessments={assessments}/>
     <CaseTimeline language={language} caseDeadline={item.deadline_at||''} documents={documents}/>
+    <CaseCompletionPanels language={language} item={item} documents={documents} assessments={assessments} onEdit={()=>setEditing(true)} onAddDocument={()=>onAddDocument(item.id)} onOpenDocument={onOpenDocument} onAssess={()=>setAssessment(current=>({...current,title:current.title||on.addAssessment}))}/>
     <section className={`readinessCard ${!documents.length?'attentionBox':''}`}><b>{on.assessmentState}</b><p>{readiness}</p></section>
     <section className="detailCard"><div className="detailCardHead"><h3>{on.sourceBasis}</h3><button className="secondary" type="button" onClick={()=>onAddDocument(item.id)}>＋ {on.documentUpload}</button></div>{documents.length?<div className="sourceList">{documents.map(document=><button type="button" onClick={()=>onOpenDocument(document)} key={document.id}><span>{document.document_date||new Date(document.created_at).toLocaleDateString()}</span><b>{document.title}</b><small>{document.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</small></button>)}</div>:<div className="emptyState">{on.noDocuments}</div>}</section>
     <section className="detailCard"><h3>{on.currentAssessments}</h3>{assessments.length?<div className="assessmentList">{assessments.map(entry=><article className={`assessment ${entry.traffic_light}`} key={entry.id}><div><span>{entry.traffic_light==='red'?`🔴 ${on.red}`:entry.traffic_light==='green'?`🟢 ${on.green}`:`🟡 ${on.yellow}`}</span><b>{entry.title}</b></div><p>{entry.reasoning||'—'}</p><small>{on.nextAction}: {entry.next_step||'—'}</small><AssessmentExplainability language={language} reasoning={entry.reasoning} next={entry.next_step}/></article>)}</div>:<p>{on.noAssessment}</p>}
