@@ -16,6 +16,8 @@ const copy={
   bg:{title:'Какво искате да изясните сега?',lead:'Започнете директно. Не е нужно да знаете вида на случая или плана.',problem:'Опишете проблема',voice:'Кажете проблема',upload:'Качете документ',example:'Вижте пример',trust:['Започнете безплатно с 3 документа','Без автоматично подновяване','Германия / германско право'],sampleTitle:'Така може да изглежда първият резултат',sampleCase:'Пример: застраховател отказва щета',have:'Налично',haveText:'Застрахователна полица',open:'Отворено',openText:'Доказателство за щета',deadline:'Проверете срока',deadlineText:'Срок за отговор / действие',next:'Следваща стъпка',nextText:'Добавете документи и подгответе отговор',close:'Затворете примера'}
 }
 
+const startTitles={de:'Wie möchten Sie starten?',en:'How would you like to start?',fr:'Comment souhaitez-vous commencer ?',tr:'Nasıl başlamak istersiniz?',pl:'Jak chcesz zacząć?',ru:'Как вы хотите начать?',ar:'كيف تريد أن تبدأ؟',fa:'چگونه می‌خواهید شروع کنید؟',ro:'Cum doriți să începeți?',bg:'Как искате да започнете?'}
+
 export function V37FirstAction(){
   const [host,setHost]=useState(null)
   const [language,setLanguage]=useState('de')
@@ -45,7 +47,7 @@ export function V37FirstAction(){
   const speakProblem=()=>{const target=document.getElementById('asgold-problem-navigator-react');const microphone=target?.querySelector('[data-problem-voice]');if(!target||!microphone)return focusProblem();target.scrollIntoView({behavior:'smooth',block:'start'});microphone.click()}
   const upload=()=>{const input=document.querySelector('input[type="file"]');if(input){input.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input.click(),300);return}const free=document.querySelector('.hero .actions .secondary.btn,.actions .secondary.btn');free?.click()}
   return createPortal(<section dir={rtl?'rtl':'ltr'} style={{margin:'18px 0 14px',padding:18,border:'2px solid #c6a553',borderRadius:18,background:'linear-gradient(135deg,#fff9e8,#fff)',boxShadow:'0 12px 30px rgba(72,55,18,.08)'}}>
-    <b style={{display:'block',fontSize:'1.45rem',color:'#4d3b14'}}>{c.title}</b>
+    <b style={{display:'block',fontSize:'1.45rem',color:'#4d3b14'}}>{startTitles[language]||startTitles.de}</b>
     <p style={{margin:'7px 0 14px',color:'#5f6976',lineHeight:1.45}}>{c.lead}</p>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:10}}>
       <button type='button' onClick={focusProblem} style={primary}>✍️ {c.problem}</button>
