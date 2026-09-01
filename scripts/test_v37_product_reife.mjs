@@ -9,6 +9,9 @@ const firstActionCompatibility=fs.readFileSync('app/components/V37FirstAction.js
 const videoCompatibility=fs.readFileSync('app/components/ExplainerVideo.js','utf8')
 const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')
 const publicLanding=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')
+const caseSurfaces=fs.readFileSync('app/modules/cases/WorkspaceCaseSurfaces.js','utf8')
+const documentsSurface=fs.readFileSync('app/modules/documents/DocumentsSurface.js','utf8')
+const dashboardSurface=fs.readFileSync('app/modules/workspace/DashboardSurface.js','utf8')
 
 const need=(source,needle,label)=>{if(!source.includes(needle)) throw new Error(`V37 readiness: missing ${label}`)}
 
@@ -28,22 +31,25 @@ need(publicLanding,'<V37FirstAction language={language} onRegister={()=>setScree
 
 need(publicLanding,"setScreen('register')",'registration path in public module')
 need(publicLanding,"setScreen('login')",'login path in public module')
-for(const key of ['backOverview','backCases','backClients']) need(page,key,`back navigation ${key}`)
+need(caseSurfaces,'backOverview','cases/clients overview navigation')
+need(page,'backCases','case-detail back navigation')
+need(caseSurfaces,'backClients','client-detail back navigation')
 need(authSurface,'backExplanation','back navigation backExplanation in auth module')
 need(page,'functionErrorMessage','analysis error normalization')
 need(page,'configuration_required','analysis configuration error')
-need(page,'emptyState','empty-state presentation')
-need(page,'uploading={uploading}','upload busy state')
-need(page,'required','required-field handling')
+need(caseSurfaces,'emptyState','client empty-state presentation')
+need(documentsSurface,'uploading={uploading}','upload busy state')
+need(caseSurfaces,'required','required-field handling')
 need(page,'createAssessment','traffic-light assessment')
 need(page,'prepareDocumentApproval','prepare approval')
 need(page,'ApprovalDetail','approval detail')
 for(const value of ['pdf','docx','xlsx','pptx']) need(page,`<option value="${value}">`,`export ${value}`)
 need(page,"doExport({kind:'case',item:selectedCase},exportType)",'case export action')
+need(dashboardSurface,'DashboardSurface','dashboard module ownership')
 
 need(video,"[open,setOpen]=useState(false)",'video collapsed default')
 need(video,"role='group' aria-label={c.voice}",'presenter accessibility group')
 need(video,"aria-pressed={presenter==='female'}",'female pressed state')
 need(video,"aria-pressed={presenter==='male'}",'male pressed state')
 
-console.log('V37 product-readiness guard passed through the direct public/workspace module boundaries.')
+console.log('V37 product-readiness guard passed through the direct modular public/workspace surfaces.')
