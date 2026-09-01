@@ -1,15 +1,6 @@
-name: V46 Workspace Refactor
+name: V46 Workspace Refactor (manual legacy)
 
 on:
-  push:
-    branches: [v46-navigation-clean]
-    paths:
-      - '.github/workflows/v46-refactor-workspace.yml'
-      - 'app/**'
-      - 'scripts/v46_*.mjs'
-      - 'scripts/test_*.mjs'
-      - 'package.json'
-      - 'package-lock.json'
   workflow_dispatch:
 
 permissions:
@@ -17,7 +8,6 @@ permissions:
 
 jobs:
   refactor:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout modular branch
@@ -25,56 +15,6 @@ jobs:
         with:
           ref: v46-navigation-clean
           fetch-depth: 1
-
-      - name: Apply deterministic module refactors
-        shell: bash
+      - name: Legacy workflow intentionally manual
         run: |
-          set -euo pipefail
-          node scripts/v46_refactor_workspace_services.mjs
-          node scripts/v46_fix_service_guard.mjs
-          node scripts/v46_refactor_upload_module.mjs
-          node scripts/v46_refactor_workspace_catalogs.mjs
-          node scripts/v46_extract_domain_catalogs.mjs
-          node scripts/v46_extract_workspace_shell.mjs
-          node scripts/v46_extract_auth_surface.mjs
-          node scripts/v46_consolidate_workspace_shell.mjs
-          node scripts/v46_extract_public_landing.mjs
-          node scripts/v46_direct_public_interactions.mjs
-          node scripts/v46_fix_public_catalog_exports.mjs
-          node scripts/v46_fix_public_guard_order.mjs
-          node scripts/v46_finish_workspace_surfaces.mjs
-          node scripts/v46_align_final_surface_guards.mjs
-
-      - name: Align V34 guard with current V50 explainer trigger
-        shell: bash
-        run: |
-          node --input-type=module - <<'NODE'
-          import fs from 'node:fs'
-          const path='scripts/test_v34_customer_path.mjs'
-          let source=fs.readFileSync(path,'utf8')
-          source=source.replace("const videoPos=publicLanding.indexOf('<ExplainerVideo language={language}/>')","const videoPos=publicLanding.indexOf('<ExplainerVideo language={language} openSignal={explainerSignal}/>')")
-          fs.writeFileSync(path,source)
-          NODE
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run complete regression chain
-        run: npm run prebuild
-
-      - name: Build production bundle
-        run: npx next build
-
-      - name: Commit verified modular result
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [ -z "$(git status --porcelain)" ]; then
-            echo 'No modular changes to commit.'
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app scripts/test_*.mjs docs/APP_GOLD_MODULARISIERUNG_V46.md
-          git commit -m 'V46 finalize modular workspace boundaries'
-          git push origin HEAD:v46-navigation-clean
+          echo 'The automatic bulk refactor chain is frozen. Current V46 work proceeds through reviewed modular changes and the normal Vercel regression build.'
