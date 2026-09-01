@@ -1,0 +1,65 @@
+name: V46 Align Final Release V72
+
+on:
+  push:
+    branches: [v46-navigation-clean]
+    paths:
+      - '.github/workflows/v46-align-final-release-v72.yml'
+      - 'scripts/v46_align_final_release_v72.mjs'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  align-finalizer:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout modular branch
+        uses: actions/checkout@v4
+        with:
+          ref: v46-navigation-clean
+          fetch-depth: 1
+
+      - name: Align release candidate preparation with V72
+        run: node scripts/v46_align_final_release_v72.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify V72 release-finalizer parity
+        run: node scripts/test_v46_finalizer_v72_parity.mjs
+
+      - name: Verify active modular state before committing finalizer
+        run: |
+          npm run test:v46-controller
+          npm run test:v46-modules
+          npm run test:v46-direct-imports
+          npm run test:v38-mobile
+          npm run test:v44-language-order
+          npm run test:v45-output-language
+          npm run test:v72-vietnamese
+
+      - name: Run full regression chain
+        run: npm run prebuild
+
+      - name: Build production bundle
+        run: npx next build
+
+      - name: Commit verified V72 finalizer alignment
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then
+            echo 'No finalizer alignment changes to commit.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add scripts/v46_finalize_release_candidate.mjs \
+                  scripts/test_v46_finalizer_v72_parity.mjs \
+                  app/modules/README.md \
+                  docs/APP_GOLD_MODULARISIERUNG_V46.md
+          git commit -m 'V46 align final release gate with V72 and eleven languages'
+          git push origin HEAD:v46-navigation-clean
