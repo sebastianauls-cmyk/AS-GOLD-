@@ -150,7 +150,7 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .publicPresenterRow button,.publicBackButton{min-height:46px;padding:9px 11px;border:1px solid #c9ad66;border-radius:11px;background:#fff;color:#463715;font-weight:850}
 .publicPresenterRow button.active{border:2px solid #8f6e25;background:#fff4cb;box-shadow:0 0 0 2px rgba(143,110,37,.12)}
 .publicPresenterRow .publicVideoButton{background:#2f291b;color:#fff;white-space:normal}
-.publicBackButton{max-width:190px;white-space:normal;text-align:center;line-height:1.2;background:#fff8e8}
+.publicBackButton{grid-column:1/-1;justify-self:end;max-width:330px;white-space:normal;text-align:center;line-height:1.25;background:#fff8e8}
 .outputModule p{margin:10px 0 8px;color:#596472;line-height:1.45;font-size:.92rem}
 .outputLanguageStatus{display:block;padding:8px 10px;border-radius:10px;background:#eef8ef;color:#285c33;font-size:.9rem}
 .customerModuleSlot{min-height:220px;margin-top:10px}
@@ -185,7 +185,7 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
   .publicLanguageModule .flagLanguage{max-width:none}
   .publicPresenterRow{grid-template-columns:1fr 1fr}
   .publicPresenterRow .publicVideoButton{grid-column:1/-1}
-  .publicBackButton{flex:1}
+  .publicBackButton{width:100%;max-width:none;justify-self:stretch}
   .heroCapabilities .capGrid{grid-template-columns:1fr}
   .explainerModalBackdrop{padding:8px}
   .explainerModal{max-height:calc(100dvh - 16px);padding:14px}
@@ -276,10 +276,10 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
   .publicLanguageModules{gap:9px}
   .publicLanguageModule{padding:10px;border-radius:14px}
   .publicLanguageTitle{margin-bottom:7px;font-size:.9rem}
-  .publicLanguageMainRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+  .publicLanguageMainRow{display:block}
   .publicLanguageMainRow .flagLanguage{width:100%;min-width:0}
   .publicLanguageModule .flagLanguageTrigger{min-height:44px;padding:7px 10px}
-  .publicBackButton{min-height:44px;padding:7px 10px}
+  .publicBackButton{min-height:44px;padding:9px 12px}
   .publicPresenterLabel{margin:8px 0 6px;font-size:.82rem}
   .publicPresenterRow{gap:6px}
   .publicPresenterRow button{min-height:42px;padding:7px 8px;font-size:.88rem}

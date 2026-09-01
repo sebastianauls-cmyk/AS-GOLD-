@@ -7,7 +7,7 @@ const styles=fs.readFileSync(new URL('../app/globals.css',import.meta.url),'utf8
 assert.equal((modules.match(/welcome:'/g)||[]).length,10)
 assert.match(modules,/Willkommen bei AS Gold – schön, dass Sie da sind\./)
 assert.ok(modules.indexOf('className="publicWelcome"')<modules.indexOf('className="publicLanguageModule interfaceModule"'))
-assert.match(modules,/🇩🇪 Alles auf Deutsch/)
+assert.match(modules,/🇩🇪 Back to German \/ Zurück zu Deutsch/)
 assert.match(modules,/onLanguageChange\('de'\)/)
 assert.match(modules,/onOutputLanguageChange\('de'\)/)
 assert.match(styles,/\.publicWelcome\{grid-column:1\/-1;/)

@@ -59,11 +59,11 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
 
   return <section className="publicLanguageModules" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
     <p className="publicWelcome"><span aria-hidden="true">👋</span> {warmWelcome[language]||warmWelcome.de}</p>
+    <button type="button" className="publicBackButton" dir="ltr" onClick={returnToGerman} aria-label="Back to German – Oberfläche und Kundensprache auf Deutsch zurückstellen">← 🇩🇪 Back to German / Zurück zu Deutsch</button>
     <div className="publicLanguageModule interfaceModule">
       <strong className="publicLanguageTitle">{text.interfaceTitle}</strong>
       <div className="publicLanguageMainRow">
         <LanguageSwitcher value={language} onChange={onLanguageChange} label={text.interfaceLabel}/>
-        <button type="button" className="publicBackButton" onClick={returnToGerman} aria-label="Oberfläche und Ausgabesprache vollständig auf Deutsch zurückstellen">{language==='ar'||language==='fa'?'→':'←'} 🇩🇪 Alles auf Deutsch</button>
       </div>
       <span className="publicPresenterLabel">{text.presenter}</span>
       <div className="publicPresenterRow" role="group" aria-label={text.presenter}>
