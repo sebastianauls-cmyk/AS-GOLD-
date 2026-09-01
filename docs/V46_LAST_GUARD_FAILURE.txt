@@ -1,0 +1,15 @@
+
+> app-gold-workspace@1.0.0 test:v46-modules
+> node scripts/test_v46_modular_boundaries.mjs
+
+file:///home/runner/work/AS-GOLD-/AS-GOLD-/scripts/test_v46_modular_boundaries.mjs:131
+for(const name of ['V37FirstAction','ProblemNavigator','ExplainerVideo','ProductIntroCompact']) assert.doesNotMatch(layout,new RegExp(name),'public portal modules must not be mounted globally')
+                                                                                                                    ^
+
+ReferenceError: Cannot access 'layout' before initialization
+    at file:///home/runner/work/AS-GOLD-/AS-GOLD-/scripts/test_v46_modular_boundaries.mjs:131:117
+    at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
+    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+
+Node.js v22.23.2
