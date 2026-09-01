@@ -1,7 +1,8 @@
 import fs from 'node:fs'
 
 const layout=fs.readFileSync('app/layout.js','utf8')
-const firstAction=fs.readFileSync('app/components/V37FirstAction.js','utf8')
+const firstAction=fs.readFileSync('app/modules/public/V37FirstAction.js','utf8')
+const firstActionCompatibility=fs.readFileSync('app/components/V37FirstAction.js','utf8')
 const video=fs.readFileSync('app/components/ExplainerVideo.js','utf8')
 
 const requiredActions=['Problem beschreiben','Dokument hochladen','Beispiel ansehen']
@@ -14,7 +15,8 @@ for(const text of requiredTrust){
   if(!firstAction.includes(text)) throw new Error(`V37 guard: missing trust promise: ${text}`)
 }
 
-if(!layout.includes('V37FirstAction')) throw new Error('V37 guard: first-action component is not mounted in layout')
+if(!layout.includes("./modules/public/V37FirstAction")) throw new Error('V37 guard: first-action module is not mounted in layout')
+if(!firstActionCompatibility.includes("../modules/public/V37FirstAction")) throw new Error('V37 guard: legacy first-action path must remain a compatibility re-export')
 if(!firstAction.includes('asgold-problem-navigator-react')) throw new Error('V37 guard: problem action no longer targets the problem navigator')
 if(!firstAction.includes('input[type="file"]')) throw new Error('V37 guard: upload action no longer targets file upload')
 if(!firstAction.includes('So sieht ein erstes Ergebnis aus')) throw new Error('V37 guard: sample result is missing')
