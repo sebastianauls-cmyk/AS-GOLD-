@@ -34,7 +34,6 @@ const videoLanguages=[
 
 const videoButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی',ro:'Videoclip explicativ',bg:'Обяснително видео'}
 const videoCloseText={de:'Schließen',en:'Close',fr:'Fermer',tr:'Kapat',pl:'Zamknij',ru:'Закрыть',ar:'إغلاق',fa:'بستن',ro:'Închide',bg:'Затвори'}
-const backText={de:'← Zurück',en:'← Back',fr:'← Retour',tr:'← Geri',pl:'← Wstecz',ru:'← Назад',ar:'← رجوع',fa:'← بازگشت',ro:'← Înapoi',bg:'← Назад'}
 
 function FlagSet({countryCodes=[],fallback='',className=''}){
   const supported=countryCodes.filter(code=>flagComponents[code])
@@ -94,7 +93,6 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
   if(publicPicker){
     const explainerLabel=videoButtonText[value]||videoButtonText.de
     const closeLabel=videoCloseText[value]||videoCloseText.de
-    const backLabel=label==='Sprache'?backText.de:(backText[value]||backText.de)
     return <div
       className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()}
       ref={rootRef}
@@ -114,6 +112,12 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         <b aria-hidden="true" style={{fontSize:'.8rem',flex:'0 0 auto',marginLeft:'2px'}}>{open?'▴':'▾'}</b>
       </button>
       <button type="button" onClick={()=>setVideoOpen(current=>!current)} aria-expanded={videoOpen} style={{minHeight:'46px',padding:'8px 12px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#2f291b',color:'#fff',fontWeight:850,boxShadow:'0 4px 14px rgba(27,31,37,.10)',whiteSpace:'nowrap'}}>▶ {explainerLabel}</button>
+      {open&&<button
+        type="button"
+        onClick={()=>setOpen(false)}
+        aria-label="Zurück"
+        style={{flex:'1 0 100%',width:'100%',minHeight:'48px',padding:'10px 14px',borderRadius:'12px',border:'1px solid #c9ad66',background:'#2f291b',color:'#fff',fontWeight:900,fontSize:'1rem',textAlign:'left',boxShadow:'0 4px 14px rgba(27,31,37,.12)'}}
+      >← Zurück</button>}
       {open&&<div
         id={menuId}
         role="listbox"
@@ -123,9 +127,9 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         <button
           type="button"
           onClick={()=>setOpen(false)}
-          aria-label={backLabel.replace('← ','')}
+          aria-label="Zurück"
           style={{display:'flex',alignItems:'center',justifyContent:'flex-start',width:'100%',minHeight:'46px',padding:'9px 11px',borderRadius:'10px',border:'1px solid #c9ad66',background:'#2f291b',color:'#fff',fontWeight:900,textAlign:'left',position:'sticky',top:0,zIndex:2}}
-        >{backLabel}</button>
+        >← Zurück</button>
         {supportedLanguages.map(item=><button
           type="button"
           role="option"
