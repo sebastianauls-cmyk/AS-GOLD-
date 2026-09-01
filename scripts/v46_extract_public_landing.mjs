@@ -46,6 +46,26 @@ workspace=workspace.replace("import { PasswordPolicyChecklist, getV29PasswordCop
 if(workspace.includes('className="publicTop"')) throw new Error('V46 public landing: public page markup remains in WorkspaceApp')
 write(workspacePath,workspace)
 
+for(const test of [
+  {path:'scripts/test_v37_end_to_end.mjs',label:'V37 E2E',mode:'mustContain'},
+  {path:'scripts/test_v37_product_reife.mjs',label:'V37 readiness',mode:'need'}
+]){
+  let source=read(test.path)
+  if(!source.includes("const publicLanding=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')")){
+    const anchor="const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')"
+    if(!source.includes(anchor)) throw new Error(`V46 public landing: ${test.label} source anchor missing`)
+    source=source.replace(anchor,`${anchor}\nconst publicLanding=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')`)
+  }
+  if(test.mode==='mustContain'){
+    source=source.replace("mustContain(page,\"setScreen('register')\",'registration route')","mustContain(publicLanding,\"setScreen('register')\",'registration route in public module')")
+    source=source.replace("mustContain(page,\"setScreen('login')\",'login route')","mustContain(publicLanding,\"setScreen('login')\",'login route in public module')")
+  }else{
+    source=source.replace("need(page,\"setScreen('register')\",'registration path')","need(publicLanding,\"setScreen('register')\",'registration path in public module')")
+    source=source.replace("need(page,\"setScreen('login')\",'login path')","need(publicLanding,\"setScreen('login')\",'login path in public module')")
+  }
+  write(test.path,source)
+}
+
 const guardPath='scripts/test_v46_modular_boundaries.mjs'
 let guard=read(guardPath)
 const inventory="  'app/modules/public/PublicLanding.js',"
@@ -64,7 +84,7 @@ write(guardPath,guard)
 const docsPath='docs/APP_GOLD_MODULARISIERUNG_V46.md'
 let docs=read(docsPath)
 if(!docs.includes('V46 Öffentliche Oberfläche')){
-  docs += '\n\n### V46 Öffentliche Oberfläche\n\n- `public/PublicLanding.js` besitzt jetzt die komplette öffentliche Start-, Fallarten-, Transparenz- und Preisoberfläche.\n- `WorkspaceApp.js` liefert nur noch Zustand, abgeleitete Daten und Aktionen an diese Oberfläche.\n- Sprache, Ausgabesprache und Footer werden in der öffentlichen Modulgrenze direkt aus den kanonischen Sprach-/Compliance-Modulen komponiert.\n- Öffentliche Markup-Änderungen können damit unabhängig von Authentifizierung und geschütztem Workspace erfolgen.\n'
+  docs += '\n\n### V46 Öffentliche Oberfläche\n\n- `public/PublicLanding.js` besitzt jetzt die komplette öffentliche Start-, Fallarten-, Transparenz- und Preisoberfläche.\n- `WorkspaceApp.js` liefert nur noch Zustand, abgeleitete Daten und Aktionen an diese Oberfläche.\n- Sprache, Ausgabesprache und Footer werden in der öffentlichen Modulgrenze direkt aus den kanonischen Sprach-/Compliance-Modulen komponiert.\n- Öffentliche Markup-Änderungen können damit unabhängig von Authentifizierung und geschütztem Workspace erfolgen.\n- V37-End-to-End- und Readiness-Guards folgen Registrierungs-/Login-Routen jetzt bis in das Public-Modul.\n'
 }
 write(docsPath,docs)
 
@@ -73,4 +93,4 @@ let readme=read(readmePath)
 if(!readme.includes('public/PublicLanding.js')) readme += '\n- `public/PublicLanding.js`: complete public landing, case-discovery, transparency and pricing composition.\n'
 write(readmePath,readme)
 
-console.log('V46 public landing extracted from WorkspaceApp behind the public module boundary.')
+console.log('V46 public landing extracted and route guards aligned to public module ownership.')
