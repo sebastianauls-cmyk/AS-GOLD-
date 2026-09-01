@@ -18,14 +18,19 @@ for(const path of [
   'app/modules/navigation/AccessibilityHardening.js',
   'app/modules/navigation/MobileResilience.js',
   'app/modules/public/ProblemNavigator.js',
+  'app/modules/public/problemNavigatorLanguages.mjs',
+  'app/modules/public/problemNavigatorLanguagesV36.mjs',
   'app/modules/tester/TesterPaused.js',
   'app/modules/auth/PasswordPolicy.js',
+  'app/modules/auth/v29PasswordPolicy.mjs',
   'app/modules/cases/V24Workspace.js',
   'app/modules/cases/V42ActionableGaps.js',
   'app/modules/documents/V26DocumentAnalysis.js',
   'app/modules/pricing/PromoCodeControl.js',
   'app/modules/pricing/v31PromoTranslations.mjs',
   'app/modules/compliance/LegalDocument.js',
+  'app/modules/compliance/v31InteractiveLegalTranslations.mjs',
+  'app/modules/compliance/v31LegalTranslations.mjs',
   'app/modules/integrations/IntegrationHub.js',
   'app/modules/services/officeExports.js',
   'app/modules/workspace/WorkspaceApp.js'
@@ -78,12 +83,19 @@ for(const [compat,modulePath] of [
   ['app/lib/v35ComponentTranslations.mjs','modules/language/v35ComponentTranslations'],
   ['app/lib/v30ComponentTranslations.base.mjs','modules/language/v30ComponentTranslations.base'],
   ['app/lib/v31PromoTranslations.mjs','modules/pricing/v31PromoTranslations'],
+  ['app/lib/problemNavigatorLanguages.mjs','modules/public/problemNavigatorLanguages'],
+  ['app/lib/problemNavigatorLanguagesV36.mjs','modules/public/problemNavigatorLanguagesV36'],
+  ['app/lib/v29PasswordPolicy.mjs','modules/auth/v29PasswordPolicy'],
+  ['app/lib/v31InteractiveLegalTranslations.mjs','modules/compliance/v31InteractiveLegalTranslations'],
+  ['app/lib/v31LegalTranslations.mjs','modules/compliance/v31LegalTranslations'],
   ['app/lib/officeExports.js','modules/services/officeExports']
 ]) assert.match(read(compat),new RegExp(modulePath.replaceAll('/','\\/')))
 
 for(const path of [
   'app/lib/v30Languages.mjs','app/lib/v36Languages.mjs','app/lib/v35Languages.mjs','app/lib/v35RoBgExtras.mjs','app/lib/v30Languages.base.mjs',
-  'app/lib/v30ComponentTranslations.mjs','app/lib/v35ComponentTranslations.mjs','app/lib/v30ComponentTranslations.base.mjs','app/lib/v31PromoTranslations.mjs','app/lib/officeExports.js'
+  'app/lib/v30ComponentTranslations.mjs','app/lib/v35ComponentTranslations.mjs','app/lib/v30ComponentTranslations.base.mjs','app/lib/v31PromoTranslations.mjs',
+  'app/lib/problemNavigatorLanguages.mjs','app/lib/problemNavigatorLanguagesV36.mjs','app/lib/v29PasswordPolicy.mjs',
+  'app/lib/v31InteractiveLegalTranslations.mjs','app/lib/v31LegalTranslations.mjs','app/lib/officeExports.js'
 ]) assert.ok(read(path).length<140,`${path} should be a thin compatibility adapter`)
 
-console.log('V46 modular-boundary guard passed: thin page entry, domain-owned language/pricing catalogs, service ownership, single language-menu back control, tester lock and compatibility adapters verified.')
+console.log('V46 modular-boundary guard passed: thin page entry, domain-owned language/public/auth/compliance/pricing catalogs, service ownership, single language-menu back control, tester lock and compatibility adapters verified.')
