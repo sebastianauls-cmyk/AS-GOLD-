@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch && npm run test:v38-practical-simulation && npm run test:v38-tester-guide && npm run test:v38-integrations && npm run test:v38-supabase-security && npm run test:v39-case-intelligence && npm run test:v40-handoff && npm run test:v41-consistency && npm run test:v42-actions && npm run test:v43-visibility && npm run test:v44-language-order && npm run test:v45-output-language && npm run test:v46-modules && npm run test:v56-parity && npm run test:v69-public-parity && npm run test:v70-tester-staged",
+    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch && npm run test:v38-practical-simulation && npm run test:v38-tester-guide && npm run test:v38-integrations && npm run test:v38-supabase-security && npm run test:v39-case-intelligence && npm run test:v40-handoff && npm run test:v41-consistency && npm run test:v42-actions && npm run test:v43-visibility && npm run test:v44-language-order && npm run test:v45-output-language && npm run test:v46-modules && npm run test:v56-parity && npm run test:v69-public-parity && npm run test:v70-tester-staged && npm run test:v46-direct-imports",
     "build": "next build",
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
@@ -40,7 +40,8 @@
     "test:v46-modules": "node scripts/test_v46_modular_boundaries.mjs",
     "test:v56-parity": "node scripts/test_v56_modular_parity.mjs",
     "test:v69-public-parity": "node scripts/test_v69_modular_public_parity.mjs",
-    "test:v70-tester-staged": "node scripts/test_v70_tester_sharing.mjs"
+    "test:v70-tester-staged": "node scripts/test_v70_tester_sharing.mjs",
+    "test:v46-direct-imports": "node scripts/test_v46_workspace_direct_imports.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
