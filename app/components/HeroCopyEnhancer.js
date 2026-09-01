@@ -40,7 +40,7 @@ function ensureAudienceBlock(language){
     block.style.cssText='margin:0 0 34px;padding:24px;border:1px solid #e2d6b7;border-radius:20px;background:linear-gradient(135deg,#fffaf0,#fff)'
     section.prepend(block)
   }
-  block.innerHTML=`<div class="eyebrow">${copy.title}</div><h2 style="margin:8px 0 8px;font-size:clamp(1.7rem,5vw,2.5rem)">${copy.title}</h2><p style="margin:0 0 18px;color:#5f6976;line-height:1.5">${copy.lead}</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">${copy.items.map(([title,text])=>`<article style="background:#fff;border:1px solid #e3e5e9;border-radius:14px;padding:16px"><b style="display:block;margin-bottom:7px;color:#5e4818">${title}</b><span style="color:#626c78;line-height:1.45">${text}</span></article>`).join('')}</div>`
+  block.innerHTML=`<h2 style="margin:0 0 8px;font-size:clamp(1.7rem,5vw,2.5rem)">${copy.title}</h2><p style="margin:0 0 18px;color:#5f6976;line-height:1.5">${copy.lead}</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">${copy.items.map(([title,text])=>`<article style="background:#fff;border:1px solid #e3e5e9;border-radius:14px;padding:16px"><b style="display:block;margin-bottom:7px;color:#5e4818">${title}</b><span style="color:#626c78;line-height:1.45">${text}</span></article>`).join('')}</div>`
 }
 
 function applyHeroCopy(){
