@@ -3,7 +3,7 @@ export async function getWorkspaceAccess(supabase){
   if(accessResult.error)return {access:null,upgrades:[],error:accessResult.error}
   const access=accessResult.data?.[0]||null
   const upgradesResult=await supabase.rpc('gold_available_upgrades')
-  return {access,upgrades:upgradesResult.data||[],error:upgradesResult.error||null}
+  return {access,upgrades:upgradesResult.data||[],error:null}
 }
 
 export async function loadWorkspaceBundle(supabase,ownerId){
@@ -21,10 +21,10 @@ export async function loadWorkspaceBundle(supabase,ownerId){
   const [cases,clients,documents,approvals,assessments,sourceStatus,auditRows,deletionRows,privacyRow]=results
   return {
     data:{cases:cases.data||[],clients:clients.data||[],documents:documents.data||[],approvals:approvals.data||[],assessments:assessments.data||[],sourceStatus:sourceStatus.data||[]},
-    audit: auditRows.data||[],
-    deletionRequests: deletionRows.data||[],
-    privacy: privacyRow.data||null,
-    error: results.find(result=>result.error)?.error||null
+    audit:auditRows.data||[],
+    deletionRequests:deletionRows.data||[],
+    privacy:privacyRow.data||null,
+    error:results.find(result=>result.error)?.error||null
   }
 }
 
@@ -38,7 +38,7 @@ export async function recordAuditEvent(supabase,{ownerId,eventType,metadata={},e
   const {error}=await supabase.rpc('record_gold_audit_event',{p_event_type:eventType,p_entity_type:entityType,p_entity_id:entityId,p_metadata:metadata})
   if(error)return {rows:null,error}
   const list=await supabase.from('audit_events').select('*').eq('owner_id',ownerId).order('created_at',{ascending:false}).limit(20)
-  return {rows:list.data||[],error:list.error||null}
+  return {rows:list.data||[],error:null}
 }
 
 export function listDeletionRequests(supabase,ownerId){
