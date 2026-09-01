@@ -59,6 +59,8 @@ export function ProblemNavigator(){
   const [voiceStarting,setVoiceStarting]=useState(false)
   const recognitionRef=useRef(null)
   const textRef=useRef(null)
+  const statusRef=useRef(null)
+  const resultRef=useRef(null)
   const profile=getProblemLanguageProfile(language)
   const c=profile.ui
 
@@ -86,13 +88,28 @@ export function ProblemNavigator(){
     return ()=>{bodyObserver?.disconnect();langObserver.disconnect()}
   },[])
 
-  const recommendation=useMemo(()=>result?recommend(value,profile):null,[result,value,profile])
+  const recommendation=useMemo(()=>result?recommend(result.value,profile):null,[result,profile])
   if(!host) return null
 
   function analyse(){
-    if(!value.trim()){setStatus(c.empty);setResult(null);return}
+    const currentValue=String(textRef.current?.value??value).trim()
+    if(!currentValue){
+      setStatus(c.empty)
+      setResult(null)
+      setTimeout(()=>statusRef.current?.scrollIntoView({behavior:'smooth',block:'nearest'}),0)
+      return
+    }
+    if(currentValue!==value)setValue(currentValue)
     setStatus('')
-    setResult(Date.now())
+    setResult({at:Date.now(),value:currentValue})
+    textRef.current?.blur()
+    setTimeout(()=>resultRef.current?.scrollIntoView({behavior:'smooth',block:'center'}),250)
+  }
+
+  function updateValue(nextValue){
+    setValue(nextValue)
+    setResult(null)
+    if(status)setStatus('')
   }
 
   async function voice(){
@@ -118,7 +135,7 @@ export function ProblemNavigator(){
       rec.onaudiostart=()=>setStatus(c.listening)
       rec.onresult=e=>{
         const spoken=Array.from(e.results).map(x=>x[0]?.transcript||'').join(' ').trim()
-        if(spoken){receivedText=true;setValue([base,spoken].filter(Boolean).join(base?' ':''))}
+        if(spoken){receivedText=true;updateValue([base,spoken].filter(Boolean).join(base?' ':''))}
       }
       rec.onerror=e=>{
         recognitionError=e?.error||'unknown'
@@ -157,15 +174,17 @@ export function ProblemNavigator(){
   return createPortal(<section id="asgold-problem-navigator-react" dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
-    <div style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
-    <textarea ref={textRef} value={value} onChange={e=>{setValue(e.target.value);setResult(null)}} rows={4} placeholder={c.placeholder} dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
-    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
-      <button type="button" onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting ? 0.7 : 1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[language]||voiceMessages.de).starting:c.voice}</button>
-      <button type="button" onClick={analyse} style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
-    </div>
-    {status&&<div role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
+    <div id="asgold-problem-input-help" style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
+    <form onSubmit={event=>{event.preventDefault();analyse()}} noValidate>
+      <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={c.title} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
+        <button type="button" onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting ? 0.7 : 1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[language]||voiceMessages.de).starting:c.voice}</button>
+        <button type="submit" aria-controls="asgold-problem-result" style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
+      </div>
+      {status&&<div id="asgold-problem-status" ref={statusRef} role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
+    </form>
 
-    {recommendation&&<article style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
+    {recommendation&&<article id="asgold-problem-result" ref={resultRef} tabIndex={-1} style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
       <small style={{display:'block',fontWeight:850,color:'#79601f',marginBottom:6}}>{c.recommendation}</small>
       <div style={{padding:'12px 13px',borderRadius:12,background:'#fff',border:'1px solid #ead69e',marginBottom:10}}>
         <span style={{display:'block',fontSize:'.78rem',fontWeight:800,color:'#707986',marginBottom:3}}>{c.caseLabel}</span>

@@ -28,6 +28,11 @@ expect(firstActionPos>=0&&navPos>firstActionPos&&introPos>navPos&&jumpPos>introP
 
 // Mobile input must be a stable controlled React textarea with explicit help.
 expect(navigator.includes('<textarea ref={textRef} value={value} onChange='),'problem input must remain a controlled textarea')
+expect(navigator.includes('onInput={event=>updateValue(event.currentTarget.value)}'),'mobile input events must update the problem text directly')
+expect(navigator.includes('<form onSubmit={event=>{event.preventDefault();analyse()}}'),'problem analysis must use a real form submission')
+expect(navigator.includes('textRef.current?.value??value'),'analysis must read the visible field value even while a mobile keyboard is composing text')
+expect(navigator.includes("textRef.current?.blur()"),'successful analysis must close the mobile keyboard')
+expect(navigator.includes("resultRef.current?.scrollIntoView"),'the recommendation must be brought into view after analysis')
 expect(navigator.includes('So funktioniert die Eingabe:'),'German input explanation is missing')
 expect(navigator.includes('inputHelp'),'multilingual input help is missing')
 expect((navigator.match(/id=\"asgold-problem-navigator-react\"/g)||[]).length===1,'problem navigator section must exist exactly once in component')
