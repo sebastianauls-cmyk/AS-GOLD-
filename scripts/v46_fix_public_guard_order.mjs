@@ -12,10 +12,9 @@ if(source.includes(assertion)){
   source=source.replace(layoutAnchor,layoutAnchor+assertion)
 }
 
-source=source.replace(
-  "assert.match(layout,/modules\\/public\\/ProblemNavigator/)\n",
-  "assert.match(publicLanding,/\\.\\/ProblemNavigator/)\n"
-)
+const staleNavigatorOwnership=String.raw`assert.match(layout,/modules\/public\/ProblemNavigator/)`+'\n'
+const directNavigatorOwnership=String.raw`assert.match(publicLanding,/\.\/ProblemNavigator/)`+'\n'
+source=source.replace(staleNavigatorOwnership,directNavigatorOwnership)
 
 fs.writeFileSync(path,source)
 console.log('V46 public-module guard ordering and ownership assertions verified.')
