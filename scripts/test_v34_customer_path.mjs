@@ -22,7 +22,7 @@ const titleCompatibility=read('app/components/HeroTitleStabilizer.js')
 const languages=read('app/modules/public/problemNavigatorLanguagesV36.mjs')
 const languagesCompatibility=read('app/lib/problemNavigatorLanguagesV36.mjs')
 
-expect((publicLanding.match(/<ProblemNavigator outputLanguage=\{outputLanguage\}/g)||[]).length===1,'ProblemNavigator must be rendered exactly once by PublicLanding with the customer/output language')
+expect((publicLanding.match(/<ProblemNavigator[^>]*outputLanguage=\{outputLanguage\}/g)||[]).length===1,'ProblemNavigator must be rendered exactly once by PublicLanding with the customer/output language')
 expect(!publicLanding.includes('customerModule={customerModule}'),'customer navigator must not be tunneled through the language module')
 expect(!languageModules.includes('asgold-customer-module-slot')&&!languageModules.includes('{customerModule}'),'language/output module must not own the problem navigator')
 expect(!languageModules.includes('createPortal')&&!languageModules.includes('MutationObserver'),'customer-language shell must not use DOM mounting enhancers')
@@ -31,7 +31,7 @@ expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not 
 
 const introPos=publicLanding.indexOf('<ProductIntroCompact language={outputLanguage}/>')
 const firstActionPos=publicLanding.indexOf('<V37FirstAction language={outputLanguage}')
-const problemPos=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
+const problemPos=publicLanding.indexOf('<ProblemNavigator ref={problemNavigatorRef} outputLanguage={outputLanguage}')
 const videoPos=publicLanding.indexOf('<ExplainerVideo key=')
 expect(introPos>=0&&firstActionPos>introPos&&problemPos>firstActionPos&&videoPos>problemPos,'hero order must remain explanation -> first action -> problem input -> optional video')
 expect(!layout.includes('V37FirstAction')&&!layout.includes('ProblemNavigator')&&!layout.includes('ExplainerVideo')&&!layout.includes('ProductIntroCompact'),'public hero modules must not be mounted globally')
@@ -56,7 +56,8 @@ expect((navigator.match(/id="asgold-problem-navigator-react"/g)||[]).length===1,
 expect(navigator.includes('data-customer-language={customerLanguage}'),'problem navigator must expose the selected customer language')
 expect(navigator.includes('getSpeechLocale(customerLanguage)'),'speech recognition must follow the customer language')
 expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document entry is missing from recommendation flow')
-expect(navigator.includes('focusSignal=0')&&navigator.includes('voiceSignal=0'),'first-action focus and speech must be explicit React signals')
+expect(navigator.includes('forwardRef(function ProblemNavigator')&&navigator.includes('useImperativeHandle(ref'),'first-action focus and speech must use a direct React ref handle')
+expect(publicLanding.includes('problemNavigatorRef.current?.speak()')&&publicLanding.includes('problemNavigatorRef.current?.focus()'),'first action must synchronously call the problem navigator ref')
 
 const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
 for(const code of supported){
@@ -78,4 +79,4 @@ expect(jump.includes('publicTop'),'case jump must account for the mobile header'
 expect(!jump.includes('addEventListener'),'case navigation must not install a global click listener')
 expect(!title.includes('MutationObserver')&&!title.includes('querySelector'),'hero title module must not patch the rendered DOM')
 
-console.log('V34 customer-path regression checks passed for direct modular public-language flow')
+console.log('V34 customer-path regression checks passed for direct modular public-language flow and synchronous microphone ref')
