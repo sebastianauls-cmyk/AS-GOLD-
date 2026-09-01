@@ -46,6 +46,8 @@ jobs:
         run: node scripts/v46_extract_public_landing.mjs
       - name: Replace global public DOM enhancers with direct React interactions
         run: node scripts/v46_direct_public_interactions.mjs
+      - name: Normalize public catalog exports
+        run: node scripts/v46_fix_public_catalog_exports.mjs
       - name: Embed public modules directly in PublicLanding
         run: node scripts/v46_embed_public_modules.mjs
       - name: Repair generated public-module guard order
