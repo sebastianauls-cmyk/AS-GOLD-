@@ -27,9 +27,9 @@ if(!video.includes('Weiblich') || !video.includes('Männlich')) throw new Error(
 if(!video.includes("setPresenter('female')") || !video.includes("setPresenter('male')")) throw new Error('V37 guard: presenter buttons are not interactive')
 
 const firstActionIndex=publicLanding.indexOf('<V37FirstAction language={language}')
-const problemIndex=publicLanding.indexOf('<ProblemNavigator language={language}')
-const videoIndex=publicLanding.indexOf('<ExplainerVideo language={language} openSignal={explainerSignal}/>')
+const problemIndex=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
+const videoIndex=publicLanding.indexOf('<ExplainerVideo key={`${language}-${explainerSignal}`} language={language} openSignal={explainerSignal}/>')
 const productIndex=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
-if(!(firstActionIndex>=0 && problemIndex>firstActionIndex && videoIndex>problemIndex && productIndex>videoIndex)) throw new Error('V37 guard: homepage priority order must be first action -> problem navigator -> optional video -> product details')
+if(!(firstActionIndex>=0 && problemIndex>firstActionIndex && videoIndex>problemIndex && productIndex>videoIndex)) throw new Error('V37 guard: homepage priority order must be first action -> customer-language problem navigator -> optional video -> product details')
 if(firstAction.includes('createPortal')||firstAction.includes('MutationObserver')||video.includes('createPortal')||video.includes('MutationObserver')) throw new Error('V37 guard: public modules must render directly without portal mount observers')
 console.log('V37 first-action regression checks passed')
