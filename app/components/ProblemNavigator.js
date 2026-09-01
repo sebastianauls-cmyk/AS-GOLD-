@@ -20,6 +20,18 @@ const inputHelp={
   bg:'Опишете проблема със свои думи. Не са нужни специални термини. Напишете какво се е случило и какво искате да постигнете – или го кажете с глас.'
 }
 const inputTitles={de:'So funktioniert die Eingabe:',en:'How to enter your problem:',fr:'Comment saisir votre problème :',tr:'Sorununuzu nasıl girersiniz:',pl:'Jak wpisać problem:',ru:'Как описать проблему:',ar:'كيفية إدخال المشكلة:',fa:'نحوه وارد کردن مشکل:',ro:'Cum introduceți problema:',bg:'Как да въведете проблема:'}
+const voiceMessages={
+  de:{starting:'Mikrofon wird aktiviert …',done:'Sprache wurde übernommen.',noSpeech:'Es wurde keine Sprache erkannt. Tippen Sie erneut auf das Mikrofon und sprechen Sie nach dem Startsignal.',audio:'Das Mikrofon ist auf diesem Gerät nicht verfügbar oder wird gerade von einer anderen App verwendet.',denied:'Der Mikrofonzugriff ist gesperrt. Öffnen Sie die App- bzw. Browser-Einstellungen, erlauben Sie das Mikrofon für AS Gold und versuchen Sie es erneut.',network:'Die Spracherkennung ist momentan nicht erreichbar. Bitte versuchen Sie es erneut oder verwenden Sie das Mikrofon Ihrer Tastatur.',insecure:'Die Spracheingabe benötigt eine sichere HTTPS-Verbindung.'},
+  en:{starting:'Activating microphone …',done:'Speech was added.',noSpeech:'No speech was recognized. Tap the microphone again and speak after it starts.',audio:'The microphone is unavailable or currently used by another app.',denied:'Microphone access is blocked. Allow the microphone for AS Gold in the app or browser settings, then try again.',network:'Speech recognition is temporarily unavailable. Try again or use your keyboard microphone.',insecure:'Voice input requires a secure HTTPS connection.'},
+  fr:{starting:'Activation du microphone …',done:'La dictée a été ajoutée.',noSpeech:'Aucune parole reconnue. Touchez de nouveau le microphone et parlez après le démarrage.',audio:'Le microphone est indisponible ou utilisé par une autre application.',denied:'L’accès au microphone est bloqué. Autorisez le microphone pour AS Gold dans les réglages de l’application ou du navigateur.',network:'La reconnaissance vocale est momentanément indisponible. Réessayez ou utilisez le microphone du clavier.',insecure:'La saisie vocale nécessite une connexion HTTPS sécurisée.'},
+  tr:{starting:'Mikrofon etkinleştiriliyor …',done:'Konuşma metne eklendi.',noSpeech:'Konuşma algılanmadı. Mikrofona yeniden dokunun ve başladıktan sonra konuşun.',audio:'Mikrofon kullanılamıyor veya başka bir uygulama tarafından kullanılıyor.',denied:'Mikrofon erişimi engellendi. Uygulama veya tarayıcı ayarlarından AS Gold için mikrofona izin verin.',network:'Ses tanıma şu anda kullanılamıyor. Yeniden deneyin veya klavye mikrofonunu kullanın.',insecure:'Sesli giriş için güvenli bir HTTPS bağlantısı gerekir.'},
+  pl:{starting:'Włączanie mikrofonu …',done:'Mowa została dodana.',noSpeech:'Nie rozpoznano mowy. Dotknij mikrofonu ponownie i zacznij mówić po uruchomieniu.',audio:'Mikrofon jest niedostępny lub używany przez inną aplikację.',denied:'Dostęp do mikrofonu jest zablokowany. Zezwól AS Gold na mikrofon w ustawieniach aplikacji lub przeglądarki.',network:'Rozpoznawanie mowy jest chwilowo niedostępne. Spróbuj ponownie lub użyj mikrofonu klawiatury.',insecure:'Wprowadzanie głosowe wymaga bezpiecznego połączenia HTTPS.'},
+  ru:{starting:'Микрофон включается …',done:'Речь добавлена.',noSpeech:'Речь не распознана. Нажмите микрофон ещё раз и говорите после запуска.',audio:'Микрофон недоступен или используется другим приложением.',denied:'Доступ к микрофону заблокирован. Разрешите микрофон для AS Gold в настройках приложения или браузера.',network:'Распознавание речи временно недоступно. Повторите попытку или используйте микрофон клавиатуры.',insecure:'Для голосового ввода требуется защищённое соединение HTTPS.'},
+  ar:{starting:'جارٍ تشغيل الميكروفون …',done:'تمت إضافة الكلام.',noSpeech:'لم يتم التعرف على كلام. اضغط على الميكروفون مرة أخرى وتحدث بعد بدء التشغيل.',audio:'الميكروفون غير متاح أو تستخدمه تطبيقات أخرى.',denied:'تم حظر الوصول إلى الميكروفون. اسمح لـ AS Gold باستخدامه من إعدادات التطبيق أو المتصفح ثم حاول مجددًا.',network:'التعرف على الكلام غير متاح مؤقتًا. حاول مجددًا أو استخدم ميكروفون لوحة المفاتيح.',insecure:'يتطلب الإدخال الصوتي اتصال HTTPS آمنًا.'},
+  fa:{starting:'میکروفون در حال فعال‌شدن است …',done:'گفتار به متن افزوده شد.',noSpeech:'گفتاری تشخیص داده نشد. دوباره روی میکروفون بزنید و پس از شروع صحبت کنید.',audio:'میکروفون در دسترس نیست یا برنامه دیگری از آن استفاده می‌کند.',denied:'دسترسی میکروفون مسدود است. در تنظیمات برنامه یا مرورگر، میکروفون را برای AS Gold مجاز کنید.',network:'تشخیص گفتار موقتاً در دسترس نیست. دوباره تلاش کنید یا از میکروفون صفحه‌کلید استفاده کنید.',insecure:'ورودی صوتی به اتصال امن HTTPS نیاز دارد.'},
+  ro:{starting:'Se activează microfonul …',done:'Textul dictat a fost adăugat.',noSpeech:'Nu a fost recunoscută nicio voce. Apăsați din nou microfonul și vorbiți după pornire.',audio:'Microfonul nu este disponibil sau este folosit de altă aplicație.',denied:'Accesul la microfon este blocat. Permiteți microfonul pentru AS Gold în setările aplicației sau browserului.',network:'Recunoașterea vocală este temporar indisponibilă. Încercați din nou sau folosiți microfonul tastaturii.',insecure:'Introducerea vocală necesită o conexiune HTTPS securizată.'},
+  bg:{starting:'Микрофонът се включва …',done:'Речта е добавена.',noSpeech:'Не е разпозната реч. Натиснете микрофона отново и говорете след стартирането.',audio:'Микрофонът не е наличен или се използва от друго приложение.',denied:'Достъпът до микрофона е блокиран. Разрешете микрофона за AS Gold в настройките на приложението или браузъра.',network:'Разпознаването на реч временно не е налично. Опитайте отново или използвайте микрофона на клавиатурата.',insecure:'Гласовото въвеждане изисква защитена HTTPS връзка.'}
+}
 
 function normalize(v){return String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
 function hits(text,arr){return arr.reduce((n,w)=>n+(text.includes(normalize(w))?1:0),0)}
@@ -44,6 +56,7 @@ export function ProblemNavigator(){
   const [status,setStatus]=useState('')
   const [result,setResult]=useState(null)
   const [listening,setListening]=useState(false)
+  const [voiceStarting,setVoiceStarting]=useState(false)
   const recognitionRef=useRef(null)
   const textRef=useRef(null)
   const profile=getProblemLanguageProfile(language)
@@ -82,23 +95,48 @@ export function ProblemNavigator(){
   }
 
   async function voice(){
+    const messages=voiceMessages[language]||voiceMessages.de
+    if(!window.isSecureContext){setStatus(messages.insecure);return}
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition
     if(!SpeechRecognition){setStatus(c.unsupported);textRef.current?.focus();return}
     if(listening&&recognitionRef.current){recognitionRef.current.stop();return}
     try{
-      if(navigator.mediaDevices?.getUserMedia){const stream=await navigator.mediaDevices.getUserMedia({audio:true});stream.getTracks().forEach(t=>t.stop())}
+      const permission=await navigator.permissions?.query?.({name:'microphone'}).catch(()=>null)
+      if(permission?.state==='denied'){setStatus(messages.denied);textRef.current?.focus();return}
+      setVoiceStarting(true)
+      setStatus(messages.starting)
       const rec=new SpeechRecognition()
       recognitionRef.current=rec
       rec.lang=getSpeechLocale(language)
       rec.interimResults=true
       rec.continuous=false
       const base=value.trim()
-      rec.onstart=()=>{setListening(true);setStatus(c.listening)}
-      rec.onresult=e=>{const spoken=Array.from(e.results).map(x=>x[0]?.transcript||'').join(' ').trim();setValue([base,spoken].filter(Boolean).join(base?' ':''))}
-      rec.onerror=e=>{setListening(false);setStatus(e?.error==='not-allowed'||e?.error==='service-not-allowed'?c.denied:c.unsupported)}
-      rec.onend=()=>setListening(false)
+      let receivedText=false
+      let recognitionError=''
+      rec.onstart=()=>{setVoiceStarting(false);setListening(true);setStatus(c.listening)}
+      rec.onaudiostart=()=>setStatus(c.listening)
+      rec.onresult=e=>{
+        const spoken=Array.from(e.results).map(x=>x[0]?.transcript||'').join(' ').trim()
+        if(spoken){receivedText=true;setValue([base,spoken].filter(Boolean).join(base?' ':''))}
+      }
+      rec.onerror=e=>{
+        recognitionError=e?.error||'unknown'
+        setVoiceStarting(false)
+        setListening(false)
+        if(recognitionError==='not-allowed'||recognitionError==='service-not-allowed')setStatus(messages.denied)
+        else if(recognitionError==='audio-capture')setStatus(messages.audio)
+        else if(recognitionError==='no-speech')setStatus(messages.noSpeech)
+        else if(recognitionError==='network')setStatus(messages.network)
+        else setStatus(c.unsupported)
+      }
+      rec.onend=()=>{
+        setVoiceStarting(false)
+        setListening(false)
+        recognitionRef.current=null
+        if(!recognitionError)setStatus(receivedText?messages.done:messages.noSpeech)
+      }
       rec.start()
-    }catch(e){setListening(false);setStatus(e?.name==='NotAllowedError'?c.denied:c.unsupported)}
+    }catch(e){setVoiceStarting(false);setListening(false);setStatus(e?.name==='NotAllowedError'?messages.denied:c.unsupported)}
   }
 
   function showCase(){
@@ -121,10 +159,10 @@ export function ProblemNavigator(){
     <div style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
     <textarea ref={textRef} value={value} onChange={e=>{setValue(e.target.value);setResult(null)}} rows={4} placeholder={c.placeholder} dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
     <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
-      <button type="button" onClick={voice} style={secondary}>{listening?'⏹':'🎙'} {listening?c.stop:c.voice}</button>
+      <button type="button" onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting ? 0.7 : 1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[language]||voiceMessages.de).starting:c.voice}</button>
       <button type="button" onClick={analyse} style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
     </div>
-    {status&&<small style={{display:'block',marginTop:8,color:'#6d7682'}}>{status}</small>}
+    {status&&<div role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
 
     {recommendation&&<article style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
       <small style={{display:'block',fontWeight:850,color:'#79601f',marginBottom:6}}>{c.recommendation}</small>

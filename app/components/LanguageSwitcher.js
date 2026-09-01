@@ -7,6 +7,7 @@ import { supportedLanguages } from '../lib/v30Languages.mjs'
 const flagComponents={AF,AE,BG,DE,FR,GB,IR,PL,RO,RU,SA,TR,US}
 
 const videoButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی',ro:'Videoclip explicativ',bg:'Обяснително видео'}
+const backButtonText={de:'← Zurück',en:'← Back',fr:'← Retour',tr:'← Geri',pl:'← Wstecz',ru:'← Назад',ar:'الرجوع →',fa:'بازگشت →',ro:'← Înapoi',bg:'← Назад'}
 
 function FlagSet({countryCodes=[],fallback='',className=''}){
   const supported=countryCodes.filter(code=>flagComponents[code])
@@ -16,34 +17,22 @@ function FlagSet({countryCodes=[],fallback='',className=''}){
   </div>
 }
 
-export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false}){
+export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false,publicPicker=false}){
   const [open,setOpen]=useState(false)
-  const [publicPicker,setPublicPicker]=useState(false)
   const [mobilePublic,setMobilePublic]=useState(false)
   const menuId=useId()
   const rootRef=useRef(null)
   const active=supportedLanguages.find(item=>item.key===value)||supportedLanguages[0]
+  const backLabel=backButtonText[value]||backButtonText.de
 
   useEffect(()=>{
-    const isPublic=Boolean(rootRef.current?.closest('.publicTop'))
-    setPublicPicker(isPublic)
-    if(!isPublic) return
+    if(!publicPicker) return
     const mq=window.matchMedia('(max-width: 560px)')
-    const apply=()=>{
-      setMobilePublic(mq.matches)
-      const parent=rootRef.current?.parentElement
-      if(parent?.classList?.contains('languageSwitch')){
-        parent.style.gridColumn=mq.matches?'1 / -1':''
-        parent.style.width=mq.matches?'100%':''
-        parent.style.minWidth='0'
-        parent.style.display=mq.matches?'flex':''
-        parent.style.justifyContent=mq.matches?'flex-start':''
-      }
-    }
+    const apply=()=>setMobilePublic(mq.matches)
     apply()
     mq.addEventListener?.('change',apply)
     return ()=>mq.removeEventListener?.('change',apply)
-  },[])
+  },[publicPicker])
 
   useEffect(()=>{
     if(!open) return
@@ -78,7 +67,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         onClick={()=>setOpen(current=>!current)}
         style={{display:'inline-flex',alignItems:'center',justifyContent:'flex-start',gap:'9px',width:'auto',minWidth:mobilePublic?'150px':0,minHeight:'46px',padding:'8px 11px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#fff',color:'#2f291b',fontWeight:850,boxShadow:'0 4px 14px rgba(27,31,37,.10)',maxWidth:'100%'}}
       >
-        <div style={{display:'inline-flex',alignItems:'center',gap:'9px',minWidth:0}}><FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong style={{display:'inline-block',fontSize:'.9rem',whiteSpace:'nowrap'}}>{label}</strong></div>
+        <div style={{display:'inline-flex',alignItems:'center',gap:'9px',minWidth:0}}><FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><span style={{display:'grid',textAlign:'left',lineHeight:1.15}}><small style={{fontSize:'.68rem',color:'#6b6250'}}>{label}</small><strong style={{display:'inline-block',fontSize:'.9rem',whiteSpace:'nowrap'}}>{active.label}</strong></span></div>
         <b aria-hidden="true" style={{fontSize:'.8rem',flex:'0 0 auto',marginLeft:'2px'}}>{open?'▴':'▾'}</b>
       </button>
       <button type="button" onClick={showExplainer} style={{minHeight:'46px',padding:'8px 12px',border:'1px solid #c9ad66',borderRadius:'12px',background:'#2f291b',color:'#fff',fontWeight:850,boxShadow:'0 4px 14px rgba(27,31,37,.10)',whiteSpace:'nowrap'}}>▶ {explainerLabel}</button>
@@ -91,9 +80,9 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
         <button
           type="button"
           onClick={()=>setOpen(false)}
-          aria-label="Zurück"
+          aria-label={backLabel.replace(/^←\s*|\s*→$/g,'')}
           style={{display:'flex',alignItems:'center',justifyContent:'flex-start',width:'100%',minHeight:'46px',padding:'9px 11px',borderRadius:'10px',border:'1px solid #c9ad66',background:'#2f291b',color:'#fff',fontWeight:900,textAlign:'left',position:'sticky',top:0,zIndex:2}}
-        >← Zurück</button>
+        >{backLabel}</button>
         {supportedLanguages.map(item=><button
           type="button"
           role="option"
@@ -114,6 +103,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
       <FlagSet countryCodes={active.countryCodes} fallback={active.flags} className="flagLanguageActive"/><strong>{active.label}</strong><span className="flagLanguageChevron" aria-hidden="true">⌄</span>
     </button>
     {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
+      <button type="button" className="flagLanguageMenuBack" onClick={()=>setOpen(false)} aria-label={backLabel.replace(/^←\s*|\s*→$/g,'')}>{backLabel}</button>
       {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}><span className="flagLanguageOptionMain"><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span className="flagLanguageName">{item.label}</span></span><small>{item.short}</small></button>)}
     </div>}
   </div>

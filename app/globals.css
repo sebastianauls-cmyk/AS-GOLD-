@@ -143,6 +143,39 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .flagLanguageName{overflow:hidden;color:#27303b;font-weight:800;text-overflow:ellipsis;white-space:nowrap}
 .flagLanguageMenu button small{min-width:31px;padding:4px 6px;border-radius:7px;background:#eceff2;text-align:center}
 .flagLanguageMenu button.active small{background:#eadcae;color:#594412}
+.flagLanguageMenu .flagLanguageMenuBack{position:sticky;top:0;z-index:3;justify-content:flex-start;border-color:#c9ad66;background:#2f291b;color:#fff;font-weight:900}
+.flagLanguageMenu .flagLanguageMenuBack:hover{border-color:#c9ad66;background:#453a20}
+
+/* V50: both language controls and a real back action remain visible on public pages. */
+.publicTop .nav{gap:18px;padding-top:10px;padding-bottom:10px}
+.publicLanguageStack{display:grid;gap:7px;min-width:min(100%,310px);padding:9px 10px;border:1px solid #d9c792;border-radius:14px;background:#fffdf7}
+.publicLanguageRow{display:grid;grid-template-columns:minmax(120px,1fr) auto;align-items:center;gap:10px}
+.publicLanguageRow>span{color:#443817;font-size:.78rem;font-weight:850;line-height:1.25}
+.publicLanguageRow .flagLanguageTrigger{justify-self:end}
+.publicNavActions{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap}
+.publicBackBtn{white-space:nowrap}
+.legalMarketBar [data-output-language-status]{white-space:nowrap}
+
+@media(max-width:900px){
+  .publicTop .nav{display:grid;grid-template-columns:1fr;align-items:stretch}
+  .publicTop .brand{justify-content:center}
+  .publicLanguageStack{width:100%;min-width:0}
+  .publicNavActions{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+  .publicNavActions>*{width:100%;min-width:0;min-height:44px;display:grid;place-items:center;text-align:center}
+}
+
+@media(max-width:560px){
+  .publicTop .nav nav.publicNavActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+  .publicTop .nav nav.publicNavActions>a{display:grid}
+  .publicTop .nav nav.publicNavActions>button{grid-column:auto}
+  .publicLanguageRow{grid-template-columns:1fr;align-items:stretch}
+  .publicLanguageRow .flagLanguage,.publicLanguageRow .flagLanguagePublicPicker{width:100%!important}
+  .publicLanguageRow .flagLanguageTrigger{width:100%;justify-content:space-between}
+  .publicLanguageRow .flagLanguagePublicPicker>button:first-child{flex:1;min-width:0!important}
+  .publicLanguageRow .flagLanguagePublicPicker>button:nth-child(2){flex:1}
+  .publicNavActions .publicBackBtn{grid-column:1}
+  .legalMarketBar [data-output-language-status]{white-space:normal}
+}
 
 @media(max-width:760px){
   .appTop{display:grid;grid-template-columns:1fr;align-items:stretch;gap:9px;padding-top:10px;padding-bottom:10px}
