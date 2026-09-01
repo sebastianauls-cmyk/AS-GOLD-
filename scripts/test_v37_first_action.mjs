@@ -28,7 +28,7 @@ if(!video.includes("setPresenter('female')") || !video.includes("setPresenter('m
 
 const firstActionIndex=publicLanding.indexOf('<V37FirstAction language={language}')
 const problemIndex=publicLanding.indexOf('<ProblemNavigator language={language}')
-const videoIndex=publicLanding.indexOf('<ExplainerVideo language={language}/>')
+const videoIndex=publicLanding.indexOf('<ExplainerVideo language={language} openSignal={explainerSignal}/>')
 const productIndex=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
 if(!(firstActionIndex>=0 && problemIndex>firstActionIndex && videoIndex>problemIndex && productIndex>videoIndex)) throw new Error('V37 guard: homepage priority order must be first action -> problem navigator -> optional video -> product details')
 if(firstAction.includes('createPortal')||firstAction.includes('MutationObserver')||video.includes('createPortal')||video.includes('MutationObserver')) throw new Error('V37 guard: public modules must render directly without portal mount observers')
