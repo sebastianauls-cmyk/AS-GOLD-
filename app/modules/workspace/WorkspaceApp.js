@@ -10,9 +10,8 @@ import { ui } from '../public/publicUi'
 import { passwordUi } from '../auth/passwordUi'
 import { ProtectedWorkspaceShell } from './ProtectedWorkspaceShell'
 import { LoadingSurface } from './LoadingSurface'
-import { AppLogo } from './AppLogo'
-import { PasswordField } from '../auth/PasswordField'
 import { AuthSurface } from '../auth/AuthSurface'
+import { PublicLanding } from '../public/PublicLanding'
 import { emptyData, emptyCase, sectionNames } from './stateConfig'
 import { launchTrustText, serverControlText, accessPendingMessages } from '../compliance/workspaceControlText'
 import { notices, dashboardGuide, transparencyText, caseDiscoveryText, publicAudienceText, testerLinkText } from '../public/catalog'
@@ -20,10 +19,8 @@ import { terms, plans, planJourney, planText, journeyLabels, recommendationText,
 import { CaseDetail, CaseSection, DocumentDetail, DocumentSection, QuickActions, getV24Copy } from './components/V24Workspace'
 import { ApprovalDetail, ApprovalSection, getV25ApprovalCopy } from './components/V25ApprovalWorkflow'
 import { getV26AnalysisCopy } from './components/V26DocumentAnalysis'
-import { LegalFooter } from './components/LegalFooter'
-import { LanguageSwitcher } from './components/LanguageSwitcher'
-import { LegalAcceptance, PRIVACY_NOTICE_VERSION, RegistrationLegalFields, TERMS_VERSION, getV28PrivacyCopy } from './components/V28PrivacyControls'
-import { PasswordPolicyChecklist, getV29PasswordCopy, validateV29Password } from './components/V29PasswordPolicy'
+import { LegalAcceptance, PRIVACY_NOTICE_VERSION, TERMS_VERSION, getV28PrivacyCopy } from './components/V28PrivacyControls'
+import { getV29PasswordCopy, validateV29Password } from './components/V29PasswordPolicy'
 import { PromoCodeControl } from './components/PromoCodeControl'
 import { localeForLanguage, pageTranslations, rtlLanguages, supportedLanguages } from './lib/v30Languages.mjs'
 import { promoTranslations } from './lib/v31PromoTranslations.mjs'
@@ -686,97 +683,5 @@ export default function Home(){
       :<><div className="sectionHead"><button className="backBtn" onClick={()=>setSection('dashboard')}>{a.backOverview}</button><h2>{a.sections[section]}</h2></div>{section==='clients'&&<><button className="primary actionBtn" onClick={()=>setShowClientForm(v=>!v)}>{showClientForm?a.cancel:a.addClient}</button>{showClientForm&&<form className="actionCard" onSubmit={createClient}><label>{a.name}<input value={newClient.name} onChange={e=>setNewClient({...newClient,name:e.target.value})} required/></label><label>{a.email}<input type="email" value={newClient.email} onChange={e=>setNewClient({...newClient,email:e.target.value})}/></label><label>{a.phone}<input value={newClient.phone} onChange={e=>setNewClient({...newClient,phone:e.target.value})}/></label><label>{a.note}<textarea value={newClient.notes} onChange={e=>setNewClient({...newClient,notes:e.target.value})}/></label><button className="primary full">{a.saveClient}</button></form>}</>}{section==='documents'&&<form className="actionCard" onSubmit={uploadDocument}><h3>{a.uploadDoc}</h3>{access?.app_role!=='owner'&&Number(access?.permissions?.document_limit||0)>0&&<p className="muted">{a.used.replace('{used}',data.documents.length).replace('{limit}',access.permissions.document_limit)}</p>}<label>{a.file}<input name="file" type="file" accept={allowedUploadAccept} required/></label><small className="authHelp">{uui.testLimit}</small><label>{a.case}<select name="case_id"><option value="">{a.withoutCase}</option>{data.cases.map(c=><option value={c.id} key={c.id}>{c.title}</option>)}</select></label><label>{v28.classification}<select name="data_classification" defaultValue="" required><option value="" disabled>—</option><option value="synthetic">{v28.synthetic}</option><option value="anonymized">{v28.anonymized}</option></select></label><label className="documentPrivacyConfirm"><input name="test_data_confirmed" type="checkbox" required/><span>{v28.uploadConfirm}</span></label><button className="primary full" disabled={uploading}>{uploading?a.uploading:a.uploadDoc}</button></form>}{data[section].length?<div className="itemList">{data[section].map((item,i)=>section==='cases'?<button className="itemRow buttonRow" onClick={()=>setSelectedCase(item)} key={item.id||i}><div><b>{item.title||a.case}</b><div className="pills"><span className="pill">{statusLabel(item.status)}</span><span className={`pill ${item.traffic_light||''}`}>{lightLabel(item.traffic_light)}</span></div></div><span className="chev">›</span></button>:section==='clients'?<button className="itemRow buttonRow" onClick={()=>setSelectedClient(item)} key={item.id||i}><div><b>{item.name}</b>{item.email&&<p>{item.email}</p>}</div><span className="chev">›</span></button>:section==='documents'?<article className="itemRow documentRow" key={item.id||i}><button className="documentOpen" onClick={()=>openDocument(item)}><div><b>{item.title}</b></div><span className="chev">›</span></button><div className="miniExport"><select defaultValue="pdf"><option value="pdf">PDF</option><option value="docx">Word</option><option value="xlsx">Excel</option><option value="pptx">PowerPoint</option><option value="csv">CSV</option><option value="txt">Text</option></select><button className="secondary" onClick={e=>doExport({kind:'document',item},e.currentTarget.previousElementSibling?.value||'pdf')}>{a.export}</button></div></article>:<article className="itemRow" key={item.id||i}><b>{item.title||item.subject||item.id}</b></article>)}</div>:<div className="emptyState"><b>{a.noneYet.replace('{section}',a.sections[section].toLowerCase())}</b><p>{section==='clients'?a.firstClient:section==='documents'?a.firstDoc:a.appearsHere}</p></div>}</>}</>)
   }
 
-  return <>
-    <header className="publicTop">
-      <div className="wrap nav">
-        <div className="brand"><AppLogo/><b>AS Gold</b></div>
-        <nav>
-          <div className="languageSwitch"><span>{t.language}</span><LanguageSwitcher value={language} onChange={setLanguage} label={t.language}/></div>
-          <a href="#fallarten">{cd.nav}</a>
-          <a href="#preise">{t.prices}</a>
-          <button className="secondary" onClick={()=>setScreen('register')}>{t.register}</button>
-          <button className="primary" onClick={()=>setScreen('login')}>{t.login}</button>
-        </nav>
-      </div>
-    </header>
-    <main>
-      <div className="legalMarketBar">
-        <div className="wrap">
-          <b>{t.legal}</b><span>{t.marketNote}</span>
-          <label>{t.outputLanguage}<LanguageSwitcher value={outputLanguage} onChange={setOutputLanguage} label={t.outputLanguage}/></label>
-        </div>
-      </div>
-
-      <section className="hero">
-        <div className="wrap heroLayout">
-          <div>
-            <div className="eyebrow">{a.eyebrow}</div>
-            <h1>{t.hero}</h1>
-            <p className="lead">{t.lead}</p>
-            <div className="actions">
-              <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
-              <button className="secondary btn" onClick={()=>setScreen('register')}>{t.freeCta}</button>
-            </div>
-            <p className="freeHint">✓ {cd.freeHint}</p>
-            <a className="testerSafeLink" href="/testen">{testerLinkText[language]||testerLinkText.de} →</a>
-          </div>
-          <aside className="heroOutcome" aria-label={cd.result}>
-            <span className="modeBadge">{cd.result}</span>
-            <ol>{cd.results.slice(0,3).map(item=><li key={item}>{item}</li>)}</ol>
-          </aside>
-        </div>
-      </section>
-
-      <section id="fallarten" className="caseDiscovery section">
-        <div className="wrap">
-          <div className="caseIntro"><div className="eyebrow">{cd.eyebrow}</div><h2>{cd.title}</h2><p className="lead">{cd.lead}</p></div>
-          <div className="audienceStrip" aria-label={pa.label}><b>{pa.label}</b><div>{pa.items.map(item=><span key={item}>✓ {item}</span>)}</div></div>
-          <div className="caseChooser" aria-label={cd.title}>
-            {cd.cases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>setSelectedPublicCase(item.key)} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
-          </div>
-          <article className="caseResult" aria-live="polite">
-            <div className="caseResultTitle"><span>{String(cd.cases.findIndex(item=>item.key===activePublicCase.key)+1).padStart(2,'0')}</span><div><small>{cd.typical}</small><h3>{activePublicCase.title}</h3></div></div>
-            <div className="caseResultGrid">
-              <div><b>{cd.typical}</b><p>{activePublicCase.examples}</p></div>
-              <div><b>{cd.support}</b><p>{activePublicCase.help}</p></div>
-              <div className="caseDeliverables"><b>{cd.result}</b><ul>{cd.results.map(item=><li key={item}>✓ {item}</li>)}</ul></div>
-            </div>
-            <button className="primary btn" onClick={()=>setScreen('register')}>{cd.start}</button>
-            <p className="scopeNote">{pa.scope}</p>
-          </article>
-
-          <div className="processBlock">
-            <h3>{cd.stepsTitle}</h3>
-            <div className="processSteps">{cd.steps.map(([number,title,description])=><article key={number}><span>{number}</span><div><b>{title}</b><p>{description}</p></div></article>)}</div>
-          </div>
-        </div>
-      </section>
-
-      <section className="transparencyHero">
-        <div className="wrap">
-          <div className="eyebrow">{tt.eyebrow}</div><h2>{tt.title}</h2><p className="lead">{tt.lead}</p>
-          <details className="transparencyDetails">
-            <summary>{cd.transparencyDetails}</summary>
-            <div className="transparencyGrid">{tt.items.map(([h,d])=><article className="transparencyCard" key={h}><span className="checkMark">✓</span><div><h3>{h}</h3><p>{d}</p></div></article>)}</div>
-          </details>
-        </div>
-      </section>
-
-      <section className="section">
-        <div className="wrap"><h2>{a.whatDoes}</h2><div className="capGrid">{a.caps.map(([title,description])=><article className="capCard" key={title}><h3>{title}</h3><p>{description}</p></article>)}</div></div>
-      </section>
-
-      <section id="preise" className="section alt">
-        <div className="wrap">
-          <div className="eyebrow">{a.pricingEyebrow}</div><h2>{a.pricingTitle}</h2><p className="lead pricingLead">{a.pricingLead}</p>
-          <div className="levelGuide"><div><h3>{jl.choose}</h3><p>{jl.chooseLead}</p></div><div className="levelScale"><span>{jl.less}</span><div className="levelTrack">{localizedPlans.map(p=><a key={p.key} href={`#plan-${p.key}`} title={p.stage}>{p.level}</a>)}</div><span>{jl.more}</span></div></div>
-          <div className="publicRecommendation"><div><h3>{rt.title}</h3><p>{rt.lead}</p></div><select className="goalSelect" value={selectedGoal} onChange={e=>{setSelectedGoal(e.target.value);setShowRecommendation(true)}}><option value="" disabled>{rt.chooseGoal}</option>{rt.goals.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select>{showRecommendation&&<div className="recommendationResult"><div><span className="tierBadge">{rt.recommended}</span><b>{recommendedPlan.stage} · {recommendedPlan.name}</b><p>{recommendedTier==='free'?rt.freeNote:recommendedPlan.expectation}</p></div><a className="secondary btn" href={`#plan-${recommendedTier}`}>{rt.showBenefit}</a></div>}</div>
-          <div className="prices">{localizedPlans.map(p=><article id={`plan-${p.key}`} className={`priceCard tier-${p.level}`} key={p.name}><div className="tierBadge">{p.stage}</div><h3 className="tierHeadline">{p.headline}</h3><div className="priceHead"><span>{p.name}</span><strong>{eur(p.price)}<small>{p.key==='free'?period.once:period.d30}</small></strong></div><div className="journeyBox"><div><b>{jl.knowledge}</b><p>{p.knowledge}</p></div><div><b>{jl.expectation}</b><p>{p.expectation}</p></div></div><p className="planAudience"><b>{a.suitable}</b> {p.audience}</p><div className="planDetail"><b>{a.whatDone}</b><p>{p.checks}</p></div><div className="planDetail"><b>{a.yourResult}</b><p>{p.result}</p></div><div className="planDetail excluded"><b>{a.notIncluded}</b><p>{p.excluded}</p></div><button className="secondary btn full" onClick={()=>setScreen('register')}>{p.key==='free'?a.registerFree:a.testRegister}</button></article>)}</div>
-          <div className="termPublic"><h3>{a.longTerms}</h3><div className="publicTermGrid">{terms.map(term=><div className="publicTerm" key={term.months}><b>{monthsLabel(term.months)}</b><span>{term.discount?a.discount.replace('{discount}',term.discount):a.noDiscount}</span></div>)}</div><p>{a.termInfo}</p></div>
-          <div className="priceTransparency"><h3>{a.noSubscription}</h3><p>{a.renewInfo}</p><p>{a.upgradeFair}</p><p>{a.pauseInfo}</p><p className="testNotice"><b>{a.currentTest}</b> {a.currentTestInfo}</p></div>
-        </div>
-      </section>
-    </main>
-    <LegalFooter language={language}/>
-  </>
+  return <PublicLanding t={t} a={a} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={setScreen} cd={cd} testerLinkText={testerLinkText} pa={pa} activePublicCase={activePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={tt} jl={jl} localizedPlans={localizedPlans} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} recommendedTier={recommendedTier} eur={eur} period={period} terms={terms} monthsLabel={monthsLabel}/>
 }

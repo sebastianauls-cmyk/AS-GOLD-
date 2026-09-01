@@ -8,6 +8,7 @@ const video=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8')
 const firstActionCompatibility=fs.readFileSync('app/components/V37FirstAction.js','utf8')
 const videoCompatibility=fs.readFileSync('app/components/ExplainerVideo.js','utf8')
 const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')
+const publicLanding=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')
 
 const need=(source,needle,label)=>{if(!source.includes(needle)) throw new Error(`V37 readiness: missing ${label}`)}
 
@@ -24,8 +25,8 @@ need(firstAction,'asgold-problem-navigator-react','problem target')
 need(firstActionCompatibility,'../modules/public/V37FirstAction','first-action compatibility adapter')
 need(videoCompatibility,'../modules/public/ExplainerVideo','explainer compatibility adapter')
 
-need(page,"setScreen('register')",'registration path')
-need(page,"setScreen('login')",'login path')
+need(publicLanding,"setScreen('register')",'registration path in public module')
+need(publicLanding,"setScreen('login')",'login path in public module')
 for(const key of ['backOverview','backCases','backClients']) need(page,key,`back navigation ${key}`)
 need(authSurface,'backExplanation','back navigation backExplanation in auth module')
 need(page,'functionErrorMessage','analysis error normalization')

@@ -11,6 +11,7 @@ const problemCompatibility=fs.readFileSync('app/components/ProblemNavigator.js',
 const analysisService=fs.readFileSync('app/modules/services/documentAnalysis.js','utf8')
 const uploadConfig=fs.readFileSync('app/modules/documents/uploadConfig.js','utf8')
 const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')
+const publicLanding=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')
 
 const mustContain=(source,needle,label)=>{
   if(!source.includes(needle)) throw new Error(`V37 E2E guard: missing ${label}: ${needle}`)
@@ -29,8 +30,8 @@ mustContain(firstAction,'Beispiel ansehen','sample CTA')
 mustContain(problem,'analyse()','problem analysis trigger')
 mustContain(problem,'recommendation','first recommendation result')
 
-mustContain(page,"setScreen('register')",'registration route')
-mustContain(page,"setScreen('login')",'login route')
+mustContain(publicLanding,"setScreen('register')",'registration route in public module')
+mustContain(publicLanding,"setScreen('login')",'login route in public module')
 mustContain(page,'signInWithPassword','password login')
 mustContain(page,'auth.signUp','registration action')
 

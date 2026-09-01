@@ -88,3 +88,5 @@ The workspace controller now delegates repeated shell markup to explicit compone
 - `auth/AuthSurface.js`: login and registration composition; the workspace controller supplies state and handlers only.
 
 - `workspace/LoadingSurface.js`: isolated loading state. The protected application has a single shell owner in `ProtectedWorkspaceShell.js`.
+
+- `public/PublicLanding.js`: complete public landing, case-discovery, transparency and pricing composition.

@@ -52,6 +52,7 @@ for(const path of [
   'app/modules/integrations/IntegrationHub.js',
   'app/modules/services/officeExports.js',
   'app/modules/services/supabaseClient.js',
+  'app/modules/services/documentAnalysis.js',
   'app/modules/services/documentAnalysis.js'
 ]) exists(path)
 
@@ -65,6 +66,11 @@ assert.match(workspace,/DocumentSection/)
 assert.match(workspace,/doExport/)
 assert.match(workspace,/\.\.\/services\/supabaseClient/)
 assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
+assert.doesNotMatch(workspace,/const supabase = createClient\(/)
+assert.match(workspace,/invokeDocumentAnalysis/)
+assert.match(workspace,/\.\.\/services\/supabaseClient/)
+assert.match(workspace,/\.\.\/services\/documentAnalysis/)
 assert.match(workspace,/\.\.\/documents\/uploadConfig/)
 assert.match(workspace,/\.\.\/auth\/passwordUi/)
 assert.match(workspace,/\.\.\/public\/publicUi/)
@@ -74,6 +80,9 @@ assert.match(workspace,/\.\.\/public\/catalog/)
 assert.match(workspace,/\.\.\/compliance\/workspaceControlText/)
 assert.match(workspace,/\.\/stateConfig/)
 assert.match(workspace,/ProtectedWorkspaceShell/)
+assert.match(workspace,/LoadingSurface/)
+assert.doesNotMatch(workspace,/<header className=\"appTop\">/)
+assert.match(read('app/modules/workspace/ProtectedWorkspaceShell.js'),/<header className=\"appTop\">/)
 assert.match(workspace,/LoadingSurface/)
 assert.match(workspace,/AuthSurface/)
 assert.match(workspace,/PublicLanding/)
@@ -192,3 +201,7 @@ for(const path of [
 ]) assert.ok(read(path).length<140,`${path} should be a thin compatibility adapter`)
 
 console.log('V46 modular-boundary guard passed: thin root entry, extracted public/auth/workspace surfaces, domain-owned catalogs and services, direct output-language flow, single language-menu back control, tester lock and thin compatibility adapters verified.')
+
+assert.match(read('app/modules/auth/AuthSurface.js'),/backExplanation/)
+assert.match(read('app/modules/auth/AuthSurface.js'),/lt\.passwordReset/)
+assert.match(workspace,/lt=\{lt\}/)

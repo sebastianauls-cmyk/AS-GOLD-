@@ -141,3 +141,12 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Der bisherige zweite Header/Footer-Pfad im allgemeinen App-Rendering wurde entfernt; alle geschützten Ansichten laufen durch dieselbe Shell.
 - `workspace/LoadingSurface.js` besitzt den Ladebildschirm separat.
 - Damit können Navigations- und Sprachänderungen nicht mehr versehentlich nur einen von zwei parallelen App-Rahmen verändern.
+
+
+### V46 Öffentliche Oberfläche
+
+- `public/PublicLanding.js` besitzt jetzt die komplette öffentliche Start-, Fallarten-, Transparenz- und Preisoberfläche.
+- `WorkspaceApp.js` liefert nur noch Zustand, abgeleitete Daten und Aktionen an diese Oberfläche.
+- Sprache, Ausgabesprache und Footer werden in der öffentlichen Modulgrenze direkt aus den kanonischen Sprach-/Compliance-Modulen komponiert.
+- Öffentliche Markup-Änderungen können damit unabhängig von Authentifizierung und geschütztem Workspace erfolgen.
+- V37-End-to-End- und Readiness-Guards folgen Registrierungs-/Login-Routen jetzt bis in das Public-Modul.
