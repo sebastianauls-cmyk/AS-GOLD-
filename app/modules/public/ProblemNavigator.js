@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from './problemNavigatorLanguagesV36.mjs'
 import { caseFrequencyWeight } from './casePriorityV56.mjs'
 import { jumpToPublicCaseResult } from './caseNavigation'
@@ -51,7 +51,7 @@ function recommend(value,profile){
   return {caseKey,planKey,reason:profile.reasons[planKey]||profile.reasons.start}
 }
 
-export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,voiceSignal=0,focusSignal=0}){
+export const ProblemNavigator=forwardRef(function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,voiceSignal=0,focusSignal=0},ref){
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
   const [result,setResult]=useState(null)
@@ -137,6 +137,17 @@ export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,vo
     }
   }
 
+  useImperativeHandle(ref,()=>({
+    speak(){
+      rootRef.current?.scrollIntoView({behavior:'smooth',block:'center'})
+      voice()
+    },
+    focus(){
+      rootRef.current?.scrollIntoView({behavior:'smooth',block:'center'})
+      textRef.current?.focus()
+    }
+  }))
+
   useEffect(()=>{
     if(voiceSignal<=0)return
     rootRef.current?.scrollIntoView({behavior:'smooth',block:'center'})
@@ -182,4 +193,4 @@ export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,vo
     </article>}
     <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid #ece7d8'}}><a href="#fallarten" style={secondary}>{c.back}</a></div>
   </section>
-}
+})
