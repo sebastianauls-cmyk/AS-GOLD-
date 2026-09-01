@@ -39,15 +39,13 @@ function portExplainer(){
   const path='app/modules/public/ExplainerVideo.js'
   let source=read(path)
   source=source.replace("de:'/videos/as-gold-v35-de.mp4'","de:'/videos/as-gold-explainer-de-female.mp4'")
-  if(!source.includes('const maleLocalVideos=')){
-    source=source.replace("const femaleRemoteVideos={","const maleLocalVideos={de:'/videos/as-gold-explainer-de-male.mp4'}\n\nconst femaleRemoteVideos={")
-  }
+  if(!source.includes('const maleLocalVideos=')) source=source.replace("const femaleRemoteVideos={","const maleLocalVideos={de:'/videos/as-gold-explainer-de-male.mp4'}\n\nconst femaleRemoteVideos={")
   source=source.replace("export function ExplainerVideo({language='de'}){","export function ExplainerVideo({language='de',openSignal=0}){")
   if(!source.includes('if(openSignal>0)setOpen(true)')) source=source.replace("  useEffect(()=>{localStorage.setItem('asgold-video-presenter',presenter)},[presenter])","  useEffect(()=>{localStorage.setItem('asgold-video-presenter',presenter)},[presenter])\n  useEffect(()=>{if(openSignal>0)setOpen(true)},[openSignal])")
   if(!source.includes('const maleLocal=')) source=source.replace("  const maleRemote=maleRemoteVideos[videoLanguage]||maleRemoteVideos.de","  const maleLocal=maleLocalVideos[videoLanguage]\n  const maleRemote=maleRemoteVideos[videoLanguage]||maleRemoteVideos.de")
   const oldVideo="<video key={`${videoLanguage}-${presenter}`} controls playsInline preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>{presenter==='female'&&<source src={femaleLocal} type='video/mp4'/>}<source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>{presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}{c.loading}</video>"
   const newVideo="<video key={`${videoLanguage}-${presenter}`} controls playsInline preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>{presenter==='female'&&<source src={femaleLocal} type='video/mp4'/>}{presenter==='male'&&maleLocal&&<source src={maleLocal} type='video/mp4'/>}<source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>{presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}{c.loading}</video>"
-  if(source.includes(oldVideo))source=source.replace(oldVideo,newVideo)
+  if(source.includes(oldVideo)) source=source.replace(oldVideo,newVideo)
   must(source.includes('as-gold-explainer-de-female.mp4'),'V50 port: female explainer file missing')
   must(source.includes('as-gold-explainer-de-male.mp4'),'V50 port: male explainer file missing')
   write(path,source)
@@ -63,12 +61,44 @@ function portCss(){
 
 function verifyMicrophone(){
   const source=read('app/modules/public/ProblemNavigator.js')
-  for(const token of ['navigator.permissions','rec.onaudiostart','aria-live="polite"','voiceStarting'])must(source.includes(token),'V50 port: microphone marker missing: '+token)
+  for(const token of ['navigator.permissions','rec.onaudiostart','aria-live="polite"','voiceStarting']) must(source.includes(token),'V50 port: microphone marker missing: '+token)
   must(!source.includes('getUserMedia'),'V50 port: direct getUserMedia preflight must remain removed')
+}
+
+function portV36Guard(){
+  const path='scripts/test_v36_explainer_video.mjs'
+  let source=read(path)
+  source=source.replace(
+    "  assert.match(femaleLocalBlock,new RegExp(`\\\\b${language}:'/videos/as-gold-v35-${language}\\\\.mp4'`),`missing local female video for ${language}`)",
+    "  const expectedLocal=language==='de'?'/videos/as-gold-explainer-de-female.mp4':`/videos/as-gold-v35-${language}.mp4`\n  assert.ok(femaleLocalBlock.includes(`${language}:'${expectedLocal}'`),`missing local female video for ${language}`)"
+  )
+  source=source.replace(
+    "assert.equal((femaleLocalBlock.match(/\\/videos\\/as-gold-v35-[a-z]{2}\\.mp4/g)||[]).length,expectedLanguages.length,'local female catalog must contain exactly ten videos')",
+    "assert.equal((femaleLocalBlock.match(/\\/videos\\/as-gold-v35-[a-z]{2}\\.mp4/g)||[]).length,expectedLanguages.length-1,'nine translated local female videos must remain in the v35 catalog')\nassert.match(explainerSource,/as-gold-explainer-de-female\\.mp4/,'current German female explainer must remain available')\nassert.match(explainerSource,/as-gold-explainer-de-male\\.mp4/,'current German male explainer must remain available')"
+  )
+  write(path,source)
+}
+
+function portV46Guard(){
+  const path='scripts/test_v46_modular_boundaries.mjs'
+  let source=read(path)
+  source=source.replace(
+    "const interfaceControl=publicLanding.indexOf('<LanguageSwitcher value={language} onChange={setLanguage} label={t.language}/>',publicStart)",
+    "const interfaceControl=publicLanding.indexOf('<LanguageSwitcher value={language} onChange={setLanguage} label={t.language} publicPicker',publicStart)"
+  )
+  if(!source.includes('V50 current-behavior guard')){
+    const marker="console.log('V46 modular-boundary guard passed: thin root entry, extracted public/auth/workspace surfaces, domain-owned catalogs and services, direct output-language flow, single language-menu back control, tester lock and thin compatibility adapters verified.')"
+    const extra=`\n// V50 current-behavior guard\nassert.match(publicLanding,/publicBackBtn/)\nassert.match(publicLanding,/returnToPublicTop/)\nassert.match(publicLanding,/data-output-language-status/)\nassert.match(publicLanding,/publicNav\\.output/)\nassert.match(switcher,/publicPicker=false/)\nassert.match(switcher,/active\\.label/)\nassert.match(switcher,/flagLanguageMenuBack/)\nconst currentCss=read('app/globals.css')\nassert.match(currentCss,/\\.publicLanguageStack/)\nassert.match(currentCss,/\\.flagLanguageMenu \\.flagLanguageMenuBack/)\nconst currentMicrophone=read('app/modules/public/ProblemNavigator.js')\nassert.match(currentMicrophone,/window\\.SpeechRecognition\\|\\|window\\.webkitSpeechRecognition/)\nassert.match(currentMicrophone,/navigator\\.permissions/)\nassert.doesNotMatch(currentMicrophone,/getUserMedia/)\nassert.match(currentMicrophone,/rec\\.onaudiostart/)\nassert.match(currentMicrophone,/aria-live=\"polite\"/)\nconst currentExplainer=read('app/modules/public/ExplainerVideo.js')\nassert.match(currentExplainer,/as-gold-explainer-de-female\\.mp4/)\nassert.match(currentExplainer,/as-gold-explainer-de-male\\.mp4/)\n`
+    must(source.includes(marker),'V50 port: V46 guard completion marker missing')
+    source=source.replace(marker,extra+'\n'+marker)
+  }
+  write(path,source)
 }
 
 portPublicLanding()
 portExplainer()
 portCss()
 verifyMicrophone()
-console.log('V50 public navigation, current explainer assets and microphone behavior are preserved inside V46 modules.')
+portV36Guard()
+portV46Guard()
+console.log('V50 public navigation, current explainer assets and microphone behavior are preserved inside V46 modules and regression guards.')
