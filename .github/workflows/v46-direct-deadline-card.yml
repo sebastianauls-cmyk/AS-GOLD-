@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/v46-direct-deadline-card.yml'
       - 'scripts/v46_direct_deadline_card.mjs'
+      - 'scripts/v46_align_deadline_guards.mjs'
   workflow_dispatch:
 
 permissions:
@@ -24,6 +25,9 @@ jobs:
 
       - name: Replace global deadline DOM enhancer
         run: node scripts/v46_direct_deadline_card.mjs
+
+      - name: Align direct deadline regression guards
+        run: node scripts/v46_align_deadline_guards.mjs
 
       - name: Install dependencies
         run: npm ci
