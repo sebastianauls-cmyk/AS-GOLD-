@@ -151,6 +151,7 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .publicBackButton{white-space:nowrap;background:#fff8e8}
 .outputModule p{margin:10px 0 8px;color:#596472;line-height:1.45;font-size:.92rem}
 .outputLanguageStatus{display:block;padding:8px 10px;border-radius:10px;background:#eef8ef;color:#285c33;font-size:.9rem}
+.outputCustomerButton{width:100%;min-height:44px;margin-top:8px;padding:8px 10px;border:1px solid #8f6e25;border-radius:11px;background:#8f6e25;color:#fff;font-weight:850}
 .heroCapabilities{margin:18px 0;padding:16px;border:1px solid #dccb9f;border-radius:18px;background:#fff}
 .heroCapabilities h2{margin:0 0 12px;color:#4d3b14;font-size:1.3rem}
 .heroVoiceShortcut{margin:0 0 12px;border-color:#c9ad66;background:#fffaf0;color:#4f3c12}

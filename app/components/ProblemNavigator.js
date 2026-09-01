@@ -51,7 +51,6 @@ function recommend(value,profile){
 
 export function ProblemNavigator(){
   const [host,setHost]=useState(null)
-  const [language,setLanguage]=useState('de')
   const [outputLanguage,setOutputLanguage]=useState('de')
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
@@ -62,9 +61,8 @@ export function ProblemNavigator(){
   const textRef=useRef(null)
   const statusRef=useRef(null)
   const resultRef=useRef(null)
-  const profile=getProblemLanguageProfile(language)
   const outputProfile=getProblemLanguageProfile(outputLanguage)
-  const c=profile.ui
+  const c=outputProfile.ui
   const resultUi=outputProfile.ui
 
   useEffect(()=>{
@@ -84,11 +82,7 @@ export function ProblemNavigator(){
       bodyObserver=new MutationObserver(()=>{if(mount()) bodyObserver?.disconnect()})
       bodyObserver.observe(document.body,{subtree:true,childList:true})
     }
-    const syncLanguage=()=>setLanguage(normalizeProblemLanguage(document.documentElement.lang||'de'))
-    syncLanguage()
-    const langObserver=new MutationObserver(syncLanguage)
-    langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']})
-    return ()=>{bodyObserver?.disconnect();langObserver.disconnect()}
+    return ()=>bodyObserver?.disconnect()
   },[])
 
   useEffect(()=>{
@@ -126,7 +120,7 @@ export function ProblemNavigator(){
   }
 
   async function voice(){
-    const messages=voiceMessages[language]||voiceMessages.de
+    const messages=voiceMessages[outputLanguage]||voiceMessages.de
     if(!window.isSecureContext){setStatus(messages.insecure);return}
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition
     if(!SpeechRecognition){setStatus(c.unsupported);textRef.current?.focus();return}
@@ -138,7 +132,7 @@ export function ProblemNavigator(){
       setStatus(messages.starting)
       const rec=new SpeechRecognition()
       recognitionRef.current=rec
-      rec.lang=getSpeechLocale(language)
+      rec.lang=getSpeechLocale(outputLanguage)
       rec.interimResults=true
       rec.continuous=false
       const base=value.trim()
@@ -181,17 +175,17 @@ export function ProblemNavigator(){
 
   const secondary={padding:'10px 13px',border:'1px solid #d5c38f',borderRadius:11,background:'#fffaf0',color:'#5b4618',fontWeight:800,textDecoration:'none',display:'inline-flex',alignItems:'center'}
   const freeText=freeLabels[outputLanguage]||freeLabels.en
-  const helpText=inputHelp[language]||inputHelp.en
-  const inputTitle=inputTitles[language]||inputTitles.en
+  const helpText=inputHelp[outputLanguage]||inputHelp.en
+  const inputTitle=inputTitles[outputLanguage]||inputTitles.en
 
-  return createPortal(<section id="asgold-problem-navigator-react" dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
+  return createPortal(<section id="asgold-problem-navigator-react" data-customer-language={outputLanguage} lang={outputLanguage} dir={outputProfile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
     <div id="asgold-problem-input-help" style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
     <form onSubmit={event=>{event.preventDefault();analyse()}} noValidate>
-      <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={c.title} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
+      <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={c.title} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={outputProfile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
-        <button type="button" data-problem-voice onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting ? 0.7 : 1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[language]||voiceMessages.de).starting:c.voice}</button>
+        <button type="button" data-problem-voice onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting ? 0.7 : 1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[outputLanguage]||voiceMessages.de).starting:c.voice}</button>
         <button type="submit" aria-controls="asgold-problem-result" style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
       </div>
       {status&&<div id="asgold-problem-status" ref={statusRef} role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
