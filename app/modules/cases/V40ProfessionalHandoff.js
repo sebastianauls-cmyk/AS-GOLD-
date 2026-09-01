@@ -1,0 +1,68 @@
+'use client'
+
+import { useEffect } from 'react'
+import { buildProfessionalHandoff,handoffPriority } from '../lib/v40ProfessionalHandoff.mjs'
+
+const labels={
+  de:{title:'Professionelle Übergabe',lead:'Bereitet den aktuellen Fall strukturiert für Anwalt, Versicherung oder Berater auf. Die Datei wird lokal im Browser erstellt.',statusReady:'Übergabeakte vollständig vorbereitet',statusCheck:'Vor Weitergabe noch prüfen',missing:'Noch offen',pdf:'Übergabeakte PDF',docx:'Übergabeakte DOCX',privacy:'Keine zusätzliche Datenübermittlung durch den Export. Vor Weitergabe Originale, Fristen und Ampeln selbst prüfen.',goal:'Ziel',summary:'Sachstand',deadline:'Nächste Frist',next:'Nächster Schritt',documents:'Dokumente',assessments:'Bewertungen',timeline:'Timeline',generated:'Erstellt mit AS Gold · strukturierte Arbeitsunterlage, keine anwaltliche Prüfung',fields:{goal:'Ziel',summary:'Sachstand',documents:'Dokumente',assessments:'Bewertungen'}},
+  en:{title:'Professional handoff',lead:'Prepares the current case for a lawyer, insurer or adviser. The file is generated locally in your browser.',statusReady:'Handoff file ready',statusCheck:'Review before sharing',missing:'Still missing',pdf:'Handoff PDF',docx:'Handoff DOCX',privacy:'The export itself sends no additional data. Verify originals, deadlines and traffic lights before sharing.',goal:'Goal',summary:'Summary',deadline:'Next deadline',next:'Next step',documents:'Documents',assessments:'Assessments',timeline:'Timeline',generated:'Created with AS Gold · structured working file, not a lawyer review',fields:{goal:'Goal',summary:'Summary',documents:'Documents',assessments:'Assessments'}},
+  fr:{title:'Transmission professionnelle',lead:'Prépare le dossier pour un avocat, assureur ou conseiller. Le fichier est créé localement dans le navigateur.',statusReady:'Dossier de transmission prêt',statusCheck:'À vérifier avant transmission',missing:'Encore manquant',pdf:'Dossier PDF',docx:'Dossier DOCX',privacy:'Aucune transmission supplémentaire de données lors de l’export. Vérifiez les originaux, délais et feux avant partage.',goal:'Objectif',summary:'État du dossier',deadline:'Prochain délai',next:'Étape suivante',documents:'Documents',assessments:'Évaluations',timeline:'Chronologie',generated:'Créé avec AS Gold · dossier de travail structuré, sans contrôle avocat',fields:{goal:'Objectif',summary:'État du dossier',documents:'Documents',assessments:'Évaluations'}},
+  tr:{title:'Profesyonel devir',lead:'Mevcut dosyayı avukat, sigorta veya danışman için yapılandırır. Dosya tarayıcıda yerel olarak oluşturulur.',statusReady:'Devir dosyası hazır',statusCheck:'Paylaşmadan önce kontrol edin',missing:'Eksik',pdf:'Devir PDF',docx:'Devir DOCX',privacy:'Dışa aktarma ek veri aktarmaz. Paylaşmadan önce asılları, süreleri ve değerlendirmeleri kontrol edin.',goal:'Hedef',summary:'Dosya durumu',deadline:'Sonraki süre',next:'Sonraki adım',documents:'Belgeler',assessments:'Değerlendirmeler',timeline:'Zaman çizelgesi',generated:'AS Gold ile oluşturuldu · yapılandırılmış çalışma dosyası, avukat incelemesi değildir',fields:{goal:'Hedef',summary:'Dosya durumu',documents:'Belgeler',assessments:'Değerlendirmeler'}},
+  pl:{title:'Profesjonalne przekazanie',lead:'Przygotowuje sprawę dla prawnika, ubezpieczyciela lub doradcy. Plik powstaje lokalnie w przeglądarce.',statusReady:'Pakiet przekazania gotowy',statusCheck:'Sprawdź przed przekazaniem',missing:'Brakuje',pdf:'Pakiet PDF',docx:'Pakiet DOCX',privacy:'Eksport nie powoduje dodatkowego przesyłania danych. Sprawdź oryginały, terminy i oceny przed udostępnieniem.',goal:'Cel',summary:'Stan sprawy',deadline:'Najbliższy termin',next:'Następny krok',documents:'Dokumenty',assessments:'Oceny',timeline:'Oś czasu',generated:'Utworzono w AS Gold · uporządkowany materiał roboczy, bez weryfikacji prawnika',fields:{goal:'Cel',summary:'Stan sprawy',documents:'Dokumenty',assessments:'Oceny'}},
+  ru:{title:'Профессиональная передача',lead:'Готовит дело для юриста, страховщика или консультанта. Файл создаётся локально в браузере.',statusReady:'Пакет готов',statusCheck:'Проверьте перед передачей',missing:'Не хватает',pdf:'Пакет PDF',docx:'Пакет DOCX',privacy:'Экспорт не передаёт дополнительные данные. Перед отправкой проверьте оригиналы, сроки и оценки.',goal:'Цель',summary:'Состояние дела',deadline:'Ближайший срок',next:'Следующий шаг',documents:'Документы',assessments:'Оценки',timeline:'Хронология',generated:'Создано в AS Gold · структурированный рабочий материал, не юридическая проверка',fields:{goal:'Цель',summary:'Состояние дела',documents:'Документы',assessments:'Оценки'}},
+  ar:{title:'تسليم مهني',lead:'يجهّز الحالة للمحامي أو شركة التأمين أو المستشار. يتم إنشاء الملف محليًا في المتصفح.',statusReady:'ملف التسليم جاهز',statusCheck:'راجعه قبل المشاركة',missing:'لا يزال ناقصًا',pdf:'ملف PDF',docx:'ملف DOCX',privacy:'لا يرسل التصدير بيانات إضافية. تحقق من الأصول والمواعيد والتقييمات قبل المشاركة.',goal:'الهدف',summary:'ملخص الحالة',deadline:'المهلة التالية',next:'الخطوة التالية',documents:'المستندات',assessments:'التقييمات',timeline:'الخط الزمني',generated:'تم إنشاؤه بواسطة AS Gold · ملف عمل منظم وليس مراجعة محامٍ',fields:{goal:'الهدف',summary:'الملخص',documents:'المستندات',assessments:'التقييمات'}},
+  fa:{title:'تحویل حرفه‌ای',lead:'پرونده را برای وکیل، بیمه یا مشاور ساختاربندی می‌کند. فایل به‌صورت محلی در مرورگر ساخته می‌شود.',statusReady:'پرونده تحویل آماده است',statusCheck:'پیش از ارسال بررسی شود',missing:'موارد ناقص',pdf:'پرونده PDF',docx:'پرونده DOCX',privacy:'خروجی باعث ارسال اضافی داده نمی‌شود. اصل مدارک، مهلت‌ها و ارزیابی‌ها را پیش از اشتراک بررسی کنید.',goal:'هدف',summary:'وضعیت پرونده',deadline:'مهلت بعدی',next:'گام بعدی',documents:'اسناد',assessments:'ارزیابی‌ها',timeline:'خط زمانی',generated:'ساخته‌شده با AS Gold · پرونده کاری ساختاریافته، نه بررسی وکیل',fields:{goal:'هدف',summary:'وضعیت پرونده',documents:'اسناد',assessments:'ارزیابی‌ها'}},
+  ro:{title:'Predare profesională',lead:'Pregătește cazul pentru avocat, asigurător sau consultant. Fișierul este creat local în browser.',statusReady:'Dosar de predare pregătit',statusCheck:'Verificați înainte de trimitere',missing:'Încă lipsă',pdf:'Dosar PDF',docx:'Dosar DOCX',privacy:'Exportul nu transmite date suplimentare. Verificați originalele, termenele și evaluările înainte de partajare.',goal:'Obiectiv',summary:'Situația cazului',deadline:'Următorul termen',next:'Pasul următor',documents:'Documente',assessments:'Evaluări',timeline:'Cronologie',generated:'Creat cu AS Gold · material de lucru structurat, fără verificare juridică',fields:{goal:'Obiectiv',summary:'Situația cazului',documents:'Documente',assessments:'Evaluări'}},
+  bg:{title:'Професионално предаване',lead:'Подготвя случая за адвокат, застраховател или консултант. Файлът се създава локално в браузъра.',statusReady:'Пакетът е готов',statusCheck:'Проверете преди изпращане',missing:'Все още липсва',pdf:'Пакет PDF',docx:'Пакет DOCX',privacy:'Експортът не изпраща допълнителни данни. Проверете оригиналите, сроковете и оценките преди споделяне.',goal:'Цел',summary:'Състояние',deadline:'Следващ срок',next:'Следваща стъпка',documents:'Документи',assessments:'Оценки',timeline:'Хронология',generated:'Създадено с AS Gold · структуриран работен материал, не адвокатска проверка',fields:{goal:'Цел',summary:'Състояние',documents:'Документи',assessments:'Оценки'}}
+}
+
+function lang(){const value=(document.documentElement.lang||'de').toLowerCase().slice(0,2);return labels[value]?value:'de'}
+function readCase(){
+  const grid=document.querySelector('.caseCoreGrid'); if(!grid)return null
+  const cards=[...grid.querySelectorAll(':scope > article')]
+  const root=grid.parentElement
+  const title=root?.querySelector('h2')?.textContent?.trim()||'AS Gold Fallakte'
+  const documents=[...document.querySelectorAll('.sourceList button')].map(button=>({date:button.querySelector('span')?.textContent?.trim()||'',title:button.querySelector('b')?.textContent?.trim()||'',status:button.querySelector('small')?.textContent?.trim()||''}))
+  const assessments=[...document.querySelectorAll('.assessmentList .assessment')].map(article=>({trafficLight:article.classList.contains('red')?'red':article.classList.contains('green')?'green':'yellow',title:article.querySelector('b')?.textContent?.trim()||'',reasoning:article.querySelector('p')?.textContent?.trim()||'',nextStep:article.querySelector('small')?.textContent?.trim()||''}))
+  const timeline=[...document.querySelectorAll('[data-v39-timeline] li')].map(li=>({date:li.querySelector('time')?.textContent?.trim()||'',title:li.querySelector('b')?.textContent?.trim()||'',detail:li.querySelector('small')?.textContent?.trim()||''})).filter(item=>item.date)
+  return buildProfessionalHandoff({title,goal:cards[0]?.querySelector('p')?.textContent||'',summary:cards[1]?.querySelector('p')?.textContent||'',deadline:cards[2]?.querySelector('p')?.textContent||'',nextAction:cards[3]?.querySelector('p')?.textContent||'',documents,assessments,timeline})
+}
+function filename(ext){return `AS-Gold_Uebergabeakte_${new Date().toISOString().slice(0,10)}.${ext}`}
+function download(blob,name){const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+
+async function exportPdf(data,t){
+  const { jsPDF }=await import('jspdf'); const pdf=new jsPDF({unit:'mm',format:'a4'}); let y=18
+  const add=(text,size=10,bold=false)=>{pdf.setFontSize(size);pdf.setFont('helvetica',bold?'bold':'normal');const lines=pdf.splitTextToSize(String(text||'—'),175);if(y+lines.length*5>282){pdf.addPage();y=18}pdf.text(lines,18,y);y+=lines.length*5+2}
+  add('AS Gold · '+t.title,16,true);add(data.title,13,true);add(`${t.goal}: ${data.goal||'—'}`);add(`${t.summary}: ${data.summary||'—'}`);add(`${t.deadline}: ${data.deadline||'—'}`);add(`${t.next}: ${data.nextAction||'—'}`)
+  add(t.documents,12,true);data.documents.forEach((item,i)=>add(`${i+1}. ${item.date||'—'} · ${item.title}${item.status?' · '+item.status:''}`))
+  add(t.assessments,12,true);data.assessments.forEach(item=>add(`${item.trafficLight.toUpperCase()} · ${item.title}\n${item.reasoning}${item.nextStep?'\n'+item.nextStep:''}`))
+  if(data.timeline.length){add(t.timeline,12,true);data.timeline.forEach(item=>add(`${item.date} · ${item.title}${item.detail?' · '+item.detail:''}`))}
+  add(t.generated,8);pdf.save(filename('pdf'))
+}
+async function exportDocx(data,t){
+  const {Document,Packer,Paragraph,TextRun,HeadingLevel}=await import('docx')
+  const p=(label,value)=>new Paragraph({children:[new TextRun({text:label+': ',bold:true}),new TextRun(String(value||'—'))]})
+  const children=[new Paragraph({text:'AS Gold · '+t.title,heading:HeadingLevel.TITLE}),new Paragraph({text:data.title,heading:HeadingLevel.HEADING_1}),p(t.goal,data.goal),p(t.summary,data.summary),p(t.deadline,data.deadline),p(t.next,data.nextAction),new Paragraph({text:t.documents,heading:HeadingLevel.HEADING_2}),...data.documents.map((item,i)=>new Paragraph(`${i+1}. ${item.date||'—'} · ${item.title}${item.status?' · '+item.status:''}`)),new Paragraph({text:t.assessments,heading:HeadingLevel.HEADING_2}),...data.assessments.flatMap(item=>[new Paragraph({children:[new TextRun({text:`${item.trafficLight.toUpperCase()} · ${item.title}`,bold:true})]}),new Paragraph(item.reasoning||'—'),new Paragraph(item.nextStep||'')])]
+  if(data.timeline.length)children.push(new Paragraph({text:t.timeline,heading:HeadingLevel.HEADING_2}),...data.timeline.map(item=>new Paragraph(`${item.date} · ${item.title}${item.detail?' · '+item.detail:''}`)))
+  children.push(new Paragraph({children:[new TextRun({text:t.generated,italics:true})]}));download(await Packer.toBlob(new Document({sections:[{children}]})),filename('docx'))
+}
+
+export function V40ProfessionalHandoff(){
+  useEffect(()=>{
+    let busy=false
+    const render=()=>{
+      const grid=document.querySelector('.caseCoreGrid')
+      if(!grid){document.querySelector('[data-v40-handoff]')?.remove();return}
+      const data=readCase(); if(!data)return
+      const t=labels[lang()]; let section=document.querySelector('[data-v40-handoff]')
+      if(!section){section=document.createElement('section');section.dataset.v40Handoff='true';section.className='detailCard v40ProfessionalHandoff';const anchor=document.querySelector('[data-v39-timeline]')||grid;anchor.insertAdjacentElement('afterend',section)}
+      const priority=handoffPriority(data.assessments);const icon=priority==='red'?'🔴':priority==='green'?'🟢':'🟡';const missing=data.missing.map(key=>t.fields[key]||key).join(', ')
+      section.innerHTML=`<div class="detailCardHead"><div><span class="modeBadge">V40</span><h3>${t.title}</h3></div><strong>${icon} ${data.ready?t.statusReady:t.statusCheck}</strong></div><p>${t.lead}</p>${missing?`<p><b>${t.missing}:</b> ${missing}</p>`:''}<div class="documentReviewActions"><button type="button" class="secondary" data-v40-pdf>${t.pdf}</button><button type="button" class="primary" data-v40-docx>${t.docx}</button></div><small>${t.privacy}</small>`
+      section.querySelector('[data-v40-pdf]').onclick=async()=>{if(busy)return;busy=true;try{await exportPdf(readCase(),t)}finally{busy=false}}
+      section.querySelector('[data-v40-docx]').onclick=async()=>{if(busy)return;busy=true;try{await exportDocx(readCase(),t)}finally{busy=false}}
+    }
+    render();const observer=new MutationObserver(render);observer.observe(document.body,{childList:true,subtree:true,characterData:true});const timer=setInterval(render,1200)
+    return()=>{observer.disconnect();clearInterval(timer);document.querySelector('[data-v40-handoff]')?.remove()}
+  },[])
+  return null
+}
