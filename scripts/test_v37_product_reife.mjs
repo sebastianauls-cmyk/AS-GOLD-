@@ -20,10 +20,11 @@ need(css,'.documentRow{grid-template-columns:1fr}','mobile document layout')
 need(css,'.dashboardSteps{grid-template-columns:1fr}','mobile dashboard steps')
 
 for(const text of ['Problem beschreiben','Dokument hochladen','Beispiel ansehen']) need(firstAction,text,`entry action ${text}`)
-need(firstAction,'input[type="file"]','upload target')
+need(firstAction,'onRegister?.()','direct registration/upload entry path')
 need(firstAction,'asgold-problem-navigator-react','problem target')
 need(firstActionCompatibility,'../modules/public/V37FirstAction','first-action compatibility adapter')
 need(videoCompatibility,'../modules/public/ExplainerVideo','explainer compatibility adapter')
+need(publicLanding,'<V37FirstAction language={language} onRegister={()=>setScreen(\'register\')}/>','first action registration callback')
 
 need(publicLanding,"setScreen('register')",'registration path in public module')
 need(publicLanding,"setScreen('login')",'login path in public module')
@@ -45,4 +46,4 @@ need(video,"role='group' aria-label={c.voice}",'presenter accessibility group')
 need(video,"aria-pressed={presenter==='female'}",'female pressed state')
 need(video,"aria-pressed={presenter==='male'}",'male pressed state')
 
-console.log('V37 product-readiness guard passed through the workspace module boundary.')
+console.log('V37 product-readiness guard passed through the direct public/workspace module boundaries.')
