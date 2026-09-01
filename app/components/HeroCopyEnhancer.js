@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { whatIsAsGoldCopy } from '../lib/asGoldIntroCopy.mjs'
 
 const heroCopy={
   de:{title:'Was ist AS Gold?',lead:'AS Gold ist eine digitale Anwendung, die Dokumente, E-Mails und Ihre eigene Schilderung zu einem verständlichen Fall zusammenführt. Sie erkennt wichtige Informationen, Fristen und Risiken und zeigt den nächsten sinnvollen Schritt.'},
@@ -45,7 +46,7 @@ function ensureAudienceBlock(language){
 function applyHeroCopy(){
   if(location.pathname!=='/') return
   const language=(document.documentElement.lang||'de').split('-')[0]
-  const copy=heroCopy[language]||heroCopy.de
+  const copy=whatIsAsGoldCopy[language]||whatIsAsGoldCopy.de
   const title=document.querySelector('.hero h1')
   const lead=document.querySelector('.hero .lead')
   if(title) title.textContent=copy.title
