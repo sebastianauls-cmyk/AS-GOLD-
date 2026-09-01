@@ -22,14 +22,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
   const problemUi=getProblemLanguageProfile(outputLanguage).ui
   const [explainerSignal,setExplainerSignal]=useState(0)
 
-  function startProblemVoice(){
-    const microphone=document.querySelector('#asgold-problem-navigator-react [data-problem-voice]')
-    if(!microphone)return
-    microphone.scrollIntoView({behavior:'smooth',block:'center'})
-    setTimeout(()=>microphone.click(),350)
-  }
-
-  const customerModule=<ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
+  const customerModule=<ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase} voiceSignal={explainerSignal}/>
 
   return <>
     <header className="publicTop">
@@ -59,7 +52,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <h1>{hero.title}</h1>
             <p className="lead">{hero.lead}</p>
             <V37FirstAction language={language} onRegister={()=>setScreen('register')}/>
-            <button type="button" className="secondary heroVoiceShortcut" aria-controls="asgold-problem-navigator-react" onClick={startProblemVoice}>🎙 {problemUi.voice}</button>
+            <button type="button" className="secondary heroVoiceShortcut" aria-controls="asgold-problem-navigator-react" onClick={()=>setExplainerSignal(value=>value+1)}>🎙 {problemUi.voice}</button>
             <ExplainerVideo key={`${language}-${explainerSignal}`} language={language} openSignal={explainerSignal}/>
             <ProductIntroCompact language={language}/>
             <div className="actions">

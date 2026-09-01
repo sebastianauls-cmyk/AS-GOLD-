@@ -328,3 +328,11 @@ assert.ok(!workspace.includes("await import('docx')"),'workspace controller must
 assert.ok(!workspace.includes("await import('jspdf')"),'workspace controller must not generate PDF directly')
 assert.ok(!workspace.includes("document.createElement('a')"),'workspace controller must not own browser download DOM')
 console.log('V46 export service boundary verified.')
+
+const directPublicLanding=read('app/modules/public/PublicLanding.js')
+const directProblemNavigator=read('app/modules/public/ProblemNavigator.js')
+assert.ok(!directPublicLanding.includes('document.querySelector'),'PublicLanding must not locate/click ProblemNavigator controls through the DOM')
+assert.match(directProblemNavigator,/voiceSignal/)
+assert.match(directProblemNavigator,/rootRef/)
+assert.match(directProblemNavigator,/useEffect/)
+console.log('V46 direct public voice boundary verified.')

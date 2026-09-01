@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from './problemNavigatorLanguagesV36.mjs'
 import { caseFrequencyWeight } from './casePriorityV56.mjs'
 import { jumpToPublicCaseResult } from './caseNavigation'
@@ -50,7 +50,7 @@ function recommend(value,profile){
   return {caseKey,planKey,reason:profile.reasons[planKey]||profile.reasons.start}
 }
 
-export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase}){
+export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,voiceSignal=0}){
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
   const [result,setResult]=useState(null)
@@ -60,6 +60,7 @@ export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase}){
   const textRef=useRef(null)
   const statusRef=useRef(null)
   const resultRef=useRef(null)
+  const rootRef=useRef(null)
   const customerLanguage=normalizeProblemLanguage(outputLanguage)
   const profile=getProblemLanguageProfile(customerLanguage)
   const c=profile.ui
@@ -135,6 +136,13 @@ export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase}){
     }
   }
 
+  useEffect(()=>{
+    if(voiceSignal<=0)return
+    rootRef.current?.scrollIntoView({behavior:'smooth',block:'center'})
+    const timer=setTimeout(()=>voice(),350)
+    return()=>clearTimeout(timer)
+  },[voiceSignal])
+
   function showCase(){onSelectCase?.(recommendation.caseKey);jumpToPublicCaseResult()}
   function showPlans(){document.getElementById('preise')?.scrollIntoView({behavior:'smooth',block:'start'})}
   function startFree(){onRegister?.()}
@@ -144,7 +152,7 @@ export function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase}){
   const helpText=inputHelp[customerLanguage]||inputHelp.en
   const inputTitle=inputTitles[customerLanguage]||inputTitles.en
 
-  return <section id="asgold-problem-navigator-react" data-customer-language={customerLanguage} lang={customerLanguage} dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
+  return <section ref={rootRef} id="asgold-problem-navigator-react" data-customer-language={customerLanguage} lang={customerLanguage} dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
     <div id="asgold-problem-input-help" style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
