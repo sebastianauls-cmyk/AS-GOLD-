@@ -48,8 +48,26 @@ jobs:
         run: node scripts/v46_direct_public_interactions.mjs
       - name: Normalize public catalog exports
         run: node scripts/v46_fix_public_catalog_exports.mjs
-      - name: Embed public modules directly in PublicLanding
-        run: node scripts/v46_embed_public_modules.mjs
+      - name: Confirm public modules are already embedded
+        shell: bash
+        run: |
+          node --input-type=module - <<'NODE'
+          import fs from 'node:fs'
+          const publicLanding=fs.readFileSync('app/modules/public/PublicLanding.js','utf8')
+          const problemNavigator=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8')
+          const explainer=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8')
+          for (const marker of [
+            '<V37FirstAction language={language}',
+            '<ProblemNavigator language={language}',
+            '<ExplainerVideo language={language}/>',
+            '<ProductIntroCompact language={language}/>'
+          ]) {
+            if (!publicLanding.includes(marker)) throw new Error(`V46 public embedding missing: ${marker}`)
+          }
+          if (/createPortal|MutationObserver/.test(problemNavigator)) throw new Error('V46 ProblemNavigator must render directly')
+          if (!problemNavigator.includes('voiceStarting')) throw new Error('V50 microphone-start handling was lost')
+          if (/createPortal|MutationObserver/.test(explainer)) throw new Error('V46 ExplainerVideo must render directly')
+          NODE
       - name: Repair generated public-module guard order
         run: node scripts/v46_fix_public_guard_order.mjs
 
