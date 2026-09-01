@@ -27,6 +27,7 @@ import { LegalAcceptance, PRIVACY_NOTICE_VERSION, TERMS_VERSION, getV28PrivacyCo
 import { getV29PasswordCopy, validateV29Password } from './components/V29PasswordPolicy'
 import { localeForLanguage, pageTranslations, rtlLanguages, supportedLanguages } from './lib/v30Languages.mjs'
 import { promoTranslations } from './lib/v31PromoTranslations.mjs'
+import { orderCasesByResearch } from '../public/casePriorityV56.mjs'
 
 
 const languages = supportedLanguages
@@ -115,7 +116,7 @@ export default function Home(){
   const [outputLanguage,setOutputLanguage] = useState('de')
   const [selectedGoal,setSelectedGoal] = useState('overview')
   const [showRecommendation,setShowRecommendation] = useState(false)
-  const [selectedPublicCase,setSelectedPublicCase] = useState('insurance')
+  const [selectedPublicCase,setSelectedPublicCase] = useState('work')
   const [activityLog,setActivityLog] = useState([])
   const [serverAudit,setServerAudit] = useState([])
   const [deletionRequests,setDeletionRequests] = useState([])
@@ -154,7 +155,11 @@ export default function Home(){
     return ()=>{ document.documentElement.dir = 'ltr' }
   },[language])
 
-  useEffect(()=>{ localStorage.setItem('asgold-output-language',outputLanguage) },[outputLanguage])
+  useEffect(()=>{
+    localStorage.setItem('asgold-output-language',outputLanguage)
+    document.documentElement.dataset.outputLanguage=outputLanguage
+    document.dispatchEvent(new CustomEvent('asgold:output-language',{detail:{language:outputLanguage}}))
+  },[outputLanguage])
 
   const currentTier = access?.permissions?.tier || 'free'
   const currentPlan = useMemo(() => plans.find(p=>p.key===currentTier) || plans[0],[currentTier])
@@ -162,8 +167,9 @@ export default function Home(){
   const rt = recommendationText[language] || recommendationText.de
   const tt = transparencyText[language] || transparencyText.de
   const cd = caseDiscoveryText[language] || caseDiscoveryText.de
+  const orderedPublicCases = orderCasesByResearch(cd.cases)
   const pa = publicAudienceText[language] || publicAudienceText.de
-  const activePublicCase = cd.cases.find(item=>item.key===selectedPublicCase) || cd.cases[0]
+  const activePublicCase = orderedPublicCases.find(item=>item.key===selectedPublicCase) || orderedPublicCases[0]
   const lt = launchTrustText[language] || launchTrustText.de
   const sct = serverControlText[language] || serverControlText.de
   const promo = promoTranslations[language] || promoTranslations.de
@@ -594,6 +600,8 @@ export default function Home(){
   async function doExport(ref,type){
     if(!canExport(type)) return setMessage(n.exportLocked)
     const ex=exportUi[outputLanguage]||exportUi.de
+    const outputCore=getV24Copy(outputLanguage)
+    const outputApprovalUi=getV25ApprovalCopy(outputLanguage)
     const localStatus=s=>s==='open'?ex.open:s==='closed'?ex.closed:s||'—'
     const localLight=s=>s==='yellow'?`🟡 ${ex.yellow}`:s==='green'?`🟢 ${ex.green}`:s==='red'?`🔴 ${ex.red}`:s||'—'
     const caseDocuments=ref.kind==='case'?data.documents.filter(item=>item.case_id===ref.item.id):[]
@@ -601,7 +609,7 @@ export default function Home(){
     const caseSources=ref.kind==='case'?data.sourceStatus.filter(item=>item.case_id===ref.item.id):[]
     const caseApprovals=ref.kind==='case'?data.approvals.filter(item=>item.case_id===ref.item.id):[]
     const rows=ref.kind==='case'
-      ? [[ex.caseTitle,''],[ex.case,ref.item.title||ex.case],[ex.status,localStatus(ref.item.status)],[ex.traffic,localLight(ref.item.traffic_light)],[core.goal,ref.item.goal||''],[ex.summary,ref.item.summary||''],[core.deadline,ref.item.deadline_at?new Date(ref.item.deadline_at).toLocaleString():''],[core.nextAction,ref.item.next_action||''],[ex.documents,caseDocuments.map(item=>item.title).join(', ')||ex.none],[core.currentAssessments,caseAssessments.map(item=>`${localLight(item.traffic_light)} · ${item.title}: ${item.reasoning||''}${item.next_step?` · ${core.nextAction}: ${item.next_step}`:''}`).join('\n')||ex.none],[core.sourceBasis,caseSources.map(item=>`${item.source_label||item.source_kind}: ${item.status}${item.details?` · ${item.details}`:''}`).join('\n')||ex.none],[approvalUi.title,caseApprovals.map(item=>`${item.subject||item.approval_type} · ${approvalUi[item.status]||item.status} · ${approvalUi.revision} ${item.preview_revision}`).join('\n')||ex.none]]
+      ? [[ex.caseTitle,''],[ex.case,ref.item.title||ex.case],[ex.status,localStatus(ref.item.status)],[ex.traffic,localLight(ref.item.traffic_light)],[outputCore.goal,ref.item.goal||''],[ex.summary,ref.item.summary||''],[outputCore.deadline,ref.item.deadline_at?new Date(ref.item.deadline_at).toLocaleString():''],[outputCore.nextAction,ref.item.next_action||''],[ex.documents,caseDocuments.map(item=>item.title).join(', ')||ex.none],[outputCore.currentAssessments,caseAssessments.map(item=>`${localLight(item.traffic_light)} · ${item.title}: ${item.reasoning||''}${item.next_step?` · ${outputCore.nextAction}: ${item.next_step}`:''}`).join('\n')||ex.none],[outputCore.sourceBasis,caseSources.map(item=>`${item.source_label||item.source_kind}: ${item.status}${item.details?` · ${item.details}`:''}`).join('\n')||ex.none],[outputApprovalUi.title,caseApprovals.map(item=>`${item.subject||item.approval_type} · ${outputApprovalUi[item.status]||item.status} · ${outputApprovalUi.revision} ${item.preview_revision}`).join('\n')||ex.none]]
       : [[ex.documentTitle,''],[ex.document,ref.item.title||ex.document],[ex.documentType,ref.item.document_type||''],[ex.documentDate,ref.item.document_date||''],[ex.analysis,ref.item.analysis_summary||ex.noAnalysis],[ex.nextStep,ref.item.analysis_next_step||''],[ex.extracted,ref.item.extracted_text||'']]
     const base=(ref.item.title||(ref.kind==='case'?'Fall':'Dokument')).replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g,'_').slice(0,80)
     try{
