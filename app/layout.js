@@ -7,6 +7,7 @@ import { ExplainerVideo } from './components/ExplainerVideo'
 import { ProblemNavigator } from './components/ProblemNavigator'
 import { CaseChoiceJumpEnhancer } from './components/CaseChoiceJumpEnhancer'
 import { V38DeadlineCardEnhancer } from './components/V38DeadlineCardEnhancer'
+import { V38AssessmentExplainability } from './components/V38AssessmentExplainability'
 
 export const metadata = {
   metadataBase: new URL('https://app-gold-workspace.vercel.app'),
@@ -17,5 +18,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><HeroCopyEnhancer/><HeroTitleStabilizer/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><CaseChoiceJumpEnhancer/><V38DeadlineCardEnhancer/>{children}</body></html>
+  return <html lang="de"><body><HeroCopyEnhancer/><HeroTitleStabilizer/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><CaseChoiceJumpEnhancer/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/>{children}</body></html>
 }
