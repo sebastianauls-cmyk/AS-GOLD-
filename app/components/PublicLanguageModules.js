@@ -42,7 +42,7 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
     window.scrollTo({top:0,left:0,behavior:'instant'})
   }
 
-  return <section className="publicLanguageModules" aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
+  return <section className="publicLanguageModules" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
     <div className="publicLanguageModule interfaceModule">
       <strong className="publicLanguageTitle">{text.interfaceTitle}</strong>
       <div className="publicLanguageMainRow">
