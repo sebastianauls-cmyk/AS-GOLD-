@@ -1,5 +1,5 @@
 import './globals.css'
-import { HeroCopyEnhancer } from './components/HeroCopyEnhancer'
+import { HeroCopyEnhancer } from './modules/public/HeroCopyEnhancer'
 import { HeroTitleStabilizer } from './modules/public/HeroTitleStabilizer'
 import { V37FirstAction } from './modules/public/V37FirstAction'
 import { ProductIntroCompact } from './modules/public/ProductIntroCompact'
