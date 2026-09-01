@@ -1,1 +1,1 @@
-export * from '../../../lib/officeExports.js'
+export * from '../../services/officeExports.js'
