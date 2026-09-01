@@ -259,3 +259,26 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
   .flagLanguageMenu button{min-width:0}
   .flagLanguageMenu button small{font-size:.72rem}
 }
+
+/* V52: the expanded public controls must remain part of the page instead of covering it. */
+.publicTop{position:relative;top:auto}
+
+@media(max-width:760px){
+  .publicHeader{gap:9px;padding:8px 0 10px}
+  .publicBrand .logo{width:38px;height:38px;border-radius:12px}
+  .publicLanguageModules{gap:9px}
+  .publicLanguageModule{padding:10px;border-radius:14px}
+  .publicLanguageTitle{margin-bottom:7px;font-size:.9rem}
+  .publicLanguageMainRow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:7px}
+  .publicLanguageMainRow .flagLanguage{width:100%;min-width:0}
+  .publicLanguageModule .flagLanguageTrigger{min-height:44px;padding:7px 10px}
+  .publicBackButton{min-height:44px;padding:7px 10px}
+  .publicPresenterLabel{margin:8px 0 6px;font-size:.82rem}
+  .publicPresenterRow{gap:6px}
+  .publicPresenterRow button{min-height:42px;padding:7px 8px;font-size:.88rem}
+  .outputModule p{display:none}
+  .outputLanguageStatus{margin-top:7px;padding:7px 9px;font-size:.82rem}
+  .publicActions{gap:7px}
+  .publicActions a,.publicActions button{min-height:42px;padding:7px 8px;font-size:.88rem}
+  .legalMarketBar .wrap{padding-top:.5rem;padding-bottom:.5rem}
+}
