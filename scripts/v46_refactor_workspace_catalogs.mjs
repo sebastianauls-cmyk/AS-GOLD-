@@ -64,6 +64,24 @@ workspace=extractCatalog({workspace,name:'exportUi',modulePath:'app/modules/docu
 workspace=extractCatalog({workspace,name:'appText',modulePath:'app/modules/workspace/workspaceText.js',importPath:'./workspaceText'})
 write(workspacePath,workspace)
 
+const prelaunchPath='scripts/test_v38_prelaunch_guard.mjs'
+let prelaunch=read(prelaunchPath)
+if(!prelaunch.includes("const workspaceText=read('app/modules/workspace/workspaceText.js')")){
+  const anchor="const uploadConfig=read('app/modules/documents/uploadConfig.js')"
+  if(!prelaunch.includes(anchor)) throw new Error('V46 catalogs: prelaunch upload-config anchor missing')
+  prelaunch=prelaunch.replace(anchor,`${anchor}\nconst workspaceText=read('app/modules/workspace/workspaceText.js')\nconst publicUi=read('app/modules/public/publicUi.js')\nconst workspaceCopy=page+'\\n'+workspaceText+'\\n'+publicUi`)
+}
+for(const needle of [
+  'Bezahlfunktion ist vorübergehend deaktiviert',
+  'keine Zahlung ausgelöst',
+  'Keine automatische Verlängerung'
+]){
+  const old=`assert.match(page,/${needle}/)`
+  const next=`assert.match(workspaceCopy,/${needle}/)`
+  if(prelaunch.includes(old)) prelaunch=prelaunch.replace(old,next)
+}
+write(prelaunchPath,prelaunch)
+
 const v46Path='scripts/test_v46_modular_boundaries.mjs'
 let v46=read(v46Path)
 const inventory=[
