@@ -33,6 +33,7 @@ jobs:
 
       - name: Verify active modular state before committing finalizer
         run: |
+          node scripts/test_v46_workspace_session_audit.mjs
           npm run test:v46-controller
           npm run test:v46-modules
           npm run test:v46-direct-imports
@@ -58,8 +59,9 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add scripts/v46_finalize_release_candidate.mjs \
+                  scripts/v46_finalize_release_candidate_v72.mjs \
                   scripts/test_v46_finalizer_v72_parity.mjs \
                   app/modules/README.md \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md
-          git commit -m 'V46 align final release gate with V72 and eleven languages'
+          git commit -m 'V46 align canonical V72 final release gate'
           git push origin HEAD:v46-navigation-clean
