@@ -61,3 +61,19 @@ jobs:
           path: AS-Gold-Quellcode-${{ github.sha }}.zip
           if-no-files-found: error
           retention-days: 90
+
+      - name: Create Drive-friendly source-only archive
+        run: |
+          zip -r AS-Gold-V38-Quellcode-Drive-${GITHUB_SHA}.zip . \
+            -x '.git/*' \
+               'public/videos/*' \
+               'node_modules/*' \
+               '.next/*'
+
+      - name: Upload Drive-friendly source-only archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: AS-Gold-V38-Quellcode-Drive-${{ github.sha }}
+          path: AS-Gold-V38-Quellcode-Drive-${{ github.sha }}.zip
+          if-no-files-found: error
+          retention-days: 90
