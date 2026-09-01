@@ -1,9 +1,14 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
+import { TesterShareButton } from '../components/TesterShareButton'
 
-export const metadata={title:'AS Gold V49 sicher ausprobieren',description:'Kontrollierter AS-Gold-V49-Testbetrieb mit synthetischen oder anonymisierten Testdaten.'}
+export const metadata={title:'AS Gold V70 testen und weiterleiten',description:'AS Gold sicher testen und den Tester-Link direkt über WhatsApp, E-Mail oder andere Apps weiterleiten.'}
 
 export default function TestingGuide(){
-  return <LegalDocument pageId="testen" eyebrow="Testerbetrieb V49" title="AS Gold V49 sicher ausprobieren" intro="Hier können Sie den vollständigen V49-Ablauf prüfen, ohne echte Kundendaten oder eine Zahlung zu verwenden.">
+  return <LegalDocument pageId="testen" eyebrow="Testerbetrieb V70" title="AS Gold V70 sicher ausprobieren" intro="Hier können Sie den vollständigen V70-Ablauf prüfen, den Link weiterleiten und ohne echte Kundendaten oder eine Zahlung testen." updated="1. September 2026" localizedExtra={<TesterShareButton/>} localizedExtraAfterSection={0}>
+    <LegalSection title="Tester-Link weiterleiten">
+      <p>Öffnen Sie mit einem Fingertipp das Teilen-Menü Ihres Handys oder senden Sie die vorbereitete Nachricht direkt per WhatsApp.</p>
+      <TesterShareButton/>
+    </LegalSection>
     <LegalNotice tone="warning"><b>Nur sichere Testdaten verwenden.</b><p>Bitte ausschließlich synthetische oder wirksam anonymisierte Unterlagen hochladen. Die Bezahlfunktion bleibt deaktiviert.</p></LegalNotice>
     <LegalSection title="Diese Punkte bitte prüfen">
       <ul>
@@ -21,8 +26,8 @@ export default function TestingGuide(){
       <p>Die Musterdatei enthält keine echten personenbezogenen Daten und kann für Upload, Analyse, Ampel und Export verwendet werden.</p>
     </LegalSection>
     <LegalSection title="Testfeedback">
-      <p><a className="primary btn" href="mailto:sebastian.auls@gmail.com?subject=AS%20Gold%20V49%20Testfeedback">Feedback zu V49 senden</a></p>
-      <p>V49 ist ein kontrollierter Produkttest. Ergebnisse müssen vor einer verbindlichen Verwendung weiterhin geprüft und ausdrücklich freigegeben werden.</p>
+      <p><a className="primary btn" href="mailto:sebastian.auls@gmail.com?subject=AS%20Gold%20V70%20Testfeedback">Feedback zu V70 senden</a></p>
+      <p>V70 ist ein kontrollierter Produkttest. Ergebnisse müssen vor einer verbindlichen Verwendung weiterhin geprüft und ausdrücklich freigegeben werden.</p>
     </LegalSection>
   </LegalDocument>
 }
