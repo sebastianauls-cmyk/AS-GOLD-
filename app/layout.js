@@ -1,7 +1,7 @@
 import './globals.css'
 import { HeroCopyEnhancer } from './components/HeroCopyEnhancer'
 import { HeroTitleStabilizer } from './modules/public/HeroTitleStabilizer'
-import { V37FirstAction } from './components/V37FirstAction'
+import { V37FirstAction } from './modules/public/V37FirstAction'
 import { ProductIntroCompact } from './modules/public/ProductIntroCompact'
 import { ExplainerVideo } from './components/ExplainerVideo'
 import { ProblemNavigator } from './modules/public/ProblemNavigator'
