@@ -21,6 +21,14 @@ const ordinaryDate=analyzeDeadlines({text:'Die Besprechung findet am 03.09.2026 
 assert.equal(ordinaryDate.status,'uncertain')
 assert.equal(ordinaryDate.primary,null)
 
+const documentDate=analyzeDeadlines({text:'Stellungnahme vom 03.09.2026. Inhalt folgt.',now})
+assert.equal(documentDate.status,'uncertain')
+assert.equal(documentDate.primary,null)
+
+const dueDate=analyzeDeadlines({text:'Der Betrag ist fällig am 06.09.2026.',now})
+assert.equal(dueDate.status,'high')
+assert.equal(dueDate.primary.date,'2026-09-06')
+
 const mixed=extractDeadlineDates('Dokumentdatum 01.09.2026. Besprechung am 02.09.2026. Ihre Antwort muss spätestens bis 05.09.2026 eingehen.')
 assert.equal(mixed.length,1)
 assert.equal(mixed[0].date.toISOString().slice(0,10),'2026-09-05')
@@ -55,4 +63,4 @@ assert.match(card,/de:.*Fristen-Warnung/)
 for(const language of ['en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(card,new RegExp(`${language}:\\{`))
 assert.match(layout,/V38DeadlineCardEnhancer/)
 
-console.log('V38 deadline intelligence guard passed: semantic deadline cues, ordinary-date rejection, document-view wiring, localized consequences, prioritization and uncertainty verified.')
+console.log('V38 deadline intelligence guard passed: semantic deadline cues, false-positive rejection, document-view wiring, localized consequences, prioritization and uncertainty verified.')
