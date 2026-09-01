@@ -50,6 +50,7 @@ jobs:
                   app/layout.js \
                   app/modules/README.md \
                   scripts/test_v38_deadline_intelligence.mjs \
+                  scripts/test_v38_synthetic_full_flow.mjs \
                   scripts/test_v46_modular_boundaries.mjs
           git commit -m 'V46 render deadline warnings directly'
           git push origin HEAD:v46-navigation-clean
