@@ -29,28 +29,48 @@ jobs:
         run: npm ci
 
       - name: Run full regression chain
-        run: npm run prebuild
+        id: prebuild
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run prebuild 2>&1 | tee docs/V46_DASHBOARD_PREBUILD_LOG.txt
 
-      - name: Build production bundle
-        run: npx next build
-
-      - name: Commit verified modular split
+      - name: Commit regression diagnostics on failure
+        if: steps.prebuild.outcome == 'failure'
         shell: bash
         run: |
           set -euo pipefail
-          rm -f docs/V46_DASHBOARD_SPLIT_LOG.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add docs/V46_DASHBOARD_PREBUILD_LOG.txt
+          git commit -m 'V46 record dashboard regression failure' || true
+          git push origin HEAD:v46-navigation-clean
+          exit 1
+
+      - name: Build production bundle
+        if: steps.prebuild.outcome == 'success'
+        run: npx next build
+
+      - name: Commit verified modular split
+        if: steps.prebuild.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -f docs/V46_DASHBOARD_SPLIT_LOG.txt docs/V46_DASHBOARD_PREBUILD_LOG.txt
           if [ -z "$(git status --porcelain)" ]; then
             echo 'No dashboard split changes to commit.'
             exit 0
           fi
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add app/modules/workspace/WorkspaceApp.js \
-                  app/modules/workspace/DashboardSurface.js \
-                  app/modules/pricing/PricingSurface.js \
-                  app/modules/compliance/AccountSurface.js \
-                  scripts/test_v46_modular_boundaries.mjs \
-                  docs/APP_GOLD_MODULARISIERUNG_V46.md \
-                  docs/V46_DASHBOARD_SPLIT_LOG.txt
+          git add -A app/modules/workspace/WorkspaceApp.js \
+                     app/modules/workspace/DashboardSurface.js \
+                     app/modules/pricing/PricingSurface.js \
+                     app/modules/compliance/AccountSurface.js \
+                     scripts/test_v46_modular_boundaries.mjs \
+                     docs/APP_GOLD_MODULARISIERUNG_V46.md \
+                     docs/V46_DASHBOARD_SPLIT_LOG.txt \
+                     docs/V46_DASHBOARD_PREBUILD_LOG.txt
           git commit -m 'V46 split dashboard pricing and account surfaces'
           git push origin HEAD:v46-navigation-clean
