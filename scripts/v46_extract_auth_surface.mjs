@@ -29,6 +29,17 @@ if(!workspace.includes("import { AuthSurface } from '../auth/AuthSurface'")){
 }
 write(workspacePath,workspace)
 
+const e2ePath='scripts/test_v37_end_to_end.mjs'
+let e2e=read(e2ePath)
+if(!e2e.includes("const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')")){
+  const anchor="const uploadConfig=fs.readFileSync('app/modules/documents/uploadConfig.js','utf8')"
+  if(!e2e.includes(anchor)) throw new Error('V46 auth surface: V37 source anchor missing')
+  e2e=e2e.replace(anchor,`${anchor}\nconst authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')`)
+}
+const oldNavigation="for(const marker of ['backOverview','backCases','backClients','backExplanation']) mustContain(page,marker,`navigation ${marker}`)"
+if(e2e.includes(oldNavigation)) e2e=e2e.replace(oldNavigation,"for(const marker of ['backOverview','backCases','backClients']) mustContain(page,marker,`navigation ${marker}`)\nmustContain(authSurface,'backExplanation','navigation backExplanation in auth module')")
+write(e2ePath,e2e)
+
 const guardPath='scripts/test_v46_modular_boundaries.mjs'
 let guard=read(guardPath)
 const inventory="  'app/modules/auth/AuthSurface.js',"
@@ -46,7 +57,7 @@ write(guardPath,guard)
 
 const docsPath='docs/APP_GOLD_MODULARISIERUNG_V46.md'
 let docs=read(docsPath)
-if(!docs.includes('V46 Auth-Oberfläche')) docs += '\n\n### V46 Auth-Oberfläche\n\n- `auth/AuthSurface.js` besitzt jetzt die vollständige Login-/Registrierungsoberfläche.\n- `WorkspaceApp.js` hält weiterhin den Auth-Zustand und die Auth-Handler, rendert die Formulare aber nicht mehr selbst.\n- Passwortfeld, Passwortregeln, Sprachwahl, Rechtseinwilligung und Footer werden innerhalb der Auth-Modulgrenze komponiert.\n'
+if(!docs.includes('V46 Auth-Oberfläche')) docs += '\n\n### V46 Auth-Oberfläche\n\n- `auth/AuthSurface.js` besitzt jetzt die vollständige Login-/Registrierungsoberfläche.\n- `WorkspaceApp.js` hält weiterhin den Auth-Zustand und die Auth-Handler, rendert die Formulare aber nicht mehr selbst.\n- Passwortfeld, Passwortregeln, Sprachwahl, Rechtseinwilligung und Footer werden innerhalb der Auth-Modulgrenze komponiert.\n- Der V37-End-to-End-Guard verfolgt den Auth-spezifischen Zurück-Pfad jetzt bis in das Auth-Modul statt ihn fälschlich im Workspace-Controller zu verlangen.\n'
 write(docsPath,docs)
 
 const readmePath='app/modules/README.md'
@@ -54,4 +65,4 @@ let readme=read(readmePath)
 if(!readme.includes('auth/AuthSurface.js')) readme += '\n- `auth/AuthSurface.js`: login and registration composition; the workspace controller supplies state and handlers only.\n'
 write(readmePath,readme)
 
-console.log('V46 authentication surface extracted from WorkspaceApp.')
+console.log('V46 authentication surface extracted from WorkspaceApp and E2E guard aligned to module ownership.')
