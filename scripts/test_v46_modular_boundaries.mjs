@@ -6,6 +6,7 @@ const exists=path=>assert.ok(fs.existsSync(path),`missing module file: ${path}`)
 
 for(const path of [
   'app/modules/language/LanguageSwitcher.js',
+  'app/modules/language/useLanguagePreferences.js',
   'app/modules/language/OutputLanguageBridge.js',
   'app/modules/language/outputLanguage.js',
   'app/modules/language/LegalLanguageContext.js',
@@ -62,6 +63,14 @@ assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/)
 assert.ok(pageEntry.length<500,'root page must remain a thin workspace-module entry point')
 
 const workspace=read('app/modules/workspace/WorkspaceApp.js')
+const languagePreferences=read('app/modules/language/useLanguagePreferences.js')
+assert.match(workspace,/useLanguagePreferences/)
+assert.doesNotMatch(workspace,/localStorage\.setItem\('asgold-language'/)
+assert.doesNotMatch(workspace,/document\.documentElement\.dir/)
+assert.match(languagePreferences,/asgold-language/)
+assert.match(languagePreferences,/asgold-output-language/)
+assert.match(languagePreferences,/asgold:output-language/)
+assert.match(languagePreferences,/rtlLanguages/)
 assert.match(workspace,/signInSession/)
 assert.match(read('app/modules/services/authRepository.js'),/signInWithPassword/)
 assert.match(read('app/modules/documents/DocumentsSurface.js'),/DocumentSection/)

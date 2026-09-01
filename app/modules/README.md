@@ -31,7 +31,7 @@ This directory is the target ownership structure for the V46 modularization. New
 
 ## Migration status — 1 September 2026
 
-- `language/`: owns LanguageSwitcher, ExplainerVideoDialog, LegalLanguageContext, output-language helpers, the complete language catalog chain and component translation catalogs. V43/V44 DOM correction layers are removed. Output-language transport no longer relies on DOM polling or global fetch interception.
+- `language/`: owns LanguageSwitcher, ExplainerVideoDialog, LegalLanguageContext, persisted interface/output language preferences, output-language helpers, the complete language catalog chain and component translation catalogs. V43/V44 DOM correction layers are removed. WorkspaceApp no longer owns localStorage/document language synchronization, and output-language transport no longer relies on DOM polling or global fetch interception.
 - `navigation/`: owns accessibility hardening and mobile resilience; root layout imports both modules directly.
 - `tester/`: owns the paused tester state; public tester access remains closed and has no registration start link.
 - `auth/`: owns password policy and password UI; broader login/registration composition is still inside WorkspaceApp.
@@ -96,3 +96,5 @@ The workspace controller now delegates repeated shell markup to explicit compone
 - `services/authRepository.js`: session lookup/subscription, sign-in, reset, test registration and sign-out are isolated from WorkspaceApp; AuthSurface remains presentation-only.
 
 - `services/exportService.js`: workspace and account export artifact generation/download is isolated from WorkspaceApp; the controller only applies permissions, audit logging and user feedback.
+
+- `language/useLanguagePreferences.js`: owns persisted interface language, output language, RTL document direction and the existing output-language event compatibility signal.

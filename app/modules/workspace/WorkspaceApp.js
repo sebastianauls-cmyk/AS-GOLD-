@@ -32,12 +32,12 @@ import { ApprovalDetail, getV25ApprovalCopy } from './components/V25ApprovalWork
 import { getV26AnalysisCopy } from './components/V26DocumentAnalysis'
 import { LegalAcceptance, PRIVACY_NOTICE_VERSION, TERMS_VERSION, getV28PrivacyCopy } from './components/V28PrivacyControls'
 import { getV29PasswordCopy, validateV29Password } from './components/V29PasswordPolicy'
-import { localeForLanguage, pageTranslations, rtlLanguages, supportedLanguages } from './lib/v30Languages.mjs'
+import { localeForLanguage, pageTranslations } from './lib/v30Languages.mjs'
 import { promoTranslations } from './lib/v31PromoTranslations.mjs'
 import { orderCasesByResearch } from '../public/casePriorityV56.mjs'
+import { useLanguagePreferences } from '../language/useLanguagePreferences'
 
 
-const languages = supportedLanguages
 
 
 
@@ -119,8 +119,7 @@ export default function Home(){
   const [uploadCaseId,setUploadCaseId] = useState('')
   const [uploading,setUploading] = useState(false)
   const [exportType,setExportType] = useState('pdf')
-  const [language,setLanguage] = useState('de')
-  const [outputLanguage,setOutputLanguage] = useState('de')
+  const {language,setLanguage,outputLanguage,setOutputLanguage} = useLanguagePreferences()
   const [selectedGoal,setSelectedGoal] = useState('overview')
   const [showRecommendation,setShowRecommendation] = useState(false)
   const [selectedPublicCase,setSelectedPublicCase] = useState('work')
@@ -145,28 +144,6 @@ export default function Home(){
   const statusLabel = s => s === 'open' ? eui.open : s === 'closed' ? eui.closed : s || '—'
   const lightLabel = s => s === 'yellow' ? `🟡 ${eui.yellow}` : s === 'green' ? `🟢 ${eui.green}` : s === 'red' ? `🔴 ${eui.red}` : s || '—'
   const monthsLabel = value => a.months.replace('{n}',value).replace('{plural}', value>1 ? (language==='de'?'e':language==='en'?'s':'') : '')
-
-  useEffect(()=>{
-    const queryLanguage = new URLSearchParams(window.location.search).get('lang')
-    const savedLanguage = localStorage.getItem('asgold-language')
-    const savedOutput = localStorage.getItem('asgold-output-language')
-    if(queryLanguage && languages.some(l=>l.key===queryLanguage)) setLanguage(queryLanguage)
-    else if(savedLanguage && languages.some(l=>l.key===savedLanguage)) setLanguage(savedLanguage)
-    if(savedOutput && languages.some(l=>l.key===savedOutput)) setOutputLanguage(savedOutput)
-  },[])
-
-  useEffect(()=>{
-    document.documentElement.lang = language
-    document.documentElement.dir = rtlLanguages.has(language) ? 'rtl' : 'ltr'
-    localStorage.setItem('asgold-language',language)
-    return ()=>{ document.documentElement.dir = 'ltr' }
-  },[language])
-
-  useEffect(()=>{
-    localStorage.setItem('asgold-output-language',outputLanguage)
-    document.documentElement.dataset.outputLanguage=outputLanguage
-    document.dispatchEvent(new CustomEvent('asgold:output-language',{detail:{language:outputLanguage}}))
-  },[outputLanguage])
 
   const currentTier = access?.permissions?.tier || 'free'
   const currentPlan = useMemo(() => plans.find(p=>p.key===currentTier) || plans[0],[currentTier])
