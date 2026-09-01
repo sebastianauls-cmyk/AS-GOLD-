@@ -1,4 +1,5 @@
 import {componentTranslations as baseComponentTranslations} from './v30ComponentTranslations.base.mjs'
+import {vietnameseComponentTranslations} from './v71VietnameseComponentTranslations.mjs'
 
 const confidenceLabels=(high,medium,low)=>({hoch:high,high,mittel:medium,medium,mid:medium,niedrig:low,low})
 
@@ -22,4 +23,4 @@ const bgPassword={title:'Сигурна тестова парола',intro:'Из
 const roBg={workspaceCopy:{ro:roWorkspace,bg:bgWorkspace},approvalCopy:{ro:roApproval,bg:bgApproval},analysisCopy:{ro:roAnalysis,bg:bgAnalysis},privacyCopy:{ro:roPrivacy,bg:bgPrivacy},aiControlCopy:{ro:roAi,bg:bgAi},passwordCopy:{ro:roPassword,bg:bgPassword}}
 
 export const componentTranslations={}
-for(const key of new Set([...Object.keys(baseComponentTranslations),...Object.keys(roBg)])) componentTranslations[key]={...(baseComponentTranslations[key]||{}),...(roBg[key]||{})}
+for(const key of new Set([...Object.keys(baseComponentTranslations),...Object.keys(roBg),...Object.keys(vietnameseComponentTranslations)])) componentTranslations[key]={...(baseComponentTranslations[key]||{}),...(roBg[key]||{}),...(vietnameseComponentTranslations[key]===undefined?{}:{vi:vietnameseComponentTranslations[key]})}

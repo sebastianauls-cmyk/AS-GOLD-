@@ -1,12 +1,13 @@
 'use client'
 
 import { useEffect, useId, useRef, useState } from 'react'
-import { AF, AE, BG, DE, FR, GB, IR, PL, RO, RU, SA, TR, US } from 'country-flag-icons/react/3x2'
+import { AF, AE, BG, DE, FR, GB, IR, PL, RO, RU, SA, TR, US, VN } from 'country-flag-icons/react/3x2'
 import { supportedLanguages } from './v36Languages.mjs'
 
-const flagComponents={AF,AE,BG,DE,FR,GB,IR,PL,RO,RU,SA,TR,US}
+const flagComponents={AF,AE,BG,DE,FR,GB,IR,PL,RO,RU,SA,TR,US,VN}
 const explainerButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی',ro:'Videoclip explicativ',bg:'Обяснително видео'}
-const backButtonText={de:'← Zurück',en:'← Back',fr:'← Retour',tr:'← Geri',pl:'← Wstecz',ru:'← Назад',ar:'الرجوع →',fa:'بازگشت →',ro:'← Înapoi',bg:'← Назад'}
+const backButtonText={de:'← Zurück',en:'← Back',fr:'← Retour',tr:'← Geri',pl:'← Wstecz',ru:'← Назад',ar:'الرجوع →',fa:'بازگشت →',ro:'← Înapoi',bg:'← Назад',
+  vi:'← Quay lại'}
 
 function FlagSet({countryCodes=[],fallback='',className=''}){
   const usable=countryCodes.filter(code=>flagComponents[code])

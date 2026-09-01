@@ -10,16 +10,17 @@ const explainerVideos={
   ar:'/videos/as-gold-v35-ar.mp4',
   fa:'/videos/as-gold-v35-fa.mp4',
   ro:'/videos/as-gold-v35-ro.mp4',
-  bg:'/videos/as-gold-v35-bg.mp4'
+  bg:'/videos/as-gold-v35-bg.mp4',
+  vi:'https://resource2.heygen.ai/video_translate/c853c1c7508249c9933e9ecf2fa664c1-vi_vi-VN/original.mp4'
 }
 
 const videoLanguages=[
   ['de','🇩🇪','Deutsch'],['en','🇬🇧','English'],['fr','🇫🇷','Français'],['tr','🇹🇷','Türkçe'],['pl','🇵🇱','Polski'],
-  ['ru','🇷🇺','Русский'],['ar','🇸🇦','العربية'],['fa','🇮🇷','فارسی'],['ro','🇷🇴','Română'],['bg','🇧🇬','Български']
+  ['ru','🇷🇺','Русский'],['ar','🇸🇦','العربية'],['fa','🇮🇷','فارسی'],['ro','🇷🇴','Română'],['bg','🇧🇬','Български'],['vi','🇻🇳','Tiếng Việt']
 ]
 
-export const videoButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی',ro:'Videoclip explicativ',bg:'Обяснително видео'}
-const videoCloseText={de:'Schließen',en:'Close',fr:'Fermer',tr:'Kapat',pl:'Zamknij',ru:'Закрыть',ar:'إغلاق',fa:'بستن',ro:'Închide',bg:'Затвори'}
+export const videoButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی',ro:'Videoclip explicativ',bg:'Обяснително видео',vi:'Video giải thích'}
+const videoCloseText={de:'Schließen',en:'Close',fr:'Fermer',tr:'Kapat',pl:'Zamknij',ru:'Закрыть',ar:'إغلاق',fa:'بستن',ro:'Închide',bg:'Затвори',vi:'Đóng'}
 
 export function ExplainerVideoDialog({language='de',videoLanguage,setVideoLanguage,onClose}){
   const title=videoButtonText[language]||videoButtonText.de
