@@ -58,3 +58,12 @@ This directory is the target ownership structure for the V46 modularization. New
 Current gate: latest V46 compliance/service modularization build is green; `main` remains unchanged and tester access remains closed until all release blockers above are cleared.
 
 - `documents/uploadConfig.js`: owns upload limits, accepted file extensions and localized upload validation copy; WorkspaceApp only consumes this domain configuration.
+
+### Workspace catalog boundaries
+
+- `auth/passwordUi.js`: password visibility copy.
+- `public/publicUi.js`: public landing and language-control copy.
+- `documents/exportUi.js`: export labels and status copy.
+- `workspace/workspaceText.js`: protected-workspace application copy.
+
+WorkspaceApp consumes these catalogs; it no longer owns their leading definitions.

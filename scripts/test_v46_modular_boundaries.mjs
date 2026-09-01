@@ -27,6 +27,10 @@ for(const path of [
   'app/modules/cases/V42ActionableGaps.js',
   'app/modules/documents/V26DocumentAnalysis.js',
   'app/modules/documents/uploadConfig.js',
+  'app/modules/workspace/workspaceText.js',
+  'app/modules/documents/exportUi.js',
+  'app/modules/public/publicUi.js',
+  'app/modules/auth/passwordUi.js',
   'app/modules/pricing/PromoCodeControl.js',
   'app/modules/pricing/v31PromoTranslations.mjs',
   'app/modules/compliance/LegalDocument.js',
@@ -58,8 +62,21 @@ assert.match(workspace,/\.\.\/services\/documentAnalysis/)
 assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
 assert.doesNotMatch(workspace,/const supabase = createClient\(/)
 assert.match(workspace,/invokeDocumentAnalysis/)
+assert.match(workspace,/\.\.\/services\/supabaseClient/)
+assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
+assert.doesNotMatch(workspace,/const supabase = createClient\(/)
+assert.match(workspace,/invokeDocumentAnalysis/)
 assert.match(workspace,/\.\.\/documents\/uploadConfig/)
 assert.doesNotMatch(workspace,/const maxUploadBytes =/)
+assert.match(workspace,/\.\.\/auth\/passwordUi/)
+assert.match(workspace,/\.\.\/public\/publicUi/)
+assert.match(workspace,/\.\.\/documents\/exportUi/)
+assert.match(workspace,/\.\/workspaceText/)
+assert.doesNotMatch(workspace,/const passwordUi =/)
+assert.doesNotMatch(workspace,/const ui =/)
+assert.doesNotMatch(workspace,/const exportUi =/)
+assert.doesNotMatch(workspace,/const appText =/)
 assert.match(workspace,/\.\.\/services\/supabaseClient/)
 assert.match(workspace,/\.\.\/services\/documentAnalysis/)
 assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)

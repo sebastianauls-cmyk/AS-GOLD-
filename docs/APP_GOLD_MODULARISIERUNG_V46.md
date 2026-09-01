@@ -99,3 +99,12 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Dateigrenze, unterstützte Dateiendungen, Accept-Liste und lokalisierte Upload-Hinweise besitzen damit eine eindeutige fachliche Zuständigkeit im Dokumentmodul.
 - WorkspaceApp konsumiert diese Werte nur noch über die Modulgrenze.
 - Die End-to-End-, Prelaunch-, Praxis-Simulations- und V46-Modulguards wurden auf die neue Zuständigkeit umgestellt.
+
+
+### V46 Statische Workspace-Kataloge
+
+- Passwort-UI-Texte liegen unter app/modules/auth/passwordUi.js.
+- Öffentliche Oberflächentexte liegen unter app/modules/public/publicUi.js.
+- Exporttexte liegen unter app/modules/documents/exportUi.js.
+- Die umfangreichen geschützten Workspace-Texte liegen unter app/modules/workspace/workspaceText.js.
+- WorkspaceApp importiert die Kataloge nur noch über die jeweiligen Fachgrenzen und enthält keine führenden Kopien mehr.
