@@ -25,6 +25,24 @@ jobs:
       - name: Extract auth service
         run: node scripts/v46_extract_auth_service.mjs
 
+      - name: Align legacy E2E auth guard
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('scripts/test_v37_end_to_end.mjs')
+          source=path.read_text()
+          repo_line="const workspaceRepository=fs.readFileSync('app/modules/services/workspaceRepository.js','utf8')"
+          auth_line="const authRepository=fs.readFileSync('app/modules/services/authRepository.js','utf8')"
+          if auth_line not in source:
+              if repo_line not in source:
+                  raise SystemExit('auth repository guard import anchor missing')
+              source=source.replace(repo_line, repo_line+'\n'+auth_line)
+          source=source.replace("mustContain(page,'signInWithPassword','password login')","mustContain(authRepository,'signInWithPassword','password login service')")
+          source=source.replace("mustContain(page,'auth.signUp','registration action')","mustContain(authRepository,'auth.signUp','registration service action')")
+          path.write_text(source)
+          PY
+
       - name: Install dependencies
         run: npm ci
 
@@ -47,6 +65,7 @@ jobs:
           git add app/modules/workspace/WorkspaceApp.js \
                   app/modules/services/authRepository.js \
                   app/modules/README.md \
-                  scripts/test_v46_modular_boundaries.mjs
+                  scripts/test_v46_modular_boundaries.mjs \
+                  scripts/test_v37_end_to_end.mjs
           git commit -m 'V46 extract auth service boundary'
           git push origin HEAD:v46-navigation-clean
