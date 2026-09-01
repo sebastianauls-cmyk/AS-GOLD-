@@ -7,6 +7,7 @@ const firstAction=fs.readFileSync('app/modules/public/V37FirstAction.js','utf8')
 const video=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8')
 const firstActionCompatibility=fs.readFileSync('app/components/V37FirstAction.js','utf8')
 const videoCompatibility=fs.readFileSync('app/components/ExplainerVideo.js','utf8')
+const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')
 
 const need=(source,needle,label)=>{if(!source.includes(needle)) throw new Error(`V37 readiness: missing ${label}`)}
 
@@ -25,7 +26,8 @@ need(videoCompatibility,'../modules/public/ExplainerVideo','explainer compatibil
 
 need(page,"setScreen('register')",'registration path')
 need(page,"setScreen('login')",'login path')
-for(const key of ['backOverview','backCases','backClients','backExplanation']) need(page,key,`back navigation ${key}`)
+for(const key of ['backOverview','backCases','backClients']) need(page,key,`back navigation ${key}`)
+need(authSurface,'backExplanation','back navigation backExplanation in auth module')
 need(page,'functionErrorMessage','analysis error normalization')
 need(page,'configuration_required','analysis configuration error')
 need(page,'emptyState','empty-state presentation')
