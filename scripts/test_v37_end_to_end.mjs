@@ -4,7 +4,8 @@ import fs from 'node:fs'
 const page=fs.readFileSync('app/page.js','utf8')
 const layout=fs.readFileSync('app/layout.js','utf8')
 const firstAction=fs.readFileSync('app/components/V37FirstAction.js','utf8')
-const problem=fs.readFileSync('app/components/ProblemNavigator.js','utf8')
+const problem=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8')
+const problemCompatibility=fs.readFileSync('app/components/ProblemNavigator.js','utf8')
 
 const mustContain=(source,needle,label)=>{
   if(!source.includes(needle)) throw new Error(`V37 E2E guard: missing ${label}: ${needle}`)
@@ -13,6 +14,8 @@ const mustContain=(source,needle,label)=>{
 // 1. Public entry -> guided problem input / upload / sample.
 mustContain(layout,'V37FirstAction','V37 first-action mount')
 mustContain(layout,'ProblemNavigator','problem navigator mount')
+mustContain(layout,"./modules/public/ProblemNavigator",'problem navigator module ownership')
+mustContain(problemCompatibility,"../modules/public/ProblemNavigator",'problem navigator compatibility re-export')
 mustContain(firstAction,'Problem beschreiben','problem CTA')
 mustContain(firstAction,'Dokument hochladen','upload CTA')
 mustContain(firstAction,'Beispiel ansehen','sample CTA')
