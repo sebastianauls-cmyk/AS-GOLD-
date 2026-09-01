@@ -16,6 +16,7 @@ assert.ok(languageMatch,'missing explainer language selector')
 const languageBlock=languageMatch[1]
 const copyBlock=objectBody('copy')
 const femaleLocalBlock=objectBody('femaleLocalVideos')
+const maleLocalBlock=objectBody('maleLocalVideos')
 const femaleRemoteBlock=objectBody('femaleRemoteVideos')
 const maleRemoteBlock=objectBody('maleRemoteVideos')
 
@@ -30,11 +31,8 @@ for(const language of expectedLanguages){
     new RegExp(`\\b${language}:\\{[^\\n]*voice:'[^']+'[^\\n]*female:'[^']+'[^\\n]*male:'[^']+'[^\\n]*maleFallback:'[^']+'`),
     `missing presenter or fallback controls for ${language}`
   )
-  assert.match(
-    femaleLocalBlock,
-    new RegExp(`\\b${language}:'/videos/as-gold-v35-${language}\\.mp4'`),
-    `missing local female video for ${language}`
-  )
+  const expectedFemale=language==='de'?'as-gold-explainer-de-female':`as-gold-v35-${language}`
+  assert.match(femaleLocalBlock,new RegExp(`\\b${language}:'/videos/${expectedFemale}\\.mp4'`),`missing local female video for ${language}`)
   assert.match(
     femaleRemoteBlock,
     new RegExp(`\\b${language}:'https://resource2\\.heygen\\.ai/video_translate/[^']+/original\\.mp4'`),
@@ -48,10 +46,11 @@ for(const language of expectedLanguages){
 }
 
 assert.equal(
-  (femaleLocalBlock.match(/\/videos\/as-gold-v35-[a-z]{2}\.mp4/g)||[]).length,
+  (femaleLocalBlock.match(/\/videos\/as-gold-(?:v35-[a-z]{2}|explainer-de-female)\.mp4/g)||[]).length,
   expectedLanguages.length,
   'local female catalog must contain exactly ten videos'
 )
+assert.match(maleLocalBlock,/de:'\/videos\/as-gold-explainer-de-male\.mp4'/)
 assert.equal(
   (femaleRemoteBlock.match(/https:\/\/resource2\.heygen\.ai\/video_translate\//g)||[]).length,
   expectedLanguages.length,
@@ -79,6 +78,7 @@ assert.match(explainerSource,/onClick=\{\(\)=>setPresenter\('male'\)\}/)
 assert.match(explainerSource,/presenter==='male'&&videoLanguage!=='de'/)
 assert.match(explainerSource,/\{c\.maleFallback\}/)
 assert.match(explainerSource,/presenter==='female'&&<source src=\{femaleLocal\}/)
+assert.match(explainerSource,/presenter==='male'&&maleLocal&&<source src=\{maleLocal\}/)
 assert.match(explainerSource,/<source src=\{presenter==='male'\?maleRemote:femaleRemote\}/)
 assert.match(explainerSource,/presenter==='male'&&<source src=\{femaleRemote\}/)
 assert.match(explainerSource,/const rtl=uiLanguage==='ar'\|\|uiLanguage==='fa'/)

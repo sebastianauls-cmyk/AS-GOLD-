@@ -23,9 +23,11 @@ const copy={
 }
 
 const femaleLocalVideos={
-  de:'/videos/as-gold-v35-de.mp4',en:'/videos/as-gold-v35-en.mp4',fr:'/videos/as-gold-v35-fr.mp4',tr:'/videos/as-gold-v35-tr.mp4',pl:'/videos/as-gold-v35-pl.mp4',
+  de:'/videos/as-gold-explainer-de-female.mp4',en:'/videos/as-gold-v35-en.mp4',fr:'/videos/as-gold-v35-fr.mp4',tr:'/videos/as-gold-v35-tr.mp4',pl:'/videos/as-gold-v35-pl.mp4',
   ru:'/videos/as-gold-v35-ru.mp4',ar:'/videos/as-gold-v35-ar.mp4',fa:'/videos/as-gold-v35-fa.mp4',ro:'/videos/as-gold-v35-ro.mp4',bg:'/videos/as-gold-v35-bg.mp4'
 }
+
+const maleLocalVideos={de:'/videos/as-gold-explainer-de-male.mp4'}
 
 const femaleRemoteVideos={
   de:'https://resource2.heygen.ai/video_translate/6b18109b292448afb9fedf930f8ccdbb-de/original.mp4',en:'https://resource2.heygen.ai/video_translate/3ccf94ed801641f585cd0620cc97de38-en/original.mp4',fr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-fr/original.mp4',tr:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-tr/original.mp4',pl:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-pl/original.mp4',ru:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ru/original.mp4',ar:'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ar/original.mp4',fa:'https://resource2.heygen.ai/video_translate/4378b94dc0e84ad598a3742c105bbda7-fa_fa-IR/original.mp4',ro:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-ro/original.mp4',bg:'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-bg/original.mp4'
@@ -47,7 +49,15 @@ export function ExplainerVideo(){
     const mount=()=>{const heroMain=document.querySelector('.heroLayout > div:first-child')||document.querySelector('.hero .wrap > div:first-child');const problemSlot=document.getElementById('asgold-problem-slot');const introSlot=document.getElementById('asgold-product-intro-compact-slot');if(!heroMain||(!problemSlot&&!introSlot))return false;let slot=document.getElementById('asgold-explainer-video-slot');if(!slot){slot=document.createElement('div');slot.id='asgold-explainer-video-slot';if(problemSlot)problemSlot.insertAdjacentElement('afterend',slot);else introSlot.insertAdjacentElement('beforebegin',slot)}setHost(slot);return true}
     if(!mount()){observer=new MutationObserver(()=>{if(mount())observer?.disconnect()});observer.observe(document.body,{subtree:true,childList:true})}
     const savedPresenter=localStorage.getItem('asgold-video-presenter');if(savedPresenter==='male'||savedPresenter==='female')setPresenter(savedPresenter)
-    const sync=()=>{const lang=(document.documentElement.lang||'de').split('-')[0];setUiLanguage(lang);if(languages.some(([code])=>code===lang))setVideoLanguage(lang)};sync();const langObserver=new MutationObserver(sync);langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});return()=>{observer?.disconnect();langObserver.disconnect()}
+    const sync=()=>{const lang=(document.documentElement.lang||'de').split('-')[0];setUiLanguage(lang);if(languages.some(([code])=>code===lang))setVideoLanguage(lang)}
+    const openExplainer=event=>{
+      const requested=event.detail?.language
+      if(languages.some(([code])=>code===requested))setVideoLanguage(requested)
+      setOpen(true)
+      requestAnimationFrame(()=>document.getElementById('asgold-explainer-video-slot')?.scrollIntoView({behavior:'smooth',block:'center'}))
+    }
+    sync();document.addEventListener('asgold:open-explainer',openExplainer)
+    const langObserver=new MutationObserver(sync);langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});return()=>{observer?.disconnect();langObserver.disconnect();document.removeEventListener('asgold:open-explainer',openExplainer)}
   },[])
   useEffect(()=>{localStorage.setItem('asgold-video-presenter',presenter)},[presenter])
   if(!host)return null
@@ -55,6 +65,7 @@ export function ExplainerVideo(){
   const rtl=uiLanguage==='ar'||uiLanguage==='fa'
   const femaleLocal=femaleLocalVideos[videoLanguage]||femaleLocalVideos.de
   const femaleRemote=femaleRemoteVideos[videoLanguage]||femaleRemoteVideos.de
+  const maleLocal=maleLocalVideos[videoLanguage]
   const maleRemote=maleRemoteVideos[videoLanguage]||maleRemoteVideos.de
   const buttonStyle=active=>({flex:'1 1 150px',minHeight:46,padding:'10px 14px',border:active?'2px solid #8f6e25':'1px solid #d8d1bd',borderRadius:12,background:active?'#fff6d8':'#fff',color:'#4d3b14',fontWeight:900,cursor:'pointer'})
   return createPortal(<section dir={rtl?'rtl':'ltr'} style={{margin:'12px 0 10px',padding:open?16:10,border:'1px solid #d9c792',borderRadius:16,background:'#fff'}}>
@@ -63,7 +74,7 @@ export function ExplainerVideo(){
       <label style={{display:'grid',gap:5,fontWeight:800,color:'#5d4a1e',maxWidth:340,marginBottom:12}}>{c.language}<select value={videoLanguage} onChange={e=>setVideoLanguage(e.target.value)} style={{padding:'10px 11px',border:'1px solid #d8d1bd',borderRadius:11,background:'#fff'}}>{languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}</select></label>
       <b style={{display:'block',marginBottom:6,color:'#5d4a1e'}}>{c.voice}</b><div role='group' aria-label={c.voice} style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:12}}><button type='button' aria-pressed={presenter==='female'} onClick={()=>setPresenter('female')} style={buttonStyle(presenter==='female')}>👩 {c.female}</button><button type='button' aria-pressed={presenter==='male'} onClick={()=>setPresenter('male')} style={buttonStyle(presenter==='male')}>👨 {c.male}</button></div>
       {presenter==='male'&&videoLanguage!=='de'&&<p style={{padding:'9px 11px',borderRadius:10,background:'#fff8df',border:'1px solid #ead69e',color:'#65562d',fontSize:'.9rem'}}>{c.maleFallback}</p>}
-      <video key={`${videoLanguage}-${presenter}`} controls playsInline preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>{presenter==='female'&&<source src={femaleLocal} type='video/mp4'/>}<source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>{presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}{c.loading}</video>
+      <video data-explainer-presenter={presenter} key={`${videoLanguage}-${presenter}`} controls playsInline preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>{presenter==='female'&&<source src={femaleLocal} type='video/mp4'/>}{presenter==='male'&&maleLocal&&<source src={maleLocal} type='video/mp4'/>}<source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>{presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}{c.loading}</video>
     </>}
   </section>,host)
 }

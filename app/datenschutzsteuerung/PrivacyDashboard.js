@@ -1,16 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabaseClient'
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../components/V28PrivacyControls'
 import { useLegalLanguage } from '../components/LegalLanguageContext'
 import { privacyDashboardCopy } from '../lib/v31InteractiveLegalTranslations.mjs'
-
-const supabase=createClient(
-  'https://bcvggtnvuesaihqvgisg.supabase.co',
-  'sb_publishable_O0JQYoJW-60sh3_5f7yr2Q_czCPZNH0',
-  {auth:{persistSession:true,autoRefreshToken:true}}
-)
 
 export default function PrivacyDashboard(){
   const language=useLegalLanguage()

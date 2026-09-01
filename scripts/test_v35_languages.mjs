@@ -82,8 +82,8 @@ assert.match(switcherSource,/import \{[^}]*\bBG\b[^}]*\bRO\b[^}]*\} from 'countr
 assert.match(switcherSource,/const flagComponents=\{[^}]*\bBG\b[^}]*\bRO\b[^}]*\}/s)
 assert.match(switcherSource,/ro:'Videoclip explicativ'/)
 assert.match(switcherSource,/bg:'Обяснително видео'/)
-assert.match(switcherSource,/ro:'Închide'/)
-assert.match(switcherSource,/bg:'Затвори'/)
+assert.match(switcherSource,/asgold:open-explainer/)
+assert.doesNotMatch(switcherSource,/role="dialog"/)
 assert.match(switcherSource,/>\{label\}<\/strong>/)
 assert.doesNotMatch(switcherSource,/heygen\.ai/,'language control must use the permanent local video paths')
 assert.match(heroSource,/\bro:\{title:/)
@@ -97,7 +97,9 @@ for(const language of expectedLanguages){
   const path=new URL(`../public/videos/as-gold-v35-${language}.mp4`,import.meta.url)
   const info=await stat(path)
   assert.ok(info.isFile()&&info.size>1_000_000,`missing or incomplete local explainer video for ${language}`)
-  assert.match(switcherSource,new RegExp(`\\/videos\\/as-gold-v35-${language}\\.mp4`))
+  if(language!=='de') assert.match(explainerSource,new RegExp(`\\/videos\\/as-gold-v35-${language}\\.mp4`))
 }
+assert.match(explainerSource,/\/videos\/as-gold-explainer-de-female\.mp4/)
+assert.match(explainerSource,/\/videos\/as-gold-explainer-de-male\.mp4/)
 
 console.log('V35 language guard: 10 app languages, RO/BG catalogs, SVG flags and local videos verified.')

@@ -1,10 +1,8 @@
 'use client'
 
 import { useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../lib/supabaseClient'
 import { analyzeCaseConsistency } from '../lib/v41CaseConsistency.mjs'
-
-const supabase=createClient('https://bcvggtnvuesaihqvgisg.supabase.co','sb_publishable_O0JQYoJW-60sh3_5f7yr2Q_czCPZNH0',{auth:{persistSession:true,autoRefreshToken:true}})
 
 const labels={
  de:{title:'Fall-Konsistenz & Nachweise',score:'Vollständigkeit',good:'Gut vorbereitet',review:'Prüfung empfohlen',attention:'Lücken schließen',gaps:'Fehlende oder offene Punkte',deviations:'Abweichende Angaben zwischen Dokumenten',deviationNote:'Nicht automatisch als Widerspruch gewertet – prüfen, ob unterschiedliche Zeiträume oder Positionen gemeint sind.',none:'Keine auffälligen Abweichungen erkannt.',goal:'Ziel des Falls fehlt',summary:'Sachstand fehlt',deadline:'Keine Fallfrist hinterlegt',next_action:'Nächster Schritt fehlt',documents:'Noch keine Dokumente',unread_documents:'Dokumente ohne ausgelesenen Inhalt',assessment:'Noch keine dokumentierte Bewertung',red_without_next:'Rote Bewertung ohne nächsten Schritt',amount:'Betrag',date:'Datum'},
