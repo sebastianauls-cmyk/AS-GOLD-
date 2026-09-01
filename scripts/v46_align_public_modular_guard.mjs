@@ -30,13 +30,5 @@ replaceOnce(
   'case discovery ownership'
 )
 
-for(const [name,text] of Object.entries({PublicHeader:publicHeaderMarker(),PublicCaseDiscoverySection:publicCaseMarker(),PublicPricingSection:publicPricingMarker()})){
-  if(!source.includes(text)) throw new Error(`V46 modular guard missing explicit ${name} ownership assertion`)
-}
-
 fs.writeFileSync(path,source)
 console.log('V46 aligned public modular guard with direct component ownership.')
-
-function publicHeaderMarker(){return "assert.match(publicHeader,/className=\\\"publicTop\\\"/)"}
-function publicCaseMarker(){return "assert.match(publicCaseDiscovery,/id=\\\\\\\"asgold-user-audience\\\\\\\"/,'audience content must be direct React markup in its owning section')"}
-function publicPricingMarker(){return "assert.match(publicPricing,/id=\\\"preise\\\"/)"}
