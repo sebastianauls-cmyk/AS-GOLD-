@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from '../lib/problemNavigatorLanguagesV36.mjs'
+import { caseFrequencyWeight, caseOrder } from '../lib/casePriorityV56.mjs'
 
 const plans={start:'AS Gold Start',klar:'AS Gold Klar',analyse:'AS Gold Analyse',komplett:'AS Gold Komplett',business:'AS Gold Business'}
-const caseOrder=['insurance','property','contract','authority','work','business','dispute','private']
 const freeLabels={de:'3 Dokumente kostenlos kennenlernen',en:'Try 3 documents for free',fr:'Découvrir gratuitement avec 3 documents',tr:'3 belgeyi ücretsiz deneyin',pl:'Wypróbuj 3 dokumenty bezpłatnie',ru:'Попробовать 3 документа бесплатно',ar:'جرّب 3 مستندات مجانًا',fa:'۳ سند را رایگان امتحان کنید',ro:'Încercați gratuit cu 3 documente',bg:'Опитайте 3 документа безплатно'}
 const inputHelp={
   de:'Beschreiben Sie Ihr Problem einfach in eigenen Worten. Sie müssen keine Fachbegriffe kennen. Schreiben Sie, was passiert ist und was Sie erreichen möchten – oder sprechen Sie es ein.',
@@ -37,9 +37,13 @@ function normalize(v){return String(v||'').toLowerCase().normalize('NFD').replac
 function hits(text,arr){return arr.reduce((n,w)=>n+(text.includes(normalize(w))?1:0),0)}
 function recommend(value,profile){
   const text=normalize(value)
-  const scores=Object.fromEntries(Object.entries(multilingualKeywords).map(([k,v])=>[k,hits(text,v)]))
-  let caseKey=Object.entries(scores).sort((a,b)=>b[1]-a[1])[0]?.[0]||'private'
-  if(Math.max(...Object.values(scores))===0) caseKey=text.length>180?'dispute':'private'
+  const matches=Object.fromEntries(Object.entries(multilingualKeywords).map(([k,v])=>[k,hits(text,v)]))
+  // A keyword match always outweighs the statistical prior. The researched
+  // frequency only decides otherwise equal matches, so a specific description
+  // can still select every one of the eight case types.
+  const weightedScores=Object.fromEntries(Object.entries(matches).map(([key,count])=>[key,(count*1000)+(caseFrequencyWeight[key]||0)]))
+  let caseKey=Object.entries(weightedScores).sort((a,b)=>b[1]-a[1])[0]?.[0]||'private'
+  if(Math.max(...Object.values(matches))===0) caseKey=text.length>180?'dispute':'private'
   let planKey='start'
   const has=terms=>terms.some(term=>text.includes(normalize(term)))
   if(has(['mehrere kunden','team','wiederkehr','mandanten','portfolio','multiple clients','recurring','plusieurs clients','équipe','müşteri','ekip','klienci','zespół','клиент','команда','عملاء','فريق','مشتری','تیم','mai mulți clienți','echipă','recurent','няколко клиента','екип','повтарящ'])) planKey='business'

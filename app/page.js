@@ -14,6 +14,7 @@ import { PromoCodeControl } from './components/PromoCodeControl'
 import { localeForLanguage, pageTranslations, rtlLanguages, supportedLanguages } from './lib/v30Languages.mjs'
 import { promoTranslations } from './lib/v31PromoTranslations.mjs'
 import { getProblemLanguageProfile } from './lib/problemNavigatorLanguagesV36.mjs'
+import { orderCasesByResearch } from './lib/casePriorityV56.mjs'
 
 const emptyData = { cases: [], clients: [], documents: [], approvals: [], assessments: [], sourceStatus: [] }
 const emptyCase = { title:'', client_id:'', reference_no:'', goal:'', summary:'', deadline_at:'', next_action:'' }
@@ -367,7 +368,7 @@ export default function Home(){
   const [outputLanguage,setOutputLanguage] = useState('de')
   const [selectedGoal,setSelectedGoal] = useState('overview')
   const [showRecommendation,setShowRecommendation] = useState(false)
-  const [selectedPublicCase,setSelectedPublicCase] = useState('insurance')
+  const [selectedPublicCase,setSelectedPublicCase] = useState('work')
   const [activityLog,setActivityLog] = useState([])
   const [serverAudit,setServerAudit] = useState([])
   const [deletionRequests,setDeletionRequests] = useState([])
@@ -418,8 +419,9 @@ export default function Home(){
   const rt = recommendationText[language] || recommendationText.de
   const tt = transparencyText[language] || transparencyText.de
   const cd = caseDiscoveryText[language] || caseDiscoveryText.de
+  const orderedPublicCases = orderCasesByResearch(cd.cases)
   const pa = publicAudienceText[language] || publicAudienceText.de
-  const activePublicCase = cd.cases.find(item=>item.key===selectedPublicCase) || cd.cases[0]
+  const activePublicCase = orderedPublicCases.find(item=>item.key===selectedPublicCase) || orderedPublicCases[0]
   const lt = launchTrustText[language] || launchTrustText.de
   const sct = serverControlText[language] || serverControlText.de
   const promo = promoTranslations[language] || promoTranslations.de
@@ -1002,10 +1004,10 @@ export default function Home(){
           <div className="caseIntro"><div className="eyebrow">{cd.eyebrow}</div><h2>{cd.title}</h2><p className="lead">{cd.lead}</p></div>
           <div className="audienceStrip" aria-label={pa.label}><b>{pa.label}</b><div>{pa.items.map(item=><span key={item}>✓ {item}</span>)}</div></div>
           <div className="caseChooser" aria-label={cd.title}>
-            {cd.cases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>setSelectedPublicCase(item.key)} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
+            {orderedPublicCases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>setSelectedPublicCase(item.key)} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
           </div>
           <article className="caseResult" aria-live="polite">
-            <div className="caseResultTitle"><span>{String(cd.cases.findIndex(item=>item.key===activePublicCase.key)+1).padStart(2,'0')}</span><div><small>{cd.typical}</small><h3>{activePublicCase.title}</h3></div></div>
+            <div className="caseResultTitle"><span>{String(orderedPublicCases.findIndex(item=>item.key===activePublicCase.key)+1).padStart(2,'0')}</span><div><small>{cd.typical}</small><h3>{activePublicCase.title}</h3></div></div>
             <div className="caseResultGrid">
               <div><b>{cd.typical}</b><p>{activePublicCase.examples}</p></div>
               <div><b>{cd.support}</b><p>{activePublicCase.help}</p></div>
