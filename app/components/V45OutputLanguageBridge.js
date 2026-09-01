@@ -8,6 +8,21 @@ const names={de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',
 export function V45OutputLanguageBridge(){
   useEffect(()=>{
     let last=''
+    const originalFetch=window.fetch.bind(window)
+    window.fetch=async(input,init={})=>{
+      try{
+        const url=typeof input==='string'?input:input?.url||''
+        if(url.includes('/functions/v1/gold-ocr-v28')&&init?.body){
+          const parsed=typeof init.body==='string'?JSON.parse(init.body):null
+          if(parsed&&typeof parsed==='object'){
+            const value=localStorage.getItem('asgold-output-language')||'de'
+            parsed.output_language=supported.has(value)?value:'de'
+            init={...init,body:JSON.stringify(parsed)}
+          }
+        }
+      }catch{}
+      return originalFetch(input,init)
+    }
     const sync=()=>{
       const value=localStorage.getItem('asgold-output-language')||'de'
       const lang=supported.has(value)?value:'de'
@@ -24,7 +39,7 @@ export function V45OutputLanguageBridge(){
     }
     sync()
     const timer=setInterval(sync,300)
-    return()=>{clearInterval(timer);document.querySelector('[data-v45-output-language]')?.remove();delete document.documentElement.dataset.outputLanguage}
+    return()=>{clearInterval(timer);window.fetch=originalFetch;document.querySelector('[data-v45-output-language]')?.remove();delete document.documentElement.dataset.outputLanguage}
   },[])
   return null
 }
