@@ -1,4 +1,4 @@
-import { LegalDocument, LegalNotice, LegalSection } from '../../components/LegalDocument'
+import { LegalDocument, LegalNotice, LegalSection } from '../compliance/LegalDocument'
 
 export function TesterPaused(){
   return <LegalDocument pageId="testen" eyebrow="AS Gold · Testzugang pausiert" title="Testerzugang vorübergehend geschlossen" intro="Wir stabilisieren derzeit die Navigation und Benutzerführung. Bis zur erneuten Freigabe ist der öffentliche Testerzugang bewusst pausiert.">
