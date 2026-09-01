@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/v46-controller-domain-workflows.yml'
       - 'scripts/v46_wire_controller_workflows.mjs'
+      - 'scripts/v46_align_public_modular_guard.mjs'
   workflow_dispatch:
 
 permissions:
@@ -24,6 +25,9 @@ jobs:
 
       - name: Wire domain workflows into active controller
         run: node scripts/v46_wire_controller_workflows.mjs
+
+      - name: Align public modular ownership guard
+        run: node scripts/v46_align_public_modular_guard.mjs
 
       - name: Install dependencies
         run: npm ci
@@ -55,6 +59,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add app/modules/workspace/WorkspaceAppV2.js \
                   scripts/test_v46_controller_workflows.mjs \
+                  scripts/test_v46_modular_boundaries.mjs \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md
           git commit -m 'V46 delegate auth pricing and account controller workflows'
           git push origin HEAD:v46-navigation-clean
