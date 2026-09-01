@@ -13,6 +13,17 @@ function dateFromParts(day,month,year){
   return date
 }
 
+function sentenceContext(text,index,length){
+  const before=text.slice(0,index)
+  const after=text.slice(index+length)
+  const leftBreak=Math.max(before.lastIndexOf('.'),before.lastIndexOf('!'),before.lastIndexOf('?'),before.lastIndexOf('\n'),before.lastIndexOf(';'))
+  const rightOffsets=[after.indexOf('.'),after.indexOf('!'),after.indexOf('?'),after.indexOf('\n'),after.indexOf(';')].filter(value=>value>=0)
+  const rightBreak=rightOffsets.length?Math.min(...rightOffsets):after.length
+  const start=leftBreak+1
+  const end=index+length+rightBreak
+  return text.slice(start,end).trim()
+}
+
 export function parseGermanDate(value){
   const match=String(value||'').match(/\b([0-3]?\d)\.(0?\d|1[0-2])\.(20\d{2})\b/)
   return match?dateFromParts(match[1],match[2],match[3]):null
@@ -26,9 +37,7 @@ export function extractDeadlineDates(value){
   while((match=DATE_RE.exec(text))){
     const date=dateFromParts(match[1],match[2],match[3])
     if(!date) continue
-    const start=Math.max(0,match.index-90)
-    const end=Math.min(text.length,match.index+match[0].length+90)
-    const context=text.slice(start,end)
+    const context=sentenceContext(text,match.index,match[0].length)
     const strong=STRONG_DEADLINE_CUES.test(context)
     const ordinary=ORDINARY_DATE_CUES.test(context)
     if(!strong) continue
@@ -36,7 +45,7 @@ export function extractDeadlineDates(value){
       date,
       confidence:ordinary?'medium':'high',
       basis:ordinary?'Datum mit Fristbezug im Dokument – Terminbezug zusätzlich prüfen':'Expliziter Fristbezug im Dokument',
-      context:context.trim()
+      context
     })
   }
   return matches
