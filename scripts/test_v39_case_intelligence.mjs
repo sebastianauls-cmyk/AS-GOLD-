@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+import {autoDocumentAssessment,sortTimelineEntries} from '../app/lib/v39CaseIntelligence.mjs'
+
+const red=autoDocumentAssessment('Zahlungsaufforderung. Die Widerspruchsfrist ist versäumt.',{status:'immediate',primary:{date:'2026-09-03'}})
+assert.equal(red.trafficLight,'red')
+assert.match(red.reason,/Frist 2026-09-03/)
+assert.match(red.nextStep,/sofort/i)
+
+const green=autoDocumentAssessment('Der Antrag wurde bewilligt und bestätigt.',{status:'uncertain',primary:null})
+assert.equal(green.trafficLight,'green')
+
+const unknown=autoDocumentAssessment('',null)
+assert.equal(unknown.trafficLight,'yellow')
+assert.equal(unknown.confidence,'low')
+
+const timeline=sortTimelineEntries([{date:'2026-09-10',title:'B'},{date:'2026-09-03',title:'A'}])
+assert.deepEqual(timeline.map(entry=>entry.title),['A','B'])
+
+const component=fs.readFileSync(new URL('../app/components/V39CaseTimelineAutoAssessment.js',import.meta.url),'utf8')
+const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
+for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(component,new RegExp(`\\b${language}:\\{`))
+assert.match(component,/Automatische Dokument-Ampel/)
+assert.match(component,/Vorläufig – Original prüfen/)
+assert.match(component,/Fall-Timeline/)
+assert.match(component,/data-v39-auto-assessment/)
+assert.match(component,/data-v39-timeline/)
+assert.match(component,/analyzeDeadlines/)
+assert.match(layout,/V39CaseTimelineAutoAssessment/)
+console.log('V39 case intelligence guard passed: automatic provisional traffic light and chronological case timeline verified.')
