@@ -45,7 +45,9 @@ for(const path of [pricingSurfacePath,accountSurfacePath,dashboardPath]){
     guard=guard.replace(anchor,`${anchor}\n  '${path}',`)
   }
 }
-const assertions=`\nconst dashboardSurface=read('app/modules/workspace/DashboardSurface.js')\nassert.doesNotMatch(dashboardSurface,/AccountControlPanel|UpgradePanel/,'dashboard must not own account or pricing controls')\nassert.match(dashboardSurface,/setSection\\('pricing'\\)/)\nassert.match(dashboardSurface,/setSection\\('account'\\)/)\nassert.match(workspace,/PricingSurface/)\nassert.match(workspace,/AccountSurface/)\nassert.match(workspace,/section==='pricing'/)\nassert.match(workspace,/section==='account'/)\n`
+guard=guard.replace("assert.match(read('app/modules/workspace/DashboardSurface.js'),/AccountControlPanel/)\n",'')
+guard=guard.replace("assert.match(read('app/modules/workspace/DashboardSurface.js'),/UpgradePanel/)\n",'')
+const assertions=`\nconst dashboardSurface=read('app/modules/workspace/DashboardSurface.js')\nassert.doesNotMatch(dashboardSurface,/AccountControlPanel|UpgradePanel/,'dashboard must not own account or pricing controls')\nassert.match(dashboardSurface,/setSection\\('pricing'\\)/)\nassert.match(dashboardSurface,/setSection\\('account'\\)/)\nassert.match(read('app/modules/pricing/PricingSurface.js'),/UpgradePanel/)\nassert.match(read('app/modules/compliance/AccountSurface.js'),/AccountControlPanel/)\nassert.match(workspace,/PricingSurface/)\nassert.match(workspace,/AccountSurface/)\nassert.match(workspace,/section==='pricing'/)\nassert.match(workspace,/section==='account'/)\n`
 if(!guard.includes("dashboard must not own account or pricing controls")) guard += assertions
 fs.writeFileSync(guardPath,guard)
 
