@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 
-const page=fs.readFileSync('app/testen/page.js','utf8')
+const route=fs.readFileSync('app/testen/page.js','utf8')
+const module=fs.readFileSync('app/modules/tester/TesterPaused.js','utf8')
+const page=`${route}\n${module}`
 const paused=page.includes('Testerzugang vorübergehend geschlossen')
 
 if(paused){
@@ -17,7 +19,7 @@ if(paused){
   for(const forbidden of ['?start=register','Kostenlos testen','Muster-PDF herunterladen']){
     if(page.includes(forbidden)) throw new Error(`Paused tester guide must not expose active test action: ${forbidden}`)
   }
-  console.log('V45 tester-guide guard passed: public tester access is intentionally paused with no active registration, upload or sample-download CTA.')
+  console.log('V45 tester-guide guard passed: modular public tester access is intentionally paused with no active registration, upload or sample-download CTA.')
 }else{
   const required=[
     'Testerbetrieb V45','AS Gold V45 sicher ausprobieren','vollständigen V45-Ablauf prüfen',
