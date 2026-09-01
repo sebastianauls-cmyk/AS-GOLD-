@@ -10,6 +10,7 @@ const problem=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8')
 const problemCompatibility=fs.readFileSync('app/components/ProblemNavigator.js','utf8')
 const analysisService=fs.readFileSync('app/modules/services/documentAnalysis.js','utf8')
 const uploadConfig=fs.readFileSync('app/modules/documents/uploadConfig.js','utf8')
+const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')
 
 const mustContain=(source,needle,label)=>{
   if(!source.includes(needle)) throw new Error(`V37 E2E guard: missing ${label}: ${needle}`)
@@ -55,6 +56,7 @@ mustContain(page,"doExport({kind:'case',item:selectedCase},exportType)",'case ex
 for(const [value,label] of [['pdf','PDF'],['docx','Word (.docx)'],['xlsx','Excel (.xlsx)'],['pptx','PowerPoint (.pptx)'],['csv','CSV (.csv)'],['txt','Text (.txt)']]) mustContain(page,`<option value=\"${value}\">${label}</option>`,`export ${label}`)
 mustContain(page,'function downloadBlob','download delivery')
 
-for(const marker of ['backOverview','backCases','backClients','backExplanation']) mustContain(page,marker,`navigation ${marker}`)
+for(const marker of ['backOverview','backCases','backClients']) mustContain(page,marker,`navigation ${marker}`)
+mustContain(authSurface,'backExplanation','navigation backExplanation in auth module')
 
 console.log('V37 code-path end-to-end regression checks passed through the workspace module boundary')

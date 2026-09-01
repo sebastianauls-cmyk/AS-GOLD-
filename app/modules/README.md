@@ -84,3 +84,5 @@ These declarations no longer live in `WorkspaceApp.js`; the composition layer co
 - `workspace/ProtectedWorkspaceShell.js`: protected header/language/logout/message/footer composition.
 
 The workspace controller now delegates repeated shell markup to explicit components.
+
+- `auth/AuthSurface.js`: login and registration composition; the workspace controller supplies state and handlers only.

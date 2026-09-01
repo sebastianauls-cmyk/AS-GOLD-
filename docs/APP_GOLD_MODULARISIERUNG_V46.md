@@ -125,3 +125,11 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - `workspace/AppLogo.js` besitzt die gemeinsame AS-Gold-Logo-Komponente.
 - `workspace/ProtectedWorkspaceShell.js` besitzt Header, Sprach-/Ausgabesprachen-Steuerung, Logout-Rahmen, Nachrichtenfläche und Footer des geschützten Bereichs.
 - `WorkspaceApp.js` übergibt nur noch Zustand und Handler an die Shell statt deren Markup selbst zu duplizieren.
+
+
+### V46 Auth-Oberfläche
+
+- `auth/AuthSurface.js` besitzt jetzt die vollständige Login-/Registrierungsoberfläche.
+- `WorkspaceApp.js` hält weiterhin den Auth-Zustand und die Auth-Handler, rendert die Formulare aber nicht mehr selbst.
+- Passwortfeld, Passwortregeln, Sprachwahl, Rechtseinwilligung und Footer werden innerhalb der Auth-Modulgrenze komponiert.
+- V37-End-to-End- und Readiness-Guards verfolgen den Auth-spezifischen Zurück-Pfad jetzt bis in das Auth-Modul statt ihn fälschlich im Workspace-Controller zu verlangen.

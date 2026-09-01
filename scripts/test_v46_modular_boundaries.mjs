@@ -32,6 +32,7 @@ for(const path of [
   'app/modules/workspace/ProtectedWorkspaceShell.js',
   'app/modules/workspace/AppLogo.js',
   'app/modules/auth/PasswordField.js',
+  'app/modules/auth/AuthSurface.js',
   'app/modules/compliance/workspaceControlText.js',
   'app/modules/public/catalog.js',
   'app/modules/pricing/catalog.js',
@@ -84,6 +85,11 @@ assert.match(workspace,/\.\.\/services\/documentAnalysis/)
 assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
 assert.doesNotMatch(workspace,/const supabase = createClient\(/)
 assert.match(workspace,/invokeDocumentAnalysis/)
+assert.match(workspace,/\.\.\/services\/supabaseClient/)
+assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
+assert.doesNotMatch(workspace,/const supabase = createClient\(/)
+assert.match(workspace,/invokeDocumentAnalysis/)
 assert.match(workspace,/\.\.\/documents\/uploadConfig/)
 assert.doesNotMatch(workspace,/const maxUploadBytes =/)
 assert.match(workspace,/\.\.\/auth\/passwordUi/)
@@ -99,6 +105,8 @@ assert.match(workspace,/\.\.\/public\/catalog/)
 assert.match(workspace,/\.\.\/compliance\/workspaceControlText/)
 assert.match(workspace,/\.\/stateConfig/)
 assert.match(workspace,/ProtectedWorkspaceShell/)
+assert.match(workspace,/AuthSurface/)
+assert.doesNotMatch(workspace,/className=\"card authCard\"/)
 assert.match(workspace,/\.\.\/auth\/PasswordField/)
 assert.match(workspace,/\.\/AppLogo/)
 assert.doesNotMatch(workspace,/function PasswordField\(/)
