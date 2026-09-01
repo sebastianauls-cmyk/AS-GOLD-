@@ -68,3 +68,7 @@ Current gate: the modular branch is green after the public-surface split, `main`
 
 The active controller now delegates local activity persistence and server audit recording to `workspace/useWorkspaceAudit.js`, and delegates Supabase session bootstrap/auth-state subscription cleanup to `workspace/useWorkspaceSession.js`. `WorkspaceAppV2.js` keeps only composition state and explicit signed-out reset intent; it no longer imports `recordAuditEvent`, `getAuthSession` or `watchAuthState`. A dedicated guard verifies these boundaries before the full prebuild/build gate.
 
+### Final-release alignment — V72 / eleven languages
+
+The release-candidate preparation now matches the active V72 product: eleven application languages including Vietnamese, the active `WorkspaceAppV2.js` controller, and the extracted workspace session/audit hooks. The final release gate explicitly prevents regression back to V70/ten-language assumptions and verifies that the active controller delegates audit persistence and auth-session lifecycle. Tester access remains staged/closed until the complete synchronized final release candidate passes.
+
