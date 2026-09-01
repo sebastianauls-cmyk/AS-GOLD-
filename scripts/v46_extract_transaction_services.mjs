@@ -17,9 +17,12 @@ function replaceExact(oldText,newText,label){
 
 function replaceFunction(startName,nextName,replacement){
   const start=`  async function ${startName}`
-  const next=`\n  async function ${nextName}`
   const startIndex=source.indexOf(start)
-  const nextIndex=source.indexOf(next,startIndex)
+  const nextCandidates=[
+    source.indexOf(`\n  async function ${nextName}`,startIndex),
+    source.indexOf(`\n  function ${nextName}`,startIndex)
+  ].filter(index=>index>=0)
+  const nextIndex=nextCandidates.length?Math.min(...nextCandidates):-1
   if(startIndex<0||nextIndex<0) throw new Error(`Could not isolate ${startName}`)
   source=source.slice(0,startIndex)+replacement+source.slice(nextIndex)
 }

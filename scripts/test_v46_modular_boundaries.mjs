@@ -302,3 +302,11 @@ console.log('V46 modular-boundary guard passed: thin root entry, extracted publi
 assert.match(read('app/modules/auth/AuthSurface.js'),/backExplanation/)
 assert.match(read('app/modules/auth/AuthSurface.js'),/lt\.passwordReset/)
 assert.match(workspace,/lt=\{lt\}/)
+
+for(const path of ['app/modules/services/pricingRepository.js','app/modules/services/complianceRepository.js','app/modules/services/documentRepository.js','app/modules/services/approvalRepository.js']) exists(path)
+assert.match(workspace,/pricingRepository/)
+assert.match(workspace,/complianceRepository/)
+assert.match(workspace,/documentRepository/)
+assert.match(workspace,/approvalRepository/)
+for(const legacyCall of ["supabase.rpc('gold_upgrade_quote'","supabase.rpc('gold_request_upgrade'","supabase.from('approvals')","supabase.from('documents').update","supabase.from('account_privacy_settings').upsert","supabase.storage.from('goldstandard-private').upload","supabase.from('exports').insert"]) assert.ok(!workspace.includes(legacyCall),`workspace controller must not own low-level transaction: ${legacyCall}`)
+console.log('V46 transactional service boundaries verified.')

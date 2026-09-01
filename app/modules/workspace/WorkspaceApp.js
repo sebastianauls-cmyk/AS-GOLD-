@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
 import { cancelDeletionRecord, createAssessmentRecord, createCaseRecord, createClientRecord, ensureRegistrationPrivacy, getWorkspaceAccess, listDeletionRequests, loadWorkspaceBundle, recordAuditEvent, requestDeletionRecord, updateCaseRecord } from '../services/workspaceRepository'
+import { getUpgradeQuotes, requestUpgradeRecord } from '../services/pricingRepository'
+import { acknowledgeLegalSettings, authorizeDocumentAnalysis } from '../services/complianceRepository'
+import { createWorkspaceDocumentSignedUrl, recordExportEntry, updateDocumentRecord, uploadWorkspaceDocument } from '../services/documentRepository'
+import { approveApprovalRecord, createApprovalRecord, rejectApprovalRecord, updateApprovalRecord } from '../services/approvalRepository'
 import { invokeDocumentAnalysis } from '../services/documentAnalysis'
 import { allowedUploadAccept, allowedUploadExtensions, maxUploadBytes, uploadUi } from '../documents/uploadConfig'
 import { appText } from './workspaceText'
@@ -279,13 +283,8 @@ export default function Home(){
     let cancelled=false
     ;(async()=>{
       setQuoteLoading(true)
-      const pairs = await Promise.all(upgrades.map(async u=>{
-        const args={p_to_plan:u.plan_key,p_term_months:termMonths}
-        if(appliedPromoCode) args.p_promo_code=appliedPromoCode
-        const {data,error}=await supabase.rpc('gold_upgrade_quote',args)
-        return [u.plan_key,error?null:data]
-      }))
-      if(!cancelled){ setQuotes(Object.fromEntries(pairs)); setQuoteLoading(false) }
+      const nextQuotes=await getUpgradeQuotes(supabase,{upgrades,termMonths,promoCode:appliedPromoCode})
+      if(!cancelled){ setQuotes(nextQuotes); setQuoteLoading(false) }
     })()
     return ()=>{cancelled=true}
   },[screen,termMonths,upgrades.length,appliedPromoCode,promoRevision])
@@ -293,9 +292,7 @@ export default function Home(){
   async function acknowledgeCurrentLegal(){
     if(!user?.id||privacyBusy) return false
     setPrivacyBusy(true);setMessage('')
-    const now=new Date().toISOString()
-    const payload={owner_id:user.id,privacy_notice_version:PRIVACY_NOTICE_VERSION,privacy_notice_acknowledged_at:now,terms_version:TERMS_VERSION,terms_acknowledged_at:now,real_data_authorized:false,ai_processing_enabled:false,special_categories_authorized:false,retention_days:90}
-    const {data:stored,error}=await supabase.from('account_privacy_settings').upsert(payload,{onConflict:'owner_id'}).select().single()
+    const {data:stored,error}=await acknowledgeLegalSettings(supabase,{ownerId:user.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
     if(error){setPrivacyBusy(false);setMessage(error.message);return false}
     setPrivacySettings(stored)
     await recordServerAudit('legal_notices_acknowledged',{},'account',null)
@@ -345,13 +342,12 @@ export default function Home(){
     setMessage('')
     const selectedQuote=quotes[plan.plan_key]
     if(appliedPromoCode&&selectedQuote?.promo_code_state!=='valid') return setMessage(promo.invalid)
-    const args={p_to_plan:plan.plan_key,p_term_months:termMonths}
-    if(appliedPromoCode) args.p_promo_code=appliedPromoCode
-    const {data,error}=await supabase.rpc('gold_request_upgrade',args)
+    const {data,error}=await requestUpgradeRecord(supabase,{planKey:plan.plan_key,termMonths,promoCode:appliedPromoCode})
     if(error) return setMessage(appliedPromoCode?promo.invalid:error.message)
     await recordServerAudit('upgrade_requested',{plan_key:plan.plan_key,term_months:Number(termMonths),promo_applied:data?.promo_code_state==='valid'},'account',null)
     setMessage(`${n.upgradeReserved} ${n.selected}: ${data?.to_plan_name || plan.plan_name}, ${termMonths} ${termMonths===1?n.monthOne:n.monthMany}.`)
   }
+
   async function createClient(e){
     e.preventDefault(); setMessage('')
     const {data:created,error}=await createClientRecord(supabase,{ownerId:user.id,draft:newClient})
@@ -414,11 +410,9 @@ export default function Home(){
     setMessage('')
     if(!privacyCurrent){setMessage(v28.required);return false}
     if(!['synthetic','anonymized'].includes(document.data_classification)){setMessage(v28.uploadRequired);return false}
-    const enabled=await supabase.from('account_privacy_settings').update({ai_processing_enabled:true,updated_at:new Date().toISOString()}).eq('owner_id',user.id).eq('privacy_notice_version',PRIVACY_NOTICE_VERSION).eq('terms_version',TERMS_VERSION).select().single()
-    if(enabled.error){setMessage(enabled.error.message);return false}
-    const allowed=await supabase.from('documents').update({ai_processing_allowed:true,privacy_notice_version:PRIVACY_NOTICE_VERSION,ai_notice_version:PRIVACY_NOTICE_VERSION,updated_at:new Date().toISOString()}).eq('id',document.id).eq('owner_id',user.id).in('data_classification',['synthetic','anonymized']).select().single()
-    if(allowed.error){setMessage(allowed.error.message);return false}
-    setPrivacySettings(enabled.data)
+    const authorization=await authorizeDocumentAnalysis(supabase,{ownerId:user.id,documentId:document.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
+    if(authorization.error){setMessage(authorization.error.message);return false}
+    setPrivacySettings(authorization.privacy)
     await recordServerAudit('document_ai_transfer_authorized',{classification:document.data_classification},'document',document.id)
     const {data:result,error}=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
     if(error){setMessage(await functionErrorMessage(error,analysisUi.failed));return false}
@@ -449,8 +443,7 @@ export default function Home(){
   }
   async function updateDocument(documentId,draft){
     setMessage('')
-    const payload={title:String(draft.title||'').trim(),case_id:draft.case_id||null,document_type:String(draft.document_type||'').trim()||null,document_date:draft.document_date||null,extracted_text:String(draft.extracted_text||'').trim()||null,analysis_summary:String(draft.analysis_summary||'').trim()||null,analysis_next_step:String(draft.analysis_next_step||'').trim()||null,updated_at:new Date().toISOString()}
-    const {data:updated,error}=await supabase.from('documents').update(payload).eq('id',documentId).eq('owner_id',user.id).select().single()
+    const {data:updated,error}=await updateDocumentRecord(supabase,{ownerId:user.id,documentId,draft})
     if(error){setMessage(error.message);return false}
     const eventType=draft.analysis_generated?'document_analysis_saved':'document_reviewed'
     recordLocalAction(eventType)
@@ -459,6 +452,7 @@ export default function Home(){
     setMessage(auditSaved?(draft.analysis_generated?analysisUi.savedMessage:`${core.documentReview} ✓`):sct.auditFailed)
     return true
   }
+
   async function createApproval(draft){
     setMessage('')
     if(!draft.case_id){setMessage(approvalUi.caseRequired);return false}
@@ -466,19 +460,7 @@ export default function Home(){
     if(draft.approval_type==='send'&&!draft.recipient.trim()){setMessage(approvalUi.recipientRequired);return false}
     const linkedDocument=draft.document_id?data.documents.find(item=>item.id===draft.document_id):null
     if(linkedDocument?.case_id!==draft.case_id&&draft.document_id){setMessage(approvalUi.documentMismatch);return false}
-    const payload={
-      owner_id:user.id,
-      case_id:draft.case_id,
-      document_id:draft.document_id||null,
-      approval_type:draft.approval_type,
-      status:'pending',
-      recipient:draft.recipient.trim()||null,
-      subject:draft.subject.trim(),
-      body:draft.body.trim(),
-      attachment_names:linkedDocument?[linkedDocument.title]:[],
-      preview_required:true
-    }
-    const {data:created,error}=await supabase.from('approvals').insert(payload).select().single()
+    const {data:created,error}=await createApprovalRecord(supabase,{ownerId:user.id,draft,linkedDocument})
     if(error){setMessage(error.message);return false}
     recordLocalAction('approval_created')
     await recordServerAudit('approval_created',{revision:Number(created.preview_revision)},'approval',created.id)
@@ -488,20 +470,16 @@ export default function Home(){
     setMessage(approvalUi.created)
     return created
   }
+
   async function updateApproval(approvalId,draft){
     setMessage('')
     const current=data.approvals.find(item=>item.id===approvalId)
     if(!current) return false
     if(!draft.subject.trim()||!draft.body.trim()){setMessage(approvalUi.contentRequired);return false}
     if(current.approval_type==='send'&&!draft.recipient.trim()){setMessage(approvalUi.recipientRequired);return false}
-    const next={recipient:draft.recipient.trim()||null,subject:draft.subject.trim(),body:draft.body.trim()}
-    const contentChanged=(current.recipient||null)!==next.recipient||(current.subject||'')!==next.subject||(current.body||'')!==next.body
-    const payload={...next}
-    if(contentChanged&&current.status==='rejected') Object.assign(payload,{status:'pending',approved_at:null,approved_revision:null})
-    const {data:updated,error}=await supabase.from('approvals').update(payload).eq('id',approvalId).eq('owner_id',user.id).eq('preview_revision',current.preview_revision).select().maybeSingle()
+    const {data:updated,error,invalidated}=await updateApprovalRecord(supabase,{ownerId:user.id,approvalId,current,draft})
     if(error){setMessage(error.message);return false}
     if(!updated){setMessage(approvalUi.stale);return false}
-    const invalidated=current.status==='approved'&&updated.status==='pending'
     recordLocalAction(invalidated?'approval_invalidated':'approval_updated')
     await recordServerAudit(invalidated?'approval_invalidated':'approval_updated',{revision:Number(updated.preview_revision)},'approval',updated.id)
     setData(previous=>({...previous,approvals:previous.approvals.map(item=>item.id===updated.id?updated:item)}))
@@ -509,10 +487,10 @@ export default function Home(){
     setMessage(approvalUi.saved)
     return updated
   }
+
   async function approveApproval(item){
     setMessage('')
-    const approvedAt=new Date().toISOString()
-    const {data:updated,error}=await supabase.from('approvals').update({status:'approved',approved_at:approvedAt,approved_revision:item.preview_revision,invalidated_at:null}).eq('id',item.id).eq('owner_id',user.id).eq('status','pending').eq('preview_revision',item.preview_revision).select().maybeSingle()
+    const {data:updated,error}=await approveApprovalRecord(supabase,{ownerId:user.id,item})
     if(error){setMessage(error.message);return false}
     if(!updated){setMessage(approvalUi.stale);return false}
     recordLocalAction('approval_approved')
@@ -522,9 +500,10 @@ export default function Home(){
     setMessage(approvalUi.approvedMessage)
     return updated
   }
+
   async function rejectApproval(item){
     setMessage('')
-    const {data:updated,error}=await supabase.from('approvals').update({status:'rejected',approved_at:null,approved_revision:null}).eq('id',item.id).eq('owner_id',user.id).eq('status','pending').eq('preview_revision',item.preview_revision).select().maybeSingle()
+    const {data:updated,error}=await rejectApprovalRecord(supabase,{ownerId:user.id,item})
     if(error){setMessage(error.message);return false}
     if(!updated){setMessage(approvalUi.stale);return false}
     recordLocalAction('approval_rejected')
@@ -539,6 +518,7 @@ export default function Home(){
     setApprovalDefaults({caseId:document.case_id||'',documentId:document.id})
     setSection('approvals')
   }
+
   async function uploadDocument(e){
     e.preventDefault(); setMessage('')
     const form=e.currentTarget
@@ -554,26 +534,18 @@ export default function Home(){
     const limit=Number(access?.permissions?.document_limit||0)
     if(access?.app_role!=='owner' && limit>0 && data.documents.length>=limit) return setMessage(n.docLimit.replace('{limit}',limit))
     setUploading(true)
-    const path=`${user.id}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`
-    const upload=await supabase.storage.from('goldstandard-private').upload(path,file,{upsert:false})
-    if(upload.error){setUploading(false);return setMessage(upload.error.message)}
-    let extractedText=null
-    if(['txt','csv'].includes(extension) && file.size<=2*1024*1024){
-      try{extractedText=(await file.text()).trim()||null}catch{extractedText=null}
-    }
-    const documentType=form.elements.document_type?.value.trim()||extension.toUpperCase()
-    const documentDate=form.elements.document_date?.value||null
-    const source=form.elements.source?.value||'upload'
-    const insert=await supabase.from('documents').insert({owner_id:user.id,title:file.name,file_path:path,case_id:caseId,document_type:documentType,document_date:documentDate,source,extracted_text:extractedText,data_classification:dataClassification,privacy_notice_version:PRIVACY_NOTICE_VERSION,ai_processing_allowed:false}).select().single()
-    if(insert.error){await supabase.storage.from('goldstandard-private').remove([path]);setUploading(false);return setMessage(insert.error.message)}
-    recordLocalAction('document_uploaded'); await recordServerAudit('document_uploaded',{classification:dataClassification},'document',insert.data.id); setData(previous=>({...previous,documents:[insert.data,...previous.documents]})); setUploading(false); form.reset(); setSection('documents'); setSelectedDocument(insert.data)
+    const {data:created,error}=await uploadWorkspaceDocument(supabase,{ownerId:user.id,file,caseId,dataClassification,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,documentType:form.elements.document_type?.value.trim()||extension.toUpperCase(),documentDate:form.elements.document_date?.value||null,source:form.elements.source?.value||'upload'})
+    if(error){setUploading(false);return setMessage(error.message)}
+    recordLocalAction('document_uploaded'); await recordServerAudit('document_uploaded',{classification:dataClassification},'document',created.id); setData(previous=>({...previous,documents:[created,...previous.documents]})); setUploading(false); form.reset(); setSection('documents'); setSelectedDocument(created)
   }
+
   async function openDocument(doc){
     if(!doc.file_path) return
-    const {data:signed,error}=await supabase.storage.from('goldstandard-private').createSignedUrl(doc.file_path,300)
+    const {data:signed,error}=await createWorkspaceDocumentSignedUrl(supabase,doc.file_path,300)
     if(error) return setMessage(error.message)
     recordLocalAction('document_opened'); await recordServerAudit('document_opened',{},'document',doc.id); window.open(signed.signedUrl,'_blank','noopener')
   }
+
   function canExport(type){
     if(access?.app_role==='owner') return true
     const p=access?.permissions||{}
@@ -611,7 +583,7 @@ export default function Home(){
       } else if(type==='csv'){
         const q=v=>`"${String(v??'').replace(/"/g,'""')}"`; downloadBlob(new Blob(['\uFEFF'+rows.map(r=>r.map(q).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),`${base}.csv`)
       } else if(type==='txt') downloadBlob(new Blob([rows.map((r,i)=>i===0?r[0]:`${r[0]}: ${r[1]||''}`).join('\r\n\r\n')],{type:'text/plain;charset=utf-8'}),`${base}.txt`)
-      const {error:exportLogError}=await supabase.from('exports').insert({case_id:ref.kind==='case'?ref.item.id:ref.item.case_id||null,document_id:ref.kind==='document'?ref.item.id:null,export_type:type,title:`${ref.item.title||'AS Gold Export'} (${type.toUpperCase()})`,status:'ready'})
+      const {error:exportLogError}=await recordExportEntry(supabase,{ref,type})
       if(exportLogError) throw exportLogError
       recordLocalAction('export_created')
       const auditSaved=await recordServerAudit('export_created',{format:type.toUpperCase()},ref.kind,ref.item.id)
