@@ -1,8 +1,4 @@
 import './globals.css'
-import { V37FirstAction } from './modules/public/V37FirstAction'
-import { ProductIntroCompact } from './modules/public/ProductIntroCompact'
-import { ExplainerVideo } from './modules/public/ExplainerVideo'
-import { ProblemNavigator } from './modules/public/ProblemNavigator'
 import { V38DeadlineCardEnhancer } from './modules/cases/V38DeadlineCardEnhancer'
 import { V38AssessmentExplainability } from './modules/cases/V38AssessmentExplainability'
 import { V38PrimaryNextStep } from './modules/cases/V38PrimaryNextStep'
@@ -22,5 +18,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
+  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
 }

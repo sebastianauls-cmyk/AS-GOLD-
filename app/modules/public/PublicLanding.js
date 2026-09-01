@@ -4,6 +4,10 @@ import { AppLogo } from '../workspace/AppLogo'
 import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
 import { jumpToPublicCaseResult } from './caseNavigation'
+import { V37FirstAction } from './V37FirstAction'
+import { ProblemNavigator } from './ProblemNavigator'
+import { ExplainerVideo } from './ExplainerVideo'
+import { ProductIntroCompact } from './ProductIntroCompact'
 
 export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
   const hero=heroTitleCopy[language]||heroTitleCopy.de
@@ -35,6 +39,10 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <div className="eyebrow">{a.eyebrow}</div>
             <h1>{hero.title}</h1>
             <p className="lead">{hero.lead}</p>
+            <V37FirstAction language={language} onRegister={()=>setScreen('register')}/>
+            <ProblemNavigator language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
+            <ExplainerVideo language={language}/>
+            <ProductIntroCompact language={language}/>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
               <button className="secondary btn" onClick={()=>setScreen('register')}>{t.freeCta}</button>

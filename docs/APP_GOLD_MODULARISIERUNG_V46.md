@@ -159,3 +159,13 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Die Auswahl einer Fallart löst die Navigation zum Ergebnis direkt im React-onClick aus. Ein globaler document-click-Listener ist nicht mehr erforderlich.
 - `HeroCopyEnhancer`, `HeroTitleStabilizer` und `CaseChoiceJumpEnhancer` bleiben nur als wirkungslose Kompatibilitätshüllen bzw. Katalogzugänge erhalten und werden nicht mehr im Root-Layout gemountet.
 - Regression- und Modulgrenzen-Tests erzwingen, dass diese drei Bereiche nicht wieder als globale DOM-Nachrüstungen eingeführt werden.
+
+
+### V46 Public-Module direkt eingebettet
+
+- `V37FirstAction`, `ProblemNavigator`, `ExplainerVideo` und `ProductIntroCompact` werden direkt von `PublicLanding.js` gerendert.
+- Die vier Komponenten benötigen keine `createPortal`-Slots, keine `MutationObserver` und keine dynamisch erzeugten DOM-Container mehr.
+- Sprache wird als React-Prop weitergegeben statt über Beobachter auf `document.documentElement.lang` synchronisiert.
+- Der Problem-Navigator wechselt Fallart und Registrierung über explizite Callback-Props; Preis- und Ergebnisnavigation bleiben lokale, nutzerinitiierte Scroll-Aktionen.
+- Das Root-Layout enthält damit keine Public-Hero-Portalmodule mehr.
+- Regressionstests prüfen die direkte Reihenfolge und verhindern die Rückkehr globaler Mount-Observer.

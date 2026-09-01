@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 
 const languages=[
   ['de','🇩🇪','Deutsch'],['en','🇬🇧','English'],['fr','🇫🇷','Français'],['tr','🇹🇷','Türkçe'],
@@ -35,29 +34,23 @@ const maleRemoteVideos={
   de:'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/b780eebf3d4ac79f61de519984d98f8c.mp4',en:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-en/original.mp4',fr:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-fr/original.mp4',tr:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-tr/original.mp4',pl:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-pl/original.mp4',ru:'https://resource2.heygen.ai/video_translate/2014388e973a4723907ce6f55851921d-ru/original.mp4',ar:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-ar/original.mp4',fa:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-fa_fa-IR/original.mp4',ro:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-ro/original.mp4',bg:'https://resource2.heygen.ai/video_translate/9d9a4ec98ad0459c9d5f144372ae6931-bg/original.mp4'
 }
 
-export function ExplainerVideo(){
-  const [host,setHost]=useState(null)
-  const [uiLanguage,setUiLanguage]=useState('de')
-  const [videoLanguage,setVideoLanguage]=useState('de')
+export function ExplainerVideo({language='de'}){
+  const [videoLanguage,setVideoLanguage]=useState(language)
   const [presenter,setPresenter]=useState('female')
   const [open,setOpen]=useState(false)
   useEffect(()=>{
-    if(location.pathname!=='/') return
-    let observer
-    const mount=()=>{const heroMain=document.querySelector('.heroLayout > div:first-child')||document.querySelector('.hero .wrap > div:first-child');const problemSlot=document.getElementById('asgold-problem-slot');const introSlot=document.getElementById('asgold-product-intro-compact-slot');if(!heroMain||(!problemSlot&&!introSlot))return false;let slot=document.getElementById('asgold-explainer-video-slot');if(!slot){slot=document.createElement('div');slot.id='asgold-explainer-video-slot';if(problemSlot)problemSlot.insertAdjacentElement('afterend',slot);else introSlot.insertAdjacentElement('beforebegin',slot)}setHost(slot);return true}
-    if(!mount()){observer=new MutationObserver(()=>{if(mount())observer?.disconnect()});observer.observe(document.body,{subtree:true,childList:true})}
-    const savedPresenter=localStorage.getItem('asgold-video-presenter');if(savedPresenter==='male'||savedPresenter==='female')setPresenter(savedPresenter)
-    const sync=()=>{const lang=(document.documentElement.lang||'de').split('-')[0];setUiLanguage(lang);if(languages.some(([code])=>code===lang))setVideoLanguage(lang)};sync();const langObserver=new MutationObserver(sync);langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});return()=>{observer?.disconnect();langObserver.disconnect()}
+    const savedPresenter=localStorage.getItem('asgold-video-presenter')
+    if(savedPresenter==='male'||savedPresenter==='female') setPresenter(savedPresenter)
   },[])
+  useEffect(()=>{if(languages.some(([code])=>code===language))setVideoLanguage(language)},[language])
   useEffect(()=>{localStorage.setItem('asgold-video-presenter',presenter)},[presenter])
-  if(!host)return null
-  const c=copy[uiLanguage]||copy.de
-  const rtl=uiLanguage==='ar'||uiLanguage==='fa'
+  const c=copy[language]||copy.de
+  const rtl=language==='ar'||language==='fa'
   const femaleLocal=femaleLocalVideos[videoLanguage]||femaleLocalVideos.de
   const femaleRemote=femaleRemoteVideos[videoLanguage]||femaleRemoteVideos.de
   const maleRemote=maleRemoteVideos[videoLanguage]||maleRemoteVideos.de
   const buttonStyle=active=>({flex:'1 1 150px',minHeight:46,padding:'10px 14px',border:active?'2px solid #8f6e25':'1px solid #d8d1bd',borderRadius:12,background:active?'#fff6d8':'#fff',color:'#4d3b14',fontWeight:900,cursor:'pointer'})
-  return createPortal(<section dir={rtl?'rtl':'ltr'} style={{margin:'12px 0 10px',padding:open?16:10,border:'1px solid #d9c792',borderRadius:16,background:'#fff'}}>
+  return (<section dir={rtl?'rtl':'ltr'} style={{margin:'12px 0 10px',padding:open?16:10,border:'1px solid #d9c792',borderRadius:16,background:'#fff'}}>
     {!open?<button type='button' onClick={()=>setOpen(true)} aria-expanded='false' style={{width:'100%',padding:'12px 14px',border:0,borderRadius:11,background:'#fff8df',color:'#5b4618',fontWeight:900,fontSize:'1rem',cursor:'pointer'}}>{c.show}</button>:<>
       <div style={{display:'flex',justifyContent:'space-between',gap:10,alignItems:'start'}}><div><b style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{c.title}</b><p style={{margin:'5px 0 12px',color:'#596472'}}>{c.lead}</p></div><button type='button' onClick={()=>setOpen(false)} aria-expanded='true' style={{border:'1px solid #d8d1bd',background:'#fff',borderRadius:10,padding:'7px 9px',cursor:'pointer'}}>{c.hide}</button></div>
       <label style={{display:'grid',gap:5,fontWeight:800,color:'#5d4a1e',maxWidth:340,marginBottom:12}}>{c.language}<select value={videoLanguage} onChange={e=>setVideoLanguage(e.target.value)} style={{padding:'10px 11px',border:'1px solid #d8d1bd',borderRadius:11,background:'#fff'}}>{languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}</select></label>
@@ -65,5 +58,5 @@ export function ExplainerVideo(){
       {presenter==='male'&&videoLanguage!=='de'&&<p style={{padding:'9px 11px',borderRadius:10,background:'#fff8df',border:'1px solid #ead69e',color:'#65562d',fontSize:'.9rem'}}>{c.maleFallback}</p>}
       <video key={`${videoLanguage}-${presenter}`} controls playsInline preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>{presenter==='female'&&<source src={femaleLocal} type='video/mp4'/>}<source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>{presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}{c.loading}</video>
     </>}
-  </section>,host)
+  </section>)
 }

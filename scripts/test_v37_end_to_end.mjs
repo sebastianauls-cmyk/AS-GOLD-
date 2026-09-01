@@ -18,10 +18,11 @@ const mustContain=(source,needle,label)=>{
 }
 
 mustContain(pageEntry,"./modules/workspace/WorkspaceApp",'workspace page module boundary')
-mustContain(layout,'V37FirstAction','V37 first-action mount')
-mustContain(layout,"./modules/public/V37FirstAction",'V37 first-action module ownership')
-mustContain(layout,'ProblemNavigator','problem navigator mount')
-mustContain(layout,"./modules/public/ProblemNavigator",'problem navigator module ownership')
+mustContain(publicLanding,'V37FirstAction','V37 first-action direct public mount')
+mustContain(publicLanding,"./V37FirstAction",'V37 first-action public ownership')
+mustContain(publicLanding,'ProblemNavigator','problem navigator direct public mount')
+mustContain(publicLanding,"./ProblemNavigator",'problem navigator public ownership')
+if(layout.includes('V37FirstAction')||layout.includes('ProblemNavigator')) throw new Error('V37 E2E guard: public interaction modules must not be global layout mounts')
 mustContain(firstActionCompatibility,"../modules/public/V37FirstAction",'V37 first-action compatibility re-export')
 mustContain(problemCompatibility,"../modules/public/ProblemNavigator",'problem navigator compatibility re-export')
 mustContain(firstAction,'Problem beschreiben','problem CTA')

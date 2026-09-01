@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useState } from 'react'
 
 const copy={
   de:{title:'Was möchten Sie jetzt klären?',lead:'Starten Sie direkt. Sie müssen keinen Falltyp oder Tarif kennen.',problem:'Problem beschreiben',upload:'Dokument hochladen',example:'Beispiel ansehen',trust:['Kostenlos mit 3 Dokumenten starten','Keine automatische Verlängerung','Deutschland / deutsches Recht'],sampleTitle:'So sieht ein erstes Ergebnis aus',sampleCase:'Beispiel: Versicherung lehnt einen Schaden ab',have:'Vorhanden',haveText:'Versicherungsschein',open:'Offen',openText:'Schadennachweis',deadline:'Frist prüfen',deadlineText:'Stellungnahme / Reaktionsfrist',next:'Nächster Schritt',nextText:'Unterlagen ergänzen und Antwort vorbereiten',close:'Beispiel schließen'},
@@ -16,34 +15,15 @@ const copy={
   bg:{title:'Какво искате да изясните сега?',lead:'Започнете директно. Не е нужно да знаете вида на случая или плана.',problem:'Опишете проблема',upload:'Качете документ',example:'Вижте пример',trust:['Започнете безплатно с 3 документа','Без автоматично подновяване','Германия / германско право'],sampleTitle:'Така може да изглежда първият резултат',sampleCase:'Пример: застраховател отказва щета',have:'Налично',haveText:'Застрахователна полица',open:'Отворено',openText:'Доказателство за щета',deadline:'Проверете срока',deadlineText:'Срок за отговор / действие',next:'Следваща стъпка',nextText:'Добавете документи и подгответе отговор',close:'Затворете примера'}
 }
 
-export function V37FirstAction(){
-  const [host,setHost]=useState(null)
-  const [language,setLanguage]=useState('de')
+export function V37FirstAction({language='de',onRegister}){
   const [showExample,setShowExample]=useState(false)
-  useEffect(()=>{
-    if(location.pathname!=='/') return
-    let bodyObserver
-    const mount=()=>{
-      const heroMain=document.querySelector('.heroLayout > div:first-child')||document.querySelector('.hero .wrap > div:first-child')
-      const actions=heroMain?.querySelector('.actions')
-      if(!heroMain||!actions) return false
-      let slot=document.getElementById('asgold-v37-first-action-slot')
-      if(!slot){slot=document.createElement('div');slot.id='asgold-v37-first-action-slot';heroMain.insertBefore(slot,actions)}
-      setHost(slot);return true
-    }
-    if(!mount()){bodyObserver=new MutationObserver(()=>{if(mount())bodyObserver?.disconnect()});bodyObserver.observe(document.body,{subtree:true,childList:true})}
-    const sync=()=>setLanguage((document.documentElement.lang||'de').split('-')[0])
-    sync();const langObserver=new MutationObserver(sync);langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']})
-    return()=>{bodyObserver?.disconnect();langObserver.disconnect()}
-  },[])
-  if(!host)return null
   const c=copy[language]||copy.de
   const rtl=language==='ar'||language==='fa'
   const primary={padding:'13px 16px',border:0,borderRadius:12,background:'#8f6e25',color:'#fff',fontWeight:900,fontSize:'1rem',cursor:'pointer'}
   const secondary={...primary,background:'#fff',color:'#5b4618',border:'1px solid #d8c58d'}
-  const focusProblem=()=>{const el=document.querySelector('#asgold-problem-navigator-react textarea');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.focus(),350)}else document.getElementById('asgold-problem-slot')?.scrollIntoView({behavior:'smooth'})}
-  const upload=()=>{const input=document.querySelector('input[type="file"]');if(input){input.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input.click(),300);return}const free=document.querySelector('.hero .actions .secondary.btn,.actions .secondary.btn');free?.click()}
-  return createPortal(<section dir={rtl?'rtl':'ltr'} style={{margin:'18px 0 14px',padding:18,border:'2px solid #c6a553',borderRadius:18,background:'linear-gradient(135deg,#fff9e8,#fff)',boxShadow:'0 12px 30px rgba(72,55,18,.08)'}}>
+  const focusProblem=()=>{const el=document.querySelector('#asgold-problem-navigator-react textarea');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});window.setTimeout(()=>el.focus(),350)}}
+  const upload=()=>onRegister?.()
+  return <section id="asgold-v37-first-action" dir={rtl?'rtl':'ltr'} style={{margin:'18px 0 14px',padding:18,border:'2px solid #c6a553',borderRadius:18,background:'linear-gradient(135deg,#fff9e8,#fff)',boxShadow:'0 12px 30px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.45rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'7px 0 14px',color:'#5f6976',lineHeight:1.45}}>{c.lead}</p>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:10}}>
@@ -53,5 +33,5 @@ export function V37FirstAction(){
     </div>
     <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>{c.trust.map(x=><span key={x} style={{padding:'6px 9px',borderRadius:999,background:'#fff',border:'1px solid #e2d6b7',fontSize:'.82rem',color:'#5c6570'}}>✓ {x}</span>)}</div>
     {showExample&&<article style={{marginTop:14,padding:14,borderRadius:14,background:'#fff',border:'1px solid #e2d6b7'}}><b style={{display:'block',color:'#4d3b14',marginBottom:4}}>{c.sampleTitle}</b><p style={{margin:'0 0 10px',color:'#626c78'}}>{c.sampleCase}</p><div style={{display:'grid',gap:7}}><div>🟢 <b>{c.have}:</b> {c.haveText}</div><div>🟡 <b>{c.open}:</b> {c.openText}</div><div>🔴 <b>{c.deadline}:</b> {c.deadlineText}</div><div>➡️ <b>{c.next}:</b> {c.nextText}</div></div><button type='button' onClick={()=>setShowExample(false)} style={{...secondary,marginTop:12,padding:'8px 11px'}}>{c.close}</button></article>}
-  </section>,host)
+  </section>
 }

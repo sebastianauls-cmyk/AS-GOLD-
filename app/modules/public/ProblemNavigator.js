@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { createPortal } from 'react-dom'
-import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from '../../lib/problemNavigatorLanguagesV36.mjs'
+import { useMemo, useRef, useState } from 'react'
+import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from './problemNavigatorLanguagesV36.mjs'
+import { jumpToPublicCaseResult } from './caseNavigation'
 
 const plans={start:'AS Gold Start',klar:'AS Gold Klar',analyse:'AS Gold Analyse',komplett:'AS Gold Komplett',business:'AS Gold Business'}
 const caseOrder=['insurance','property','contract','authority','work','business','dispute','private']
@@ -37,44 +37,18 @@ function recommend(value,profile){
   return {caseKey,planKey,reason:profile.reasons[planKey]||profile.reasons.start}
 }
 
-export function ProblemNavigator(){
-  const [host,setHost]=useState(null)
-  const [language,setLanguage]=useState('de')
+export function ProblemNavigator({language='de',onRegister,onSelectCase}){
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
   const [result,setResult]=useState(null)
   const [listening,setListening]=useState(false)
   const recognitionRef=useRef(null)
   const textRef=useRef(null)
-  const profile=getProblemLanguageProfile(language)
+  const normalizedLanguage=normalizeProblemLanguage(language)
+  const profile=getProblemLanguageProfile(normalizedLanguage)
   const c=profile.ui
 
-  useEffect(()=>{
-    if(location.pathname!=='/') return
-    let bodyObserver
-    const mount=()=>{
-      const heroMain=document.querySelector('.heroLayout > div:first-child')||document.querySelector('.hero .wrap > div:first-child')
-      const actions=heroMain?.querySelector('.actions')
-      if(!heroMain||!actions) return false
-      let slot=document.getElementById('asgold-problem-slot')
-      if(!slot){slot=document.createElement('div');slot.id='asgold-problem-slot';heroMain.insertBefore(slot,actions)}
-      setHost(slot)
-      return true
-    }
-    if(!mount()){
-      bodyObserver=new MutationObserver(()=>{if(mount()) bodyObserver?.disconnect()})
-      bodyObserver.observe(document.body,{subtree:true,childList:true})
-    }
-    const syncLanguage=()=>setLanguage(normalizeProblemLanguage(document.documentElement.lang||'de'))
-    syncLanguage()
-    const langObserver=new MutationObserver(syncLanguage)
-    langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']})
-    return ()=>{bodyObserver?.disconnect();langObserver.disconnect()}
-  },[])
-
   const recommendation=useMemo(()=>result?recommend(value,profile):null,[result,value,profile])
-  if(!host) return null
-
   function analyse(){
     if(!value.trim()){setStatus(c.empty);setResult(null);return}
     setStatus('')
@@ -89,7 +63,7 @@ export function ProblemNavigator(){
       if(navigator.mediaDevices?.getUserMedia){const stream=await navigator.mediaDevices.getUserMedia({audio:true});stream.getTracks().forEach(t=>t.stop())}
       const rec=new SpeechRecognition()
       recognitionRef.current=rec
-      rec.lang=getSpeechLocale(language)
+      rec.lang=getSpeechLocale(normalizedLanguage)
       rec.interimResults=true
       rec.continuous=false
       const base=value.trim()
@@ -102,20 +76,18 @@ export function ProblemNavigator(){
   }
 
   function showCase(){
-    const buttons=[...document.querySelectorAll('.caseChooser .caseChoice')]
-    const index=caseOrder.indexOf(recommendation.caseKey)
-    if(index>=0&&buttons[index]) buttons[index].click()
-    location.hash='fallarten'
+    onSelectCase?.(recommendation.caseKey)
+    jumpToPublicCaseResult()
   }
-  function showPlans(){const prices=document.querySelector('.prices');const target=prices?.closest('section')||prices;if(target)target.scrollIntoView({behavior:'smooth',block:'start'})}
-  function startFree(){const button=document.querySelector('.hero .actions .secondary.btn')||document.querySelector('.actions .secondary.btn');if(button)button.click()}
+  function showPlans(){document.getElementById('preise')?.scrollIntoView({behavior:'smooth',block:'start'})}
+  function startFree(){onRegister?.()}
 
   const secondary={padding:'10px 13px',border:'1px solid #d5c38f',borderRadius:11,background:'#fffaf0',color:'#5b4618',fontWeight:800,textDecoration:'none',display:'inline-flex',alignItems:'center'}
-  const freeText=freeLabels[language]||freeLabels.en
-  const helpText=inputHelp[language]||inputHelp.en
-  const inputTitle=inputTitles[language]||inputTitles.en
+  const freeText=freeLabels[normalizedLanguage]||freeLabels.en
+  const helpText=inputHelp[normalizedLanguage]||inputHelp.en
+  const inputTitle=inputTitles[normalizedLanguage]||inputTitles.en
 
-  return createPortal(<section id="asgold-problem-navigator-react" dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
+  return (<section id="asgold-problem-navigator-react" dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{c.title}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
     <div style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
@@ -141,5 +113,5 @@ export function ProblemNavigator(){
     </article>}
 
     <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid #ece7d8'}}><a href="#fallarten" style={secondary}>{c.back}</a></div>
-  </section>,host)
+  </section>)
 }
