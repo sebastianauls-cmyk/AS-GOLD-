@@ -17,120 +17,106 @@ for(const path of [
   'app/modules/language/v35ComponentTranslations.mjs',
   'app/modules/navigation/AccessibilityHardening.js',
   'app/modules/navigation/MobileResilience.js',
+  'app/modules/public/PublicLanding.js',
   'app/modules/public/ProblemNavigator.js',
   'app/modules/public/problemNavigatorLanguages.mjs',
   'app/modules/public/problemNavigatorLanguagesV36.mjs',
   'app/modules/tester/TesterPaused.js',
   'app/modules/auth/PasswordPolicy.js',
   'app/modules/auth/v29PasswordPolicy.mjs',
+  'app/modules/auth/PasswordField.js',
+  'app/modules/auth/AuthSurface.js',
   'app/modules/cases/V24Workspace.js',
   'app/modules/cases/V42ActionableGaps.js',
   'app/modules/documents/V26DocumentAnalysis.js',
   'app/modules/documents/uploadConfig.js',
+  'app/modules/documents/exportUi.js',
   'app/modules/workspace/workspaceText.js',
   'app/modules/workspace/stateConfig.js',
   'app/modules/workspace/ProtectedWorkspaceShell.js',
   'app/modules/workspace/LoadingSurface.js',
   'app/modules/workspace/AppLogo.js',
-  'app/modules/auth/PasswordField.js',
-  'app/modules/auth/AuthSurface.js',
+  'app/modules/workspace/WorkspaceApp.js',
   'app/modules/compliance/workspaceControlText.js',
-  'app/modules/public/catalog.js',
-  'app/modules/pricing/catalog.js',
-  'app/modules/documents/exportUi.js',
-  'app/modules/public/publicUi.js',
-  'app/modules/auth/passwordUi.js',
-  'app/modules/pricing/PromoCodeControl.js',
-  'app/modules/pricing/v31PromoTranslations.mjs',
   'app/modules/compliance/LegalDocument.js',
   'app/modules/compliance/PrivacyDashboard.js',
   'app/modules/compliance/WithdrawalForm.js',
   'app/modules/compliance/v31InteractiveLegalTranslations.mjs',
   'app/modules/compliance/v31LegalTranslations.mjs',
+  'app/modules/public/catalog.js',
+  'app/modules/public/publicUi.js',
+  'app/modules/pricing/catalog.js',
+  'app/modules/pricing/PromoCodeControl.js',
+  'app/modules/pricing/v31PromoTranslations.mjs',
+  'app/modules/auth/passwordUi.js',
   'app/modules/integrations/IntegrationHub.js',
   'app/modules/services/officeExports.js',
   'app/modules/services/supabaseClient.js',
-  'app/modules/services/documentAnalysis.js',
-  'app/modules/workspace/WorkspaceApp.js'
+  'app/modules/services/documentAnalysis.js'
 ]) exists(path)
 
 const pageEntry=read('app/page.js')
 assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/)
 assert.ok(pageEntry.length<500,'root page must remain a thin workspace-module entry point')
+
 const workspace=read('app/modules/workspace/WorkspaceApp.js')
 assert.match(workspace,/signInWithPassword/)
 assert.match(workspace,/DocumentSection/)
 assert.match(workspace,/doExport/)
 assert.match(workspace,/\.\.\/services\/supabaseClient/)
 assert.match(workspace,/\.\.\/services\/documentAnalysis/)
-assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
-assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
-assert.match(workspace,/\.\.\/services\/supabaseClient/)
-assert.match(workspace,/\.\.\/services\/documentAnalysis/)
-assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
-assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
-assert.match(workspace,/\.\.\/services\/supabaseClient/)
-assert.match(workspace,/\.\.\/services\/documentAnalysis/)
-assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
-assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
-assert.match(workspace,/\.\.\/services\/supabaseClient/)
-assert.match(workspace,/\.\.\/services\/documentAnalysis/)
-assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
-assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
-assert.match(workspace,/\.\.\/services\/supabaseClient/)
-assert.match(workspace,/\.\.\/services\/documentAnalysis/)
-assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
-assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
-assert.match(workspace,/\.\.\/services\/supabaseClient/)
-assert.match(workspace,/\.\.\/services\/documentAnalysis/)
-assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
-assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
-assert.match(workspace,/\.\.\/services\/supabaseClient/)
-assert.match(workspace,/\.\.\/services\/documentAnalysis/)
-assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
-assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
-assert.match(workspace,/\.\.\/services\/supabaseClient/)
-assert.match(workspace,/\.\.\/services\/documentAnalysis/)
-assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
-assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
 assert.match(workspace,/\.\.\/documents\/uploadConfig/)
-assert.doesNotMatch(workspace,/const maxUploadBytes =/)
 assert.match(workspace,/\.\.\/auth\/passwordUi/)
 assert.match(workspace,/\.\.\/public\/publicUi/)
 assert.match(workspace,/\.\.\/documents\/exportUi/)
-assert.match(workspace,/\.\/workspaceText/)
-assert.doesNotMatch(workspace,/const passwordUi =/)
-assert.doesNotMatch(workspace,/const ui =/)
-assert.doesNotMatch(workspace,/const exportUi =/)
-assert.doesNotMatch(workspace,/const appText =/)
 assert.match(workspace,/\.\.\/pricing\/catalog/)
 assert.match(workspace,/\.\.\/public\/catalog/)
 assert.match(workspace,/\.\.\/compliance\/workspaceControlText/)
 assert.match(workspace,/\.\/stateConfig/)
 assert.match(workspace,/ProtectedWorkspaceShell/)
 assert.match(workspace,/LoadingSurface/)
-assert.doesNotMatch(workspace,/<header className=\"appTop\">/)
-assert.match(read('app/modules/workspace/ProtectedWorkspaceShell.js'),/<header className=\"appTop\">/)
 assert.match(workspace,/AuthSurface/)
-assert.doesNotMatch(workspace,/className=\"card authCard\"/)
-assert.match(workspace,/\.\.\/auth\/PasswordField/)
-assert.match(workspace,/\.\/AppLogo/)
-assert.doesNotMatch(workspace,/function PasswordField\(/)
-assert.doesNotMatch(workspace,/function Logo\(/)
-for (const name of ['terms','plans','planJourney','planText','journeyLabels','recommendationText','periodText','goalTier','tierRank','notices','dashboardGuide','transparencyText','caseDiscoveryText','publicAudienceText','testerLinkText','launchTrustText','serverControlText','accessPendingMessages','emptyData','emptyCase','sectionNames']) assert.doesNotMatch(workspace,new RegExp('const '+name+'\\s*='))
-assert.match(workspace,/\.\.\/services\/supabaseClient/)
-assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.match(workspace,/PublicLanding/)
+assert.match(workspace,/invokeDocumentAnalysis/)
 assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
 assert.doesNotMatch(workspace,/const supabase = createClient\(/)
-assert.match(workspace,/invokeDocumentAnalysis/)
+assert.doesNotMatch(workspace,/<header className="appTop">/)
+assert.doesNotMatch(workspace,/className="card authCard"/)
+assert.doesNotMatch(workspace,/className="publicTop"/)
+assert.doesNotMatch(workspace,/function PasswordField\(/)
+assert.doesNotMatch(workspace,/function Logo\(/)
+assert.doesNotMatch(workspace,/const maxUploadBytes =/)
+assert.doesNotMatch(workspace,/const passwordUi =/)
+assert.doesNotMatch(workspace,/const ui =/)
+assert.doesNotMatch(workspace,/const exportUi =/)
+assert.doesNotMatch(workspace,/const appText =/)
+for (const name of ['terms','plans','planJourney','planText','journeyLabels','recommendationText','periodText','goalTier','tierRank','notices','dashboardGuide','transparencyText','caseDiscoveryText','publicAudienceText','testerLinkText','launchTrustText','serverControlText','accessPendingMessages','emptyData','emptyCase','sectionNames']) {
+  assert.doesNotMatch(workspace,new RegExp('const '+name+'\\s*='))
+}
+
+const authSurface=read('app/modules/auth/AuthSurface.js')
+assert.match(authSurface,/\.\/PasswordField/)
+assert.match(authSurface,/\.\.\/workspace\/AppLogo/)
+assert.match(authSurface,/\.\.\/language\/LanguageSwitcher/)
+assert.match(authSurface,/\.\.\/compliance\/LegalFooter/)
+assert.match(authSurface,/backExplanation/)
+assert.match(authSurface,/lt\.passwordReset/)
+assert.match(workspace,/lt=\{lt\}/)
+
+const protectedShell=read('app/modules/workspace/ProtectedWorkspaceShell.js')
+assert.match(protectedShell,/<header className="appTop">/)
+
+const publicLanding=read('app/modules/public/PublicLanding.js')
+assert.match(publicLanding,/className="publicTop"/)
+assert.match(publicLanding,/id="preise"/)
+assert.match(publicLanding,/\.\.\/language\/LanguageSwitcher/)
+assert.match(publicLanding,/\.\.\/compliance\/LegalFooter/)
+const publicStart=publicLanding.indexOf('return <>')
+const interfaceControl=publicLanding.indexOf('<LanguageSwitcher value={language} onChange={setLanguage} label={t.language}/>',publicStart)
+const outputControl=publicLanding.indexOf('<LanguageSwitcher value={outputLanguage} onChange={setOutputLanguage} label={t.outputLanguage}/>',publicStart)
+assert.ok(publicStart>=0,'public landing must render a React fragment')
+assert.ok(interfaceControl>publicStart,'interface language control must exist on public landing')
+assert.ok(outputControl>interfaceControl,'output language must follow interface language in natural source order')
 
 const layout=read('app/layout.js')
 assert.doesNotMatch(layout,/components\/V4[0-5]/)
@@ -163,7 +149,7 @@ const withdrawalRoute=read('app/widerruf/page.js')
 const withdrawalModule=read('app/modules/compliance/WithdrawalForm.js')
 assert.match(privacyRoute,/modules\/compliance\/PrivacyDashboard/)
 assert.match(withdrawalRoute,/modules\/compliance\/WithdrawalForm/)
-assert.match(privacyModule,/modules\/services\/supabaseClient|\.\.\/services\/supabaseClient/)
+assert.match(privacyModule,/\.\.\/services\/supabaseClient/)
 assert.doesNotMatch(privacyModule,/createClient\(/)
 assert.match(withdrawalModule,/\.\.\/language\/LegalLanguageContext/)
 assert.match(withdrawalModule,/\.\/v31InteractiveLegalTranslations\.mjs/)
@@ -205,8 +191,4 @@ for(const path of [
   'app/datenschutzsteuerung/PrivacyDashboard.js','app/widerruf/WithdrawalForm.js'
 ]) assert.ok(read(path).length<140,`${path} should be a thin compatibility adapter`)
 
-console.log('V46 modular-boundary guard passed: thin page entry, domain-owned language/public/auth/compliance/pricing catalogs, route-owned compliance surfaces, shared service ownership, single language-menu back control, tester lock and compatibility adapters verified.')
-
-assert.match(read('app/modules/auth/AuthSurface.js'),/backExplanation/)
-assert.match(read('app/modules/auth/AuthSurface.js'),/lt\.passwordReset/)
-assert.match(workspace,/lt=\{lt\}/)
+console.log('V46 modular-boundary guard passed: thin root entry, extracted public/auth/workspace surfaces, domain-owned catalogs and services, direct output-language flow, single language-menu back control, tester lock and thin compatibility adapters verified.')
