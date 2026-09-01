@@ -11,7 +11,6 @@ import { V38AssessmentExplainability } from './components/V38AssessmentExplainab
 import { V38PrimaryNextStep } from './components/V38PrimaryNextStep'
 import { V38MobileResilience } from './components/V38MobileResilience'
 import { V38AccessibilityHardening } from './components/V38AccessibilityHardening'
-import { V38IntegrationAvailabilityGuard } from './components/V38IntegrationAvailabilityGuard'
 import { V39CaseTimelineAutoAssessment } from './components/V39CaseTimelineAutoAssessment'
 import { V40ProfessionalHandoff } from './components/V40ProfessionalHandoff'
 import { V41CaseConsistency } from './components/V41CaseConsistency'
@@ -27,5 +26,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><V45OutputLanguageBridge/><V38AccessibilityHardening/><V38MobileResilience/><V38IntegrationAvailabilityGuard/><HeroCopyEnhancer/><HeroTitleStabilizer/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><CaseChoiceJumpEnhancer/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
+  return <html lang="de"><body><V45OutputLanguageBridge/><V38AccessibilityHardening/><V38MobileResilience/><HeroCopyEnhancer/><HeroTitleStabilizer/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><CaseChoiceJumpEnhancer/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
 }
