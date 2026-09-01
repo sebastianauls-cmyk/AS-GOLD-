@@ -120,7 +120,21 @@ jobs:
           fi
 
       - name: Build production bundle
-        run: npx next build
+        shell: bash
+        run: |
+          set +e
+          npx next build > /tmp/v46-build.log 2>&1
+          code=$?
+          cat /tmp/v46-build.log
+          if [ "$code" -ne 0 ]; then
+            cp /tmp/v46-build.log docs/V46_LAST_BUILD_FAILURE.txt
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add docs/V46_LAST_BUILD_FAILURE.txt
+            git commit -m 'V46 capture production build failure' || true
+            git push origin HEAD:v46-navigation-clean
+            exit "$code"
+          fi
 
       - name: Commit verified refactor
         shell: bash
