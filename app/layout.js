@@ -16,6 +16,7 @@ import { V39CaseTimelineAutoAssessment } from './components/V39CaseTimelineAutoA
 import { V40ProfessionalHandoff } from './components/V40ProfessionalHandoff'
 import { V41CaseConsistency } from './components/V41CaseConsistency'
 import { V42ActionableGaps } from './components/V42ActionableGaps'
+import { V43VisibilityFix } from './components/V43VisibilityFix'
 
 export const metadata = {
   metadataBase: new URL('https://app-gold-workspace.vercel.app'),
@@ -26,5 +27,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><V38AccessibilityHardening/><V38MobileResilience/><V38IntegrationAvailabilityGuard/><HeroCopyEnhancer/><HeroTitleStabilizer/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><CaseChoiceJumpEnhancer/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
+  return <html lang="de"><body><V38AccessibilityHardening/><V38MobileResilience/><V38IntegrationAvailabilityGuard/><HeroCopyEnhancer/><HeroTitleStabilizer/><V37FirstAction/><ProblemNavigator/><ExplainerVideo/><ProductIntroCompact/><CaseChoiceJumpEnhancer/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/><V43VisibilityFix/>{children}</body></html>
 }
