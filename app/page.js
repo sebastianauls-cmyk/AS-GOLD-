@@ -13,6 +13,7 @@ import { PasswordPolicyChecklist, getV29PasswordCopy, validateV29Password } from
 import { PromoCodeControl } from './components/PromoCodeControl'
 import { localeForLanguage, pageTranslations, rtlLanguages, supportedLanguages } from './lib/v30Languages.mjs'
 import { promoTranslations } from './lib/v31PromoTranslations.mjs'
+import { getProblemLanguageProfile } from './lib/problemNavigatorLanguagesV36.mjs'
 
 const emptyData = { cases: [], clients: [], documents: [], approvals: [], assessments: [], sourceStatus: [] }
 const emptyCase = { title:'', client_id:'', reference_no:'', goal:'', summary:'', deadline_at:'', next_action:'' }
@@ -405,7 +406,11 @@ export default function Home(){
     return ()=>{ document.documentElement.dir = 'ltr' }
   },[language])
 
-  useEffect(()=>{ localStorage.setItem('asgold-output-language',outputLanguage) },[outputLanguage])
+  useEffect(()=>{
+    localStorage.setItem('asgold-output-language',outputLanguage)
+    document.documentElement.dataset.outputLanguage=outputLanguage
+    document.dispatchEvent(new CustomEvent('asgold:output-language',{detail:{language:outputLanguage}}))
+  },[outputLanguage])
 
   const currentTier = access?.permissions?.tier || 'free'
   const currentPlan = useMemo(() => plans.find(p=>p.key===currentTier) || plans[0],[currentTier])
@@ -418,6 +423,7 @@ export default function Home(){
   const lt = launchTrustText[language] || launchTrustText.de
   const sct = serverControlText[language] || serverControlText.de
   const promo = promoTranslations[language] || promoTranslations.de
+  const problemUi = getProblemLanguageProfile(language).ui
   const core = getV24Copy(language)
   const approvalUi = getV25ApprovalCopy(language)
   const analysisUi = getV26AnalysisCopy(language)
@@ -844,6 +850,8 @@ export default function Home(){
   async function doExport(ref,type){
     if(!canExport(type)) return setMessage(n.exportLocked)
     const ex=exportUi[outputLanguage]||exportUi.de
+    const outputCore=getV24Copy(outputLanguage)
+    const outputApprovalUi=getV25ApprovalCopy(outputLanguage)
     const localStatus=s=>s==='open'?ex.open:s==='closed'?ex.closed:s||'—'
     const localLight=s=>s==='yellow'?`🟡 ${ex.yellow}`:s==='green'?`🟢 ${ex.green}`:s==='red'?`🔴 ${ex.red}`:s||'—'
     const caseDocuments=ref.kind==='case'?data.documents.filter(item=>item.case_id===ref.item.id):[]
@@ -851,7 +859,7 @@ export default function Home(){
     const caseSources=ref.kind==='case'?data.sourceStatus.filter(item=>item.case_id===ref.item.id):[]
     const caseApprovals=ref.kind==='case'?data.approvals.filter(item=>item.case_id===ref.item.id):[]
     const rows=ref.kind==='case'
-      ? [[ex.caseTitle,''],[ex.case,ref.item.title||ex.case],[ex.status,localStatus(ref.item.status)],[ex.traffic,localLight(ref.item.traffic_light)],[core.goal,ref.item.goal||''],[ex.summary,ref.item.summary||''],[core.deadline,ref.item.deadline_at?new Date(ref.item.deadline_at).toLocaleString():''],[core.nextAction,ref.item.next_action||''],[ex.documents,caseDocuments.map(item=>item.title).join(', ')||ex.none],[core.currentAssessments,caseAssessments.map(item=>`${localLight(item.traffic_light)} · ${item.title}: ${item.reasoning||''}${item.next_step?` · ${core.nextAction}: ${item.next_step}`:''}`).join('\n')||ex.none],[core.sourceBasis,caseSources.map(item=>`${item.source_label||item.source_kind}: ${item.status}${item.details?` · ${item.details}`:''}`).join('\n')||ex.none],[approvalUi.title,caseApprovals.map(item=>`${item.subject||item.approval_type} · ${approvalUi[item.status]||item.status} · ${approvalUi.revision} ${item.preview_revision}`).join('\n')||ex.none]]
+      ? [[ex.caseTitle,''],[ex.case,ref.item.title||ex.case],[ex.status,localStatus(ref.item.status)],[ex.traffic,localLight(ref.item.traffic_light)],[outputCore.goal,ref.item.goal||''],[ex.summary,ref.item.summary||''],[outputCore.deadline,ref.item.deadline_at?new Date(ref.item.deadline_at).toLocaleString():''],[outputCore.nextAction,ref.item.next_action||''],[ex.documents,caseDocuments.map(item=>item.title).join(', ')||ex.none],[outputCore.currentAssessments,caseAssessments.map(item=>`${localLight(item.traffic_light)} · ${item.title}: ${item.reasoning||''}${item.next_step?` · ${outputCore.nextAction}: ${item.next_step}`:''}`).join('\n')||ex.none],[outputCore.sourceBasis,caseSources.map(item=>`${item.source_label||item.source_kind}: ${item.status}${item.details?` · ${item.details}`:''}`).join('\n')||ex.none],[outputApprovalUi.title,caseApprovals.map(item=>`${item.subject||item.approval_type} · ${outputApprovalUi[item.status]||item.status} · ${outputApprovalUi.revision} ${item.preview_revision}`).join('\n')||ex.none]]
       : [[ex.documentTitle,''],[ex.document,ref.item.title||ex.document],[ex.documentType,ref.item.document_type||''],[ex.documentDate,ref.item.document_date||''],[ex.analysis,ref.item.analysis_summary||ex.noAnalysis],[ex.nextStep,ref.item.analysis_next_step||''],[ex.extracted,ref.item.extracted_text||'']]
     const base=(ref.item.title||(ref.kind==='case'?'Fall':'Dokument')).replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g,'_').slice(0,80)
     try{
@@ -905,6 +913,14 @@ export default function Home(){
     if(action==='clients'){setSection('clients');return}
     if(action==='deadlines'){setSection('cases');return}
     if(action==='approvals'){setApprovalDefaults({caseId:'',documentId:''});setSection('approvals')}
+  }
+
+  function startProblemVoice(){
+    const problem=document.getElementById('asgold-problem-navigator-react')
+    const microphone=problem?.querySelector('[data-problem-voice]')
+    if(!problem||!microphone)return
+    problem.scrollIntoView({behavior:'smooth',block:'center'})
+    setTimeout(()=>microphone.click(),350)
   }
 
   function protectedWorkspace(content){
@@ -964,6 +980,7 @@ export default function Home(){
             <p className="lead">{t.lead}</p>
             <section className="heroCapabilities" aria-labelledby="asgold-what-does-title">
               <h2 id="asgold-what-does-title">{a.whatDoes}</h2>
+              <button type="button" className="secondary heroVoiceShortcut" aria-controls="asgold-problem-navigator-react" onClick={startProblemVoice}>🎙 {problemUi.voice}</button>
               <div className="capGrid">{a.caps.map(([title,description])=><article className="capCard" key={title}><h3>{title}</h3><p>{description}</p></article>)}</div>
             </section>
             <div className="actions">

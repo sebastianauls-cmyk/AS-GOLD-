@@ -153,6 +153,7 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .outputLanguageStatus{display:block;padding:8px 10px;border-radius:10px;background:#eef8ef;color:#285c33;font-size:.9rem}
 .heroCapabilities{margin:18px 0;padding:16px;border:1px solid #dccb9f;border-radius:18px;background:#fff}
 .heroCapabilities h2{margin:0 0 12px;color:#4d3b14;font-size:1.3rem}
+.heroVoiceShortcut{margin:0 0 12px;border-color:#c9ad66;background:#fffaf0;color:#4f3c12}
 .heroCapabilities .capGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
 .heroCapabilities .capCard{padding:12px;border-radius:12px;box-shadow:none}
 .heroCapabilities .capCard h3{margin:0 0 5px;font-size:.98rem}

@@ -52,6 +52,7 @@ function recommend(value,profile){
 export function ProblemNavigator(){
   const [host,setHost]=useState(null)
   const [language,setLanguage]=useState('de')
+  const [outputLanguage,setOutputLanguage]=useState('de')
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
   const [result,setResult]=useState(null)
@@ -62,7 +63,9 @@ export function ProblemNavigator(){
   const statusRef=useRef(null)
   const resultRef=useRef(null)
   const profile=getProblemLanguageProfile(language)
+  const outputProfile=getProblemLanguageProfile(outputLanguage)
   const c=profile.ui
+  const resultUi=outputProfile.ui
 
   useEffect(()=>{
     if(location.pathname!=='/') return
@@ -88,7 +91,17 @@ export function ProblemNavigator(){
     return ()=>{bodyObserver?.disconnect();langObserver.disconnect()}
   },[])
 
-  const recommendation=useMemo(()=>result?recommend(result.value,profile):null,[result,profile])
+  useEffect(()=>{
+    const syncOutputLanguage=event=>{
+      const selected=event?.detail?.language||document.documentElement.dataset.outputLanguage||localStorage.getItem('asgold-output-language')||'de'
+      setOutputLanguage(normalizeProblemLanguage(selected))
+    }
+    syncOutputLanguage()
+    document.addEventListener('asgold:output-language',syncOutputLanguage)
+    return()=>document.removeEventListener('asgold:output-language',syncOutputLanguage)
+  },[])
+
+  const recommendation=useMemo(()=>result?recommend(result.value,outputProfile):null,[result,outputProfile])
   if(!host) return null
 
   function analyse(){
@@ -167,7 +180,7 @@ export function ProblemNavigator(){
   function startFree(){const button=document.querySelector('.hero .actions .secondary.btn')||document.querySelector('.actions .secondary.btn');if(button)button.click()}
 
   const secondary={padding:'10px 13px',border:'1px solid #d5c38f',borderRadius:11,background:'#fffaf0',color:'#5b4618',fontWeight:800,textDecoration:'none',display:'inline-flex',alignItems:'center'}
-  const freeText=freeLabels[language]||freeLabels.en
+  const freeText=freeLabels[outputLanguage]||freeLabels.en
   const helpText=inputHelp[language]||inputHelp.en
   const inputTitle=inputTitles[language]||inputTitles.en
 
@@ -178,24 +191,24 @@ export function ProblemNavigator(){
     <form onSubmit={event=>{event.preventDefault();analyse()}} noValidate>
       <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={c.title} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
-        <button type="button" onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting ? 0.7 : 1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[language]||voiceMessages.de).starting:c.voice}</button>
+        <button type="button" data-problem-voice onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting ? 0.7 : 1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[language]||voiceMessages.de).starting:c.voice}</button>
         <button type="submit" aria-controls="asgold-problem-result" style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
       </div>
       {status&&<div id="asgold-problem-status" ref={statusRef} role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
     </form>
 
-    {recommendation&&<article id="asgold-problem-result" ref={resultRef} tabIndex={-1} style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
-      <small style={{display:'block',fontWeight:850,color:'#79601f',marginBottom:6}}>{c.recommendation}</small>
+    {recommendation&&<article id="asgold-problem-result" ref={resultRef} tabIndex={-1} lang={outputLanguage} dir={outputProfile.rtl?'rtl':'ltr'} style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
+      <small style={{display:'block',fontWeight:850,color:'#79601f',marginBottom:6}}>{resultUi.recommendation}</small>
       <div style={{padding:'12px 13px',borderRadius:12,background:'#fff',border:'1px solid #ead69e',marginBottom:10}}>
-        <span style={{display:'block',fontSize:'.78rem',fontWeight:800,color:'#707986',marginBottom:3}}>{c.caseLabel}</span>
-        <strong style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{profile.cases[recommendation.caseKey]}</strong>
+        <span style={{display:'block',fontSize:'.78rem',fontWeight:800,color:'#707986',marginBottom:3}}>{resultUi.caseLabel}</span>
+        <strong style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{outputProfile.cases[recommendation.caseKey]}</strong>
       </div>
       <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10}}>
-        <div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.planLabel}</span><b>{plans[recommendation.planKey]}</b></div>
-        <div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.why}</span><span style={{color:'#596472'}}>{recommendation.reason}</span></div>
+        <div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{resultUi.planLabel}</span><b>{plans[recommendation.planKey]}</b></div>
+        <div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{resultUi.why}</span><span style={{color:'#596472'}}>{recommendation.reason}</span></div>
       </div>
       <button type="button" onClick={startFree} style={{width:'100%',marginTop:14,padding:'12px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:900,fontSize:'1rem'}}>✓ {freeText}</button>
-      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}><button type="button" onClick={showCase} style={{padding:'9px 12px',border:0,borderRadius:10,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.showCase}</button><button type="button" onClick={showPlans} style={secondary}>{c.showPlans}</button></div>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}><button type="button" onClick={showCase} style={{padding:'9px 12px',border:0,borderRadius:10,background:'#8f6e25',color:'#fff',fontWeight:800}}>{resultUi.showCase}</button><button type="button" onClick={showPlans} style={secondary}>{resultUi.showPlans}</button></div>
     </article>}
 
     <div style={{marginTop:14,paddingTop:12,borderTop:'1px solid #ece7d8'}}><a href="#fallarten" style={secondary}>{c.back}</a></div>
