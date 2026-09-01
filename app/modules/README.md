@@ -63,3 +63,8 @@ The normal prebuild chain includes dedicated guards for customer flow, language/
 - Reopen tester access only after the final synchronized release candidate is green; until then `/testen` stays paused.
 
 Current gate: the modular branch is green after the public-surface split, `main` remains unchanged, and tester access remains closed. The next work is controller/orchestration reduction rather than further public DOM cleanup.
+
+### Controller reduction — session/audit boundary (2 September 2026)
+
+The active controller now delegates local activity persistence and server audit recording to `workspace/useWorkspaceAudit.js`, and delegates Supabase session bootstrap/auth-state subscription cleanup to `workspace/useWorkspaceSession.js`. `WorkspaceAppV2.js` keeps only composition state and explicit signed-out reset intent; it no longer imports `recordAuditEvent`, `getAuthSession` or `watchAuthState`. A dedicated guard verifies these boundaries before the full prebuild/build gate.
+

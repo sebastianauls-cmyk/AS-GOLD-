@@ -214,3 +214,8 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 ## Controller-Orchestrierung: Auth, Tarife und Konto delegiert
 
 Der aktive Workspace-Controller delegiert nun zusätzlich Login/Registrierung/Workspace-Bootstrap an `auth/workspaceAuthWorkflow.js`, Angebots-/Promo-/Upgrade-Sequenzen an `pricing/pricingWorkflow.js` und Datenschutz-/Löschabläufe an `compliance/accountWorkflow.js`. Damit verbleiben in `WorkspaceAppV2.js` primär Screen-State, Auswahlzustände und die Komposition der Domain-Surfaces. Direkte Repository-Aufrufe für diese drei Abläufe wurden aus dem Controller entfernt. Der Testerzugang bleibt während der verbleibenden Release-Prüfungen geschlossen.
+
+### Controller reduction — session/audit boundary (2 September 2026)
+
+The active controller now delegates local activity persistence and server audit recording to `workspace/useWorkspaceAudit.js`, and delegates Supabase session bootstrap/auth-state subscription cleanup to `workspace/useWorkspaceSession.js`. `WorkspaceAppV2.js` keeps only composition state and explicit signed-out reset intent; it no longer imports `recordAuditEvent`, `getAuthSession` or `watchAuthState`. A dedicated guard verifies these boundaries before the full prebuild/build gate.
+

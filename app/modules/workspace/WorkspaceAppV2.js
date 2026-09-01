@@ -2,8 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
-import { recordAuditEvent } from '../services/workspaceRepository'
-import { getAuthSession, signOutSession, watchAuthState } from '../services/authRepository'
+import { signOutSession } from '../services/authRepository'
 import { allowedUploadAccept, uploadUi } from '../documents/uploadConfig'
 import { exportUi } from '../documents/exportUi'
 import { appText } from './workspaceText'
@@ -39,6 +38,8 @@ import { createExportWorkflowActions } from '../documents/exportWorkflow'
 import { createWorkspaceAuthActions } from '../auth/workspaceAuthWorkflow'
 import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
 import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
+import { useWorkspaceAudit } from './useWorkspaceAudit'
+import { useWorkspaceSession } from './useWorkspaceSession'
 
 const eur=value=>`${Number(value||0).toFixed(2).replace('.',',')} €`
 
@@ -94,8 +95,7 @@ export default function WorkspaceAppV2(){
   const [selectedGoal,setSelectedGoal]=useState('overview')
   const [showRecommendation,setShowRecommendation]=useState(false)
   const [selectedPublicCase,setSelectedPublicCase]=useState('work')
-  const [activityLog,setActivityLog]=useState([])
-  const [serverAudit,setServerAudit]=useState([])
+  const {activityLog,serverAudit,setServerAudit,recordLocalAction,recordServerAudit,resetAudit}=useWorkspaceAudit({supabase,userId:user?.id})
   const [deletionRequests,setDeletionRequests]=useState([])
   const [deletionBusy,setDeletionBusy]=useState(false)
 
@@ -158,37 +158,6 @@ export default function WorkspaceAppV2(){
   const publicRecommendedPlan=publicLocalizedPlans.find(plan=>plan.key===recommendedTier)||publicLocalizedPlans[0]
   const publicMonthsLabel=value=>publicA.months.replace('{n}',value).replace('{plural}',value>1?(publicLanguage==='de'?'e':publicLanguage==='en'?'s':''):'')
 
-  useEffect(()=>{
-    if(!user?.id) return
-    try{
-      const storageKey=`asgold-activity-${user.id}`
-      const stored=JSON.parse(localStorage.getItem(storageKey)||'[]')
-      const sanitized=Array.isArray(stored)?stored.filter(entry=>entry?.at&&entry?.kind).map(entry=>({at:entry.at,kind:entry.kind,detail:'✓'})).slice(0,50):[]
-      localStorage.setItem(storageKey,JSON.stringify(sanitized))
-      setActivityLog(sanitized)
-    }catch{
-      setActivityLog([])
-    }
-  },[user?.id])
-
-  function recordLocalAction(kind){
-    if(!user?.id) return
-    const entry={at:new Date().toISOString(),kind,detail:'✓'}
-    setActivityLog(previous=>{
-      const next=[entry,...previous].slice(0,50)
-      localStorage.setItem(`asgold-activity-${user.id}`,JSON.stringify(next))
-      return next
-    })
-  }
-
-  async function recordServerAudit(eventType,metadata={},entityType=null,entityId=null){
-    if(!user?.id) return false
-    const {rows,error}=await recordAuditEvent(supabase,{ownerId:user.id,eventType,metadata,entityType,entityId})
-    if(error){console.error('record_gold_audit_event',error);return false}
-    setServerAudit(rows||[])
-    return true
-  }
-
   const {createClient,createCase,updateCase,createAssessment}=createCaseWorkflowActions({
     supabase,ownerId:user?.id,data,newClient,newCase,setData,setMessage,setNewClient,setShowClientForm,setSection,setNewCase,setShowCaseForm,setSelectedCase,recordLocalAction,recordServerAudit
   })
@@ -217,33 +186,26 @@ export default function WorkspaceAppV2(){
     supabase,upgrades,termMonths,promoCode,appliedPromoCode,quotes,promoCopy:promo,notices:n,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setMessage,recordServerAudit
   })
 
-  useEffect(()=>{
-    let alive=true
-    getAuthSession(supabase).then(({data:{session}})=>{
-      if(alive) session?loadApp(session):setScreen(new URLSearchParams(window.location.search).get('start')==='register'?'register':'public')
-    })
-    const subscription=watchAuthState(supabase,(event,session)=>{
-      if(!alive) return
-      if(event==='SIGNED_IN'&&session) loadApp(session)
-      if(event==='SIGNED_OUT'){
-        setUser(null)
-        setAccess(null)
-        setPrivacySettings(null)
-        setData(emptyData)
-        setSelectedCase(null)
-        setSelectedClient(null)
-        setSelectedDocument(null)
-        setSelectedApproval(null)
-        setApprovalDefaults({caseId:'',documentId:''})
-        setServerAudit([])
-        setDeletionRequests([])
-        setActivityLog([])
-        setSection('dashboard')
-        setScreen('public')
-      }
-    })
-    return ()=>{alive=false;subscription.unsubscribe()}
-  },[])
+  useWorkspaceSession({
+    supabase,
+    loadApp,
+    setScreen,
+    onSignedOut:()=>{
+      setUser(null)
+      setAccess(null)
+      setPrivacySettings(null)
+      setData(emptyData)
+      setSelectedCase(null)
+      setSelectedClient(null)
+      setSelectedDocument(null)
+      setSelectedApproval(null)
+      setApprovalDefaults({caseId:'',documentId:''})
+      setDeletionRequests([])
+      resetAudit()
+      setSection('dashboard')
+      setScreen('public')
+    }
+  })
 
   useEffect(()=>{
     if(screen!=='app'||!upgrades.length) return
