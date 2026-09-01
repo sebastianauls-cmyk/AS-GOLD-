@@ -42,7 +42,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     </button>
     {publicPicker&&<button type="button" className="secondary explainerVideoTrigger" onClick={()=>setVideoOpen(true)} aria-expanded={videoOpen}>▶ {videoButtonText[value]||videoButtonText.de}</button>}
     {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
-      <button type="button" className="flagLanguageClose" onClick={()=>setOpen(false)}>← Zurück</button>
+      <button type="button" className="flagLanguageClose" aria-label="Zurück" onClick={()=>setOpen(false)}>← Zurück</button>
       {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}>
         <span className="flagLanguageOptionMain"><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span className="flagLanguageName">{item.label}</span></span><small>{item.short}</small>
       </button>)}
