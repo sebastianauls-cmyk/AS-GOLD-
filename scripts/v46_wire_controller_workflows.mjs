@@ -76,7 +76,7 @@ fs.writeFileSync(controllerTestPath,controllerTest)
 let doc=fs.readFileSync(docPath,'utf8')
 const marker='## Controller-Orchestrierung: Auth, Tarife und Konto delegiert'
 if(!doc.includes(marker)){
-  doc+=`\n\n${marker}\n\nDer aktive Workspace-Controller delegiert nun zusätzlich Login/Registrierung/Workspace-Bootstrap an \\`auth/workspaceAuthWorkflow.js\\`, Angebots-/Promo-/Upgrade-Sequenzen an \\`pricing/pricingWorkflow.js\\` und Datenschutz-/Löschabläufe an \\`compliance/accountWorkflow.js\\`. Damit verbleiben in \\`WorkspaceAppV2.js\\` primär Screen-State, Auswahlzustände und die Komposition der Domain-Surfaces. Direkte Repository-Aufrufe für diese drei Abläufe wurden aus dem Controller entfernt. Der Testerzugang bleibt während der verbleibenden Release-Prüfungen geschlossen.\n`
+  doc+='\n\n'+marker+'\n\nDer aktive Workspace-Controller delegiert nun zusätzlich Login/Registrierung/Workspace-Bootstrap an `auth/workspaceAuthWorkflow.js`, Angebots-/Promo-/Upgrade-Sequenzen an `pricing/pricingWorkflow.js` und Datenschutz-/Löschabläufe an `compliance/accountWorkflow.js`. Damit verbleiben in `WorkspaceAppV2.js` primär Screen-State, Auswahlzustände und die Komposition der Domain-Surfaces. Direkte Repository-Aufrufe für diese drei Abläufe wurden aus dem Controller entfernt. Der Testerzugang bleibt während der verbleibenden Release-Prüfungen geschlossen.\n'
   fs.writeFileSync(docPath,doc)
 }
 
