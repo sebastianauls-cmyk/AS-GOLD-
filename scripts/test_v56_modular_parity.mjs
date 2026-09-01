@@ -35,8 +35,8 @@ assert.doesNotMatch(languageModules,/getElementById|querySelector|MutationObserv
 assert.match(landing,/PublicHeader/)
 assert.match(publicHeader,/PublicLanguageModules/)
 assert.doesNotMatch(landing,/customerModule=\{customerModule\}/)
-assert.match(landing,/ProblemNavigator outputLanguage=\{outputLanguage\}/)
-assert.match(landing,/onSpeakProblem=\{\(\)=>setProblemVoiceSignal/)
+assert.match(landing,/<ProblemNavigator[^>]*outputLanguage=\{outputLanguage\}/)
+assert.match(landing,/onSpeakProblem=\{\(\)=>problemNavigatorRef\.current\?\.speak\(\)\}/)
 assert.match(landing,/PublicCaseDiscoverySection/)
 assert.match(caseDiscovery,/orderedPublicCases\.map/)
 
