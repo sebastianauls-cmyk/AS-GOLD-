@@ -1,0 +1,34 @@
+name: V46 Port V58 Direct Parity
+
+on:
+  push:
+    branches: [v46-navigation-clean]
+    paths:
+      - '.github/workflows/v46-v58-direct-parity.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  port-v58:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v46-navigation-clean
+          fetch-depth: 1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Apply direct modular V58 parity
+        run: node scripts/v46_port_v58_direct_parity.mjs
+      - name: Commit parity update
+        run: |
+          set -euo pipefail
+          if [ -z "$(git status --porcelain)" ]; then exit 0; fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app/modules/workspace/WorkspaceApp.js app/globals.css
+          git commit -m 'V46 port V58 direct modular parity'
+          git push origin HEAD:v46-navigation-clean
