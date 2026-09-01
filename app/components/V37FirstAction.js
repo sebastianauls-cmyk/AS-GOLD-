@@ -60,7 +60,10 @@ export function V37FirstAction(){
     setShowProblem(true)
     document.dispatchEvent(new CustomEvent('asgold:open-problem',{detail:{voice}}))
     const target=document.getElementById('asgold-problem-navigator-react')
-    if(voice) target?.querySelector('[data-problem-voice]')?.click()
+    if(voice){
+      const microphone=target?.querySelector('[data-problem-voice]')
+      if(microphone)microphone.click()
+    }
     requestAnimationFrame(()=>{
       target?.scrollIntoView({behavior:'smooth',block:'start'})
       if(!voice)setTimeout(()=>target?.querySelector('textarea')?.focus(),350)
