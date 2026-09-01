@@ -14,6 +14,7 @@ on:
       - 'scripts/v46_extract_auth_surface.mjs'
       - 'scripts/v46_consolidate_workspace_shell.mjs'
       - 'scripts/v46_extract_public_landing.mjs'
+      - 'scripts/test_v44_language_order.mjs'
   workflow_dispatch:
 
 permissions:
