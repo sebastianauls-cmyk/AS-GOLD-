@@ -133,3 +133,11 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - `WorkspaceApp.js` hält weiterhin den Auth-Zustand und die Auth-Handler, rendert die Formulare aber nicht mehr selbst.
 - Passwortfeld, Passwortregeln, Sprachwahl, Rechtseinwilligung und Footer werden innerhalb der Auth-Modulgrenze komponiert.
 - V37-End-to-End- und Readiness-Guards verfolgen den Auth-spezifischen Zurück-Pfad jetzt bis in das Auth-Modul statt ihn fälschlich im Workspace-Controller zu verlangen.
+
+
+### V46 Einheitliche Workspace-Shell
+
+- `workspace/ProtectedWorkspaceShell.js` ist die einzige Quelle für den geschützten App-Header, Oberflächen-/Ausgabesprache, Logout, globale Nachricht und Footer.
+- Der bisherige zweite Header/Footer-Pfad im allgemeinen App-Rendering wurde entfernt; alle geschützten Ansichten laufen durch dieselbe Shell.
+- `workspace/LoadingSurface.js` besitzt den Ladebildschirm separat.
+- Damit können Navigations- und Sprachänderungen nicht mehr versehentlich nur einen von zwei parallelen App-Rahmen verändern.
