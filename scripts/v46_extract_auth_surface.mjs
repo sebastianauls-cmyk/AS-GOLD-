@@ -29,16 +29,26 @@ if(!workspace.includes("import { AuthSurface } from '../auth/AuthSurface'")){
 }
 write(workspacePath,workspace)
 
-const e2ePath='scripts/test_v37_end_to_end.mjs'
-let e2e=read(e2ePath)
-if(!e2e.includes("const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')")){
-  const anchor="const uploadConfig=fs.readFileSync('app/modules/documents/uploadConfig.js','utf8')"
-  if(!e2e.includes(anchor)) throw new Error('V46 auth surface: V37 source anchor missing')
-  e2e=e2e.replace(anchor,`${anchor}\nconst authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')`)
+for(const test of [
+  {path:'scripts/test_v37_end_to_end.mjs',label:'V37 E2E'},
+  {path:'scripts/test_v37_product_reife.mjs',label:'V37 readiness'}
+]){
+  let source=read(test.path)
+  if(!source.includes("const authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')")){
+    const candidates=[
+      "const uploadConfig=fs.readFileSync('app/modules/documents/uploadConfig.js','utf8')",
+      "const videoCompatibility=fs.readFileSync('app/components/ExplainerVideo.js','utf8')"
+    ]
+    const anchor=candidates.find(candidate=>source.includes(candidate))
+    if(!anchor) throw new Error(`V46 auth surface: ${test.label} source anchor missing`)
+    source=source.replace(anchor,`${anchor}\nconst authSurface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')`)
+  }
+  const e2eNavigation="for(const marker of ['backOverview','backCases','backClients','backExplanation']) mustContain(page,marker,`navigation ${marker}`)"
+  if(source.includes(e2eNavigation)) source=source.replace(e2eNavigation,"for(const marker of ['backOverview','backCases','backClients']) mustContain(page,marker,`navigation ${marker}`)\nmustContain(authSurface,'backExplanation','navigation backExplanation in auth module')")
+  const readinessNavigation="for(const key of ['backOverview','backCases','backClients','backExplanation']) need(page,key,`back navigation ${key}`)"
+  if(source.includes(readinessNavigation)) source=source.replace(readinessNavigation,"for(const key of ['backOverview','backCases','backClients']) need(page,key,`back navigation ${key}`)\nneed(authSurface,'backExplanation','back navigation backExplanation in auth module')")
+  write(test.path,source)
 }
-const oldNavigation="for(const marker of ['backOverview','backCases','backClients','backExplanation']) mustContain(page,marker,`navigation ${marker}`)"
-if(e2e.includes(oldNavigation)) e2e=e2e.replace(oldNavigation,"for(const marker of ['backOverview','backCases','backClients']) mustContain(page,marker,`navigation ${marker}`)\nmustContain(authSurface,'backExplanation','navigation backExplanation in auth module')")
-write(e2ePath,e2e)
 
 const guardPath='scripts/test_v46_modular_boundaries.mjs'
 let guard=read(guardPath)
@@ -57,7 +67,7 @@ write(guardPath,guard)
 
 const docsPath='docs/APP_GOLD_MODULARISIERUNG_V46.md'
 let docs=read(docsPath)
-if(!docs.includes('V46 Auth-Oberfläche')) docs += '\n\n### V46 Auth-Oberfläche\n\n- `auth/AuthSurface.js` besitzt jetzt die vollständige Login-/Registrierungsoberfläche.\n- `WorkspaceApp.js` hält weiterhin den Auth-Zustand und die Auth-Handler, rendert die Formulare aber nicht mehr selbst.\n- Passwortfeld, Passwortregeln, Sprachwahl, Rechtseinwilligung und Footer werden innerhalb der Auth-Modulgrenze komponiert.\n- Der V37-End-to-End-Guard verfolgt den Auth-spezifischen Zurück-Pfad jetzt bis in das Auth-Modul statt ihn fälschlich im Workspace-Controller zu verlangen.\n'
+if(!docs.includes('V46 Auth-Oberfläche')) docs += '\n\n### V46 Auth-Oberfläche\n\n- `auth/AuthSurface.js` besitzt jetzt die vollständige Login-/Registrierungsoberfläche.\n- `WorkspaceApp.js` hält weiterhin den Auth-Zustand und die Auth-Handler, rendert die Formulare aber nicht mehr selbst.\n- Passwortfeld, Passwortregeln, Sprachwahl, Rechtseinwilligung und Footer werden innerhalb der Auth-Modulgrenze komponiert.\n- V37-End-to-End- und Readiness-Guards verfolgen den Auth-spezifischen Zurück-Pfad jetzt bis in das Auth-Modul statt ihn fälschlich im Workspace-Controller zu verlangen.\n'
 write(docsPath,docs)
 
 const readmePath='app/modules/README.md'
@@ -65,4 +75,4 @@ let readme=read(readmePath)
 if(!readme.includes('auth/AuthSurface.js')) readme += '\n- `auth/AuthSurface.js`: login and registration composition; the workspace controller supplies state and handlers only.\n'
 write(readmePath,readme)
 
-console.log('V46 authentication surface extracted from WorkspaceApp and E2E guard aligned to module ownership.')
+console.log('V46 authentication surface extracted from WorkspaceApp and V37 guards aligned to module ownership.')
