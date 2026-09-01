@@ -2,6 +2,7 @@
   "name": "app-gold-workspace",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev",
     "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch && npm run test:v38-practical-simulation && npm run test:v38-tester-guide && npm run test:v38-integrations",
