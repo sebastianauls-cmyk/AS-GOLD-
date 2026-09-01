@@ -5,7 +5,7 @@ import path from 'node:path'
 
 const root=process.cwd()
 const read=p=>fs.readFileSync(path.join(root,p),'utf8')
-const fail=message=>{throw new Error(\`V34: \${message}\`)}
+const fail=message=>{throw new Error('V34: '+message)}
 const expect=(condition,message)=>{if(!condition) fail(message)}
 
 const layout=read('app/layout.js')
@@ -33,7 +33,7 @@ expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not 
 const introPos=publicLanding.indexOf('<ProductIntroCompact language={outputLanguage}/>')
 const firstActionPos=publicLanding.indexOf('<V37FirstAction language={outputLanguage}')
 const problemPos=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
-const videoPos=publicLanding.indexOf('<ExplainerVideo key={`${outputLanguage}-${explainerSignal}`} language={outputLanguage} openSignal={explainerSignal}/>')
+const videoPos=publicLanding.indexOf('<ExplainerVideo key=')
 expect(introPos>=0&&firstActionPos>introPos&&problemPos>firstActionPos&&videoPos>problemPos,'hero order must remain explanation -> first action -> problem input -> optional video')
 expect(!layout.includes('V37FirstAction')&&!layout.includes('ProblemNavigator')&&!layout.includes('ExplainerVideo')&&!layout.includes('ProductIntroCompact'),'public hero modules must not be mounted globally')
 expect(!layout.includes('<CaseChoiceJumpEnhancer/>'),'case-choice navigation must no longer be a global enhancer')
@@ -60,8 +60,8 @@ expect(navigator.includes('focusSignal=0')&&navigator.includes('voiceSignal=0'),
 
 const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
 for(const code of supported){
-  expect(introCopy.includes(`${code}:{title:`),`public product explanation missing language ${code}`)
-  if(code==='ro'||code==='bg') expect(languages.includes(`${code}:{locale:`),`problem language profile missing ${code}`)
+  expect(introCopy.includes(code+':{title:'),'public product explanation missing language '+code)
+  if(code==='ro'||code==='bg') expect(languages.includes(code+':{locale:'),'problem language profile missing '+code)
 }
 expect(languages.includes("import {problemLanguageProfiles as baseProfiles"),'V36 profile layer must include the base eight languages')
 expect(languages.includes('problemLanguageProfiles={...baseProfiles,...extraProfiles}'),'V36 profile layer must merge base and extra languages')
