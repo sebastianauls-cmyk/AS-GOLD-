@@ -2,14 +2,66 @@
 > app-gold-workspace@1.0.0 test:v46-modules
 > node scripts/test_v46_modular_boundaries.mjs
 
-file:///home/runner/work/AS-GOLD-/AS-GOLD-/scripts/test_v46_modular_boundaries.mjs:131
-for(const name of ['V37FirstAction','ProblemNavigator','ExplainerVideo','ProductIntroCompact']) assert.doesNotMatch(layout,new RegExp(name),'public portal modules must not be mounted globally')
-                                                                                                                    ^
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
 
-ReferenceError: Cannot access 'layout' before initialization
-    at file:///home/runner/work/AS-GOLD-/AS-GOLD-/scripts/test_v46_modular_boundaries.mjs:131:117
+AssertionError [ERR_ASSERTION]: The input did not match the regular expression /modules\/public\/ProblemNavigator/. Input:
+
+"import './globals.css'\n" +
+  "import { V38DeadlineCardEnhancer } from './modules/cases/V38DeadlineCardEnhancer'\n" +
+  "import { V38AssessmentExplainability } from './modules/cases/V38AssessmentExplainability'\n" +
+  "import { V38PrimaryNextStep } from './modules/cases/V38PrimaryNextStep'\n" +
+  "import { AccessibilityHardening } from './modules/navigation/AccessibilityHardening'\n" +
+  "import { MobileResilience } from './modules/navigation/MobileResilience'\n" +
+  "import { V39CaseTimelineAutoAssessment } from './modules/cases/V39CaseTimelineAutoAssessment'\n" +
+  "import { V40ProfessionalHandoff } from './modules/cases/V40ProfessionalHandoff'\n" +
+  "import { V41CaseConsistency } from './modules/cases/V41CaseConsistency'\n" +
+  "import { V42ActionableGaps } from './modules/cases/V42ActionableGaps'\n" +
+  '\n' +
+  'export const metadata = {\n' +
+  "  metadataBase: new URL('https://app-gold-workspace.vercel.app'),\n" +
+  "  title: { default:'AS Gold', template:'%s' },\n" +
+  "  description: 'Strukturierte Fallbearbeitung, Dokumente, Fristen und Freigaben im kontrollierten Testbetrieb.',\n" +
+  "  applicationName: 'AS Gold',\n" +
+  '  robots: { index:true, follow:true }\n' +
+  '}\n' +
+  '\n' +
+  'export default function RootLayout({ children }) {\n' +
+  '  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>\n' +
+  '}\n'
+
+    at file:///home/runner/work/AS-GOLD-/AS-GOLD-/scripts/test_v46_modular_boundaries.mjs:166:8
     at ModuleJob.run (node:internal/modules/esm/module_job:343:25)
     at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:681:26)
-    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:117:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: "import './globals.css'\n" +
+    "import { V38DeadlineCardEnhancer } from './modules/cases/V38DeadlineCardEnhancer'\n" +
+    "import { V38AssessmentExplainability } from './modules/cases/V38AssessmentExplainability'\n" +
+    "import { V38PrimaryNextStep } from './modules/cases/V38PrimaryNextStep'\n" +
+    "import { AccessibilityHardening } from './modules/navigation/AccessibilityHardening'\n" +
+    "import { MobileResilience } from './modules/navigation/MobileResilience'\n" +
+    "import { V39CaseTimelineAutoAssessment } from './modules/cases/V39CaseTimelineAutoAssessment'\n" +
+    "import { V40ProfessionalHandoff } from './modules/cases/V40ProfessionalHandoff'\n" +
+    "import { V41CaseConsistency } from './modules/cases/V41CaseConsistency'\n" +
+    "import { V42ActionableGaps } from './modules/cases/V42ActionableGaps'\n" +
+    '\n' +
+    'export const metadata = {\n' +
+    "  metadataBase: new URL('https://app-gold-workspace.vercel.app'),\n" +
+    "  title: { default:'AS Gold', template:'%s' },\n" +
+    "  description: 'Strukturierte Fallbearbeitung, Dokumente, Fristen und Freigaben im kontrollierten Testbetrieb.',\n" +
+    "  applicationName: 'AS Gold',\n" +
+    '  robots: { index:true, follow:true }\n' +
+    '}\n' +
+    '\n' +
+    'export default function RootLayout({ children }) {\n' +
+    '  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V38DeadlineCardEnhancer/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>\n' +
+    '}\n',
+  expected: /modules\/public\/ProblemNavigator/,
+  operator: 'match',
+  diff: 'simple'
+}
 
 Node.js v22.23.2
