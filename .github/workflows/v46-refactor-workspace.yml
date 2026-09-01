@@ -14,6 +14,7 @@ on:
       - 'scripts/v46_extract_auth_surface.mjs'
       - 'scripts/v46_consolidate_workspace_shell.mjs'
       - 'scripts/v46_extract_public_landing.mjs'
+      - 'scripts/v46_direct_public_interactions.mjs'
       - 'scripts/test_v44_language_order.mjs'
       - 'scripts/test_v46_modular_boundaries.mjs'
   workflow_dispatch:
@@ -59,6 +60,9 @@ jobs:
       - name: Extract public landing
         run: node scripts/v46_extract_public_landing.mjs
 
+      - name: Replace global public DOM enhancers with direct React interactions
+        run: node scripts/v46_direct_public_interactions.mjs
+
       - name: Install dependencies
         run: npm ci
 
@@ -92,10 +96,15 @@ jobs:
                   app/modules/public/publicUi.js \
                   app/modules/public/catalog.js \
                   app/modules/public/PublicLanding.js \
+                  app/modules/public/HeroCopyEnhancer.js \
+                  app/modules/public/HeroTitleStabilizer.js \
+                  app/modules/public/CaseChoiceJumpEnhancer.js \
+                  app/modules/public/caseNavigation.js \
                   app/modules/pricing/catalog.js \
                   app/modules/compliance/workspaceControlText.js \
                   app/modules/documents/uploadConfig.js \
                   app/modules/documents/exportUi.js \
+                  scripts/test_v34_customer_path.mjs \
                   scripts/test_v37_end_to_end.mjs \
                   scripts/test_v37_product_reife.mjs \
                   scripts/test_v38_prelaunch_guard.mjs \
@@ -104,5 +113,5 @@ jobs:
                   scripts/test_v46_modular_boundaries.mjs \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md \
                   app/modules/README.md
-          git commit -m 'V46 extract public landing from workspace controller'
+          git commit -m 'V46 render public hero and case navigation directly'
           git push origin HEAD:v46-navigation-clean
