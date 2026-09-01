@@ -68,9 +68,10 @@ export function ProblemNavigator(){
     const mount=()=>{
       const heroMain=document.querySelector('.heroLayout > div:first-child')||document.querySelector('.hero .wrap > div:first-child')
       const actions=heroMain?.querySelector('.actions')
+      const capabilities=heroMain?.querySelector('.heroCapabilities')
       if(!heroMain||!actions) return false
       let slot=document.getElementById('asgold-problem-slot')
-      if(!slot){slot=document.createElement('div');slot.id='asgold-problem-slot';heroMain.insertBefore(slot,actions)}
+      if(!slot){slot=document.createElement('div');slot.id='asgold-problem-slot';heroMain.insertBefore(slot,capabilities||actions)}
       setHost(slot)
       return true
     }

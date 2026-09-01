@@ -130,6 +130,62 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 @media(max-width:700px){.flagLanguageMenu{position:fixed;top:auto;right:12px;bottom:12px;left:12px;width:auto;grid-template-columns:repeat(2,minmax(0,1fr));padding:10px}.appHeaderTools .flagLanguageLabeled{flex-direction:column;align-items:flex-start;gap:3px}.legalHeaderActions .btn{display:none}.legalHeaderInner{min-height:64px}.outputLanguageControl{justify-content:space-between}.promoForm>div{grid-template-columns:1fr}.promoForm button{width:100%}.promoBoxHead{align-items:flex-start}}
 @media(max-width:420px){.flagLanguageMenu{grid-template-columns:1fr 1fr}.flagLanguageMenu button{min-width:0}.flagLanguageMenu button small{font-size:.7rem}}
 
+/* V51: two independent language modules and directly visible explainer choice */
+.publicHeader{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 20px;align-items:center;padding:12px 0 14px}
+.publicBrand{align-self:start;padding-top:8px}
+.publicActions{display:flex;justify-content:flex-end;align-items:center;gap:9px;flex-wrap:wrap}
+.publicActions a{min-height:42px;display:grid;place-items:center;padding:8px 12px;border:1px solid #e1e3e7;border-radius:10px;background:#fff;color:#374151;text-decoration:none;font-weight:750}
+.publicLanguageModules{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;width:100%}
+.publicLanguageModule{min-width:0;padding:14px;border:1px solid #d9c792;border-radius:16px;background:#fffdf7;box-shadow:0 5px 18px rgba(27,31,37,.06)}
+.publicLanguageTitle{display:block;margin-bottom:9px;color:#443817;font-size:1rem}
+.publicLanguageMainRow{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.publicLanguageModule .flagLanguage{width:100%;max-width:360px}
+.publicLanguageModule .flagLanguageTrigger{width:100%;min-height:50px;justify-content:flex-start;border-color:#c9ad66;padding:9px 12px}
+.publicLanguageModule .flagLanguageTrigger .flagLanguageChevron{margin-inline-start:auto}
+.publicLanguageModule .flagLanguageMenu{inset-inline-start:0;inset-inline-end:auto;z-index:200}
+.publicPresenterLabel{display:block;margin:12px 0 7px;color:#5d4a1e;font-size:.9rem;font-weight:850}
+.publicPresenterRow{display:grid;grid-template-columns:1fr 1fr 1.2fr;gap:8px}
+.publicPresenterRow button,.publicBackButton{min-height:46px;padding:9px 11px;border:1px solid #c9ad66;border-radius:11px;background:#fff;color:#463715;font-weight:850}
+.publicPresenterRow button.active{border:2px solid #8f6e25;background:#fff4cb;box-shadow:0 0 0 2px rgba(143,110,37,.12)}
+.publicPresenterRow .publicVideoButton{background:#2f291b;color:#fff;white-space:normal}
+.publicBackButton{white-space:nowrap;background:#fff8e8}
+.outputModule p{margin:10px 0 8px;color:#596472;line-height:1.45;font-size:.92rem}
+.outputLanguageStatus{display:block;padding:8px 10px;border-radius:10px;background:#eef8ef;color:#285c33;font-size:.9rem}
+.heroCapabilities{margin:18px 0;padding:16px;border:1px solid #dccb9f;border-radius:18px;background:#fff}
+.heroCapabilities h2{margin:0 0 12px;color:#4d3b14;font-size:1.3rem}
+.heroCapabilities .capGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.heroCapabilities .capCard{padding:12px;border-radius:12px;box-shadow:none}
+.heroCapabilities .capCard h3{margin:0 0 5px;font-size:.98rem}
+.heroCapabilities .capCard p{margin:0;color:#606a76;font-size:.88rem;line-height:1.4}
+.explainerModalBackdrop{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:16px;background:rgba(17,21,28,.72);backdrop-filter:blur(5px)}
+.explainerModal{width:min(900px,100%);max-height:calc(100dvh - 32px);overflow:auto;padding:18px;border:1px solid #d9c792;border-radius:18px;background:#fff;box-shadow:0 24px 80px rgba(0,0,0,.42)}
+.explainerModalHead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:12px}
+.explainerModalHead b{display:block;color:#4d3b14;font-size:1.25rem}
+.explainerModalHead p{margin:5px 0 0;color:#596472}
+.explainerModalHead button{min-height:42px;padding:8px 10px;border:1px solid #d8d1bd;border-radius:10px;background:#fff;font-weight:800}
+.explainerLanguage{display:grid;gap:5px;max-width:360px;margin-bottom:12px;color:#5d4a1e;font-weight:800}
+.explainerLanguage select{min-height:46px;padding:10px 11px;border:1px solid #d8d1bd;border-radius:11px;background:#fff}
+.explainerPresenterTitle{display:block;margin-bottom:6px;color:#5d4a1e}
+.explainerPresenterButtons{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.explainerFallback{padding:9px 11px;border:1px solid #ead69e;border-radius:10px;background:#fff8df;color:#65562d;font-size:.9rem}
+.explainerModal video{display:block;width:100%;aspect-ratio:16/9;border-radius:14px;background:#151515}
+@media(max-width:760px){
+  .publicHeader{grid-template-columns:1fr;padding:10px 0 12px}
+  .publicBrand{justify-content:center;padding-top:0}
+  .publicActions{display:grid;grid-template-columns:1fr 1fr;width:100%}
+  .publicActions a,.publicActions button{width:100%;min-height:46px;text-align:center}
+  .publicLanguageModules{grid-column:1;grid-template-columns:1fr}
+  .publicLanguageModule .flagLanguage{max-width:none}
+  .publicPresenterRow{grid-template-columns:1fr 1fr}
+  .publicPresenterRow .publicVideoButton{grid-column:1/-1}
+  .publicBackButton{flex:1}
+  .heroCapabilities .capGrid{grid-template-columns:1fr}
+  .explainerModalBackdrop{padding:8px}
+  .explainerModal{max-height:calc(100dvh - 16px);padding:14px}
+  .explainerModalHead{align-items:stretch;flex-direction:column}
+  .explainerModalHead button{width:100%}
+}
+
 /* V33: vertically ordered language choices and consistently visible back navigation. */
 .backBtn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;background:#fff;border:1px solid #c9ad66;color:#4f3c12;box-shadow:0 5px 16px rgba(83,63,20,.09)}
 .backBtn:hover{border-color:#9b792b;background:#fffaf0}

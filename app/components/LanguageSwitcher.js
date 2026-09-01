@@ -8,13 +8,12 @@ const flagComponents={AF,AE,BG,DE,FR,GB,IR,PL,RO,RU,SA,TR,US}
 
 const videoButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی',ro:'Videoclip explicativ',bg:'Обяснително видео'}
 const backButtonText={de:'← Zurück',en:'← Back',fr:'← Retour',tr:'← Geri',pl:'← Wstecz',ru:'← Назад',ar:'الرجوع →',fa:'بازگشت →',ro:'← Înapoi',bg:'← Назад'}
-
 function FlagSet({countryCodes=[],fallback='',className=''}){
   const supported=countryCodes.filter(code=>flagComponents[code])
-  return <div className={`flagIconSet ${className}`.trim()} aria-hidden="true" style={{display:'inline-flex',alignItems:'center',gap:'4px',minWidth:'30px',flex:'0 0 auto'}}>
-    {supported.map(code=>{const CountryFlag=flagComponents[code];return <CountryFlag style={{width:'30px',height:'20px',display:'block',borderRadius:'2px',boxShadow:'0 0 0 1px rgba(24,30,38,.28)'}} focusable="false" key={code}/>})}
-    {!supported.length&&<b style={{fontSize:'1.2rem'}}>{fallback}</b>}
-  </div>
+  return <span className={`flagIconSet ${className}`.trim()} aria-hidden="true">
+    {supported.map(code=>{const CountryFlag=flagComponents[code];return <CountryFlag className="flagIcon" focusable="false" key={code}/>})}
+    {!supported.length&&<b>{fallback}</b>}
+  </span>
 }
 
 export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false,publicPicker=false}){
@@ -36,14 +35,11 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
 
   useEffect(()=>{
     if(!open) return
-    function close(event){ if(!rootRef.current?.contains(event.target)) setOpen(false) }
-    function escape(event){ if(event.key==='Escape') setOpen(false) }
+    function close(event){if(!rootRef.current?.contains(event.target))setOpen(false)}
+    function escape(event){if(event.key==='Escape')setOpen(false)}
     document.addEventListener('pointerdown',close)
     document.addEventListener('keydown',escape)
-    return ()=>{
-      document.removeEventListener('pointerdown',close)
-      document.removeEventListener('keydown',escape)
-    }
+    return()=>{document.removeEventListener('pointerdown',close);document.removeEventListener('keydown',escape)}
   },[open])
 
   if(publicPicker){
@@ -96,7 +92,6 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
       </div>}
     </div>
   }
-
   return <div className={`flagLanguage ${showLabel?'flagLanguageLabeled':''} ${className}`.trim()} ref={rootRef}>
     {showLabel&&<span className="flagLanguageLabel">{label}</span>}
     <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(current=>!current)}>

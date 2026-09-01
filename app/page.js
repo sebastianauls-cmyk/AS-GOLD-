@@ -7,6 +7,7 @@ import { ApprovalDetail, ApprovalSection, getV25ApprovalCopy } from './component
 import { getV26AnalysisCopy } from './components/V26DocumentAnalysis'
 import { LegalFooter } from './components/LegalFooter'
 import { LanguageSwitcher } from './components/LanguageSwitcher'
+import { PublicLanguageModules } from './components/PublicLanguageModules'
 import { LegalAcceptance, PRIVACY_NOTICE_VERSION, RegistrationLegalFields, TERMS_VERSION, getV28PrivacyCopy } from './components/V28PrivacyControls'
 import { PasswordPolicyChecklist, getV29PasswordCopy, validateV29Password } from './components/V29PasswordPolicy'
 import { PromoCodeControl } from './components/PromoCodeControl'
@@ -18,19 +19,6 @@ const emptyCase = { title:'', client_id:'', reference_no:'', goal:'', summary:''
 const sectionNames = { cases: 'Fälle', clients: 'Kunden', documents: 'Dokumente', approvals: 'Freigaben' }
 
 const languages = supportedLanguages
-
-const publicNavigationCopy={
-  de:{interface:'1. Sprache der Oberfläche',output:'2. Ausgabesprache',back:'← Zurück'},
-  en:{interface:'1. Interface language',output:'2. Output language',back:'← Back'},
-  fr:{interface:"1. Langue de l’interface",output:'2. Langue de sortie',back:'← Retour'},
-  tr:{interface:'1. Arayüz dili',output:'2. Çıktı dili',back:'← Geri'},
-  pl:{interface:'1. Język interfejsu',output:'2. Język wyniku',back:'← Wstecz'},
-  ru:{interface:'1. Язык интерфейса',output:'2. Язык результата',back:'← Назад'},
-  ar:{interface:'1. لغة الواجهة',output:'2. لغة الإخراج',back:'الرجوع →'},
-  fa:{interface:'1. زبان رابط',output:'2. زبان خروجی',back:'بازگشت →'},
-  ro:{interface:'1. Limba interfeței',output:'2. Limba rezultatului',back:'← Înapoi'},
-  bg:{interface:'1. Език на интерфейса',output:'2. Език на резултата',back:'← Назад'}
-}
 
 const passwordUi = {
   de:{show:'Anzeigen',hide:'Verbergen'},
@@ -442,15 +430,6 @@ export default function Home(){
   const promoAnyValid = !!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='valid')
   const promoAllInvalid = !!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
   const promoSomeInvalid = !!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='invalid')
-  const publicNav=publicNavigationCopy[language]||publicNavigationCopy.de
-  const outputLanguageName=languages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
-
-  function returnToPublicTop(){
-    const cleanUrl=`${window.location.pathname}${window.location.search}`
-    window.history.replaceState(null,'',cleanUrl)
-    window.scrollTo({top:0,behavior:'smooth'})
-  }
-
   useEffect(()=>{
     if(!user?.id) return
     try{
@@ -703,7 +682,7 @@ export default function Home(){
     if(allowed.error){setMessage(allowed.error.message);return false}
     setPrivacySettings(enabled.data)
     await recordServerAudit('document_ai_transfer_authorized',{classification:document.data_classification},'document',document.id)
-    const {data:result,error}=await supabase.functions.invoke('gold-ocr-v28',{body:{file_path:document.file_path,document_id:document.id,acknowledged:true,privacy_notice_version:PRIVACY_NOTICE_VERSION,terms_version:TERMS_VERSION}})
+    const {data:result,error}=await supabase.functions.invoke('gold-ocr-v28',{body:{file_path:document.file_path,document_id:document.id,output_language:outputLanguage,acknowledged:true,privacy_notice_version:PRIVACY_NOTICE_VERSION,terms_version:TERMS_VERSION}})
     if(error){setMessage(await functionErrorMessage(error,analysisUi.failed));return false}
     if(result?.status==='configuration_required'){setMessage(result.message||analysisUi.failed);return false}
     const suggestedCase=data.cases.some(item=>item.id===result?.suggested_case_id)?result.suggested_case_id:null
@@ -959,14 +938,10 @@ export default function Home(){
 
   return <>
     <header className="publicTop">
-      <div className="wrap nav">
-        <div className="brand"><Logo/><b>AS Gold</b></div>
-        <div className="publicLanguageStack" aria-label={`${t.language} / ${t.outputLanguage}`}>
-          <div className="publicLanguageRow"><span>{publicNav.interface}</span><LanguageSwitcher value={language} onChange={setLanguage} label={t.language} publicPicker/></div>
-          <div className="publicLanguageRow"><span>{publicNav.output}</span><LanguageSwitcher value={outputLanguage} onChange={setOutputLanguage} label={t.outputLanguage}/></div>
-        </div>
-        <nav className="publicNavActions">
-          <button type="button" className="backBtn publicBackBtn" onClick={returnToPublicTop}>{publicNav.back}</button>
+      <div className="wrap publicHeader">
+        <div className="brand publicBrand"><Logo/><b>AS Gold</b></div>
+        <PublicLanguageModules language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage}/>
+        <nav className="publicActions">
           <a href="#fallarten">{cd.nav}</a>
           <a href="#preise">{t.prices}</a>
           <button className="secondary" onClick={()=>setScreen('register')}>{t.register}</button>
@@ -978,7 +953,6 @@ export default function Home(){
       <div className="legalMarketBar">
         <div className="wrap">
           <b>{t.legal}</b><span>{t.marketNote}</span>
-          <strong className="legalChip" data-output-language-status aria-live="polite">{t.outputLanguage}: {outputLanguageName}</strong>
         </div>
       </div>
 
@@ -988,6 +962,10 @@ export default function Home(){
             <div className="eyebrow">{a.eyebrow}</div>
             <h1>{t.hero}</h1>
             <p className="lead">{t.lead}</p>
+            <section className="heroCapabilities" aria-labelledby="asgold-what-does-title">
+              <h2 id="asgold-what-does-title">{a.whatDoes}</h2>
+              <div className="capGrid">{a.caps.map(([title,description])=><article className="capCard" key={title}><h3>{title}</h3><p>{description}</p></article>)}</div>
+            </section>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
               <button className="secondary btn" onClick={()=>setScreen('register')}>{t.freeCta}</button>
@@ -1035,10 +1013,6 @@ export default function Home(){
             <div className="transparencyGrid">{tt.items.map(([h,d])=><article className="transparencyCard" key={h}><span className="checkMark">✓</span><div><h3>{h}</h3><p>{d}</p></div></article>)}</div>
           </details>
         </div>
-      </section>
-
-      <section className="section">
-        <div className="wrap"><h2>{a.whatDoes}</h2><div className="capGrid">{a.caps.map(([title,description])=><article className="capCard" key={title}><h3>{title}</h3><p>{description}</p></article>)}</div></div>
       </section>
 
       <section id="preise" className="section alt">

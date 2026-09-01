@@ -38,29 +38,42 @@ const maleRemoteVideos={
 }
 
 export function ExplainerVideo(){
-  const [host,setHost]=useState(null)
+  const [mounted,setMounted]=useState(false)
   const [uiLanguage,setUiLanguage]=useState('de')
   const [videoLanguage,setVideoLanguage]=useState('de')
   const [presenter,setPresenter]=useState('female')
   const [open,setOpen]=useState(false)
+
   useEffect(()=>{
-    if(location.pathname!=='/') return
-    let observer
-    const mount=()=>{const heroMain=document.querySelector('.heroLayout > div:first-child')||document.querySelector('.hero .wrap > div:first-child');const problemSlot=document.getElementById('asgold-problem-slot');const introSlot=document.getElementById('asgold-product-intro-compact-slot');if(!heroMain||(!problemSlot&&!introSlot))return false;let slot=document.getElementById('asgold-explainer-video-slot');if(!slot){slot=document.createElement('div');slot.id='asgold-explainer-video-slot';if(problemSlot)problemSlot.insertAdjacentElement('afterend',slot);else introSlot.insertAdjacentElement('beforebegin',slot)}setHost(slot);return true}
-    if(!mount()){observer=new MutationObserver(()=>{if(mount())observer?.disconnect()});observer.observe(document.body,{subtree:true,childList:true})}
-    const savedPresenter=localStorage.getItem('asgold-video-presenter');if(savedPresenter==='male'||savedPresenter==='female')setPresenter(savedPresenter)
-    const sync=()=>{const lang=(document.documentElement.lang||'de').split('-')[0];setUiLanguage(lang);if(languages.some(([code])=>code===lang))setVideoLanguage(lang)}
+    setMounted(true)
+    const savedPresenter=localStorage.getItem('asgold-video-presenter')
+    if(savedPresenter==='male'||savedPresenter==='female')setPresenter(savedPresenter)
+    const sync=()=>{const lang=(document.documentElement.lang||'de').split('-')[0];setUiLanguage(lang)}
     const openExplainer=event=>{
       const requested=event.detail?.language
+      const requestedPresenter=event.detail?.presenter
       if(languages.some(([code])=>code===requested))setVideoLanguage(requested)
+      if(requestedPresenter==='male'||requestedPresenter==='female')setPresenter(requestedPresenter)
       setOpen(true)
-      requestAnimationFrame(()=>document.getElementById('asgold-explainer-video-slot')?.scrollIntoView({behavior:'smooth',block:'center'}))
     }
-    sync();document.addEventListener('asgold:open-explainer',openExplainer)
-    const langObserver=new MutationObserver(sync);langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']});return()=>{observer?.disconnect();langObserver.disconnect();document.removeEventListener('asgold:open-explainer',openExplainer)}
+    sync()
+    document.addEventListener('asgold:open-explainer',openExplainer)
+    const langObserver=new MutationObserver(sync)
+    langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']})
+    return()=>{langObserver.disconnect();document.removeEventListener('asgold:open-explainer',openExplainer)}
   },[])
+
   useEffect(()=>{localStorage.setItem('asgold-video-presenter',presenter)},[presenter])
-  if(!host)return null
+  useEffect(()=>{
+    if(!open)return
+    const previous=document.body.style.overflow
+    document.body.style.overflow='hidden'
+    const close=event=>{if(event.key==='Escape')setOpen(false)}
+    document.addEventListener('keydown',close)
+    return()=>{document.body.style.overflow=previous;document.removeEventListener('keydown',close)}
+  },[open])
+
+  if(!mounted||!open)return null
   const c=copy[uiLanguage]||copy.de
   const rtl=uiLanguage==='ar'||uiLanguage==='fa'
   const femaleLocal=femaleLocalVideos[videoLanguage]||femaleLocalVideos.de
@@ -68,13 +81,15 @@ export function ExplainerVideo(){
   const maleLocal=maleLocalVideos[videoLanguage]
   const maleRemote=maleRemoteVideos[videoLanguage]||maleRemoteVideos.de
   const buttonStyle=active=>({flex:'1 1 150px',minHeight:46,padding:'10px 14px',border:active?'2px solid #8f6e25':'1px solid #d8d1bd',borderRadius:12,background:active?'#fff6d8':'#fff',color:'#4d3b14',fontWeight:900,cursor:'pointer'})
-  return createPortal(<section dir={rtl?'rtl':'ltr'} style={{margin:'12px 0 10px',padding:open?16:10,border:'1px solid #d9c792',borderRadius:16,background:'#fff'}}>
-    {!open?<button type='button' onClick={()=>setOpen(true)} aria-expanded='false' style={{width:'100%',padding:'12px 14px',border:0,borderRadius:11,background:'#fff8df',color:'#5b4618',fontWeight:900,fontSize:'1rem',cursor:'pointer'}}>{c.show}</button>:<>
-      <div style={{display:'flex',justifyContent:'space-between',gap:10,alignItems:'start'}}><div><b style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{c.title}</b><p style={{margin:'5px 0 12px',color:'#596472'}}>{c.lead}</p></div><button type='button' onClick={()=>setOpen(false)} aria-expanded='true' style={{border:'1px solid #d8d1bd',background:'#fff',borderRadius:10,padding:'7px 9px',cursor:'pointer'}}>{c.hide}</button></div>
-      <label style={{display:'grid',gap:5,fontWeight:800,color:'#5d4a1e',maxWidth:340,marginBottom:12}}>{c.language}<select value={videoLanguage} onChange={e=>setVideoLanguage(e.target.value)} style={{padding:'10px 11px',border:'1px solid #d8d1bd',borderRadius:11,background:'#fff'}}>{languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}</select></label>
-      <b style={{display:'block',marginBottom:6,color:'#5d4a1e'}}>{c.voice}</b><div role='group' aria-label={c.voice} style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:12}}><button type='button' aria-pressed={presenter==='female'} onClick={()=>setPresenter('female')} style={buttonStyle(presenter==='female')}>👩 {c.female}</button><button type='button' aria-pressed={presenter==='male'} onClick={()=>setPresenter('male')} style={buttonStyle(presenter==='male')}>👨 {c.male}</button></div>
-      {presenter==='male'&&videoLanguage!=='de'&&<p style={{padding:'9px 11px',borderRadius:10,background:'#fff8df',border:'1px solid #ead69e',color:'#65562d',fontSize:'.9rem'}}>{c.maleFallback}</p>}
-      <video data-explainer-presenter={presenter} key={`${videoLanguage}-${presenter}`} controls playsInline preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>{presenter==='female'&&<source src={femaleLocal} type='video/mp4'/>}{presenter==='male'&&maleLocal&&<source src={maleLocal} type='video/mp4'/>}<source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>{presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}{c.loading}</video>
-    </>}
-  </section>,host)
+
+  return createPortal(<div className="explainerModalBackdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)setOpen(false)}}>
+    <section className="explainerModal" role="dialog" aria-modal="true" aria-labelledby="asgold-explainer-title" dir={rtl?'rtl':'ltr'}>
+      <div className="explainerModalHead"><div><b id="asgold-explainer-title">{c.title}</b><p>{c.lead}</p></div><button type="button" onClick={()=>setOpen(false)} aria-label={c.hide}>✕ {c.hide}</button></div>
+      <label className="explainerLanguage">{c.language}<select value={videoLanguage} onChange={event=>setVideoLanguage(event.target.value)}>{languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}</select></label>
+      <b className="explainerPresenterTitle">{c.voice}</b>
+      <div className="explainerPresenterButtons" role='group' aria-label={c.voice}><button type="button" aria-pressed={presenter==='female'} onClick={()=>setPresenter('female')} style={buttonStyle(presenter==='female')}>👩 {c.female}</button><button type="button" aria-pressed={presenter==='male'} onClick={()=>setPresenter('male')} style={buttonStyle(presenter==='male')}>👨 {c.male}</button></div>
+      {presenter==='male'&&videoLanguage!=='de'&&<p className="explainerFallback">{c.maleFallback}</p>}
+      <video data-explainer-presenter={presenter} key={`${videoLanguage}-${presenter}`} controls autoPlay playsInline preload="metadata">{presenter==='female'&&<source src={femaleLocal} type="video/mp4"/>}{presenter==='male'&&maleLocal&&<source src={maleLocal} type="video/mp4"/>}<source src={presenter==='male'?maleRemote:femaleRemote} type="video/mp4"/>{presenter==='male'&&<source src={femaleRemote} type="video/mp4"/>}{c.loading}</video>
+    </section>
+  </div>,document.body)
 }

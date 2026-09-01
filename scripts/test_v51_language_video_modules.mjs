@@ -1,0 +1,33 @@
+import assert from 'node:assert/strict'
+import fs from 'node:fs'
+
+const modules=fs.readFileSync('app/components/PublicLanguageModules.js','utf8')
+const switcher=fs.readFileSync('app/components/LanguageSwitcher.js','utf8')
+const video=fs.readFileSync('app/components/ExplainerVideo.js','utf8')
+const page=fs.readFileSync('app/page.js','utf8')
+const layout=fs.readFileSync('app/layout.js','utf8')
+const languages=fs.readFileSync('app/lib/v30Languages.base.mjs','utf8')
+const problem=fs.readFileSync('app/components/ProblemNavigator.js','utf8')
+const intro=fs.readFileSync('app/components/ProductIntroCompact.js','utf8')
+
+assert.match(modules,/1\. Sprache der Oberfläche/)
+assert.match(modules,/2\. Sprache für Ausgabe & Kunden/)
+assert.equal((modules.match(/<LanguageSwitcher/g)||[]).length,2)
+assert.match(modules,/value=\{language\} onChange=\{onLanguageChange\}/)
+assert.match(modules,/value=\{outputLanguage\} onChange=\{onOutputLanguageChange\}/)
+assert.match(modules,/presenter:'Wer soll AS Gold erklären\?'/)
+assert.match(modules,/female:'Frau erklärt'/)
+assert.match(modules,/male:'Mann erklärt'/)
+assert.match(modules,/detail:\{language,presenter\}/)
+assert.match(switcher,/supportedLanguages\.map/)
+assert.match(languages,/key: 'de', label: 'Deutsch'/)
+assert.match(video,/role="dialog" aria-modal="true"/)
+assert.match(video,/as-gold-explainer-de-male\.mp4/)
+assert.match(video,/event\.detail\?\.presenter/)
+assert.match(page,/output_language:outputLanguage/)
+assert.doesNotMatch(layout,/V44LanguageOrder/)
+assert.equal((page.match(/className="heroCapabilities"/g)||[]).length,1)
+assert.match(problem,/insertBefore\(slot,capabilities\|\|actions\)/)
+assert.match(intro,/insertBefore\(slot,problemSlot\|\|actions\)/)
+
+console.log('V51: independent languages, German output, presenter videos and requested intro/problem content order verified.')

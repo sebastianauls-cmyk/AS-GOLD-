@@ -74,15 +74,16 @@ for(const language of ['ro','bg']){
 }
 
 const switcherSource=await readFile(new URL('../app/components/LanguageSwitcher.js',import.meta.url),'utf8')
+const publicModulesSource=await readFile(new URL('../app/components/PublicLanguageModules.js',import.meta.url),'utf8')
 const heroSource=await readFile(new URL('../app/components/HeroTitleStabilizer.js',import.meta.url),'utf8')
 const introSource=await readFile(new URL('../app/components/ProductIntroCompact.js',import.meta.url),'utf8')
 const explainerSource=await readFile(new URL('../app/components/ExplainerVideo.js',import.meta.url),'utf8')
 
 assert.match(switcherSource,/import \{[^}]*\bBG\b[^}]*\bRO\b[^}]*\} from 'country-flag-icons\/react\/3x2'/s)
 assert.match(switcherSource,/const flagComponents=\{[^}]*\bBG\b[^}]*\bRO\b[^}]*\}/s)
-assert.match(switcherSource,/ro:'Videoclip explicativ'/)
-assert.match(switcherSource,/bg:'Обяснително видео'/)
-assert.match(switcherSource,/asgold:open-explainer/)
+assert.match(publicModulesSource,/ro:\{[^\n]*play:'Redă videoclipul explicativ'/)
+assert.match(publicModulesSource,/bg:\{[^\n]*play:'Пусни обяснителното видео'/)
+assert.match(publicModulesSource,/asgold:open-explainer/)
 assert.doesNotMatch(switcherSource,/role="dialog"/)
 assert.match(switcherSource,/>\{label\}<\/small>/)
 assert.match(switcherSource,/>\{active\.label\}<\/strong>/)
