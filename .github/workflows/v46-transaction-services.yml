@@ -22,6 +22,37 @@ jobs:
           ref: v46-navigation-clean
           fetch-depth: 1
 
+      - name: Harden migration function boundaries
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path=Path('scripts/v46_extract_transaction_services.mjs')
+          source=path.read_text()
+          old="""function replaceFunction(startName,nextName,replacement){
+            const start=`  async function ${startName}`
+            const next=`\\n  async function ${nextName}`
+            const startIndex=source.indexOf(start)
+            const nextIndex=source.indexOf(next,startIndex)
+            if(startIndex<0||nextIndex<0) throw new Error(`Could not isolate ${startName}`)
+            source=source.slice(0,startIndex)+replacement+source.slice(nextIndex)
+          }"""
+          new="""function replaceFunction(startName,nextName,replacement){
+            const start=`  async function ${startName}`
+            const startIndex=source.indexOf(start)
+            const nextCandidates=[
+              source.indexOf(`\\n  async function ${nextName}`,startIndex),
+              source.indexOf(`\\n  function ${nextName}`,startIndex)
+            ].filter(index=>index>=0)
+            const nextIndex=nextCandidates.length?Math.min(...nextCandidates):-1
+            if(startIndex<0||nextIndex<0) throw new Error(`Could not isolate ${startName}`)
+            source=source.slice(0,startIndex)+replacement+source.slice(nextIndex)
+          }"""
+          if old not in source:
+              raise SystemExit('replaceFunction helper anchor missing')
+          path.write_text(source.replace(old,new))
+          PY
+
       - name: Extract transactional services
         run: node scripts/v46_extract_transaction_services.mjs
 
@@ -50,6 +81,7 @@ jobs:
                   app/modules/services/documentRepository.js \
                   app/modules/services/approvalRepository.js \
                   app/modules/README.md \
-                  scripts/test_v46_modular_boundaries.mjs
+                  scripts/test_v46_modular_boundaries.mjs \
+                  scripts/v46_extract_transaction_services.mjs
           git commit -m 'V46 extract transactional service boundaries'
           git push origin HEAD:v46-navigation-clean
