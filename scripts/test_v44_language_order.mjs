@@ -9,7 +9,7 @@ const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 const legacyPath=new URL('../app/components/V44LanguageOrder.js',import.meta.url)
 
 const publicStart=publicSurface.indexOf('return <>')
-const interfaceControl=publicSurface.indexOf('<LanguageSwitcher value={language} onChange={setLanguage} label={t.language}/>',publicStart)
+const interfaceControl=publicSurface.indexOf('<LanguageSwitcher value={language} onChange={setLanguage} label={t.language} publicPicker',publicStart)
 const outputControl=publicSurface.indexOf('<LanguageSwitcher value={outputLanguage} onChange={setOutputLanguage} label={t.outputLanguage}/>',publicStart)
 
 assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/,'root page must delegate to workspace module')
