@@ -18,13 +18,13 @@ function addImport(line,anchor){
 addImport("import { PricingSurface } from '../pricing/PricingSurface'","import { DashboardSurface } from './DashboardSurface'")
 addImport("import { AccountSurface } from '../compliance/AccountSurface'","import { PricingSurface } from '../pricing/PricingSurface'")
 
-const dashboardCall=/      :section==='dashboard'\?<DashboardSurface[^\n]+\/>/
-if(!dashboardCall.test(workspace)) throw new Error('V46 dashboard split: dashboard render call missing')
-workspace=workspace.replace(dashboardCall,"      :section==='dashboard'?<DashboardSurface core={core} handleQuickAction={handleQuickAction} deadlineCases={deadlineCases} a={a} user={user} currentTier={currentTier} dg={dg} setSection={setSection} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} currentSufficient={currentSufficient} currentPlan={currentPlan} access={access} data={data} lt={lt}/>")
+const dashboardLine=workspace.split('\n').find(line=>line.includes(":section==='dashboard'?<DashboardSurface"))
+if(!dashboardLine) throw new Error('V46 dashboard split: dashboard render call missing')
+workspace=workspace.replace(dashboardLine,"      :section==='dashboard'?<DashboardSurface core={core} handleQuickAction={handleQuickAction} deadlineCases={deadlineCases} a={a} user={user} currentTier={currentTier} dg={dg} setSection={setSection} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} currentSufficient={currentSufficient} currentPlan={currentPlan} access={access} data={data} lt={lt}/>")
 
-const sectionAnchor="  if(screen==='app') {"
 if(!workspace.includes("section==='pricing'")){
-  if(!workspace.includes(sectionAnchor)) throw new Error('V46 dashboard split: protected section anchor missing')
+  const sectionAnchor=workspace.split('\n').find(line=>line.includes("if(screen==='app') {") && !line.includes("return protectedWorkspace"))
+  if(!sectionAnchor) throw new Error('V46 dashboard split: protected section anchor missing')
   const pricingBranch=`  if(screen==='app'&&!selectedClient&&section==='pricing') return protectedWorkspace(<PricingSurface a={a} promo={promo} upgrades={upgrades} promoCode={promoCode} setPromoCode={setPromoCode} appliedPromoCode={appliedPromoCode} applyPromo={applyPromo} clearPromo={clearPromo} quoteLoading={quoteLoading} quotes={quotes} promoAnyValid={promoAnyValid} promoAllInvalid={promoAllInvalid} promoSomeInvalid={promoSomeInvalid} eur={eur} terms={terms} termMonths={termMonths} setTermMonths={setTermMonths} monthsLabel={monthsLabel} period={period} requestUpgrade={requestUpgrade} onBack={()=>setSection('dashboard')}/>)\n  if(screen==='app'&&!selectedClient&&section==='account') return protectedWorkspace(<AccountSurface a={a} currentPlan={currentPlan} currentTier={currentTier} lt={lt} exportMyData={exportMyData} activityLog={activityLog} localeForLanguage={localeForLanguage} language={language} sct={sct} serverAudit={serverAudit} deletionRequests={deletionRequests} deletionBusy={deletionBusy} cancelAccountDeletion={cancelAccountDeletion} requestAccountDeletion={requestAccountDeletion} onBack={()=>setSection('dashboard')}/>)\n\n`
   workspace=workspace.replace(sectionAnchor,pricingBranch+sectionAnchor)
 }
