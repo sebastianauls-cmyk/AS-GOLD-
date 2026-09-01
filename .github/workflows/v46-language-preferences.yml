@@ -47,6 +47,7 @@ jobs:
           git add app/modules/workspace/WorkspaceApp.js \
                   app/modules/language/useLanguagePreferences.js \
                   app/modules/README.md \
-                  scripts/test_v46_modular_boundaries.mjs
+                  scripts/test_v46_modular_boundaries.mjs \
+                  scripts/test_v56_modular_parity.mjs
           git commit -m 'V46 extract language preference boundary'
           git push origin HEAD:v46-navigation-clean
