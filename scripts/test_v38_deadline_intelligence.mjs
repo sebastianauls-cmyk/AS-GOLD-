@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 import {analyzeDeadlines,deadlineUrgency,parseGermanDate} from '../app/lib/v38DeadlineIntelligence.mjs'
 
 const now=new Date('2026-09-01T10:00:00Z')
@@ -25,4 +26,14 @@ assert.equal(noDeadline.primary,null)
 assert.match(noDeadline.message,/Keine sichere Frist/)
 assert.match(noDeadline.consequence,/Keine Rechtsfolge behauptet/)
 
-console.log('V38 deadline intelligence guard passed: prioritization, uncertainty and conservative consequence wording verified.')
+const card=fs.readFileSync(new URL('../app/components/V38DeadlineCardEnhancer.js',import.meta.url),'utf8')
+const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
+assert.match(card,/Fristen-Warnung/)
+assert.match(card,/Mögliche Folge/)
+assert.match(card,/Jetzt tun/)
+assert.match(card,/data-v38-deadline-card/)
+assert.match(card,/de:.*Fristen-Warnung/)
+for(const language of ['en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(card,new RegExp(`${language}:\\{`))
+assert.match(layout,/V38DeadlineCardEnhancer/)
+
+console.log('V38 deadline intelligence guard passed: prioritization, uncertainty, conservative consequence wording and visible multilingual warning card verified.')
