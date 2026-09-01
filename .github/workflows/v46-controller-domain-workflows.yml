@@ -8,6 +8,7 @@ on:
       - 'scripts/v46_wire_controller_workflows.mjs'
       - 'scripts/v46_align_public_modular_guard.mjs'
       - 'scripts/test_v37_product_reife.mjs'
+      - 'scripts/test_v56_modular_parity.mjs'
   workflow_dispatch:
 
 permissions:
