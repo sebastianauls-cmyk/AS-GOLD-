@@ -22,6 +22,7 @@ export function V37FirstAction(){
   const [host,setHost]=useState(null)
   const [language,setLanguage]=useState('de')
   const [showExample,setShowExample]=useState(false)
+  const [showProblem,setShowProblem]=useState(false)
   useEffect(()=>{
     if(location.pathname!=='/') return
     let bodyObserver
@@ -38,13 +39,35 @@ export function V37FirstAction(){
     sync();const langObserver=new MutationObserver(sync);langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']})
     return()=>{bodyObserver?.disconnect();langObserver.disconnect()}
   },[])
-  if(!host)return null
+  useEffect(()=>{
+    const returnToStart=()=>{
+      setShowProblem(false)
+      setTimeout(()=>{
+        const slot=document.getElementById('asgold-v37-first-action-slot')
+        slot?.scrollIntoView({behavior:'smooth',block:'center'})
+        slot?.querySelector('button')?.focus()
+      },0)
+    }
+    document.addEventListener('asgold:return-start',returnToStart)
+    return()=>document.removeEventListener('asgold:return-start',returnToStart)
+  },[])
+  if(!host||showProblem)return null
   const c=copy[language]||copy.de
   const rtl=language==='ar'||language==='fa'
   const primary={padding:'13px 16px',border:0,borderRadius:12,background:'#8f6e25',color:'#fff',fontWeight:900,fontSize:'1rem',cursor:'pointer'}
   const secondary={...primary,background:'#fff',color:'#5b4618',border:'1px solid #d8c58d'}
-  const focusProblem=()=>{const el=document.querySelector('#asgold-problem-navigator-react textarea');if(el){el.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>el.focus(),350)}else document.getElementById('asgold-problem-slot')?.scrollIntoView({behavior:'smooth'})}
-  const speakProblem=()=>{const target=document.getElementById('asgold-problem-navigator-react');const microphone=target?.querySelector('[data-problem-voice]');if(!target||!microphone)return focusProblem();target.scrollIntoView({behavior:'smooth',block:'start'});microphone.click()}
+  const openProblem=voice=>{
+    setShowProblem(true)
+    document.dispatchEvent(new CustomEvent('asgold:open-problem',{detail:{voice}}))
+    const target=document.getElementById('asgold-problem-navigator-react')
+    if(voice) target?.querySelector('[data-problem-voice]')?.click()
+    requestAnimationFrame(()=>{
+      target?.scrollIntoView({behavior:'smooth',block:'start'})
+      if(!voice)setTimeout(()=>target?.querySelector('textarea')?.focus(),350)
+    })
+  }
+  const focusProblem=()=>openProblem(false)
+  const speakProblem=()=>openProblem(true)
   const upload=()=>{const input=document.querySelector('input[type="file"]');if(input){input.scrollIntoView({behavior:'smooth',block:'center'});setTimeout(()=>input.click(),300);return}const free=document.querySelector('.hero .actions .secondary.btn,.actions .secondary.btn');free?.click()}
   return createPortal(<section dir={rtl?'rtl':'ltr'} style={{margin:'18px 0 14px',padding:18,border:'2px solid #c6a553',borderRadius:18,background:'linear-gradient(135deg,#fff9e8,#fff)',boxShadow:'0 12px 30px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.45rem',color:'#4d3b14'}}>{startTitles[language]||startTitles.de}</b>
