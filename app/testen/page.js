@@ -1,5 +1,5 @@
-import { TesterGuide } from '../modules/tester/TesterGuide'
+import { TesterPaused } from '../modules/tester/TesterPaused'
 
-export const metadata={title:'AS Gold Testerzugang',description:'Kontrollierter AS-Gold-Testbetrieb mit synthetischen oder wirksam anonymisierten Testdaten.'}
+export const metadata={title:'AS Gold Testerzugang pausiert',description:'Der kontrollierte AS-Gold-Testerzugang bleibt bis zur vollständigen Modularisierungsabnahme geschlossen.'}
 
-export default function TestingGuide(){return <TesterGuide/>}
+export default function TestingGuide(){return <TesterPaused/>}

@@ -200,3 +200,12 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Die ausführliche „Was ist AS Gold?“-Erklärung und der vierstufige Ablauf liegen als Public-Fachkatalog im Modul.
 - Die doppelte Zielgruppenüberschrift wurde direkt im PublicLanding entfernt.
 - Ein eigener V69-Modulguard ist Bestandteil der verpflichtenden prebuild-Kette.
+
+
+### V70 Tester-Sharing modular vorbereitet
+
+- Der aktuelle V70-Teilen-Flow ist als app/modules/tester/TesterShareButton.js mit zehn Sprachvarianten modular vorbereitet.
+- Der frühere app/components-Pfad ist nur ein Kompatibilitäts-Re-Export.
+- TesterGuide enthält den V70-Teilen-, WhatsApp-, Musterfall- und Feedback-Flow, ist aber noch nicht öffentlich geroutet.
+- app/testen/page.js rendert bis zum finalen Release-Gate ausdrücklich TesterPaused.
+- Ein eigener V70-Staging-Guard verhindert eine versehentliche vorzeitige Testerfreigabe.
