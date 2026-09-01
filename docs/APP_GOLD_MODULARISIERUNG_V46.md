@@ -108,3 +108,12 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Exporttexte liegen unter app/modules/documents/exportUi.js.
 - Die umfangreichen geschützten Workspace-Texte liegen unter app/modules/workspace/workspaceText.js.
 - WorkspaceApp importiert die Kataloge nur noch über die jeweiligen Fachgrenzen und enthält keine führenden Kopien mehr.
+
+
+### V46 Fachkataloge aus WorkspaceApp
+
+- Preis- und Tarifdefinitionen liegen unter `app/modules/pricing/catalog.js`.
+- Öffentliche Discovery-/Transparenz-/Testertexte liegen unter `app/modules/public/catalog.js`.
+- Compliance- und Audit-/Löschtexte liegen unter `app/modules/compliance/workspaceControlText.js`.
+- Initiale Workspace-Zustände liegen unter `app/modules/workspace/stateConfig.js`.
+- `WorkspaceApp.js` importiert diese Kataloge nur noch und besitzt keine parallelen Inline-Kopien mehr.

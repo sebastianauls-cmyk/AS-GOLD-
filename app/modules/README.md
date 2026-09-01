@@ -67,3 +67,12 @@ Current gate: latest V46 compliance/service modularization build is green; `main
 - `workspace/workspaceText.js`: protected-workspace application copy.
 
 WorkspaceApp consumes these catalogs; it no longer owns their leading definitions.
+
+### Extracted domain catalogs
+
+- `pricing/catalog.js`: plans, terms, plan journey and recommendation mappings.
+- `public/catalog.js`: public discovery, transparency and tester-link copy.
+- `compliance/workspaceControlText.js`: account-control, audit and deletion copy.
+- `workspace/stateConfig.js`: initial workspace data/case/section state.
+
+These declarations no longer live in `WorkspaceApp.js`; the composition layer consumes them through explicit domain imports.
