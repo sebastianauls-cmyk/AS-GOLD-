@@ -1,9 +1,9 @@
 import fs from 'node:fs'
-
 const route=fs.readFileSync('app/testen/page.js','utf8')
-const paused=fs.readFileSync('app/modules/tester/TesterPaused.js','utf8')
-if(!route.includes("../modules/tester/TesterPaused")) throw new Error('Tester route must explicitly import TesterPaused until final release')
-if(route.includes('TesterGuide')||route.includes('TesterShareButton')) throw new Error('Tester route must not expose the active guide/share flow before final release')
-for(const text of ['Testerzugang vorübergehend geschlossen','Aktuell keine Testerfreigabe.','Bitte noch keinen Test starten und keine Testdaten hochladen.','Navigation vollständig geprüft und abgenommen','Testerzugang gezielt wieder freigegeben']){if(!paused.includes(text)) throw new Error('Paused tester guide missing: '+text)}
-for(const forbidden of ['?start=register','Kostenlos testen','Musterdatei herunterladen']){if(paused.includes(forbidden)) throw new Error('Paused tester guide must not expose active action: '+forbidden)}
-console.log('V46 tester-lock guard passed: route is explicitly paused and exposes no active tester/share CTA before final release.')
+const guide=fs.readFileSync('app/modules/tester/TesterGuide.js','utf8')
+const page=route+'\n'+guide
+if(!route.includes("../modules/tester/TesterGuide")) throw new Error('Final tester route must explicitly import the modular TesterGuide')
+if(route.includes('TesterPaused')) throw new Error('Final tester route must not remain paused after the release gate')
+for(const text of ['Testerbetrieb V72','AS Gold V72 sicher ausprobieren','Tester-Link weiterleiten','Genau ein Sprachmenü und genau ein Zurück-Element im geöffneten Sprachmenü','Zurück schließt das Sprachmenü zuverlässig, auch auf Mobilgeräten','Oberflächensprache zuerst und getrennte Ausgabesprache danach','Klare Navigation ohne offensichtliche Sackgassen','allen 11 App-Sprachen einschließlich Vietnamesisch','Musterdatei herunterladen','Die Bezahlfunktion bleibt deaktiviert.','AS%20Gold%20V72%20Testfeedback']){if(!page.includes(text)) throw new Error('Final tester guide missing: '+text)}
+if(!page.includes('<TesterShareButton/>')) throw new Error('Final tester guide must expose modular tester sharing')
+console.log('V46/V72 final tester-guide guard passed: tester route is active only in the fully validated release candidate.')

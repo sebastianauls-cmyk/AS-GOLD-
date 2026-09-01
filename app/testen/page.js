@@ -1,5 +1,5 @@
-import { TesterPaused } from '../modules/tester/TesterPaused'
+import { TesterGuide } from '../modules/tester/TesterGuide'
 
-export const metadata={title:'AS Gold Testerzugang pausiert',description:'Der kontrollierte AS-Gold-Testerzugang bleibt bis zur vollständigen Modularisierungsabnahme geschlossen.'}
+export const metadata={title:'AS Gold V72 testen und weiterleiten',description:'AS Gold sicher testen und den Tester-Link direkt über WhatsApp oder andere Apps weiterleiten.'}
 
-export default function TestingGuide(){return <TesterPaused/>}
+export default function TestingGuide(){return <TesterGuide/>}

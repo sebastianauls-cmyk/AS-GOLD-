@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { LegalFooter } from './LegalFooter'
 import { LanguageSwitcher } from '../language/LanguageSwitcher'
-import { LegalLanguageContext } from '../../components/LegalLanguageContext'
-import { localeForLanguage, rtlLanguages, supportedLanguages } from '../../lib/v30Languages.mjs'
-import { getLegalPage, legalShellCopy } from '../../lib/v31LegalTranslations.mjs'
+import { LegalLanguageContext } from '../language/LegalLanguageContext'
+import { localeForLanguage, rtlLanguages, supportedLanguages } from '../language/v36Languages.mjs'
+import { getLegalPage, legalShellCopy } from './v31LegalTranslations.mjs'
 
 const languageKeys=new Set(supportedLanguages.map(item=>item.key))
 

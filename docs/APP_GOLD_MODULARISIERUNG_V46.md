@@ -223,3 +223,12 @@ The active controller now delegates local activity persistence and server audit 
 
 The release-candidate preparation now matches the active V72 product: eleven application languages including Vietnamese, the active `WorkspaceAppV2.js` controller, and the extracted workspace session/audit hooks. The final release gate explicitly prevents regression back to V70/ten-language assumptions and verifies that the active controller delegates audit persistence and auth-session lifecycle. Tester access remains staged/closed until the complete synchronized final release candidate passes.
 
+
+
+### Finaler Release-Kandidat V72
+
+- Der aktuelle main-Funktionsstand einschließlich Vietnamesisch wird vor der Freigabe fachlich in die modularen Domänen übernommen.
+- Der Tester-Share-Flow wird erst im vollständig validierten Release-Kandidaten aktiviert und umfasst dann alle elf App-Sprachen.
+- Der finale Gate prüft Navigation, Interface-/Ausgabesprache, Public, Tester, Auth, Fälle/Kunden/Fristen, Dokumente/Analyse/Export, Pricing/Promo, Compliance, Integrationen, direkte Workflow-Orchestrierung und den vietnamesischen Funktionsumfang.
+- Das mobile Sprachmenü bleibt lokal zuständig: genau ein tatsächlich sichtbarer Zurück-Button pro geöffnetem Menü, zuverlässiges Schließen, Escape/Außenklick und keine Browser-History-Hacks.
+- main darf erst nach vollständigem prebuild, Produktionsbuild und unverändertem synchronisiertem main-Stand übernommen werden.
