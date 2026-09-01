@@ -75,7 +75,8 @@ for(const language of ['ro','bg']){
 
 const switcherSource=await readFile(new URL('../app/modules/language/LanguageSwitcher.js',import.meta.url),'utf8')
 const videoDialogSource=await readFile(new URL('../app/modules/language/ExplainerVideoDialog.js',import.meta.url),'utf8')
-const heroSource=await readFile(new URL('../app/components/HeroTitleStabilizer.js',import.meta.url),'utf8')
+const heroSource=await readFile(new URL('../app/modules/public/HeroTitleStabilizer.js',import.meta.url),'utf8')
+const heroCompatibility=await readFile(new URL('../app/components/HeroTitleStabilizer.js',import.meta.url),'utf8')
 const introSource=await readFile(new URL('../app/components/ProductIntroCompact.js',import.meta.url),'utf8')
 const explainerSource=await readFile(new URL('../app/components/ExplainerVideo.js',import.meta.url),'utf8')
 
@@ -91,6 +92,7 @@ assert.equal((switcherSource.match(/className="flagLanguageClose"/g)||[]).length
 assert.doesNotMatch(videoDialogSource,/heygen\.ai/,'language control must use the permanent local video paths')
 assert.match(heroSource,/\bro:\{title:/)
 assert.match(heroSource,/\bbg:\{title:/)
+assert.match(heroCompatibility,/modules\/public\/HeroTitleStabilizer/)
 assert.match(introSource,/\bro:\{/)
 assert.match(introSource,/\bbg:\{/)
 assert.match(explainerSource,/\['ro','🇷🇴','Română'\]/)
