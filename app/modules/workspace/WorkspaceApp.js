@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
+import { cancelDeletionRecord, createAssessmentRecord, createCaseRecord, createClientRecord, ensureRegistrationPrivacy, getWorkspaceAccess, listDeletionRequests, loadWorkspaceBundle, recordAuditEvent, requestDeletionRecord, updateCaseRecord } from '../services/workspaceRepository'
 import { invokeDocumentAnalysis } from '../services/documentAnalysis'
 import { allowedUploadAccept, allowedUploadExtensions, maxUploadBytes, uploadUi } from '../documents/uploadConfig'
 import { appText } from './workspaceText'
@@ -209,9 +210,8 @@ export default function Home(){
 
   async function recordServerAudit(eventType,metadata={},entityType=null,entityId=null){
     if(!user?.id) return false
-    const {error}=await supabase.rpc('record_gold_audit_event',{p_event_type:eventType,p_entity_type:entityType,p_entity_id:entityId,p_metadata:metadata})
+    const {rows,error}=await recordAuditEvent(supabase,{ownerId:user.id,eventType,metadata,entityType,entityId})
     if(error){ console.error('record_gold_audit_event',error); return false }
-    const {data:rows}=await supabase.from('audit_events').select('*').eq('owner_id',user.id).order('created_at',{ascending:false}).limit(20)
     setServerAudit(rows||[])
     return true
   }
@@ -219,10 +219,10 @@ export default function Home(){
   async function requestAccountDeletion(){
     if(!user?.id || deletionBusy) return
     setDeletionBusy(true); setMessage('')
-    const {error}=await supabase.from('deletion_requests').insert({owner_id:user.id,scope:'account',reason:'requested_in_app'})
+    const {error}=await requestDeletionRecord(supabase,user.id)
     if(error){ setDeletionBusy(false); return setMessage(error.code==='23505'?sct.deletionPending:error.message) }
     await recordServerAudit('account_deletion_requested',{status:'requested'},'account',null)
-    const {data:rows}=await supabase.from('deletion_requests').select('*').eq('owner_id',user.id).order('created_at',{ascending:false})
+    const {data:rows}=await listDeletionRequests(supabase,user.id)
     setDeletionRequests(rows||[]); setDeletionBusy(false); setMessage(sct.deletionRequested)
   }
 
@@ -230,46 +230,32 @@ export default function Home(){
     const pending=deletionRequests.find(r=>r.scope==='account'&&r.status==='requested')
     if(!pending || deletionBusy) return
     setDeletionBusy(true); setMessage('')
-    const {error}=await supabase.from('deletion_requests').update({status:'cancelled',updated_at:new Date().toISOString()}).eq('id',pending.id).eq('owner_id',user.id)
+    const {error}=await cancelDeletionRecord(supabase,{ownerId:user.id,requestId:pending.id})
     if(error){setDeletionBusy(false);return setMessage(error.message)}
     await recordServerAudit('account_deletion_cancelled',{status:'cancelled'},'account',null)
-    const {data:rows}=await supabase.from('deletion_requests').select('*').eq('owner_id',user.id).order('created_at',{ascending:false})
+    const {data:rows}=await listDeletionRequests(supabase,user.id)
     setDeletionRequests(rows||[]); setDeletionBusy(false); setMessage(sct.deletionCancelled)
   }
 
   async function loadApp(session){
     setMessage('')
-    const { data: accessRows, error: accessError } = await supabase.rpc('current_gold_access')
-    if(accessError){ setMessage(accessError.message); setScreen('login'); return }
-    const row = accessRows?.[0]
+    const accessSnapshot=await getWorkspaceAccess(supabase)
+    if(accessSnapshot.error){ setMessage(accessSnapshot.error.message); setScreen('login'); return }
+    const row=accessSnapshot.access
     if(!row?.active || row?.status !== 'approved') { setMessage(accessPendingMessages[language]||accessPendingMessages.de); setScreen('login'); return }
     setAccess(row)
-    const { data: upgradeRows } = await supabase.rpc('gold_available_upgrades')
-    setUpgrades(upgradeRows || [])
-    const ownerId = session.user.id
-    const [cases,clients,documents,approvals,assessments,sourceStatus,auditRows,deletionRows,privacyRow] = await Promise.all([
-      supabase.from('cases').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
-      supabase.from('clients').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
-      supabase.from('documents').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
-      supabase.from('approvals').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
-      supabase.from('assessments').select('*').eq('owner_id',ownerId).order('created_at',{ascending:false}),
-      supabase.from('source_status').select('*').eq('owner_id',ownerId).order('checked_at',{ascending:false}),
-      supabase.from('audit_events').select('*').eq('owner_id',ownerId).order('created_at',{ascending:false}).limit(20),
-      supabase.from('deletion_requests').select('*').eq('owner_id',ownerId).order('created_at',{ascending:false}),
-      supabase.from('account_privacy_settings').select('*').eq('owner_id',ownerId).maybeSingle()
-    ])
-    const firstDataError=[cases,clients,documents,approvals,assessments,sourceStatus,auditRows,deletionRows,privacyRow].find(result=>result.error)?.error
-    if(firstDataError) setMessage(firstDataError.message)
-    let nextPrivacy=privacyRow.data||null
-    const registrationMeta=session.user?.user_metadata||{}
-    if(!nextPrivacy && registrationMeta.privacy_notice_version===PRIVACY_NOTICE_VERSION && registrationMeta.terms_version===TERMS_VERSION && registrationMeta.test_data_only===true){
-      const acknowledgedAt=registrationMeta.legal_acknowledged_at||new Date().toISOString()
-      const createdPrivacy=await supabase.from('account_privacy_settings').insert({owner_id:ownerId,privacy_notice_version:PRIVACY_NOTICE_VERSION,privacy_notice_acknowledged_at:acknowledgedAt,terms_version:TERMS_VERSION,terms_acknowledged_at:acknowledgedAt,real_data_authorized:false,ai_processing_enabled:false,special_categories_authorized:false,retention_days:90}).select().single()
-      if(!createdPrivacy.error) nextPrivacy=createdPrivacy.data
+    setUpgrades(accessSnapshot.upgrades||[])
+    const ownerId=session.user.id
+    const bundle=await loadWorkspaceBundle(supabase,ownerId)
+    if(bundle.error)setMessage(bundle.error.message)
+    let nextPrivacy=bundle.privacy
+    if(!nextPrivacy){
+      const createdPrivacy=await ensureRegistrationPrivacy(supabase,{ownerId,registrationMeta:session.user?.user_metadata||{},privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
+      if(!createdPrivacy.error&&createdPrivacy.data)nextPrivacy=createdPrivacy.data
     }
-    setData({cases:cases.data||[],clients:clients.data||[],documents:documents.data||[],approvals:approvals.data||[],assessments:assessments.data||[],sourceStatus:sourceStatus.data||[]})
-    setServerAudit(auditRows.data||[])
-    setDeletionRequests(deletionRows.data||[])
+    setData(bundle.data)
+    setServerAudit(bundle.audit)
+    setDeletionRequests(bundle.deletionRequests)
     setPrivacySettings(nextPrivacy)
     setUser(session.user)
     setScreen('app')
@@ -368,8 +354,7 @@ export default function Home(){
   }
   async function createClient(e){
     e.preventDefault(); setMessage('')
-    const payload={owner_id:user.id,name:newClient.name.trim(),email:newClient.email.trim()||null,phone:newClient.phone.trim()||null,notes:newClient.notes.trim()||null}
-    const {data:created,error}=await supabase.from('clients').insert(payload).select().single()
+    const {data:created,error}=await createClientRecord(supabase,{ownerId:user.id,draft:newClient})
     if(error) return setMessage(error.message)
     recordLocalAction('client_created'); await recordServerAudit('client_created',{},'client',created.id); setData(previous=>({...previous,clients:[created,...previous.clients]})); setNewClient({name:'',email:'',phone:'',notes:''}); setShowClientForm(false); setSection('clients')
   }
@@ -385,38 +370,35 @@ export default function Home(){
       status:draft.status||'open'
     }
   }
+
   async function createCase(e){
     e.preventDefault(); setMessage('')
-    const payload={...cleanCasePayload(newCase),owner_id:user.id,traffic_light:'yellow'}
-    const {data:created,error}=await supabase.from('cases').insert(payload).select().single()
+    const {data:created,error}=await createCaseRecord(supabase,{ownerId:user.id,payload:cleanCasePayload(newCase)})
     if(error){setMessage(error.message);return false}
     recordLocalAction('case_created'); await recordServerAudit('case_created',{},'case',created.id)
     setData(previous=>({...previous,cases:[created,...previous.cases]})); setNewCase(emptyCase); setShowCaseForm(false); setSelectedCase(created)
     return true
   }
+
   async function updateCase(caseId,draft){
     setMessage('')
-    const payload={...cleanCasePayload(draft),updated_at:new Date().toISOString()}
-    const {data:updated,error}=await supabase.from('cases').update(payload).eq('id',caseId).eq('owner_id',user.id).select().single()
+    const {data:updated,error}=await updateCaseRecord(supabase,{ownerId:user.id,caseId,payload:cleanCasePayload(draft)})
     if(error){setMessage(error.message);return false}
     recordLocalAction('case_updated'); await recordServerAudit('case_updated',{},'case',updated.id)
     setData(previous=>({...previous,cases:previous.cases.map(item=>item.id===updated.id?updated:item)})); setSelectedCase(updated)
     return true
   }
+
   async function createAssessment(caseId,draft){
     setMessage('')
-    const payload={owner_id:user.id,case_id:caseId,title:draft.title.trim(),traffic_light:draft.traffic_light,reasoning:draft.reasoning.trim()||null,next_step:draft.next_step.trim()||null}
-    const {data:created,error}=await supabase.from('assessments').insert(payload).select().single()
+    const currentTrafficLight=data.cases.find(item=>item.id===caseId)?.traffic_light||'green'
+    const {assessment:created,updatedCase,error}=await createAssessmentRecord(supabase,{ownerId:user.id,caseId,draft,currentTrafficLight})
     if(error){setMessage(error.message);return false}
-    const ranking={green:1,yellow:2,red:3}
-    const current=data.cases.find(item=>item.id===caseId)?.traffic_light||'green'
-    const overall=ranking[created.traffic_light]>ranking[current]?created.traffic_light:current
-    const {data:updatedCase,error:caseError}=await supabase.from('cases').update({traffic_light:overall,updated_at:new Date().toISOString()}).eq('id',caseId).eq('owner_id',user.id).select().single()
-    if(caseError){setMessage(caseError.message);return false}
     recordLocalAction('assessment_created'); await recordServerAudit('assessment_created',{},'case',caseId)
     setData(previous=>({...previous,assessments:[created,...previous.assessments],cases:previous.cases.map(item=>item.id===caseId?updatedCase:item)})); setSelectedCase(updatedCase)
     return true
   }
+
   async function functionErrorMessage(error,fallback){
     if(!error) return fallback
     try{
