@@ -28,8 +28,8 @@ const firstActionIndex=layout.indexOf('<V37FirstAction/>')
 const problemIndex=layout.indexOf('<ProblemNavigator/>')
 const videoIndex=layout.indexOf('<ExplainerVideo/>')
 const productIndex=layout.indexOf('<ProductIntroCompact/>')
-if(!(firstActionIndex>=0 && problemIndex>firstActionIndex && videoIndex>problemIndex && productIndex>videoIndex)){
-  throw new Error('V37 guard: homepage priority order must be first action -> problem navigator -> optional video -> product details')
+if(!(productIndex>=0 && firstActionIndex>productIndex && problemIndex>firstActionIndex && videoIndex>problemIndex)){
+  throw new Error('V37 guard: homepage priority order must be product details -> first action -> problem navigator -> optional video')
 }
 
 console.log('V37 first-action regression checks passed')

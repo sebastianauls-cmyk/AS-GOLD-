@@ -61,7 +61,6 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
       <LanguageSwitcher value={outputLanguage} onChange={onOutputLanguageChange} label={text.outputLabel}/>
       <p>{text.outputHelp.replace('{language}',outputName)}</p>
       <span className="outputLanguageStatus" data-output-language-status aria-live="polite">✓ {text.outputLabel}: <b>{outputName}</b></span>
-      <div id="asgold-customer-module-slot" className="customerModuleSlot"/>
     </div>
   </section>
 }

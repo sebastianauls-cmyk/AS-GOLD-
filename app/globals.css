@@ -155,6 +155,7 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .customerModeBadge{display:inline-flex;align-items:center;margin:0 0 9px;padding:5px 10px;border-radius:999px;background:#f5e7b6;color:#5a4516;font-size:.82rem;font-weight:850;letter-spacing:.02em}
 #asgold-problem-navigator-react{scroll-margin-top:16px}
 .heroCapabilities{margin:18px 0;padding:16px;border:1px solid #dccb9f;border-radius:18px;background:#fff}
+.homepageFlow{display:grid;gap:0}.homepageFlow+.heroCapabilities{display:none}
 .heroCapabilities h2{margin:0 0 12px;color:#4d3b14;font-size:1.3rem}
 .heroVoiceShortcut{margin:0 0 12px;border-color:#c9ad66;background:#fffaf0;color:#4f3c12}
 .heroCapabilities .capGrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}

@@ -18,13 +18,12 @@ expect((layout.match(/<ProblemNavigator\s*\/>/g)||[]).length===1,'ProblemNavigat
 expect(!layout.includes('FreeEntryAfterRecommendation'),'legacy free-entry helper must not be mounted')
 expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not be mounted')
 
-// V37 deliberately moves action and problem guidance before the explanatory product intro.
-// Preserve the core path: first-action -> problem navigator -> product intro -> case jump support.
+// Preserve the explanatory path: intro benefits -> first action -> problem navigator.
 const firstActionPos=layout.indexOf('<V37FirstAction/>')
 const navPos=layout.indexOf('<ProblemNavigator/>')
 const introPos=layout.indexOf('<ProductIntroCompact/>')
 const jumpPos=layout.indexOf('<CaseChoiceJumpEnhancer/>')
-expect(firstActionPos>=0&&navPos>firstActionPos&&introPos>navPos&&jumpPos>introPos,'layout order must be first action -> problem navigator -> product intro -> case jump enhancer')
+expect(introPos>=0&&firstActionPos>introPos&&navPos>firstActionPos&&jumpPos>navPos,'layout order must be product intro -> first action -> problem navigator -> case jump enhancer')
 
 // Mobile input must be a stable controlled React textarea with explicit help.
 expect(navigator.includes('<textarea ref={textRef} value={value} onChange='),'problem input must remain a controlled textarea')
@@ -54,7 +53,7 @@ for(const group of itemGroups.slice(0,supported.length)){
 }
 
 // Strong headline and direct 01-08 result jump must remain in place.
-expect(title.includes('AS Gold – Klarheit, wenn Vorgänge komplex werden.'),'strong German hero headline is missing')
+expect(title.includes('Was ist AS Gold?'),'explanatory German hero headline is missing')
 expect(jump.includes(".caseChooser .caseChoice"),'01-08 case choice listener is missing')
 expect(jump.includes("#fallarten .caseResult"),'case choice must target the selected result card')
 expect(jump.includes("behavior:'auto'"),'case choice navigation must use a direct jump instead of slow scrolling')

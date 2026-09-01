@@ -16,7 +16,7 @@ assert.match(page,/getProblemLanguageProfile\(contentLanguage\)/)
 assert.match(page,/<LegalFooter language=\{contentLanguage\}/)
 assert.match(page,/screen==='public'\?outputLanguage:language/)
 assert.match(modules,/lang=\{language\}/)
-assert.match(modules,/id="asgold-customer-module-slot"/)
+assert.doesNotMatch(modules,/id="asgold-customer-module-slot"/)
 
 assert.deepEqual(supportedLanguages.map(item=>item.key),['de','en','fr','tr','pl','ru','ar','fa','ro','bg'])
 for(const key of ['fr','fa','ro','bg']){
