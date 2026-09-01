@@ -2,52 +2,46 @@
 
 import { useState } from 'react'
 import { LegalFooter } from '../compliance/LegalFooter'
-import { LanguageSwitcher } from '../language/LanguageSwitcher'
 import { AppLogo } from '../workspace/AppLogo'
 import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
 import { jumpToPublicCaseResult } from './caseNavigation'
+import { orderCasesByResearch } from './casePriorityV56.mjs'
+import { getProblemLanguageProfile } from './problemNavigatorLanguagesV36.mjs'
 import { V37FirstAction } from './V37FirstAction'
 import { ProblemNavigator } from './ProblemNavigator'
 import { ExplainerVideo } from './ExplainerVideo'
 import { ProductIntroCompact } from './ProductIntroCompact'
-
-const publicNavigationCopy={
-  de:{interface:'1. Sprache der Oberfläche',output:'2. Ausgabesprache',back:'← Zurück'},
-  en:{interface:'1. Interface language',output:'2. Output language',back:'← Back'},
-  fr:{interface:"1. Langue de l’interface",output:'2. Langue de sortie',back:'← Retour'},
-  tr:{interface:'1. Arayüz dili',output:'2. Çıktı dili',back:'← Geri'},
-  pl:{interface:'1. Język interfejsu',output:'2. Język wyniku',back:'← Wstecz'},
-  ru:{interface:'1. Язык интерфейса',output:'2. Язык результата',back:'← Назад'},
-  ar:{interface:'1. لغة الواجهة',output:'2. لغة الإخراج',back:'الرجوع →'},
-  fa:{interface:'1. زبان رابط',output:'2. زبان خروجی',back:'بازگشت →'},
-  ro:{interface:'1. Limba interfeței',output:'2. Limba rezultatului',back:'← Înapoi'},
-  bg:{interface:'1. Език на интерфейса',output:'2. Език на резултата',back:'← Назад'}
-}
+import { PublicLanguageModules } from './PublicLanguageModules'
 
 export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
   const hero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
-  const publicNav=publicNavigationCopy[language]||publicNavigationCopy.de
-  const outputLanguageName=(language===outputLanguage?language:outputLanguage)
-  const outputLanguageLabel=({de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български'})[outputLanguageName]||'Deutsch'
+  const outputLanguageLabel=({de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български'})[outputLanguage]||'Deutsch'
+  const orderedPublicCases=orderCasesByResearch(cd.cases)
+  const problemUi=getProblemLanguageProfile(outputLanguage).ui
   const [explainerSignal,setExplainerSignal]=useState(0)
-  function returnToPublicTop(){window.scrollTo({top:0,behavior:'smooth'})}
+
+  function startProblemVoice(){
+    const microphone=document.querySelector('#asgold-problem-navigator-react [data-problem-voice]')
+    if(!microphone)return
+    microphone.scrollIntoView({behavior:'smooth',block:'center'})
+    setTimeout(()=>microphone.click(),350)
+  }
+
+  const customerModule=<ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
+
   return <>
     <header className="publicTop">
-      <div className="wrap nav">
-        <div className="brand"><AppLogo/><b>AS Gold</b></div>
-        <div className="publicLanguageStack" aria-label={`${t.language} / ${t.outputLanguage}`}>
-          <div className="publicLanguageRow"><span>{publicNav.interface}</span><LanguageSwitcher value={language} onChange={setLanguage} label={t.language} publicPicker onExplainer={()=>setExplainerSignal(value=>value+1)}/></div>
-          <div className="publicLanguageRow"><span>{publicNav.output}</span><LanguageSwitcher value={outputLanguage} onChange={setOutputLanguage} label={t.outputLanguage}/></div>
-        </div>
-        <nav className="publicNavActions">
-          <button type="button" className="backBtn publicBackBtn" onClick={returnToPublicTop}>{publicNav.back}</button>
+      <div className="wrap nav publicHeader">
+        <div className="brand publicBrand"><AppLogo/><b>AS Gold</b></div>
+        <nav className="publicActions publicNavActions">
           <a href="#fallarten">{cd.nav}</a>
           <a href="#preise">{t.prices}</a>
           <button className="secondary" onClick={()=>setScreen('register')}>{t.register}</button>
           <button className="primary" onClick={()=>setScreen('login')}>{t.login}</button>
         </nav>
+        <PublicLanguageModules language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onPlayExplainer={()=>setExplainerSignal(value=>value+1)} customerModule={customerModule}/>
       </div>
     </header>
     <main>
@@ -65,7 +59,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <h1>{hero.title}</h1>
             <p className="lead">{hero.lead}</p>
             <V37FirstAction language={language} onRegister={()=>setScreen('register')}/>
-            <ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
+            <button type="button" className="secondary heroVoiceShortcut" aria-controls="asgold-problem-navigator-react" onClick={startProblemVoice}>🎙 {problemUi.voice}</button>
             <ExplainerVideo key={`${language}-${explainerSignal}`} language={language} openSignal={explainerSignal}/>
             <ProductIntroCompact language={language}/>
             <div className="actions">
@@ -91,10 +85,10 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
           </section>
           <div className="audienceStrip" aria-label={pa.label}><b>{pa.label}</b><div>{pa.items.map(item=><span key={item}>✓ {item}</span>)}</div></div>
           <div className="caseChooser" aria-label={cd.title}>
-            {cd.cases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>{setSelectedPublicCase(item.key);jumpToPublicCaseResult()}} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
+            {orderedPublicCases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>{setSelectedPublicCase(item.key);jumpToPublicCaseResult()}} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
           </div>
           <article id="asgold-public-case-result" className="caseResult" aria-live="polite">
-            <div className="caseResultTitle"><span>{String(cd.cases.findIndex(item=>item.key===activePublicCase.key)+1).padStart(2,'0')}</span><div><small>{cd.typical}</small><h3>{activePublicCase.title}</h3></div></div>
+            <div className="caseResultTitle"><span>{String(orderedPublicCases.findIndex(item=>item.key===activePublicCase.key)+1).padStart(2,'0')}</span><div><small>{cd.typical}</small><h3>{activePublicCase.title}</h3></div></div>
             <div className="caseResultGrid">
               <div><b>{cd.typical}</b><p>{activePublicCase.examples}</p></div>
               <div><b>{cd.support}</b><p>{activePublicCase.help}</p></div>
