@@ -2,30 +2,37 @@
 
 import { useEffect, useId, useRef, useState } from 'react'
 import { AF, AE, BG, DE, FR, GB, IR, PL, RO, RU, SA, TR, US } from 'country-flag-icons/react/3x2'
-import { supportedLanguages } from '../../lib/v30Languages.mjs'
-import { ExplainerVideoDialog, explainerVideos, videoButtonText } from './ExplainerVideoDialog'
+import { supportedLanguages } from './v36Languages.mjs'
 
 const flagComponents={AF,AE,BG,DE,FR,GB,IR,PL,RO,RU,SA,TR,US}
+const explainerButtonText={de:'Erklärvideo',en:'Explainer video',fr:'Vidéo explicative',tr:'Tanıtım videosu',pl:'Film objaśniający',ru:'Объясняющее видео',ar:'فيديو توضيحي',fa:'ویدیوی توضیحی',ro:'Videoclip explicativ',bg:'Обяснително видео'}
+const backButtonText={de:'← Zurück',en:'← Back',fr:'← Retour',tr:'← Geri',pl:'← Wstecz',ru:'← Назад',ar:'الرجوع →',fa:'بازگشت →',ro:'← Înapoi',bg:'← Назад'}
 
-function FlagSet({countryCodes=[],fallback=''}){
+function FlagSet({countryCodes=[],fallback='',className=''}){
   const usable=countryCodes.filter(code=>flagComponents[code])
-  return <span className="flagIconSet" aria-hidden="true">
+  return <span className={`flagIconSet ${className}`.trim()} aria-hidden="true">
     {usable.map(code=>{const Flag=flagComponents[code];return <Flag className="flagIcon" key={code} focusable="false"/>})}
     {!usable.length&&<span>{fallback}</span>}
   </span>
 }
 
-export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false}){
+export function LanguageSwitcher({value,onChange,label='Sprache',className='',showLabel=false,publicPicker=false,onExplainer=null}){
   const [open,setOpen]=useState(false)
-  const [videoOpen,setVideoOpen]=useState(false)
-  const [videoLanguage,setVideoLanguage]=useState(explainerVideos[value]?value:'de')
-  const [publicPicker,setPublicPicker]=useState(false)
+  const [mobilePublic,setMobilePublic]=useState(false)
   const menuId=useId()
   const rootRef=useRef(null)
   const active=supportedLanguages.find(item=>item.key===value)||supportedLanguages[0]
+  const backLabel=backButtonText[value]||backButtonText.de
 
-  useEffect(()=>{setPublicPicker(Boolean(rootRef.current?.closest('.publicTop')))},[])
-  useEffect(()=>{if(explainerVideos[value])setVideoLanguage(value)},[value])
+  useEffect(()=>{
+    if(!publicPicker)return
+    const mq=window.matchMedia('(max-width: 560px)')
+    const apply=()=>setMobilePublic(mq.matches)
+    apply()
+    mq.addEventListener?.('change',apply)
+    return()=>mq.removeEventListener?.('change',apply)
+  },[publicPicker])
+
   useEffect(()=>{
     if(!open)return
     const closeOutside=event=>{if(!rootRef.current?.contains(event.target))setOpen(false)}
@@ -35,18 +42,33 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     return()=>{document.removeEventListener('pointerdown',closeOutside);document.removeEventListener('keydown',closeEscape)}
   },[open])
 
-  return <div className={`flagLanguage flagLanguageModular ${publicPicker?'flagLanguagePublicPicker':''} ${showLabel?'flagLanguageLabeled':''} ${className}`.trim()} ref={rootRef}>
-    {showLabel&&!publicPicker&&<span className="flagLanguageLabel">{label}</span>}
-    <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(v=>!v)}>
-      <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong>{publicPicker?label:active.label}</strong><span className="flagLanguageChevron" aria-hidden="true">{open?'▴':'▾'}</span>
+  if(publicPicker){
+    return <div className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()} ref={rootRef} style={{position:'relative',zIndex:120,direction:'ltr',display:'inline-flex',alignItems:'center',gap:8,width:'auto',maxWidth:'100%',minWidth:0,flexWrap:'wrap'}}>
+      <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(current=>!current)} style={{minWidth:mobilePublic?'150px':0}}>
+        <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/>
+        <span className="flagLanguagePublicText"><small>{label}</small><strong>{active.label}</strong></span>
+        <span className="flagLanguageChevron" aria-hidden="true">{open?'▴':'▾'}</span>
+      </button>
+      {onExplainer&&<button type="button" className="secondary explainerVideoTrigger" onClick={()=>{setOpen(false);onExplainer(value)}}>▶ {explainerButtonText[value]||explainerButtonText.de}</button>}
+      {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
+        <button type="button" className="flagLanguageMenuBack" onClick={()=>setOpen(false)} aria-label={backLabel.replace(/^←\s*|\s*→$/g,'')}>{backLabel}</button>
+        {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}>
+          <span className="flagLanguageOptionMain"><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span className="flagLanguageName">{item.label}</span></span><small>{item.short}</small>
+        </button>)}
+      </div>}
+    </div>
+  }
+
+  return <div className={`flagLanguage flagLanguageModular ${showLabel?'flagLanguageLabeled':''} ${className}`.trim()} ref={rootRef}>
+    {showLabel&&<span className="flagLanguageLabel">{label}</span>}
+    <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(current=>!current)}>
+      <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong>{active.label}</strong><span className="flagLanguageChevron" aria-hidden="true">{open?'▴':'▾'}</span>
     </button>
-    {publicPicker&&<button type="button" className="secondary explainerVideoTrigger" onClick={()=>setVideoOpen(true)} aria-expanded={videoOpen}>▶ {videoButtonText[value]||videoButtonText.de}</button>}
     {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
-      <button type="button" className="flagLanguageClose" aria-label="Zurück" onClick={()=>setOpen(false)}>← Zurück</button>
+      <button type="button" className="flagLanguageMenuBack" onClick={()=>setOpen(false)} aria-label={backLabel.replace(/^←\s*|\s*→$/g,'')}>{backLabel}</button>
       {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}>
         <span className="flagLanguageOptionMain"><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span className="flagLanguageName">{item.label}</span></span><small>{item.short}</small>
       </button>)}
     </div>}
-    {videoOpen&&<ExplainerVideoDialog language={value} videoLanguage={videoLanguage} setVideoLanguage={setVideoLanguage} onClose={()=>setVideoOpen(false)}/>} 
   </div>
 }
