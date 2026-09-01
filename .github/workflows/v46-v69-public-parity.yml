@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/v46-v69-public-parity.yml'
       - 'scripts/v46_port_v69_modular_public_parity.mjs'
+      - 'scripts/v46_sync_public_regression_guards.mjs'
   workflow_dispatch:
 
 permissions:
@@ -27,6 +28,9 @@ jobs:
 
       - name: Port current public behavior into modular structure
         run: node scripts/v46_port_v69_modular_public_parity.mjs
+
+      - name: Align regression guards with direct module ownership
+        run: node scripts/v46_sync_public_regression_guards.mjs
 
       - name: Install dependencies
         run: npm ci
@@ -56,6 +60,7 @@ jobs:
                   app/modules/public/asGoldIntroCopy.mjs \
                   app/modules/workspace/WorkspaceApp.js \
                   app/globals.css \
+                  scripts/test_v34_customer_path.mjs \
                   scripts/test_v69_modular_public_parity.mjs \
                   package.json \
                   docs/APP_GOLD_MODULARISIERUNG_V46.md
