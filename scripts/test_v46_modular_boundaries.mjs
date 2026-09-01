@@ -19,8 +19,17 @@ for(const path of [
   'app/modules/documents/V26DocumentAnalysis.js',
   'app/modules/pricing/PromoCodeControl.js',
   'app/modules/compliance/LegalDocument.js',
-  'app/modules/integrations/IntegrationHub.js'
+  'app/modules/integrations/IntegrationHub.js',
+  'app/modules/workspace/WorkspaceApp.js'
 ]) exists(path)
+
+const pageEntry=read('app/page.js')
+assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/)
+assert.ok(pageEntry.length<500,'root page must remain a thin workspace-module entry point')
+const workspace=read('app/modules/workspace/WorkspaceApp.js')
+assert.match(workspace,/signInWithPassword/)
+assert.match(workspace,/DocumentSection/)
+assert.match(workspace,/doExport/)
 
 const layout=read('app/layout.js')
 assert.doesNotMatch(layout,/components\/V4[0-5]/)
@@ -44,6 +53,7 @@ assert.doesNotMatch(tester,/Kostenlos testen|start=register/)
 
 for(const [compat,modulePath] of [
   ['app/components/LanguageSwitcher.js','modules/language/LanguageSwitcher'],
+  ['app/components/HeroCopyEnhancer.js','modules/public/HeroCopyEnhancer'],
   ['app/components/V38DeadlineCardEnhancer.js','modules/cases/V38DeadlineCardEnhancer'],
   ['app/components/V39CaseTimelineAutoAssessment.js','modules/cases/V39CaseTimelineAutoAssessment'],
   ['app/components/V40ProfessionalHandoff.js','modules/cases/V40ProfessionalHandoff'],
@@ -53,4 +63,4 @@ for(const [compat,modulePath] of [
   ['app/components/LegalLanguageContext.js','modules/language/LegalLanguageContext']
 ]) assert.match(read(compat),new RegExp(modulePath.replaceAll('/','\\/')))
 
-console.log('V46 modular-boundary guard passed: module ownership, single language-menu back control, tester lock and compatibility adapters verified.')
+console.log('V46 modular-boundary guard passed: thin page entry, workspace ownership, module boundaries, single language-menu back control, tester lock and compatibility adapters verified.')
