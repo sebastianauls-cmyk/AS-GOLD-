@@ -56,6 +56,40 @@ jobs:
           source=source.replace('assert.match(page,/auth\\.signUp/)','assert.match(authRepository,/auth\\.signUp/)')
           source=source.replace('assert.match(page,/test_data_only:true/)','assert.match(authRepository,/test_data_only:true/)')
           prelaunch.write_text(source)
+
+          practical=Path('scripts/test_v38_practical_simulation.mjs')
+          source=practical.read_text()
+          page_line="const page=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceApp.js',import.meta.url),'utf8')"
+          auth_line="const authRepository=fs.readFileSync(new URL('../app/modules/services/authRepository.js',import.meta.url),'utf8')"
+          if auth_line not in source:
+              if page_line not in source:
+                  raise SystemExit('practical auth repository import anchor missing')
+              source=source.replace(page_line,page_line+'\n'+auth_line)
+          old="""for(const token of [
+            'supabase.auth.signUp',
+            'supabase.auth.signInWithPassword',
+            'supabase.auth.resetPasswordForEmail',
+            'acceptedLegal',
+            'confirmedTestData',
+            'validateV29Password',
+            \"data_classification\",
+            \"test_data_confirmed\"
+          ]) assert.match(page,new RegExp(token.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')))"""
+          new="""for(const token of [
+            'supabase.auth.signUp',
+            'supabase.auth.signInWithPassword',
+            'supabase.auth.resetPasswordForEmail'
+          ]) assert.match(authRepository,new RegExp(token.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')))
+          for(const token of [
+            'acceptedLegal',
+            'confirmedTestData',
+            'validateV29Password',
+            \"data_classification\",
+            \"test_data_confirmed\"
+          ]) assert.match(page,new RegExp(token.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&')))"""
+          if old not in source:
+              raise SystemExit('practical auth token-loop anchor missing')
+          practical.write_text(source.replace(old,new))
           PY
 
       - name: Install dependencies
@@ -82,6 +116,7 @@ jobs:
                   app/modules/README.md \
                   scripts/test_v46_modular_boundaries.mjs \
                   scripts/test_v37_end_to_end.mjs \
-                  scripts/test_v38_prelaunch_guard.mjs
+                  scripts/test_v38_prelaunch_guard.mjs \
+                  scripts/test_v38_practical_simulation.mjs
           git commit -m 'V46 extract auth service boundary'
           git push origin HEAD:v46-navigation-clean
