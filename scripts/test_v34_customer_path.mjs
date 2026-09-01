@@ -8,6 +8,7 @@ const expect=(condition,message)=>{if(!condition) fail(message)}
 
 const layout=read('app/layout.js')
 const publicLanding=read('app/modules/public/PublicLanding.js')
+const languageModules=read('app/modules/public/PublicLanguageModules.js')
 const navigator=read('app/modules/public/ProblemNavigator.js')
 const navigatorCompatibility=read('app/components/ProblemNavigator.js')
 const intro=read('app/modules/public/ProductIntroCompact.js')
@@ -20,14 +21,16 @@ const languages=read('app/modules/public/problemNavigatorLanguagesV36.mjs')
 const languagesCompatibility=read('app/lib/problemNavigatorLanguagesV36.mjs')
 
 expect((publicLanding.match(/<ProblemNavigator outputLanguage=\{outputLanguage\}/g)||[]).length===1,'ProblemNavigator must be rendered exactly once by PublicLanding with the customer/output language')
+expect(publicLanding.includes('customerModule={customerModule}'),'customer navigator must be passed directly into the language/output module')
+expect(languageModules.includes('{customerModule}'),'language/output module must render the customer navigator directly')
+expect(!languageModules.includes('createPortal')&&!languageModules.includes('MutationObserver'),'customer-language shell must not use DOM mounting enhancers')
 expect(!layout.includes('FreeEntryAfterRecommendation'),'legacy free-entry helper must not be mounted')
 expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not be mounted')
 
 const firstActionPos=publicLanding.indexOf('<V37FirstAction language={language}')
-const navPos=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
 const videoPos=publicLanding.indexOf('<ExplainerVideo key={`${language}-${explainerSignal}`} language={language} openSignal={explainerSignal}/>')
 const introPos=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
-expect(firstActionPos>=0&&navPos>firstActionPos&&videoPos>navPos&&introPos>videoPos,'public module order must be first action -> customer-language problem navigator -> explainer video -> product intro')
+expect(firstActionPos>=0&&videoPos>firstActionPos&&introPos>videoPos,'hero order must remain first action -> optional video -> product intro; customer navigator lives directly in the output-language module above')
 expect(!layout.includes('V37FirstAction')&&!layout.includes('ProblemNavigator')&&!layout.includes('ExplainerVideo')&&!layout.includes('ProductIntroCompact'),'public hero modules must not be mounted globally')
 expect(!layout.includes('<CaseChoiceJumpEnhancer/>'),'case-choice navigation must no longer be a global enhancer')
 expect(!layout.includes('<HeroCopyEnhancer/>')&&!layout.includes('<HeroTitleStabilizer/>'),'hero copy must be rendered directly by PublicLanding')
@@ -74,4 +77,4 @@ expect(jump.includes('publicTop'),'case jump must account for the mobile header'
 expect(!jump.includes('addEventListener'),'case navigation must not install a global click listener')
 expect(!title.includes('MutationObserver')&&!title.includes('querySelector'),'hero title module must not patch the rendered DOM')
 
-console.log('V34 customer-path regression checks passed for the modular V51–V56 customer-language flow')
+console.log('V34 customer-path regression checks passed for the direct modular V58 customer-language flow')
