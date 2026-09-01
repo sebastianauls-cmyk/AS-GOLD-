@@ -18,3 +18,5 @@ source=source.replace(staleNavigatorOwnership,directNavigatorOwnership)
 
 fs.writeFileSync(path,source)
 console.log('V46 public-module guard ordering and ownership assertions verified.')
+
+await import('./v46_port_v50_current_features.mjs')
