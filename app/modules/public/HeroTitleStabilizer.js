@@ -1,8 +1,4 @@
-'use client'
-
-import { useEffect } from 'react'
-
-const copy={
+export const heroTitleCopy={
   de:{title:'AS Gold – Klarheit, wenn Vorgänge komplex werden.',lead:'Dokumente und E-Mails bündeln, Risiken und Fristen erkennen, Ampelanalysen und Antwortschreiben erstellen – mit klaren nächsten Schritten.'},
   en:{title:'AS Gold – clarity when matters get complex.',lead:'Bring documents and emails together, identify risks and deadlines, create traffic-light analyses and reply letters – with clear next steps.'},
   fr:{title:'AS Gold – de la clarté quand les dossiers deviennent complexes.',lead:'Regroupez documents et e-mails, repérez risques et délais, créez des analyses par feu et des réponses – avec des prochaines étapes claires.'},
@@ -15,31 +11,5 @@ const copy={
   bg:{title:'AS Gold – яснота, когато случаите станат сложни.',lead:'Съберете документи и имейли, открийте рискове и срокове, създавайте светофарни оценки и писма за отговор – с ясни следващи стъпки.'}
 }
 
-export function HeroTitleStabilizer(){
-  useEffect(()=>{
-    if(location.pathname!=='/') return
-    let scheduled=false
-    const apply=()=>{
-      scheduled=false
-      const language=(document.documentElement.lang||'de').split('-')[0]
-      const c=copy[language]||copy.de
-      const title=document.querySelector('.hero h1')
-      const lead=document.querySelector('.hero .lead')
-      if(title&&title.textContent!==c.title) title.textContent=c.title
-      if(lead&&lead.textContent!==c.lead) lead.textContent=c.lead
-    }
-    const schedule=()=>{
-      if(scheduled) return
-      scheduled=true
-      requestAnimationFrame(apply)
-    }
-    apply()
-    const observer=new MutationObserver(schedule)
-    observer.observe(document.body,{subtree:true,childList:true})
-    const langObserver=new MutationObserver(schedule)
-    langObserver.observe(document.documentElement,{attributes:true,attributeFilter:['lang']})
-    const timer=setTimeout(apply,250)
-    return()=>{observer.disconnect();langObserver.disconnect();clearTimeout(timer)}
-  },[])
-  return null
-}
+
+export function HeroTitleStabilizer(){ return null }

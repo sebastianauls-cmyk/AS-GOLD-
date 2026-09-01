@@ -18,6 +18,7 @@ for(const path of [
   'app/modules/navigation/AccessibilityHardening.js',
   'app/modules/navigation/MobileResilience.js',
   'app/modules/public/PublicLanding.js',
+  'app/modules/public/caseNavigation.js',
   'app/modules/public/ProblemNavigator.js',
   'app/modules/public/problemNavigatorLanguages.mjs',
   'app/modules/public/problemNavigatorLanguagesV36.mjs',
@@ -64,6 +65,11 @@ const workspace=read('app/modules/workspace/WorkspaceApp.js')
 assert.match(workspace,/signInWithPassword/)
 assert.match(workspace,/DocumentSection/)
 assert.match(workspace,/doExport/)
+assert.match(workspace,/\.\.\/services\/supabaseClient/)
+assert.match(workspace,/\.\.\/services\/documentAnalysis/)
+assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
+assert.doesNotMatch(workspace,/const supabase = createClient\(/)
+assert.match(workspace,/invokeDocumentAnalysis/)
 assert.match(workspace,/\.\.\/services\/supabaseClient/)
 assert.match(workspace,/\.\.\/services\/documentAnalysis/)
 assert.doesNotMatch(workspace,/from '@supabase\/supabase-js'/)
@@ -126,10 +132,20 @@ const outputControl=publicLanding.indexOf('<LanguageSwitcher value={outputLangua
 assert.ok(publicStart>=0,'public landing must render a React fragment')
 assert.ok(interfaceControl>publicStart,'interface language control must exist on public landing')
 assert.ok(outputControl>interfaceControl,'output language must follow interface language in natural source order')
+assert.match(publicLanding,/id=\"asgold-user-audience\"/,'audience content must be direct React markup')
+assert.match(publicLanding,/jumpToPublicCaseResult\(\)/,'case selection must trigger direct React-owned navigation')
+const heroTitleModule=read('app/modules/public/HeroTitleStabilizer.js')
+const heroCopyModule=read('app/modules/public/HeroCopyEnhancer.js')
+const caseNavigation=read('app/modules/public/caseNavigation.js')
+assert.doesNotMatch(heroTitleModule,/MutationObserver|querySelector|useEffect/)
+assert.doesNotMatch(heroCopyModule,/MutationObserver|querySelector|createElement|innerHTML|useEffect/)
+assert.doesNotMatch(caseNavigation,/addEventListener/)
+assert.match(caseNavigation,/getElementById\('asgold-public-case-result'\)/)
 
 const layout=read('app/layout.js')
 assert.doesNotMatch(layout,/components\/V4[0-5]/)
 assert.doesNotMatch(layout,/V43VisibilityFix|V44LanguageOrder|V38IntegrationAvailabilityGuard/)
+assert.doesNotMatch(layout,/HeroCopyEnhancer|HeroTitleStabilizer|CaseChoiceJumpEnhancer/)
 assert.doesNotMatch(layout,/OutputLanguageBridge/)
 assert.match(layout,/modules\/navigation\/AccessibilityHardening/)
 assert.match(layout,/modules\/navigation\/MobileResilience/)

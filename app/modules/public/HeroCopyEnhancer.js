@@ -1,8 +1,4 @@
-'use client'
-
-import { useEffect } from 'react'
-
-const heroCopy={
+export const heroCopy={
   de:{title:'AS Gold – Klarheit, wenn Vorgänge komplex werden.',lead:'AS Gold bündelt Dokumente, E-Mails und Informationen, erkennt Fristen, Lücken, Widersprüche und Risiken und erstellt daraus Sachstand, Ampelanalysen, nächste Schritte, Antwortschreiben und Exporte. E-Mail-Konten, Cloud-Speicher und eigene Ablageorte auf PC oder Gerät können angebunden werden. Sie prüfen und entscheiden, bevor etwas gespeichert, versendet oder freigegeben wird.'},
   en:{title:'AS Gold – clarity when matters get complex.',lead:'AS Gold brings documents, emails and information together, identifies deadlines, gaps, contradictions and risks, and prepares case status, traffic-light analyses, next steps, reply letters and exports. Email accounts, cloud storage and your own storage locations can be connected. You review and decide before anything is saved, sent or approved.'},
   fr:{title:'AS Gold – de la clarté quand les dossiers deviennent complexes.',lead:'AS Gold rassemble documents, e-mails et informations, repère délais, lacunes, contradictions et risques, puis prépare l’état du dossier, des analyses par feu, les prochaines étapes, des réponses écrites et des exports. Des comptes e-mail, stockages cloud et emplacements personnels peuvent être connectés. Vous gardez la décision avant tout enregistrement, envoi ou validation.'},
@@ -15,7 +11,7 @@ const heroCopy={
   bg:{title:'AS Gold – яснота, когато случаите станат сложни.',lead:'AS Gold събира документи, имейли и информация, открива срокове, липси, противоречия и рискове и подготвя състояние на случая, светофарни оценки, следващи стъпки, писма за отговор и експорти. Могат да се свържат имейл акаунти, облачно хранилище и собствени места за съхранение. Вие проверявате и решавате преди нещо да бъде запазено, изпратено или одобрено.'}
 }
 
-const audienceCopy={
+export const audienceCopy={
   de:{title:'Für wen AS Gold besonders nützlich ist',lead:'Sie müssen keinen bestimmten „Falltyp“ kennen. Wählen Sie zuerst, wie Sie AS Gold nutzen möchten.',items:[['Privatpersonen','Briefe, Verträge, Behördenpost, Streitfälle, Reisen, Fahrzeuge oder andere dokumentenreiche Vorgänge verständlich ordnen und bearbeiten.'],['Selbstständige & kleine Unternehmen','Kundenfälle, Forderungen, Verträge, Rechnungen, Versicherungen, Mitarbeiter- und Behördenvorgänge strukturiert bearbeiten.'],['Büro, Verwaltung & Assistenz','E-Mails, Fristen, Unterlagen, Antworten und Wiedervorlagen zentral zusammenführen und nachvollziehbar weiterbearbeiten.'],['Teams mit Kundenfällen','Mehrere Kunden und Vorgänge, Dokumente, Freigaben, Ampelstände und vorbereitete Schreiben gemeinsam steuern.']]},
   en:{title:'Who AS Gold is especially useful for',lead:'You do not need to know a specific case category first. Start with how you want to use AS Gold.',items:[['Private individuals','Organize and handle letters, contracts, authority correspondence, disputes, travel, vehicles and other document-heavy matters.'],['Self-employed & small businesses','Structure client matters, claims, contracts, invoices, insurance, staff and authority processes.'],['Office, administration & assistance','Bring emails, deadlines, documents, replies and follow-ups together in one traceable workflow.'],['Teams handling client matters','Coordinate multiple clients and cases, documents, approvals, traffic-light status and prepared letters.']]},
   fr:{title:'À qui AS Gold est particulièrement utile',lead:'Vous n’avez pas besoin de connaître d’abord une catégorie de dossier. Commencez par votre manière d’utiliser AS Gold.',items:[['Particuliers','Organiser lettres, contrats, courriers administratifs, litiges, voyages, véhicules et autres dossiers riches en documents.'],['Indépendants & petites entreprises','Structurer dossiers clients, créances, contrats, factures, assurances, personnel et démarches administratives.'],['Bureau, administration & assistance','Centraliser e-mails, délais, documents, réponses et relances dans un flux traçable.'],['Équipes avec dossiers clients','Piloter plusieurs clients et dossiers, documents, validations, statuts et courriers préparés.']]},
@@ -28,37 +24,5 @@ const audienceCopy={
   bg:{title:'За кого AS Gold е особено полезен',lead:'Не е нужно предварително да знаете конкретен „вид случай“. Първо изберете как искате да използвате AS Gold.',items:[['Частни лица','Подреждайте и обработвайте разбираемо писма, договори, официална кореспонденция, спорове, пътувания, автомобили и други случаи с много документи.'],['Самонаети и малки предприятия','Обработвайте структурирано клиентски случаи, вземания, договори, фактури, застраховки, служители и административни процедури.'],['Офис, администрация и асистенти','Събирайте централно имейли, срокове, документи, отговори и последващи действия в проследим процес.'],['Екипи с клиентски случаи','Управлявайте съвместно няколко клиента и случая, документи, одобрения, статуси и подготвени писма.']]}
 }
 
-function ensureAudienceBlock(language){
-  const section=document.querySelector('#fallarten .wrap')
-  if(!section) return
-  const copy=audienceCopy[language]||audienceCopy.de
-  let block=document.getElementById('asgold-user-audience')
-  if(!block){
-    block=document.createElement('section')
-    block.id='asgold-user-audience'
-    block.style.cssText='margin:0 0 34px;padding:24px;border:1px solid #e2d6b7;border-radius:20px;background:linear-gradient(135deg,#fffaf0,#fff)'
-    section.prepend(block)
-  }
-  block.innerHTML=`<div class="eyebrow">${copy.title}</div><h2 style="margin:8px 0 8px;font-size:clamp(1.7rem,5vw,2.5rem)">${copy.title}</h2><p style="margin:0 0 18px;color:#5f6976;line-height:1.5">${copy.lead}</p><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px">${copy.items.map(([title,text])=>`<article style="background:#fff;border:1px solid #e3e5e9;border-radius:14px;padding:16px"><b style="display:block;margin-bottom:7px;color:#5e4818">${title}</b><span style="color:#626c78;line-height:1.45">${text}</span></article>`).join('')}</div>`
-}
 
-function applyHeroCopy(){
-  if(location.pathname!=='/') return
-  const language=(document.documentElement.lang||'de').split('-')[0]
-  const copy=heroCopy[language]||heroCopy.de
-  const title=document.querySelector('.hero h1')
-  const lead=document.querySelector('.hero .lead')
-  if(title) title.textContent=copy.title
-  if(lead) lead.textContent=copy.lead
-  ensureAudienceBlock(language)
-}
-
-export function HeroCopyEnhancer(){
-  useEffect(()=>{
-    applyHeroCopy()
-    const observer=new MutationObserver(applyHeroCopy)
-    observer.observe(document.documentElement,{attributes:true,attributeFilter:['lang']})
-    return ()=>observer.disconnect()
-  },[])
-  return null
-}
+export function HeroCopyEnhancer(){ return null }

@@ -150,3 +150,12 @@ Kein Modularisierungsschritt geht direkt auf `main`. Erst wenn alle Kernmodule g
 - Sprache, Ausgabesprache und Footer werden in der öffentlichen Modulgrenze direkt aus den kanonischen Sprach-/Compliance-Modulen komponiert.
 - Öffentliche Markup-Änderungen können damit unabhängig von Authentifizierung und geschütztem Workspace erfolgen.
 - V37-End-to-End- und Readiness-Guards folgen Registrierungs-/Login-Routen jetzt bis in das Public-Modul.
+
+
+### V46 Direkte Public-Interaktionen
+
+- Hero-Titel und Hero-Lead werden direkt von `PublicLanding.js` aus fachlichen Sprachkatalogen gerendert; MutationObserver-/querySelector-Korrekturen sind dort nicht mehr aktiv.
+- Der ausführliche Zielgruppenblock wird direkt als React-Markup in der öffentlichen Oberfläche gerendert.
+- Die Auswahl einer Fallart löst die Navigation zum Ergebnis direkt im React-onClick aus. Ein globaler document-click-Listener ist nicht mehr erforderlich.
+- `HeroCopyEnhancer`, `HeroTitleStabilizer` und `CaseChoiceJumpEnhancer` bleiben nur als wirkungslose Kompatibilitätshüllen bzw. Katalogzugänge erhalten und werden nicht mehr im Root-Layout gemountet.
+- Regression- und Modulgrenzen-Tests erzwingen, dass diese drei Bereiche nicht wieder als globale DOM-Nachrüstungen eingeführt werden.

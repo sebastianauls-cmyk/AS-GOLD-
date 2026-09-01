@@ -1,8 +1,13 @@
 import { LegalFooter } from '../compliance/LegalFooter'
 import { LanguageSwitcher } from '../language/LanguageSwitcher'
 import { AppLogo } from '../workspace/AppLogo'
+import { heroTitleCopy } from './HeroTitleStabilizer'
+import { audienceCopy } from './HeroCopyEnhancer'
+import { jumpToPublicCaseResult } from './caseNavigation'
 
 export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
+  const hero=heroTitleCopy[language]||heroTitleCopy.de
+  const audience=audienceCopy[language]||audienceCopy.de
   return <>
     <header className="publicTop">
       <div className="wrap nav">
@@ -28,8 +33,8 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
         <div className="wrap heroLayout">
           <div>
             <div className="eyebrow">{a.eyebrow}</div>
-            <h1>{t.hero}</h1>
-            <p className="lead">{t.lead}</p>
+            <h1>{hero.title}</h1>
+            <p className="lead">{hero.lead}</p>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
               <button className="secondary btn" onClick={()=>setScreen('register')}>{t.freeCta}</button>
@@ -47,11 +52,15 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
       <section id="fallarten" className="caseDiscovery section">
         <div className="wrap">
           <div className="caseIntro"><div className="eyebrow">{cd.eyebrow}</div><h2>{cd.title}</h2><p className="lead">{cd.lead}</p></div>
+          <section id="asgold-user-audience" style={{margin:'0 0 34px',padding:'24px',border:'1px solid #e2d6b7',borderRadius:'20px',background:'linear-gradient(135deg,#fffaf0,#fff)'}}>
+            <div className="eyebrow">{audience.title}</div><h2 style={{margin:'8px 0 8px',fontSize:'clamp(1.7rem,5vw,2.5rem)'}}>{audience.title}</h2><p style={{margin:'0 0 18px',color:'#5f6976',lineHeight:1.5}}>{audience.lead}</p>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))',gap:'12px'}}>{audience.items.map(([title,text])=><article key={title} style={{background:'#fff',border:'1px solid #e3e5e9',borderRadius:'14px',padding:'16px'}}><b style={{display:'block',marginBottom:'7px',color:'#5e4818'}}>{title}</b><span style={{color:'#626c78',lineHeight:1.45}}>{text}</span></article>)}</div>
+          </section>
           <div className="audienceStrip" aria-label={pa.label}><b>{pa.label}</b><div>{pa.items.map(item=><span key={item}>✓ {item}</span>)}</div></div>
           <div className="caseChooser" aria-label={cd.title}>
-            {cd.cases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>setSelectedPublicCase(item.key)} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
+            {cd.cases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>{setSelectedPublicCase(item.key);jumpToPublicCaseResult()}} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
           </div>
-          <article className="caseResult" aria-live="polite">
+          <article id="asgold-public-case-result" className="caseResult" aria-live="polite">
             <div className="caseResultTitle"><span>{String(cd.cases.findIndex(item=>item.key===activePublicCase.key)+1).padStart(2,'0')}</span><div><small>{cd.typical}</small><h3>{activePublicCase.title}</h3></div></div>
             <div className="caseResultGrid">
               <div><b>{cd.typical}</b><p>{activePublicCase.examples}</p></div>
