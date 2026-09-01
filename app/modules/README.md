@@ -100,3 +100,5 @@ The workspace controller now delegates repeated shell markup to explicit compone
 - `language/useLanguagePreferences.js`: owns persisted interface language, output language, RTL document direction and the existing output-language event compatibility signal.
 
 - `cases/DeadlineWarningCard`: V38 deadline intelligence now renders from explicit case/document props; the legacy V38 enhancer export is a no-op compatibility adapter and is no longer mounted in the root layout.
+
+- `cases/AssessmentExplainability` and `cases/PrimaryNextStepCard`: V38 explanation and prioritised next-step UI now render directly from case state; their legacy global enhancer exports remain no-op compatibility adapters only.

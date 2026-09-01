@@ -1,6 +1,4 @@
 import './globals.css'
-import { V38AssessmentExplainability } from './modules/cases/V38AssessmentExplainability'
-import { V38PrimaryNextStep } from './modules/cases/V38PrimaryNextStep'
 import { AccessibilityHardening } from './modules/navigation/AccessibilityHardening'
 import { MobileResilience } from './modules/navigation/MobileResilience'
 import { V39CaseTimelineAutoAssessment } from './modules/cases/V39CaseTimelineAutoAssessment'
@@ -17,5 +15,5 @@ export const metadata = {
 }
 
 export default function RootLayout({ children }) {
-  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V38AssessmentExplainability/><V38PrimaryNextStep/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
+  return <html lang="de"><body><AccessibilityHardening/><MobileResilience/><V39CaseTimelineAutoAssessment/><V40ProfessionalHandoff/><V41CaseConsistency/><V42ActionableGaps/>{children}</body></html>
 }
