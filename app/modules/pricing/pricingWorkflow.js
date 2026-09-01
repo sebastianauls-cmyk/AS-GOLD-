@@ -17,11 +17,13 @@ export function createPricingWorkflowActions({
   setMessage,
   recordServerAudit
 }){
-  async function loadQuotes(){
+  async function loadQuotes({isCancelled=()=>false}={}){
     setQuoteLoading(true)
     const nextQuotes=await getUpgradeQuotes(supabase,{upgrades,termMonths,promoCode:appliedPromoCode})
-    setQuotes(nextQuotes)
-    setQuoteLoading(false)
+    if(!isCancelled()){
+      setQuotes(nextQuotes)
+      setQuoteLoading(false)
+    }
     return nextQuotes
   }
 
