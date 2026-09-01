@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { LegalFooter } from '../compliance/LegalFooter'
 import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
@@ -23,8 +23,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
   const outputLanguageLabel=({de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български'})[outputLanguage]||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
-  const [problemVoiceSignal,setProblemVoiceSignal]=useState(0)
-  const [problemFocusSignal,setProblemFocusSignal]=useState(0)
+  const problemNavigatorRef=useRef(null)
 
   return <>
     <PublicHeader
@@ -52,8 +51,8 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <h1>{hero.title}</h1>
             <p className="lead">{hero.lead}</p>
             <ProductIntroCompact language={outputLanguage}/>
-            <V37FirstAction language={outputLanguage} onRegister={()=>setScreen('register')} onFocusProblem={()=>setProblemFocusSignal(value=>value+1)} onSpeakProblem={()=>setProblemVoiceSignal(value=>value+1)}/>
-            <ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase} voiceSignal={problemVoiceSignal} focusSignal={problemFocusSignal}/>
+            <V37FirstAction language={outputLanguage} onRegister={()=>setScreen('register')} onFocusProblem={()=>problemNavigatorRef.current?.focus()} onSpeakProblem={()=>problemNavigatorRef.current?.speak()}/>
+            <ProblemNavigator ref={problemNavigatorRef} outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
             <ExplainerVideo key={`${outputLanguage}-${explainerSignal}`} language={outputLanguage} openSignal={explainerSignal}/>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
