@@ -29,10 +29,13 @@ for(const path of [
   'app/modules/pricing/PromoCodeControl.js',
   'app/modules/pricing/v31PromoTranslations.mjs',
   'app/modules/compliance/LegalDocument.js',
+  'app/modules/compliance/PrivacyDashboard.js',
+  'app/modules/compliance/WithdrawalForm.js',
   'app/modules/compliance/v31InteractiveLegalTranslations.mjs',
   'app/modules/compliance/v31LegalTranslations.mjs',
   'app/modules/integrations/IntegrationHub.js',
   'app/modules/services/officeExports.js',
+  'app/modules/services/supabaseClient.js',
   'app/modules/workspace/WorkspaceApp.js'
 ]) exists(path)
 
@@ -64,6 +67,17 @@ assert.match(tester,/TesterPaused/)
 assert.match(tester,/Testerzugang vorübergehend geschlossen/)
 assert.doesNotMatch(tester,/Kostenlos testen|start=register/)
 
+const privacyRoute=read('app/datenschutzsteuerung/page.js')
+const privacyModule=read('app/modules/compliance/PrivacyDashboard.js')
+const withdrawalRoute=read('app/widerruf/page.js')
+const withdrawalModule=read('app/modules/compliance/WithdrawalForm.js')
+assert.match(privacyRoute,/modules\/compliance\/PrivacyDashboard/)
+assert.match(withdrawalRoute,/modules\/compliance\/WithdrawalForm/)
+assert.match(privacyModule,/modules\/services\/supabaseClient|\.\.\/services\/supabaseClient/)
+assert.doesNotMatch(privacyModule,/createClient\(/)
+assert.match(withdrawalModule,/\.\.\/language\/LegalLanguageContext/)
+assert.match(withdrawalModule,/\.\/v31InteractiveLegalTranslations\.mjs/)
+
 for(const [compat,modulePath] of [
   ['app/components/LanguageSwitcher.js','modules/language/LanguageSwitcher'],
   ['app/components/HeroCopyEnhancer.js','modules/public/HeroCopyEnhancer'],
@@ -88,14 +102,17 @@ for(const [compat,modulePath] of [
   ['app/lib/v29PasswordPolicy.mjs','modules/auth/v29PasswordPolicy'],
   ['app/lib/v31InteractiveLegalTranslations.mjs','modules/compliance/v31InteractiveLegalTranslations'],
   ['app/lib/v31LegalTranslations.mjs','modules/compliance/v31LegalTranslations'],
-  ['app/lib/officeExports.js','modules/services/officeExports']
+  ['app/lib/officeExports.js','modules/services/officeExports'],
+  ['app/datenschutzsteuerung/PrivacyDashboard.js','modules/compliance/PrivacyDashboard'],
+  ['app/widerruf/WithdrawalForm.js','modules/compliance/WithdrawalForm']
 ]) assert.match(read(compat),new RegExp(modulePath.replaceAll('/','\\/')))
 
 for(const path of [
   'app/lib/v30Languages.mjs','app/lib/v36Languages.mjs','app/lib/v35Languages.mjs','app/lib/v35RoBgExtras.mjs','app/lib/v30Languages.base.mjs',
   'app/lib/v30ComponentTranslations.mjs','app/lib/v35ComponentTranslations.mjs','app/lib/v30ComponentTranslations.base.mjs','app/lib/v31PromoTranslations.mjs',
   'app/lib/problemNavigatorLanguages.mjs','app/lib/problemNavigatorLanguagesV36.mjs','app/lib/v29PasswordPolicy.mjs',
-  'app/lib/v31InteractiveLegalTranslations.mjs','app/lib/v31LegalTranslations.mjs','app/lib/officeExports.js'
+  'app/lib/v31InteractiveLegalTranslations.mjs','app/lib/v31LegalTranslations.mjs','app/lib/officeExports.js',
+  'app/datenschutzsteuerung/PrivacyDashboard.js','app/widerruf/WithdrawalForm.js'
 ]) assert.ok(read(path).length<140,`${path} should be a thin compatibility adapter`)
 
-console.log('V46 modular-boundary guard passed: thin page entry, domain-owned language/public/auth/compliance/pricing catalogs, service ownership, single language-menu back control, tester lock and compatibility adapters verified.')
+console.log('V46 modular-boundary guard passed: thin page entry, domain-owned language/public/auth/compliance/pricing catalogs, route-owned compliance surfaces, shared service ownership, single language-menu back control, tester lock and compatibility adapters verified.')
