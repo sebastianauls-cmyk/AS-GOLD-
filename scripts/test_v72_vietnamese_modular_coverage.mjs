@@ -18,7 +18,7 @@ for(const catalog of ['workspaceCopy','approvalCopy','analysisCopy','privacyCopy
 assert.equal(problemLanguageProfiles.vi?.locale,'vi-VN');assert.equal(Object.keys(problemLanguageProfiles.vi?.cases||{}).length,8);assert.ok(promoTranslations.vi?.apply);assert.ok(howAsGoldWorksCopy.vi?.title);assert.equal(howAsGoldWorksCopy.vi?.items?.length,4)
 assert.ok(legalShellCopy.vi);assert.ok(withdrawalCopy.vi);assert.ok(privacyDashboardCopy.vi);for(const pageId of legalPageIds)assert.ok(legalTranslations.vi?.[pageId]?.title,`missing Vietnamese legal page ${pageId}`)
 const active=[
-  'app/modules/language/LanguageSwitcher.js','app/modules/language/ExplainerVideoDialog.js','app/modules/public/ExplainerVideo.js','app/modules/public/ProblemNavigator.js','app/modules/public/V37FirstAction.js'
+  'app/modules/language/LanguageSwitcher.js','app/modules/language/ExplainerVideoDialog.js','app/modules/public/ExplainerVideo.js','app/modules/public/ProblemNavigator.js','app/modules/public/V37FirstAction.js','app/modules/public/InstallAppButton.js'
 ]
 for(const p of active)assert.match(fs.readFileSync(p,'utf8'),/\bvi:|\['vi'|['"]vi['"]/,`active module lacks Vietnamese: ${p}`)
 const switcher=fs.readFileSync('app/modules/language/LanguageSwitcher.js','utf8');assert.match(switcher,/\bVN\b/)
