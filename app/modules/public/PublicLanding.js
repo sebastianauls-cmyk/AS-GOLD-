@@ -51,7 +51,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <p className="lead">{hero.lead}</p>
             <ProductIntroCompact language={outputLanguage}/>
             <ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
-            <ExplainerVideo key={`${outputLanguage}-${explainerSignal}`} language={outputLanguage} openSignal={explainerSignal}/>
+            <ExplainerVideo language={outputLanguage} openSignal={explainerSignal}/>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
               <button className="secondary btn" onClick={()=>setScreen('register')}>{t.freeCta}</button>
