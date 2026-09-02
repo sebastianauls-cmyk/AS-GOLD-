@@ -16,27 +16,17 @@ const copy={
   vi:{title:'Bạn muốn làm rõ điều gì ngay bây giờ?',lead:'Hãy bắt đầu trực tiếp. Bạn không cần biết trước loại hồ sơ hoặc gói.',problem:'Mô tả vấn đề',voice:'Nói vấn đề',upload:'Tải tài liệu lên',example:'Xem ví dụ',trust:['Bắt đầu miễn phí với 3 tài liệu','Không tự động gia hạn','Đức / pháp luật Đức'],sampleTitle:'Kết quả đầu tiên có thể trông như thế này',sampleCase:'Ví dụ: công ty bảo hiểm từ chối bồi thường',have:'Đã có',haveText:'Hợp đồng bảo hiểm',open:'Còn mở',openText:'Chứng cứ thiệt hại',deadline:'Kiểm tra thời hạn',deadlineText:'Thời hạn phản hồi / hành động',next:'Bước tiếp theo',nextText:'Bổ sung tài liệu và chuẩn bị phản hồi',close:'Đóng ví dụ'}
 }
 
-const startTitles={de:'Wie möchten Sie starten?',en:'How would you like to start?',fr:'Comment souhaitez-vous commencer ?',tr:'Nasıl başlamak istersiniz?',pl:'Jak chcesz zacząć?',ru:'Как вы хотите начать?',ar:'كيف تريد أن تبدأ؟',fa:'چگونه می‌خواهید شروع کنید؟',ro:'Cum doriți să începeți?',bg:'Как искате да започнете?',vi:'Bạn muốn bắt đầu như thế nào?'}
-
-export function V37FirstAction({language='de',onRegister,onFocusProblem,onSpeakProblem}){
+export function V37FirstAction({language='de',onRegister}){
   const [showExample,setShowExample]=useState(false)
   const c=copy[language]||copy.de
   const rtl=language==='ar'||language==='fa'
-  const primary={padding:'13px 16px',border:0,borderRadius:12,background:'#8f6e25',color:'#fff',fontWeight:900,fontSize:'1rem',cursor:'pointer'}
-  const secondary={...primary,background:'#fff',color:'#5b4618',border:'1px solid #d8c58d'}
-  const focusProblem=()=>onFocusProblem?.()
-  const speakProblem=()=>onSpeakProblem?.()
+  const secondary={padding:'13px 16px',borderRadius:12,background:'#fff',color:'#5b4618',border:'1px solid #d8c58d',fontWeight:900,fontSize:'1rem',cursor:'pointer'}
   const upload=()=>onRegister?.()
-  return <section id="asgold-v37-first-action" dir={rtl?'rtl':'ltr'} style={{margin:'18px 0 14px',padding:18,border:'2px solid #c6a553',borderRadius:18,background:'linear-gradient(135deg,#fff9e8,#fff)',boxShadow:'0 12px 30px rgba(72,55,18,.08)'}}>
-    <b style={{display:'block',fontSize:'1.45rem',color:'#4d3b14'}}>{startTitles[language]||startTitles.de}</b>
-    <p style={{margin:'7px 0 14px',color:'#5f6976',lineHeight:1.45}}>{c.lead}</p>
+  return <div id="asgold-v37-first-action" dir={rtl?'rtl':'ltr'} style={{marginTop:12}}>
     <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(170px,1fr))',gap:10}}>
-      <button type='button' onClick={focusProblem} style={primary}>✍️ {c.problem}</button>
-      <button type='button' data-first-action-voice aria-controls='asgold-problem-navigator-react' onClick={speakProblem} style={secondary}>🎙 {c.voice}</button>
       <button type='button' onClick={upload} style={secondary}>📎 {c.upload}</button>
-      <button type='button' onClick={()=>setShowExample(v=>!v)} style={secondary}>👁 {c.example}</button>
+      <button type='button' aria-expanded={showExample} onClick={()=>setShowExample(v=>!v)} style={secondary}>👁 {c.example}</button>
     </div>
-    <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>{c.trust.map(x=><span key={x} style={{padding:'6px 9px',borderRadius:999,background:'#fff',border:'1px solid #e2d6b7',fontSize:'.82rem',color:'#5c6570'}}>✓ {x}</span>)}</div>
     {showExample&&<article style={{marginTop:14,padding:14,borderRadius:14,background:'#fff',border:'1px solid #e2d6b7'}}><b style={{display:'block',color:'#4d3b14',marginBottom:4}}>{c.sampleTitle}</b><p style={{margin:'0 0 10px',color:'#626c78'}}>{c.sampleCase}</p><div style={{display:'grid',gap:7}}><div>🟢 <b>{c.have}:</b> {c.haveText}</div><div>🟡 <b>{c.open}:</b> {c.openText}</div><div>🔴 <b>{c.deadline}:</b> {c.deadlineText}</div><div>➡️ <b>{c.next}:</b> {c.nextText}</div></div><button type='button' onClick={()=>setShowExample(false)} style={{...secondary,marginTop:12,padding:'8px 11px'}}>{c.close}</button></article>}
-  </section>
+  </div>
 }
