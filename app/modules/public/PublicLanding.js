@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { LegalFooter } from '../compliance/LegalFooter'
+import { supportedLanguages } from '../language/v36Languages.mjs'
 import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
 import { orderCasesByResearch } from './casePriorityV56.mjs'
@@ -19,7 +20,7 @@ import { PublicPricingSection } from './PublicPricingSection'
 export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
   const hero=heroTitleCopy[outputLanguage]||heroTitleCopy.de
   const audience=audienceCopy[outputLanguage]||audienceCopy.de
-  const outputLanguageLabel=({de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български'})[outputLanguage]||'Deutsch'
+  const outputLanguageLabel=supportedLanguages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
 
@@ -56,7 +57,7 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
               <button className="secondary btn" onClick={()=>setScreen('register')}>{t.freeCta}</button>
             </div>
             <p className="freeHint">✓ {cd.freeHint}</p>
-            <a className="testerSafeLink" href="/testen">{testerLinkText[language]||testerLinkText.de} →</a>
+            <a className="testerSafeLink" href={language==='de'?'/testen':`/testen?lang=${language}`}>{testerLinkText[language]||testerLinkText.de} →</a>
           </div>
           <aside className="heroOutcome" aria-label={cd.result}>
             <span className="modeBadge">{cd.result}</span>
@@ -94,6 +95,6 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
         onRegister={()=>setScreen('register')}
       />
     </main>
-    <LegalFooter language={outputLanguage}/>
+    <LegalFooter language={language}/>
   </>
 }

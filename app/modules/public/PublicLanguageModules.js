@@ -28,7 +28,8 @@ const warmWelcome={
   ar:'أهلاً وسهلاً بك في AS Gold — أنت في المكان المناسب لتجد خطوتك التالية بهدوء.',
   fa:'صمیمانه به AS Gold خوش آمدید — اینجا جای مناسبی است تا با آرامش گام بعدی را پیدا کنید.',
   ro:'Bine ați venit la AS Gold – sunteți în locul potrivit pentru a găsi în liniște următorul pas.',
-  bg:'Добре дошли в AS Gold – тук сте на правилното място, за да намерите спокойно следващата стъпка.'
+  bg:'Добре дошли в AS Gold – тук сте на правилното място, за да намерите спокойно следващата стъпка.',
+  vi:'Chào mừng bạn đến với AS Gold – đây là nơi phù hợp để bạn bình tĩnh tìm ra bước tiếp theo.'
 }
 
 export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer}){

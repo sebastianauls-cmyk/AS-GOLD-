@@ -9,14 +9,14 @@ const extraProfiles={
 export const problemLanguageProfiles={...baseProfiles,...extraProfiles}
 export const multilingualKeywords={
   ...baseKeywords,
-  insurance:[...baseKeywords.insurance,'asigurare','daună','pagubă','застраховка','щета'],
-  property:[...baseKeywords.property,'chirie','proprietar','apartament','imobil','наем','наемодател','жилище','имот'],
-  contract:[...baseKeywords.contract,'contract','factură','creanță','договор','фактура','вземане'],
-  authority:[...baseKeywords.authority,'autoritate','administrație','decizie','администрация','ведомство','решение'],
-  work:[...baseKeywords.work,'angajator','salariu','muncă','работодател','заплата','работа'],
-  business:[...baseKeywords.business,'client','companie','firmă','клиент','компания','фирма'],
-  dispute:[...baseKeywords.dispute,'litigiu','avocat','instanță','dovadă','спор','адвокат','съд','доказателство'],
-  private:[...baseKeywords.private,'călătorie','mașină','familie','пътуване','автомобил','семейство']
+  insurance:[...baseKeywords.insurance,'asigurare','daună','pagubă','застраховка','щета','bảo hiểm','thiệt hại','bồi thường'],
+  property:[...baseKeywords.property,'chirie','proprietar','apartament','imobil','наем','наемодател','жилище','имот','thuê','chủ nhà','căn hộ','bất động sản'],
+  contract:[...baseKeywords.contract,'contract','factură','creanță','договор','фактура','вземане','hợp đồng','hóa đơn','yêu cầu thanh toán'],
+  authority:[...baseKeywords.authority,'autoritate','administrație','decizie','администрация','ведомство','решение','cơ quan','hành chính','quyết định','bảo hiểm xã hội'],
+  work:[...baseKeywords.work,'angajator','salariu','muncă','работодател','заплата','работа','người sử dụng lao động','tiền lương','công việc'],
+  business:[...baseKeywords.business,'client','companie','firmă','клиент','компания','фирма','khách hàng','doanh nghiệp','công ty','nhân viên'],
+  dispute:[...baseKeywords.dispute,'litigiu','avocat','instanță','dovadă','спор','адвокат','съд','доказателство','tranh chấp','luật sư','tòa án','chứng cứ'],
+  private:[...baseKeywords.private,'călătorie','mașină','familie','пътуване','автомобил','семейство','du lịch','chuyến bay','ô tô','gia đình']
 }
 export function normalizeProblemLanguage(value){return String(value||'de').toLowerCase().split('-')[0]}
 export function getProblemLanguageProfile(language){return problemLanguageProfiles[normalizeProblemLanguage(language)]||problemLanguageProfiles.en}
