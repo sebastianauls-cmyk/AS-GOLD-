@@ -1,8 +1,8 @@
 export const OUTPUT_LANGUAGE_STORAGE_KEY='asgold-output-language'
-export const OUTPUT_LANGUAGES=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
+export const OUTPUT_LANGUAGES=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 const supported=new Set(OUTPUT_LANGUAGES)
 
-export const outputLanguageLabels={de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български'}
+export const outputLanguageLabels={de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български',vi:'Tiếng Việt'}
 
 export function normalizeOutputLanguage(value){return supported.has(value)?value:'de'}
 
