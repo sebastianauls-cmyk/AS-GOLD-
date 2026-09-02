@@ -4,6 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState }
 import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from './problemNavigatorLanguagesV36.mjs'
 import { caseFrequencyWeight } from './casePriorityV56.mjs'
 import { jumpToPublicCaseResult } from './caseNavigation'
+import { V37FirstAction } from './V37FirstAction'
 
 const plans={start:'AS Gold Start',klar:'AS Gold Klar',analyse:'AS Gold Analyse',komplett:'AS Gold Komplett',business:'AS Gold Business'}
 const freeLabels={de:'3 Dokumente kostenlos kennenlernen',en:'Try 3 documents for free',fr:'Découvrir gratuitement avec 3 documents',tr:'3 belgeyi ücretsiz deneyin',pl:'Wypróbuj 3 dokumenty bezpłatnie',ru:'Попробовать 3 документа бесплатно',ar:'جرّب 3 مستندات مجانًا',fa:'۳ سند را رایگان امتحان کنید',ro:'Încercați gratuit cu 3 documente',bg:'Опитайте 3 документа безплатно'}
@@ -185,6 +186,7 @@ export const ProblemNavigator=forwardRef(function ProblemNavigator({outputLangua
       </div>
       {status&&<div id="asgold-problem-status" ref={statusRef} role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
     </form>
+    <V37FirstAction language={customerLanguage} onRegister={onRegister}/>
     {recommendation&&<article id="asgold-problem-result" ref={resultRef} tabIndex={-1} lang={customerLanguage} dir={profile.rtl?'rtl':'ltr'} style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
       <small style={{display:'block',fontWeight:850,color:'#79601f',marginBottom:6}}>{c.recommendation}</small>
       <div style={{padding:'12px 13px',borderRadius:12,background:'#fff',border:'1px solid #ead69e',marginBottom:10}}><span style={{display:'block',fontSize:'.78rem',fontWeight:800,color:'#707986',marginBottom:3}}>{c.caseLabel}</span><strong style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{profile.cases[recommendation.caseKey]}</strong></div>

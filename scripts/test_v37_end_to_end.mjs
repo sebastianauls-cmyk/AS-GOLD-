@@ -26,17 +26,17 @@ const mustContain=(source,needle,label)=>{
 }
 
 mustContain(pageEntry,"./modules/workspace/WorkspaceApp",'workspace page module boundary')
-mustContain(publicLanding,'V37FirstAction','V37 first-action direct public mount')
-mustContain(publicLanding,"./V37FirstAction",'V37 first-action public ownership')
+if(publicLanding.includes('V37FirstAction')) throw new Error('V37 E2E guard: duplicate first-action card must not be mounted by PublicLanding')
 mustContain(publicLanding,'ProblemNavigator','problem navigator direct public mount')
 mustContain(publicLanding,"./ProblemNavigator",'problem navigator public ownership')
 mustContain(publicLanding,"./PublicHeader",'public header module boundary')
 if(layout.includes('V37FirstAction')||layout.includes('ProblemNavigator')) throw new Error('V37 E2E guard: public interaction modules must not be global layout mounts')
 mustContain(firstActionCompatibility,"../modules/public/V37FirstAction",'V37 first-action compatibility re-export')
 mustContain(problemCompatibility,"../modules/public/ProblemNavigator",'problem navigator compatibility re-export')
-mustContain(firstAction,'Problem beschreiben','problem CTA')
 mustContain(firstAction,'Dokument hochladen','upload CTA')
 mustContain(firstAction,'Beispiel ansehen','sample CTA')
+mustContain(problem,'<V37FirstAction language={customerLanguage}','supplemental upload/example actions inside the single problem card')
+if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')) throw new Error('V37 E2E guard: duplicate describe/speak controls returned')
 mustContain(problem,'analyse()','problem analysis trigger')
 mustContain(problem,'recommendation','first recommendation result')
 

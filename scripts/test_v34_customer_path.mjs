@@ -30,10 +30,10 @@ expect(!layout.includes('FreeEntryAfterRecommendation'),'legacy free-entry helpe
 expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not be mounted')
 
 const introPos=publicLanding.indexOf('<ProductIntroCompact language={outputLanguage}/>')
-const firstActionPos=publicLanding.indexOf('<V37FirstAction language={outputLanguage}')
-const problemPos=publicLanding.indexOf('<ProblemNavigator ref={problemNavigatorRef} outputLanguage={outputLanguage}')
+const problemPos=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
 const videoPos=publicLanding.indexOf('<ExplainerVideo key=')
-expect(introPos>=0&&firstActionPos>introPos&&problemPos>firstActionPos&&videoPos>problemPos,'hero order must remain explanation -> first action -> problem input -> optional video')
+expect(introPos>=0&&problemPos>introPos&&videoPos>problemPos,'hero order must remain explanation -> single problem input -> optional video')
+expect(!publicLanding.includes('V37FirstAction'),'PublicLanding must not render a second entry card before the problem input')
 expect(!layout.includes('V37FirstAction')&&!layout.includes('ProblemNavigator')&&!layout.includes('ExplainerVideo')&&!layout.includes('ProductIntroCompact'),'public hero modules must not be mounted globally')
 expect(!layout.includes('<CaseChoiceJumpEnhancer/>'),'case-choice navigation must no longer be a global enhancer')
 expect(!layout.includes('<HeroCopyEnhancer/>')&&!layout.includes('<HeroTitleStabilizer/>'),'hero copy must be rendered directly by PublicLanding')
@@ -56,8 +56,8 @@ expect((navigator.match(/id="asgold-problem-navigator-react"/g)||[]).length===1,
 expect(navigator.includes('data-customer-language={customerLanguage}'),'problem navigator must expose the selected customer language')
 expect(navigator.includes('getSpeechLocale(customerLanguage)'),'speech recognition must follow the customer language')
 expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document entry is missing from recommendation flow')
-expect(navigator.includes('forwardRef(function ProblemNavigator')&&navigator.includes('useImperativeHandle(ref'),'first-action focus and speech must use a direct React ref handle')
-expect(publicLanding.includes('problemNavigatorRef.current?.speak()')&&publicLanding.includes('problemNavigatorRef.current?.focus()'),'first action must synchronously call the problem navigator ref')
+expect(navigator.includes("<V37FirstAction language={customerLanguage} onRegister={onRegister}/>") ,'upload and example actions must stay inside the single problem card')
+expect(navigator.includes('data-problem-voice onClick={voice}'),'the single problem card must activate speech directly')
 
 const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
 for(const code of supported){
