@@ -8,19 +8,18 @@ const firstActionCompatibility=fs.readFileSync('app/components/V37FirstAction.js
 const video=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8')
 const videoCompatibility=fs.readFileSync('app/components/ExplainerVideo.js','utf8')
 
-const requiredActions=['Problem beschreiben','Dokument hochladen','Beispiel ansehen']
+const problem=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8')
+const requiredActions=['Dokument hochladen','Beispiel ansehen']
 for(const text of requiredActions){if(!firstAction.includes(text)) throw new Error(`V37 guard: missing primary action: ${text}`)}
-const requiredTrust=['Kostenlos mit 3 Dokumenten starten','Keine automatische Verlängerung','Deutschland / deutsches Recht']
-for(const text of requiredTrust){if(!firstAction.includes(text)) throw new Error(`V37 guard: missing trust promise: ${text}`)}
-
-if(!publicLanding.includes("./V37FirstAction")) throw new Error('V37 guard: first-action module is not owned by PublicLanding')
+if(publicLanding.includes('V37FirstAction')) throw new Error('V37 guard: duplicate first-action card must not be mounted by PublicLanding')
+if(!problem.includes("./V37FirstAction")||!problem.includes('<V37FirstAction language={customerLanguage}')) throw new Error('V37 guard: upload and example actions must be embedded in the problem navigator')
 if(!publicLanding.includes("./ExplainerVideo")) throw new Error('V37 guard: explainer module is not owned by PublicLanding')
 if(publicLanding.includes('customerModule={customerModule}')||languageModules.includes('{customerModule}')||languageModules.includes('asgold-customer-module-slot')) throw new Error('V37 guard: customer navigator must be owned directly by PublicLanding')
 if(layout.includes('V37FirstAction')||layout.includes('ExplainerVideo')||layout.includes('ProblemNavigator')||layout.includes('ProductIntroCompact')) throw new Error('V37 guard: public hero modules must not be global layout enhancers')
 if(!firstActionCompatibility.includes("../modules/public/V37FirstAction")) throw new Error('V37 guard: legacy first-action path must remain a compatibility re-export')
 if(!videoCompatibility.includes("../modules/public/ExplainerVideo")) throw new Error('V37 guard: legacy explainer path must remain a compatibility re-export')
-if(!firstAction.includes('asgold-problem-navigator-react')) throw new Error('V37 guard: problem action no longer targets the problem navigator')
 if(!firstAction.includes('onRegister?.()')) throw new Error('V37 guard: upload action must enter the registration/upload path directly')
+if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')||firstAction.includes('startTitles')) throw new Error('V37 guard: duplicate describe/speak entry actions must stay removed')
 if(!firstAction.includes('So sieht ein erstes Ergebnis aus')) throw new Error('V37 guard: sample result is missing')
 if(!firstAction.includes('🟢') || !firstAction.includes('🟡') || !firstAction.includes('🔴') || !firstAction.includes('➡️')) throw new Error('V37 guard: sample result no longer shows status progression')
 if(!video.includes("[open,setOpen]=useState(false)")) throw new Error('V37 guard: explainer video is no longer collapsed by default')
@@ -29,10 +28,9 @@ if(!video.includes('Weiblich') || !video.includes('Männlich')) throw new Error(
 if(!video.includes("setPresenter('female')") || !video.includes("setPresenter('male')")) throw new Error('V37 guard: presenter buttons are not interactive')
 
 const productIndex=publicLanding.indexOf('<ProductIntroCompact language={outputLanguage}/>')
-const firstActionIndex=publicLanding.indexOf('<V37FirstAction language={outputLanguage}')
-const problemIndex=publicLanding.indexOf('<ProblemNavigator ref={problemNavigatorRef} outputLanguage={outputLanguage}')
+const problemIndex=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
 const videoIndex=publicLanding.indexOf('<ExplainerVideo key=')
-if(!(productIndex>=0 && firstActionIndex>productIndex && problemIndex>firstActionIndex && videoIndex>problemIndex)) throw new Error('V37 guard: hero priority order must be explanation -> first action -> problem input -> optional video')
-if(!publicLanding.includes('problemNavigatorRef.current?.speak()')||!publicLanding.includes('problemNavigatorRef.current?.focus()')) throw new Error('V37 guard: first action must reach the problem navigator synchronously through its React ref')
+if(!(productIndex>=0 && problemIndex>productIndex && videoIndex>problemIndex)) throw new Error('V37 guard: hero priority order must be explanation -> single problem input -> optional video')
+if(!problem.includes('data-problem-voice onClick={voice}')) throw new Error('V37 guard: the remaining microphone action must call speech directly')
 if(firstAction.includes('createPortal')||firstAction.includes('MutationObserver')||video.includes('createPortal')||video.includes('MutationObserver')||languageModules.includes('createPortal')||languageModules.includes('MutationObserver')) throw new Error('V37 guard: public modules must render directly without portal mount observers')
 console.log('V37 first-action regression checks passed')
