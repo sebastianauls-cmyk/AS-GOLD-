@@ -47,8 +47,8 @@ function recommend(value,profile){
   let planKey='start'
   const has=terms=>terms.some(term=>text.includes(normalize(term)))
   if(has(['mehrere kunden','team','wiederkehr','mandanten','portfolio','multiple clients','recurring','plusieurs clients','équipe','müşteri','ekip','klienci','zespół','клиент','команда','عملاء','فريق','مشتری','تیم','mai mulți clienți','echipă','recurent','няколко клиента','екип','повтарящ']))planKey='business'
-  else if(text.length>420||has(['komplex','umfangreich','viele unterlagen','komplett','complex','extensive','many documents','complet','nombreux documents','karmaşık','kapsamlı','złożon','obszern','сложн','много документов','معقد','مستندات كثيرة','پیچیده','مدارک زیاد','complex','multe documente','сложен','много документи']))planKey='komplett'
-  else if(text.length>240||has(['risiko','bewerten','analyse','anwalt','gericht','klage','risk','assess','lawyer','court','analysis','risque','avocat','tribunal','avukat','mahkeme','ryzyko','sąd','риск','суд','مخاطر','محكمة','ریسک','دادگاه','risc','evaluare','avocat','instanță','риск','оценка','адвокат','съд']))planKey='analyse'
+  else if(text.length>1800||has(['komplex','umfangreich','viele unterlagen','komplett','complex','extensive','many documents','complet','nombreux documents','karmaşık','kapsamlı','złożon','obszern','сложн','много документов','معقد','مستندات كثيرة','پیچیده','مدارک زیاد','complex','multe documente','сложен','много документи']))planKey='komplett'
+  else if(text.length>360||has(['risiko','bewerten','analyse','anwalt','gericht','klage','risk','assess','lawyer','court','analysis','risque','avocat','tribunal','avukat','mahkeme','ryzyko','sąd','риск','суд','مخاطر','محكمة','ریسک','دادگاه','risc','evaluare','avocat','instanță','риск','оценка','адвокат','съд']))planKey='analyse'
   else if(text.length>120||has(['frist','widerspruch','fehlt','unklar','prüfen','deadline','contradiction','missing','review','délai','eksik','süre','termin','brak','срок','противореч','موعد','تناقض','مهلت','termen','contradicție','lipsește','срок','противоречие','липсва']))planKey='klar'
   return {caseKey,planKey,reason:profile.reasons[planKey]||profile.reasons.start}
 }
