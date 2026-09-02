@@ -23,14 +23,13 @@ need(css,'.exportBar select,.exportBar button{width:100%}','mobile export contro
 need(css,'.documentRow{grid-template-columns:1fr}','mobile document layout')
 need(css,'.dashboardSteps{grid-template-columns:1fr}','mobile dashboard steps')
 
-for(const text of ['Problem beschreiben','Dokument hochladen','Beispiel ansehen']) need(firstAction,text,`entry action ${text}`)
+for(const text of ['Dokument hochladen','Beispiel ansehen']) need(firstAction,text,`supplemental action ${text}`)
 need(firstAction,'onRegister?.()','direct registration/upload entry path')
-need(firstAction,'asgold-problem-navigator-react','problem target')
 need(firstActionCompatibility,'../modules/public/V37FirstAction','first-action compatibility adapter')
 need(videoCompatibility,'../modules/public/ExplainerVideo','explainer compatibility adapter')
-need(publicLanding,'<V37FirstAction language={outputLanguage}','first action customer-language callback')
 need(publicLanding,'onRegister={()=>setScreen(\'register\')}','first action registration callback')
-need(publicLanding,'onSpeakProblem={()=>problemNavigatorRef.current?.speak()}','direct ref-owned voice callback')
+if(publicLanding.includes('V37FirstAction')) throw new Error('V37 readiness: duplicate first-action card is mounted before the problem navigator')
+if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')||firstAction.includes('startTitles')) throw new Error('V37 readiness: duplicate entry controls returned')
 
 need(publicLanding,"setScreen('register')",'registration path in public content')
 need(publicHeader,"onScreenChange('register')",'registration path in public header')
