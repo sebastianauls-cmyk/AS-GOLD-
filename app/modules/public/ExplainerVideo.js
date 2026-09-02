@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const languages=[
   ['de','🇩🇪','Deutsch'],['en','🇬🇧','English'],['fr','🇫🇷','Français'],['tr','🇹🇷','Türkçe'],
@@ -43,27 +43,40 @@ export function ExplainerVideo({language='de',openSignal=0}){
   const [videoLanguage,setVideoLanguage]=useState(language)
   const [presenter,setPresenter]=useState('female')
   const [open,setOpen]=useState(false)
+  const sectionRef=useRef(null)
+  const videoRef=useRef(null)
   useEffect(()=>{
     const savedPresenter=localStorage.getItem('asgold-video-presenter')
     if(savedPresenter==='male'||savedPresenter==='female') setPresenter(savedPresenter)
   },[])
   useEffect(()=>{if(languages.some(([code])=>code===language))setVideoLanguage(language)},[language])
   useEffect(()=>{localStorage.setItem('asgold-video-presenter',presenter)},[presenter])
-  useEffect(()=>{if(openSignal>0)setOpen(true)},[openSignal])
+  useEffect(()=>{
+    if(openSignal>0)setOpen(true)
+  },[openSignal])
+  useEffect(()=>{
+    if(!open)return
+    const frame=requestAnimationFrame(()=>{
+      sectionRef.current?.scrollIntoView({behavior:'smooth',block:'start'})
+      const playback=videoRef.current?.play()
+      playback?.catch(()=>{})
+    })
+    return()=>cancelAnimationFrame(frame)
+  },[open,openSignal,videoLanguage,presenter])
   const c=copy[language]||copy.de
   const rtl=language==='ar'||language==='fa'
-  const femaleLocal=femaleLocalVideos[videoLanguage]||femaleLocalVideos.de
+  const femaleLocal=femaleLocalVideos[videoLanguage]
   const femaleRemote=femaleRemoteVideos[videoLanguage]||femaleRemoteVideos.de
   const maleLocal=maleLocalVideos[videoLanguage]
   const maleRemote=maleRemoteVideos[videoLanguage]||maleRemoteVideos.de
   const buttonStyle=active=>({flex:'1 1 150px',minHeight:46,padding:'10px 14px',border:active?'2px solid #8f6e25':'1px solid #d8d1bd',borderRadius:12,background:active?'#fff6d8':'#fff',color:'#4d3b14',fontWeight:900,cursor:'pointer'})
-  return (<section dir={rtl?'rtl':'ltr'} style={{margin:'12px 0 10px',padding:open?16:10,border:'1px solid #d9c792',borderRadius:16,background:'#fff'}}>
+  return (<section ref={sectionRef} data-explainer-video-section dir={rtl?'rtl':'ltr'} style={{margin:'12px 0 10px',padding:open?16:10,border:'1px solid #d9c792',borderRadius:16,background:'#fff'}}>
     {!open?<button type='button' onClick={()=>setOpen(true)} aria-expanded='false' style={{width:'100%',padding:'12px 14px',border:0,borderRadius:11,background:'#fff8df',color:'#5b4618',fontWeight:900,fontSize:'1rem',cursor:'pointer'}}>{c.show}</button>:<>
-      <div style={{display:'flex',justifyContent:'space-between',gap:10,alignItems:'start'}}><div><b style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{c.title}</b><p style={{margin:'5px 0 12px',color:'#596472'}}>{c.lead}</p></div><button type='button' onClick={()=>setOpen(false)} aria-expanded='true' style={{border:'1px solid #d8d1bd',background:'#fff',borderRadius:10,padding:'7px 9px',cursor:'pointer'}}>{c.hide}</button></div>
+      <div style={{display:'flex',justifyContent:'space-between',gap:10,alignItems:'start'}}><div><b style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{c.title}</b><p style={{margin:'5px 0 12px',color:'#596472'}}>{c.lead}</p></div><button type='button' onClick={()=>{videoRef.current?.pause();setOpen(false)}} aria-expanded='true' style={{border:'1px solid #d8d1bd',background:'#fff',borderRadius:10,padding:'7px 9px',cursor:'pointer'}}>{c.hide}</button></div>
       <label style={{display:'grid',gap:5,fontWeight:800,color:'#5d4a1e',maxWidth:340,marginBottom:12}}>{c.language}<select value={videoLanguage} onChange={e=>setVideoLanguage(e.target.value)} style={{padding:'10px 11px',border:'1px solid #d8d1bd',borderRadius:11,background:'#fff'}}>{languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}</select></label>
       <b style={{display:'block',marginBottom:6,color:'#5d4a1e'}}>{c.voice}</b><div role='group' aria-label={c.voice} style={{display:'flex',gap:10,flexWrap:'wrap',marginBottom:12}}><button type='button' aria-pressed={presenter==='female'} onClick={()=>setPresenter('female')} style={buttonStyle(presenter==='female')}>👩 {c.female}</button><button type='button' aria-pressed={presenter==='male'} onClick={()=>setPresenter('male')} style={buttonStyle(presenter==='male')}>👨 {c.male}</button></div>
       {presenter==='male'&&videoLanguage!=='de'&&<p style={{padding:'9px 11px',borderRadius:10,background:'#fff8df',border:'1px solid #ead69e',color:'#65562d',fontSize:'.9rem'}}>{c.maleFallback}</p>}
-      <video key={`${videoLanguage}-${presenter}`} controls playsInline preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>{presenter==='female'&&<source src={femaleLocal} type='video/mp4'/>}{presenter==='male'&&maleLocal&&<source src={maleLocal} type='video/mp4'/>}<source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>{presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}{c.loading}</video>
+      <video ref={videoRef} data-explainer-video key={`${videoLanguage}-${presenter}`} controls playsInline autoPlay={open} preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}>{presenter==='female'&&femaleLocal&&<source src={femaleLocal} type='video/mp4'/>}{presenter==='male'&&maleLocal&&<source src={maleLocal} type='video/mp4'/>}<source src={presenter==='male'?maleRemote:femaleRemote} type='video/mp4'/>{presenter==='male'&&<source src={femaleRemote} type='video/mp4'/>}{c.loading}</video>
     </>}
   </section>)
 }
