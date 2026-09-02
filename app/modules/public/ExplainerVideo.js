@@ -52,7 +52,10 @@ export function ExplainerVideo({language='de',openSignal=0}){
   useEffect(()=>{if(languages.some(([code])=>code===language))setVideoLanguage(language)},[language])
   useEffect(()=>{localStorage.setItem('asgold-video-presenter',presenter)},[presenter])
   useEffect(()=>{
-    if(openSignal>0)setOpen(true)
+    if(openSignal<=0)return
+    const selectedPresenter=localStorage.getItem('asgold-video-presenter')
+    if(selectedPresenter==='male'||selectedPresenter==='female')setPresenter(selectedPresenter)
+    setOpen(true)
   },[openSignal])
   useEffect(()=>{
     if(!open)return
