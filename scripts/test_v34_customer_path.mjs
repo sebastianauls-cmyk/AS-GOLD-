@@ -58,6 +58,8 @@ expect(navigator.includes('getSpeechLocale(customerLanguage)'),'speech recogniti
 expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document entry is missing from recommendation flow')
 expect(navigator.includes("<V37FirstAction language={customerLanguage} onRegister={onRegister}/>") ,'upload and example actions must stay inside the single problem card')
 expect(navigator.includes('data-problem-voice onClick={voice}'),'the single problem card must activate speech directly')
+expect(navigator.includes('text.length>1800'),'complete-plan recommendation must be reserved for genuinely extensive narratives')
+expect(navigator.includes('text.length>360'),'medium narratives must enter analysis before the complete-plan threshold')
 
 const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
 for(const code of supported){
