@@ -1,9 +1,10 @@
 import fs from 'node:fs'
 
-const page=fs.readFileSync('app/modules/workspace/WorkspaceAppV2.js','utf8')
+const page=fs.readFileSync('app/modules/workspace/WorkspaceController.js','utf8')
 const pageEntry=fs.readFileSync('app/page.js','utf8')
 const css=fs.readFileSync('app/globals.css','utf8')
-const firstAction=fs.readFileSync('app/modules/public/V37FirstAction.js','utf8')
+const firstAction=fs.readFileSync('app/modules/public/FirstAction.js','utf8')
+const firstActionLegacy=fs.readFileSync('app/modules/public/V37FirstAction.js','utf8')
 const video=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8')
 const firstActionCompatibility=fs.readFileSync('app/components/V37FirstAction.js','utf8')
 const videoCompatibility=fs.readFileSync('app/components/ExplainerVideo.js','utf8')
@@ -21,6 +22,7 @@ const dashboardSurface=fs.readFileSync('app/modules/workspace/DashboardSurface.j
 
 const need=(source,needle,label)=>{if(!source.includes(needle)) throw new Error(`V80 readiness: missing ${label}`)}
 need(pageEntry,"./modules/workspace/WorkspaceAppCurrent",'single workspace page boundary')
+need(firstActionLegacy,"./FirstAction",'V37 compatibility-only bridge')
 need(css,'@media(max-width:850px)','tablet breakpoint');need(css,'@media(max-width:560px)','phone breakpoint');need(css,'.exportBar select,.exportBar button{width:100%}','mobile export controls');need(css,'.documentRow{grid-template-columns:1fr}','mobile document layout');need(css,'.dashboardSteps{grid-template-columns:1fr}','mobile dashboard steps')
 for(const text of ['Dokument hochladen','Beispiel ansehen']) need(firstAction,text,`supplemental action ${text}`)
 need(firstAction,'onRegister?.()','direct registration/upload entry path');need(firstActionCompatibility,'../modules/public/V37FirstAction','first-action compatibility adapter');need(videoCompatibility,'../modules/public/ExplainerVideo','explainer compatibility adapter');need(publicLanding,"onRegister={()=>setScreen('register')}",'first action registration callback')
@@ -28,4 +30,4 @@ if(publicLanding.includes('V37FirstAction')) throw new Error('V80 readiness: dup
 if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')||firstAction.includes('startTitles')) throw new Error('V80 readiness: duplicate entry controls returned')
 need(publicLanding,"setScreen('register')",'registration path in public content');need(publicHeader,"onScreenChange('register')",'registration path in public header');need(publicHeader,"onScreenChange('login')",'login path in public header');need(caseSurfaces,'backOverview','cases/clients overview navigation');need(page,'onBack={()=>setSelectedCase(null)}','case-detail back navigation');need(caseWorkspace,'export function CaseDetail','case detail module ownership');need(caseSurfaces,'backClients','client-detail back navigation');need(authSurface,'backExplanation','back navigation in auth module');need(documentWorkflow,'functionErrorMessage','analysis error normalization');need(documentWorkflow,'configuration_required','analysis configuration error');need(caseSurfaces,'emptyState','client empty-state presentation');need(documentsSurface,'disabled={uploading}','upload busy state');need(caseSurfaces,'required','required-field handling');need(caseWorkflow,'createAssessment','traffic-light assessment workflow');need(approvalWorkflow,'prepareDocumentApproval','prepare approval workflow');need(page,'ApprovalDetail','approval detail route');need(exportWorkflow,'doExport','export workflow');need(page,'createExportWorkflowActions','export workflow wiring');need(dashboardSurface,'DashboardSurface','dashboard module ownership')
 need(video,"[open,setOpen]=useState(false)",'video collapsed default');need(video,"role='group' aria-label={c.voice}",'presenter accessibility group');need(video,"aria-pressed={presenter==='female'}",'female pressed state');need(video,"aria-pressed={presenter==='male'}",'male pressed state')
-console.log('V80 product-readiness guard passed against the live controller and delegated workflow modules.')
+console.log('V80 product-readiness guard passed against WorkspaceController, FirstAction and delegated workflow modules.')
