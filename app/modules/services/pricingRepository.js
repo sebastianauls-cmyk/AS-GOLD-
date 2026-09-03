@@ -13,3 +13,7 @@ export function requestUpgradeRecord(supabase,{planKey,termMonths,promoCode=''})
   if(promoCode)args.p_promo_code=promoCode
   return supabase.rpc('gold_request_upgrade',args)
 }
+
+export function redeemTestAccessRecord(supabase,{promoCode}){
+  return supabase.rpc('gold_redeem_test_access',{p_promo_code:promoCode})
+}

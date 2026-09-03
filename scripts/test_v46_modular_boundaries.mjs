@@ -231,7 +231,7 @@ assert.doesNotMatch(switcher,/history\.(back|pushState|replaceState)/)
 
 const tester=read('app/testen/page.js')+read('app/modules/tester/TesterGuide.js')
 assert.match(tester,/TesterGuide/)
-assert.match(tester,/Testerbetrieb V74/)
+assert.match(tester,/Testerbetrieb V76/)
 assert.match(tester,/TesterShareButton/)
 assert.match(tester,/11 App-Sprachen/)
 assert.doesNotMatch(read('app/testen/page.js'),/TesterPaused/)
