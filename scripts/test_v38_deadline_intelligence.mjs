@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import {analyzeDeadlines,deadlineUrgency,extractDeadlineDates,parseGermanDate} from '../app/modules/lib/v38DeadlineIntelligence.mjs'
+import {analyzeDeadlines,deadlineUrgency,extractDeadlineDates,parseGermanDate} from '../app/modules/lib/deadlineIntelligence.mjs'
 
 const now=new Date('2026-09-01T10:00:00Z')
 assert.equal(parseGermanDate('Bitte bis zum 03.09.2026 antworten.').toISOString().slice(0,10),'2026-09-03')
@@ -18,12 +18,11 @@ const multipleDeadlines=analyzeDeadlines({text:'Zahlung bis 08.09.2026. Stellung
 const noDeadline=analyzeDeadlines({text:'Dieses Schreiben enthält kein konkretes Fristdatum.',now});assert.equal(noDeadline.status,'uncertain');assert.equal(noDeadline.primary,null);assert.match(noDeadline.message,/Keine sichere Frist/);assert.match(noDeadline.consequence,/Keine Rechtsfolge behauptet/)
 
 const card=fs.readFileSync(new URL('../app/modules/cases/DeadlineCard.js',import.meta.url),'utf8')
-const compatibility=fs.readFileSync(new URL('../app/components/V38DeadlineCardEnhancer.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 const directCases=fs.readFileSync(new URL('../app/modules/cases/CaseWorkspace.js',import.meta.url),'utf8')
 assert.match(card,/Fristen-Warnung/);assert.match(card,/Mögliche Folge/);assert.match(card,/Jetzt tun/);assert.match(card,/data-v38-deadline-card/);assert.match(card,/data-v38-deadline-mode/);assert.match(card,/DeadlineWarningCard/);assert.doesNotMatch(card,/MutationObserver|document\.createElement|querySelector|innerHTML/)
 assert.match(directCases,/DeadlineWarningCard language=\{language\} caseDeadline=\{item\.deadline_at/);assert.match(directCases,/DeadlineWarningCard language=\{language\} text=\{draft\.extracted_text\}/)
 assert.match(card,/documentBasis/);assert.match(card,/cImmediate/);assert.match(card,/cUncertain/);assert.match(card,/de:.*Fristen-Warnung/)
 for(const language of ['en','fr','tr','pl','ru','ar','fa','ro','bg']) assert.match(card,new RegExp(`${language}:\\{`))
-assert.match(compatibility,/modules\/cases\/V38DeadlineCardEnhancer/);assert.doesNotMatch(layout,/V38DeadlineCardEnhancer/)
-console.log('V80 deadline intelligence guard passed against version-neutral domain modules.')
+assert.doesNotMatch(layout,/V38DeadlineCardEnhancer/)
+console.log('V80 deadline intelligence guard passed against canonical version-neutral modules.')
