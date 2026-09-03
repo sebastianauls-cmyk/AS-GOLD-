@@ -144,7 +144,7 @@ for (const name of ['terms','plans','planJourney','planText','journeyLabels','re
 
 const authSurface=read('app/modules/auth/AuthSurface.js')
 assert.match(authSurface,/\.\/PasswordField/)
-assert.match(authSurface,/\.\.\/workspace\/AppLogo/)
+assert.match(authSurface,/\.\.\/brand\/ProductBrand/)
 assert.match(authSurface,/\.\.\/language\/LanguageSwitcher/)
 assert.match(authSurface,/\.\.\/compliance\/LegalFooter/)
 assert.match(authSurface,/backExplanation/)

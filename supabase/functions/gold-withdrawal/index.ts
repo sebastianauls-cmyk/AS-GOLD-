@@ -49,7 +49,7 @@ Deno.serve(async(req:Request)=>{
   if(error||!data) return reply(req,{error:'Der Widerruf konnte nicht gespeichert werden.'},503);
 
   const confirmationText=[
-    'AS Gold – Eingangsbestätigung des Widerrufs',
+    'AS Workspace Gold – Eingangsbestätigung des Widerrufs',
     '',`Widerrufs-ID: ${data.id}`,`Eingang (UTC): ${data.received_at}`,`Name: ${name}`,`Vertrags-/Kontoreferenz: ${contractReference}`,
     '',declaration,'','Empfänger: Sebastian Auls – Unternehmens- und Konzeptberatung, Chrysanderstraße 75, 21029 Hamburg','Kontakt: sebastian.auls@gmail.com'
   ].join('\n');

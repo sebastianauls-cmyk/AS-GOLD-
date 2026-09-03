@@ -10,10 +10,10 @@ let workspace=read(workspacePath)
 ensureDir('app/modules/workspace')
 const loadingPath='app/modules/workspace/LoadingSurface.js'
 if(!fs.existsSync(loadingPath)){
-  write(loadingPath,`import { LegalFooter } from '../compliance/LegalFooter'\nimport { AppLogo } from './AppLogo'\n\nexport function LoadingSurface({language,checking}){\n  return <><main className="center"><section className="card"><AppLogo/><h1>AS Gold</h1><p>{checking}</p></section></main><LegalFooter language={language}/></>\n}\n`)
+  write(loadingPath,`import { LegalFooter } from '../compliance/LegalFooter'\nimport { AppLogo } from './AppLogo'\n\nexport function LoadingSurface({language,checking}){\n  return <><main className="center"><section className="card"><AppLogo/><h1>AS Workspace Gold</h1><p>{checking}</p></section></main><LegalFooter language={language}/></>\n}\n`)
 }
 
-const loadingInline=`  if(screen==='loading') return <><main className="center"><section className="card"><AppLogo/><h1>AS Gold</h1><p>{a.checking}</p></section></main><LegalFooter language={language}/></>`
+const loadingInline=`  if(screen==='loading') return <><main className="center"><section className="card"><AppLogo/><h1>AS Workspace Gold</h1><p>{a.checking}</p></section></main><LegalFooter language={language}/></>`
 if(workspace.includes(loadingInline)) workspace=workspace.replace(loadingInline,`  if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>`)
 if(!workspace.includes("import { LoadingSurface } from './LoadingSurface'")){
   const anchor="import { ProtectedWorkspaceShell } from './ProtectedWorkspaceShell'"

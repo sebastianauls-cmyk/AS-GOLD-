@@ -26,8 +26,8 @@ function coreProperties(title){
     '<cp:coreProperties xmlns:cp="'+CORE_NS+'" xmlns:dc="http://purl.org/dc/elements/1.1/" '+
     'xmlns:dcterms="http://purl.org/dc/terms/" xmlns:dcmitype="http://purl.org/dc/dcmitype/" '+
     'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">'+
-    '<dc:title>'+escapeXml(title,255)+'</dc:title><dc:creator>AS Gold</dc:creator>'+
-    '<cp:lastModifiedBy>AS Gold</cp:lastModifiedBy>'+
+    '<dc:title>'+escapeXml(title,255)+'</dc:title><dc:creator>AS Workspace Gold</dc:creator>'+
+    '<cp:lastModifiedBy>AS Workspace Gold</cp:lastModifiedBy>'+
     '<dcterms:created xsi:type="dcterms:W3CDTF">'+now+'</dcterms:created>'+
     '<dcterms:modified xsi:type="dcterms:W3CDTF">'+now+'</dcterms:modified>'+
     '</cp:coreProperties>'
@@ -69,7 +69,7 @@ function worksheetCell(value,rowIndex,columnIndex,styleId=0){
 
 export async function createXlsxBlob(rows){
   const zip=new JSZip()
-  const normalized=Array.isArray(rows)&&rows.length?rows:[['AS Gold','']]
+  const normalized=Array.isArray(rows)&&rows.length?rows:[['AS Workspace Gold','']]
   const sheetRows=normalized.map((row,index)=>{
     const values=Array.isArray(row)?row:[row]
     const width=Math.max(2,values.length)
@@ -89,17 +89,17 @@ export async function createXlsxBlob(rows){
     '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>'+
     '</Types>')
   zip.file('_rels/.rels',rootRelationships('xl/workbook.xml'))
-  zip.file('docProps/core.xml',coreProperties(cleanXmlText(normalized[0]?.[0]||'AS Gold',255)))
+  zip.file('docProps/core.xml',coreProperties(cleanXmlText(normalized[0]?.[0]||'AS Workspace Gold',255)))
   zip.file('docProps/app.xml',XML_HEADER+
     '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" '+
     'xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">'+
-    '<Application>AS Gold</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop>'+
+    '<Application>AS Workspace Gold</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop>'+
     '<Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc>'+
     '<HyperlinksChanged>false</HyperlinksChanged><AppVersion>1.0</AppVersion></Properties>')
   zip.file('xl/workbook.xml',XML_HEADER+
     '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="'+OFFICE_REL_NS+'">'+
     '<bookViews><workbookView xWindow="0" yWindow="0" windowWidth="24000" windowHeight="12000"/></bookViews>'+
-    '<sheets><sheet name="AS Gold" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="0"/></workbook>')
+    '<sheets><sheet name="AS Workspace Gold" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="0"/></workbook>')
   zip.file('xl/_rels/workbook.xml.rels',XML_HEADER+'<Relationships xmlns="'+RELATIONSHIP_NS+'">'+
     '<Relationship Id="rId1" Type="'+OFFICE_REL_NS+'/worksheet" Target="worksheets/sheet1.xml"/>'+
     '<Relationship Id="rId2" Type="'+OFFICE_REL_NS+'/styles" Target="styles.xml"/>'+
@@ -159,8 +159,8 @@ function slideXml(slideNumber,shapes){
 }
 
 function presentationTheme(){
-  return XML_HEADER+'<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="AS Gold">'+
-    '<a:themeElements><a:clrScheme name="AS Gold">'+
+  return XML_HEADER+'<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="AS Workspace Gold">'+
+    '<a:themeElements><a:clrScheme name="AS Workspace Gold">'+
     '<a:dk1><a:sysClr val="windowText" lastClr="1F2937"/></a:dk1><a:lt1><a:sysClr val="window" lastClr="FFFFFF"/></a:lt1>'+
     '<a:dk2><a:srgbClr val="111827"/></a:dk2><a:lt2><a:srgbClr val="F8FAFC"/></a:lt2>'+
     '<a:accent1><a:srgbClr val="9A7414"/></a:accent1><a:accent2><a:srgbClr val="C9A227"/></a:accent2>'+
@@ -169,7 +169,7 @@ function presentationTheme(){
     '<a:hlink><a:srgbClr val="0563C1"/></a:hlink><a:folHlink><a:srgbClr val="954F72"/></a:folHlink>'+
     '</a:clrScheme><a:fontScheme name="Aptos"><a:majorFont><a:latin typeface="Aptos Display"/><a:ea typeface=""/><a:cs typeface=""/></a:majorFont>'+
     '<a:minorFont><a:latin typeface="Aptos"/><a:ea typeface=""/><a:cs typeface=""/></a:minorFont></a:fontScheme>'+
-    '<a:fmtScheme name="AS Gold"><a:fillStyleLst>'+
+    '<a:fmtScheme name="AS Workspace Gold"><a:fillStyleLst>'+
     '<a:solidFill><a:schemeClr val="phClr"/></a:solidFill>'+
     '<a:gradFill rotWithShape="1"><a:gsLst><a:gs pos="0"><a:schemeClr val="phClr"><a:tint val="50000"/><a:satMod val="300000"/></a:schemeClr></a:gs>'+
     '<a:gs pos="100000"><a:schemeClr val="phClr"><a:shade val="80000"/><a:satMod val="200000"/></a:schemeClr></a:gs></a:gsLst><a:lin ang="16200000" scaled="1"/></a:gradFill>'+
@@ -200,26 +200,26 @@ function slideMaster(){
 
 function slideLayout(){
   return XML_HEADER+'<p:sldLayout xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="'+OFFICE_REL_NS+'" '+
-    'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" preserve="1"><p:cSld name="AS Gold">'+
+    'xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main" preserve="1"><p:cSld name="AS Workspace Gold">'+
     '<p:spTree><p:nvGrpSpPr><p:cNvPr id="1" name=""/><p:cNvGrpSpPr/><p:nvPr/></p:nvGrpSpPr>'+
     '<p:grpSpPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="0" cy="0"/><a:chOff x="0" y="0"/><a:chExt cx="0" cy="0"/></a:xfrm></p:grpSpPr>'+
     '</p:spTree></p:cSld><p:clrMapOvr><a:masterClrMapping/></p:clrMapOvr></p:sldLayout>'
 }
 
 export async function createPptxBlob(rows){
-  const normalized=Array.isArray(rows)&&rows.length?rows:[['AS Gold','']]
+  const normalized=Array.isArray(rows)&&rows.length?rows:[['AS Workspace Gold','']]
   const detailRows=normalized.slice(1)
   const groups=[]
   for(let index=0;index<detailRows.length;index+=4) groups.push(detailRows.slice(index,index+4))
   if(!groups.length) groups.push([])
 
   const slides=[]
-  let titleShapes=textShape(2,'Title',normalized[0]?.[0]||'AS Gold',0.7,0.7,11.8,0.7,26,true,'1F2937')
+  let titleShapes=textShape(2,'Title',normalized[0]?.[0]||'AS Workspace Gold',0.7,0.7,11.8,0.7,26,true,'1F2937')
   titleShapes+=textShape(3,'Subtitle',normalized[1]?.[1]||'',0.7,1.65,11.8,1.1,20,false,'9A7414')
   slides.push(slideXml(1,titleShapes))
   groups.forEach((group,groupIndex)=>{
     let id=2
-    let shapes=textShape(id++,'Header','AS Gold',0.6,0.35,2.5,0.4,14,true,'9A7414')
+    let shapes=textShape(id++,'Header','AS Workspace Gold',0.6,0.35,2.5,0.4,14,true,'9A7414')
     group.forEach((row,rowIndex)=>{
       const y=1+1.35*rowIndex
       shapes+=textShape(id++,'Label '+(rowIndex+1),row?.[0]||'',0.7,y,2.2,0.45,14,true,'1F2937')
@@ -248,11 +248,11 @@ export async function createPptxBlob(rows){
     '<Override PartName="/docProps/app.xml" ContentType="application/vnd.openxmlformats-officedocument.extended-properties+xml"/>'+
     '</Types>')
   zip.file('_rels/.rels',rootRelationships('ppt/presentation.xml'))
-  zip.file('docProps/core.xml',coreProperties(cleanXmlText(normalized[0]?.[0]||'AS Gold',255)))
+  zip.file('docProps/core.xml',coreProperties(cleanXmlText(normalized[0]?.[0]||'AS Workspace Gold',255)))
   zip.file('docProps/app.xml',XML_HEADER+
     '<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" '+
     'xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">'+
-    '<Application>AS Gold</Application><PresentationFormat>Widescreen</PresentationFormat>'+
+    '<Application>AS Workspace Gold</Application><PresentationFormat>Widescreen</PresentationFormat>'+
     '<Slides>'+slides.length+'</Slides><Notes>0</Notes><HiddenSlides>0</HiddenSlides><MMClips>0</MMClips>'+
     '<ScaleCrop>false</ScaleCrop><Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc>'+
     '<HyperlinksChanged>false</HyperlinksChanged><AppVersion>1.0</AppVersion></Properties>')

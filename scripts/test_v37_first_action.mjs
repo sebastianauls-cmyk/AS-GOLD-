@@ -23,7 +23,7 @@ if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')||first
 if(!firstAction.includes('So sieht ein erstes Ergebnis aus')) throw new Error('V37 guard: sample result is missing')
 if(!firstAction.includes('🟢') || !firstAction.includes('🟡') || !firstAction.includes('🔴') || !firstAction.includes('➡️')) throw new Error('V37 guard: sample result no longer shows status progression')
 if(!video.includes("[open,setOpen]=useState(false)")) throw new Error('V37 guard: explainer video is no longer collapsed by default')
-if(!video.includes('AS Gold in 90 Sekunden ansehen')) throw new Error('V37 guard: compact video CTA missing')
+if(!video.includes('AS Workspace Gold in 90 Sekunden ansehen')) throw new Error('V37 guard: compact video CTA missing')
 if(!video.includes('Weiblich') || !video.includes('Männlich')) throw new Error('V37 guard: presenter choice missing')
 if(!video.includes("setPresenter('female')") || !video.includes("setPresenter('male')")) throw new Error('V37 guard: presenter buttons are not interactive')
 

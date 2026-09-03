@@ -1,6 +1,6 @@
 import { LegalFooter } from '../compliance/LegalFooter'
-import { AppLogo } from './AppLogo'
+import { ProductBrand } from '../brand/ProductBrand'
 
 export function LoadingSurface({language,checking}){
-  return <><main className="center"><section className="card"><AppLogo/><h1>AS Gold</h1><p>{checking}</p></section></main><LegalFooter language={language}/></>
+  return <><main className="center"><section className="card"><ProductBrand showDescriptor language={language}/><p>{checking}</p></section></main><LegalFooter language={language}/></>
 }

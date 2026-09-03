@@ -1,6 +1,6 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
 
-export const metadata={title:'KI-Transparenz | AS Gold',description:'Transparenz zur KI-gestützten Dokumentanalyse in AS Gold.'}
+export const metadata={title:'KI-Transparenz | AS Workspace Gold',description:'Transparenz zur KI-gestützten Dokumentanalyse in AS Workspace Gold.'}
 
 export default function AiTransparency(){
   return <LegalDocument pageId="kiTransparenz" title="KI-Transparenz" intro="Die Dokumentanalyse ist ein bewusst gestarteter, vorläufiger Organisationsvorschlag – keine automatische Entscheidung und keine Rechtsberatung.">

@@ -6,6 +6,8 @@ import { LanguageSwitcher } from '../language/LanguageSwitcher'
 import { LegalLanguageContext } from '../language/LegalLanguageContext'
 import { localeForLanguage, rtlLanguages, supportedLanguages } from '../language/v36Languages.mjs'
 import { APP_VERSION, withAppVersion } from '../release/appRelease.mjs'
+import { ProductBrand } from '../brand/ProductBrand'
+import { PRODUCT_NAME } from '../brand/productBrand.mjs'
 import { getLegalPage, legalShellCopy } from './v31LegalTranslations.mjs'
 
 const languageKeys=new Set(supportedLanguages.map(item=>item.key))
@@ -52,7 +54,7 @@ export function LegalNotice({children,tone='info'}){
   return <div className={`legalNotice legalNotice-${tone}`}>{children}</div>
 }
 
-export function LegalDocument({pageId,localizable=false,showRelease=false,eyebrow='AS Gold · Rechtliches',title,intro,children,updated='30. August 2026',localizedExtra=null,localizedExtraAfterSection=0}){
+export function LegalDocument({pageId,localizable=false,showRelease=false,eyebrow='AS Workspace Gold · Rechtliches',title,intro,children,updated='30. August 2026',localizedExtra=null,localizedExtraAfterSection=0}){
   const [language,setLanguage]=useState('de')
   const translated=useMemo(()=>localizable?getLegalPage(pageId,language):null,[localizable,pageId,language])
   const shell=legalShellCopy[language]||legalShellCopy.de
@@ -77,11 +79,11 @@ export function LegalDocument({pageId,localizable=false,showRelease=false,eyebro
     if(!localizable||activeLanguage==='de') url.searchParams.delete('lang')
     else url.searchParams.set('lang',activeLanguage)
     window.history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`)
-    document.title=`${shownTitle} | AS Gold`
+    document.title=`${shownTitle} | ${PRODUCT_NAME}`
   },[language,localizable,shownTitle])
 
   return <LegalLanguageContext.Provider value={language}><div className="legalSite">
-    <header className="legalHeader"><div className="wrap legalHeaderInner"><a className="brand legalHome" href={localizedHref('/',language)}><span className="logo">AS</span><b>AS Gold</b></a><div className="legalHeaderActions">{localizable&&<LanguageSwitcher value={language} onChange={setLanguage} label={shell.eyebrow}/>}<a className="secondary btn legalBackBtn" href={localizedHref('/',language)}><span aria-hidden="true">{rtlLanguages.has(language)?'→':'←'}</span>{shell.back}</a></div></div></header>
+    <header className="legalHeader"><div className="wrap legalHeaderInner"><a className="legalHome" href={localizedHref('/',language)}><ProductBrand language={language}/></a><div className="legalHeaderActions">{localizable&&<LanguageSwitcher value={language} onChange={setLanguage} label={shell.eyebrow}/>}<a className="secondary btn legalBackBtn" href={localizedHref('/',language)}><span aria-hidden="true">{rtlLanguages.has(language)?'→':'←'}</span>{shell.back}</a></div></div></header>
     <main className="legalMain wrap">
       <div className="legalTitle"><span className="eyebrow">{language==='de'?eyebrow:shell.eyebrow}{showRelease?` · ${APP_VERSION}`:''}</span><h1>{shownTitle}</h1>{shownIntro&&<p className="lead">{shownIntro}</p>}<p className="legalUpdated">{shell.updated}: {language==='de'?updated:formattedUpdated(updated,language)} · {shell.binding}</p>{language!=='de'&&<p className="legalTranslationNote">{shell.note}</p>}</div>
       <div className="legalBody">{translated?<TranslatedLegalBody page={translated} language={language} localizedExtra={localizedExtra} localizedExtraAfterSection={localizedExtraAfterSection}/>:children}</div>

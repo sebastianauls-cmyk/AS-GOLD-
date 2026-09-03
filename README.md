@@ -1,4 +1,4 @@
-# AS Gold Workspace – V33
+# AS Workspace Gold Workspace – V33
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
@@ -32,7 +32,7 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 - keine echten Kundendaten im kontrollierten Testbetrieb
 
 ## Sicherungsregel
-Jeder freigegebene funktionierende Stand wird nach Test sowohl auf Vercel bereitgestellt als auch versioniert im Google-Drive-Ordner „App intern gold / AS Gold Quellcode-Sicherungen“ gesichert.
+Jeder freigegebene funktionierende Stand wird nach Test sowohl auf Vercel bereitgestellt als auch versioniert im Google-Drive-Ordner „App intern gold / AS Workspace Gold Quellcode-Sicherungen“ gesichert.
 
 ## Mehrsprachigkeit – V32
 
@@ -133,7 +133,7 @@ Nächste vorbereitete Kandidaten nach Nutzungsbedarf: Rumänisch, Italienisch, B
 ## V27 – kundenfreundliche Fallauswahl (30.08.2026)
 
 - Der vollständige V26-Stand mit V24-Fallakte, V25-Freigabeablauf und V26-Dokumentanalyse bleibt erhalten.
-- Die öffentliche Startseite beantwortet verdichtet: für wen AS Gold gedacht ist, bei welchen Vorgängen es hilft, welche typischen Fälle passen und welches Ergebnis Nutzer erhalten.
+- Die öffentliche Startseite beantwortet verdichtet: für wen AS Workspace Gold gedacht ist, bei welchen Vorgängen es hilft, welche typischen Fälle passen und welches Ergebnis Nutzer erhalten.
 - Acht Fallarten werden als kompakte Auswahl gezeigt; Detailinformationen erscheinen erst nach Auswahl statt gleichzeitig.
 - Der Ablauf wird in drei Schritten erklärt: Fallart wählen, Unterlagen hinzufügen, Ergebnis prüfen.
 - Transparenzregeln bleiben vollständig erreichbar, sind aber zugunsten einer ruhigen Startseite zunächst eingeklappt.

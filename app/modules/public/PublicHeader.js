@@ -1,6 +1,6 @@
 'use client'
 
-import { AppLogo } from '../workspace/AppLogo'
+import { ProductBrand } from '../brand/ProductBrand'
 import { PublicLanguageModules } from './PublicLanguageModules'
 import { InstallAppButton } from './InstallAppButton'
 
@@ -16,7 +16,7 @@ export function PublicHeader({
 }){
   return <header className="publicTop">
     <div className="wrap nav publicHeader">
-      <div className="brand publicBrand"><AppLogo/><b>AS Gold</b></div>
+      <ProductBrand showDescriptor className="publicBrand" language={language}/>
       <nav className="publicActions publicNavActions">
         <a href="#fallarten">{caseNavLabel}</a>
         <a href="#preise">{t.prices}</a>

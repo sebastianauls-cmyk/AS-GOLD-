@@ -1,5 +1,7 @@
 'use client'
 
+import { PRODUCT_NAME } from '../brand/productBrand.mjs'
+
 const footerCopy={
   de:{nav:'Rechtliche Informationen',withdrawal:'Vertrag widerrufen',test:'Sicher testen',integrations:'E-Mail & Speicher',hub:'Rechtliches',imprint:'Impressum',privacy:'Datenschutz',controls:'Datenschutz-Steuerung',terms:'Nutzungsbedingungen',cookies:'Cookies & Speicher',ai:'KI-Transparenz',contact:'Kontakt',binding:'Verbindlich sind die deutschen Rechtstexte.',updated:'Stand'},
   en:{nav:'Legal information',withdrawal:'Withdraw from contract',test:'Safe testing',integrations:'Email & storage',hub:'Legal',imprint:'Legal notice',privacy:'Privacy',controls:'Privacy controls',terms:'Terms of use',cookies:'Cookies & storage',ai:'AI transparency',contact:'Contact',binding:'The German legal texts are authoritative.',updated:'Updated'},
@@ -19,7 +21,7 @@ function href(path,language){ return language==='de'?path:`${path}?lang=${langua
 export function LegalFooter({language='de'}){
   const on=footerCopy[language]||footerCopy.de
   return <footer className="legalFooter"><div className="wrap legalFooterInner">
-    <div className="legalFooterBrand"><b>AS Gold</b><span>© 2026 Sebastian Auls – Unternehmens- und Konzeptberatung</span></div>
+    <div className="legalFooterBrand"><b>{PRODUCT_NAME}</b><span>© 2026 Sebastian Auls – Unternehmens- und Konzeptberatung</span></div>
     <nav aria-label={on.nav}>
       <a className="withdrawalAction" href={href('/widerruf',language)}>{on.withdrawal}</a><a href={href('/testen',language)}>{on.test}</a><a href={href('/integrationen',language)}>{on.integrations}</a><a href={href('/rechtliches',language)}>{on.hub}</a><a href={href('/impressum',language)}>{on.imprint}</a><a href={href('/datenschutz',language)}>{on.privacy}</a><a href={href('/datenschutzsteuerung',language)}>{on.controls}</a><a href={href('/nutzungsbedingungen',language)}>{on.terms}</a><a href={href('/cookies',language)}>{on.cookies}</a><a href={href('/ki-transparenz',language)}>{on.ai}</a><a href={href('/kontakt',language)}>{on.contact}</a>
     </nav>

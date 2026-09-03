@@ -569,7 +569,7 @@ export default function Home(){
 
   async function exportMyData(){
     const packageData={
-      product:'AS Gold',
+      product:'AS Workspace Gold',
       exported_at:new Date().toISOString(),
       account:{email:user?.email||null,user_id:user?.id||null},
       access:{tier:currentTier,plan:currentPlan.name,status:access?.status||null,active:!!access?.active,payment:'disabled'},

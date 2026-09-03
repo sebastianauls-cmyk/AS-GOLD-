@@ -1,4 +1,4 @@
-# AS Gold module boundaries
+# AS Workspace Gold module boundaries
 
 This directory is the target ownership structure for the V46 modularization. New behavior belongs to a domain module first; compatibility re-exports under legacy `app/components`, `app/lib`, or route-local migration paths are temporary adapters only.
 

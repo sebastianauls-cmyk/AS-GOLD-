@@ -1,7 +1,7 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../compliance/LegalDocument'
 
 export function TesterPaused(){
-  return <LegalDocument pageId="testen" eyebrow="AS Gold · Testzugang pausiert" title="Testerzugang vorübergehend geschlossen" intro="Wir stabilisieren derzeit die Navigation und Benutzerführung. Bis zur erneuten Freigabe ist der öffentliche Testerzugang bewusst pausiert.">
+  return <LegalDocument pageId="testen" eyebrow="AS Workspace Gold · Testzugang pausiert" title="Testerzugang vorübergehend geschlossen" intro="Wir stabilisieren derzeit die Navigation und Benutzerführung. Bis zur erneuten Freigabe ist der öffentliche Testerzugang bewusst pausiert.">
     <LegalNotice tone="warning"><b>Aktuell keine Testerfreigabe.</b><p>Bitte noch keinen Test starten und keine Testdaten hochladen. Der Zugang wird erst wieder freigegeben, wenn die Navigation vollständig geprüft und abgenommen ist.</p></LegalNotice>
     <LegalSection title="Warum ist der Test pausiert?">
       <p>Wir möchten vermeiden, dass Tester einen Zwischenstand mit noch nicht finaler Navigation beurteilen. Erst nach erfolgreicher interner Prüfung wird der kontrollierte Testbetrieb wieder geöffnet.</p>

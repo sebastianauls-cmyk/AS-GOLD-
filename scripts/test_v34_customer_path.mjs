@@ -71,7 +71,7 @@ expect(languages.includes("import {problemLanguageProfiles as baseProfiles"),'V3
 expect(languages.includes('problemLanguageProfiles={...baseProfiles,...extraProfiles}'),'V36 profile layer must merge base and extra languages')
 expect(intro.includes('howAsGoldWorksCopy'),'product-intro component must consume the canonical direct module copy')
 expect(intro.includes('{index+1}'),'product flow must render four numbered steps')
-expect(title.includes('whatIsAsGoldCopy'),'hero title must consume the canonical AS Gold explanation directly')
+expect(title.includes('whatIsAsGoldCopy'),'hero title must consume the canonical AS Workspace Gold explanation directly')
 expect(publicLanding.includes('{hero.title}')&&publicLanding.includes('{hero.lead}'),'hero copy must be rendered directly by PublicLanding')
 expect(caseDiscovery.includes('id="asgold-user-audience"'),'audience content must be rendered directly by the case discovery module')
 expect((caseDiscovery.match(/\{audience\.title\}/g)||[]).length===1,'audience heading must be rendered once')

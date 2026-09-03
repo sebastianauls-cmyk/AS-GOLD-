@@ -1,8 +1,10 @@
+import { PRODUCT_DESCRIPTOR, PRODUCT_NAME } from './modules/brand/productBrand.mjs'
+
 export default function manifest(){
   return {
-    name:'AS Gold',
-    short_name:'AS Gold',
-    description:'Dokumente, Fälle, Fristen und Freigaben strukturiert bearbeiten.',
+    name:PRODUCT_NAME,
+    short_name:PRODUCT_NAME,
+    description:`${PRODUCT_DESCRIPTOR}: Dokumente, Fälle, Fristen und Freigaben strukturiert bearbeiten.`,
     start_url:'/',
     scope:'/',
     display:'standalone',

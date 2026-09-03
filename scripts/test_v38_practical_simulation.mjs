@@ -22,7 +22,7 @@ const microsoftCallback=fs.readFileSync(new URL('../app/api/integrations/microso
 assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/)
 
 const rows=[
-  ['AS Gold synthetischer Testfall',''],
+  ['AS Workspace Gold synthetischer Testfall',''],
   ['Fall','V38-Simulation'],
   ['Status','Offen'],
   ['Ampel','Gelb'],

@@ -35,8 +35,8 @@ def build_pdf() -> None:
         leftMargin=20 * mm,
         topMargin=17 * mm,
         bottomMargin=17 * mm,
-        title="AS Gold - Synthetischer Testfall V29",
-        author="AS Gold",
+        title="AS Workspace Gold - Synthetischer Testfall V29",
+        author="AS Workspace Gold",
         subject="Ausschliesslich synthetische Testdaten fuer den kontrollierten App-Test",
     )
 
@@ -120,7 +120,7 @@ def build_pdf() -> None:
     story.append(Paragraph("Muster-Schadenanzeige", styles["GoldTitle"]))
     story.append(
         Paragraph(
-            "Dieses Dokument wurde ausschliesslich fuer den kontrollierten Test von AS Gold erstellt. "
+            "Dieses Dokument wurde ausschliesslich fuer den kontrollierten Test von AS Workspace Gold erstellt. "
             "Alle Namen, Nummern, Anschriften, Betraege und Ereignisse sind frei erfunden.",
             styles["Body"],
         )
