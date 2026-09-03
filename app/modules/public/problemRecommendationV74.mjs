@@ -60,7 +60,7 @@ const analysisSignals=[
   'credit report','credit rating','credit line','disconnection warning','shutoff warning','data correction','contradictory documents','contradict each other','evidence matrix','chain of evidence','evidentiary position','risk assessment','options for action','multiple parties','in-depth review',
   'signalement de solvabilite','ligne de credit','menace de coupure','documents contradictoires','matrice de preuves','evaluation des risques','kredi notu','kredi limiti','kesme uyarisi','celiskili belgeler','kanit matrisi','risk degerlendirmesi','informacja kredytowa','linia kredytowa','ostrzezenie o odcieciu','sprzeczne dokumenty','matryca dowodow','ocena ryzyka',
   'кредитный рейтинг','кредитная линия','угроза отключения','противоречивые документы','матрица доказательств','оценка рисков','التصنيف الائتماني','حد الائتمان','تهديد بالقطع','مستندات متناقضة','مصفوفة الأدلة','تقييم المخاطر','اعتبارسنجی','خط اعتباری','اخطار قطع','اسناد متناقض','ماتریس شواهد','ارزیابی ریسک',
-  'raport de credit','linie de credit','amenintare cu deconectarea','documente contradictorii','matrice de probe','evaluarea riscului','кредитен рейтинг','кредитна линия','предупреждение за спиране','противоречиви документи','матрица на доказателствата','оценка на риска','xep hang tin dung','han muc tin dung','canh bao cat dien','tai lieu mau thuan','ma tran bang chung','danh gia rui ro'
+  'raport de credit','linie de credit','amenintare cu deconectarea','documente contradictorii','matrice de probe','evaluarea riscului','кредитен рейтинг','кредитна линия','предупреждение за спиране','противоречиви документи','матрица на доказателствата','оценка на риска','xep hang tin dung','han muc tin dung','canh bao cat dien','tai lieu mau thuan','ma tran bang chung','danh gia rui ro','rủi ro'
 ]
 
 const claritySignals=[
@@ -68,7 +68,7 @@ const claritySignals=[
   'dunning notice','debt collection','payment demand','deadline','objection','open points','documents missing','missing','not attached','unclear','what is missing','next step',
   'mise en demeure','recouvrement','delai','opposition','points ouverts','documents manquants','ihtar','tahsilat','sure','itiraz','acik noktalar','eksik belgeler','wezwanie do zaplaty','windykacja','termin','sprzeciw','otwarte kwestie','brak dokumentow',
   'требование об оплате','взыскание долга','срок','возражение','открытые вопросы','не хватает документов','إنذار بالدفع','تحصيل الديون','موعد نهائي','اعتراض','نقاط مفتوحة','مستندات مفقودة','اخطار پرداخت','وصول مطالبات','مهلت','اعتراض','موارد باز','مدارک ناقص',
-  'somatie de plata','colectare datorii','termen','contestatie','puncte deschise','documente lipsa','покана за плащане','събиране на дълг','срок','възражение','отворени въпроси','липсващи документи','thu nhac no','thu hoi no','thoi han','phan doi','van de con mo','thieu tai lieu'
+  'somatie de plata','colectare datorii','termen','contestatie','puncte deschise','documente lipsa','покана за плащане','събиране на дълг','срок','възражение','отворени въпроси','липсващи документи','thu nhac no','thu hoi no','thoi han','thời hạn','phan doi','van de con mo','thieu tai lieu'
 ]
 
 const domainSignals={
