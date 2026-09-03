@@ -19,13 +19,11 @@ for(const path of Object.values(paths)) exists(path)
 const page=read('app/page.js')
 const current=read('app/modules/workspace/WorkspaceAppCurrent.js')
 const controller=read(paths.controller)
-const legacy=read('app/modules/workspace/WorkspaceApp.js')
 const workflows=Object.fromEntries(Object.entries(paths).filter(([key])=>key!=='controller').map(([key,path])=>[key,read(path)]))
 
 assert.match(page,/modules\/workspace\/WorkspaceAppCurrent/,'root page must use the single current workspace entry')
 assert.match(current,/WorkspaceAppV2/,'current entry must delegate to the active controller')
-assert.match(legacy,/WorkspaceAppCurrent/,'legacy controller path must be compatibility-only')
-assert.doesNotMatch(legacy,/useState|useEffect|createDocumentWorkflowActions/)
+assert.equal(fs.existsSync('app/modules/workspace/WorkspaceApp.js'),false,'obsolete WorkspaceApp.js must stay removed')
 for(const expected of [
   "from '../cases/caseWorkflow'","from '../cases/approvalWorkflow'","from '../documents/documentWorkflow'","from '../documents/exportWorkflow'","from '../auth/workspaceAuthWorkflow'","from '../pricing/pricingWorkflow'","from '../compliance/accountWorkflow'"
 ]) assert.match(controller,new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')),`controller must import ${expected}`)
