@@ -60,7 +60,7 @@ const analysisSignals=[
   'credit report','credit rating','credit line','disconnection warning','shutoff warning','data correction','contradictory documents','contradict each other','evidence matrix','chain of evidence','evidentiary position','risk assessment','options for action','multiple parties','in-depth review',
   'signalement de solvabilite','ligne de credit','menace de coupure','documents contradictoires','matrice de preuves','evaluation des risques','kredi notu','kredi limiti','kesme uyarisi','celiskili belgeler','kanit matrisi','risk degerlendirmesi','informacja kredytowa','linia kredytowa','ostrzezenie o odcieciu','sprzeczne dokumenty','matryca dowodow','ocena ryzyka',
   'кредитный рейтинг','кредитная линия','угроза отключения','противоречивые документы','матрица доказательств','оценка рисков','التصنيف الائتماني','حد الائتمان','تهديد بالقطع','مستندات متناقضة','مصفوفة الأدلة','تقييم المخاطر','اعتبارسنجی','خط اعتباری','اخطار قطع','اسناد متناقض','ماتریس شواهد','ارزیابی ریسک',
-  'raport de credit','linie de credit','amenintare cu deconectarea','documente contradictorii','matrice de probe','evaluarea riscului','кредитен рейтинг','кредитна линия','предупреждение за спиране','противоречиви документи','матрица на доказателствата','оценка на риска','xep hang tin dung','han muc tin dung','canh bao cat dien','tai lieu mau thuan','ma tran bang chung','danh gia rui ro'
+  'raport de credit','linie de credit','amenintare cu deconectarea','documente contradictorii','matrice de probe','evaluarea riscului','кредитен рейтинг','кредитна линия','предупреждение за спиране','противоречиви документи','матрица на доказателствата','оценка на риска','xep hang tin dung','han muc tin dung','canh bao cat dien','tai lieu mau thuan','ma tran bang chung','danh gia rui ro','rủi ro'
 ]
 
 const claritySignals=[
@@ -68,13 +68,13 @@ const claritySignals=[
   'dunning notice','debt collection','payment demand','deadline','objection','open points','documents missing','missing','not attached','unclear','what is missing','next step',
   'mise en demeure','recouvrement','delai','opposition','points ouverts','documents manquants','ihtar','tahsilat','sure','itiraz','acik noktalar','eksik belgeler','wezwanie do zaplaty','windykacja','termin','sprzeciw','otwarte kwestie','brak dokumentow',
   'требование об оплате','взыскание долга','срок','возражение','открытые вопросы','не хватает документов','إنذار بالدفع','تحصيل الديون','موعد نهائي','اعتراض','نقاط مفتوحة','مستندات مفقودة','اخطار پرداخت','وصول مطالبات','مهلت','اعتراض','موارد باز','مدارک ناقص',
-  'somatie de plata','colectare datorii','termen','contestatie','puncte deschise','documente lipsa','покана за плащане','събиране на дълг','срок','възражение','отворени въпроси','липсващи документи','thu nhac no','thu hoi no','thoi han','phan doi','van de con mo','thieu tai lieu'
+  'somatie de plata','colectare datorii','termen','contestatie','puncte deschise','documente lipsa','покана за плащане','събиране на дълг','срок','възражение','отворени въпроси','липсващи документи','thu nhac no','thu hoi no','thoi han','thời hạn','phan doi','van de con mo','thieu tai lieu'
 ]
 
 const domainSignals={
   work:[['lohnabrechnung',12],['lohn',6],['arbeitgeberbescheinigung',9],['arbeitgeber',5],['arbeitszeit',6],['stundenzettel',7],['krankengeld',7],['krankmeldung',5],['kundigung',5],['zuschlage',4],['payroll',8],['employer',5],['working hours',6],['sick pay',7]],
   authority:[['behorde',9],['bescheid',9],['sozialversicherung',8],['krankenkasse',5],['kasse',2],['anmeldung',5],['formular',5],['agency',7],['authority',8],['social insurance',8],['official notice',8]],
-  property:[['betriebskostenabrechnung',12],['mietvertrag',11],['mietverhaltnis',9],['vermieter',7],['miete',6],['pacht',11],['ubergabeprotokoll',9],['gebaude',4],['immobiliengesellschaft',5],['tenancy',8],['landlord',7],['lease',8]],
+  property:[['betriebskostenabrechnung',12],['mietvertrag',11],['mietverhaltnis',9],['vermieter',7],['miete',6],['pacht',14],['ubergabeprotokoll',9],['ubergabe',7],['ruckstande',4],['gebaude',4],['immobiliengesellschaft',5],['tenancy',8],['landlord',7],['lease',8]],
   insurance:[['versicherung',9],['versicherer',10],['versicherungsschutz',10],['deckungsrisiko',10],['deckung',7],['wasserschaden',7],['schaden',5],['gutachter',5],['insurer',10],['insurance',9],['coverage',8],['damage',5]],
   contract:[['stromrechnung',10],['rechnung',6],['mahnung',6],['inkasso',8],['forderung',7],['liefernachweis',7],['dienstleister',7],['versorger',7],['bank',3],['vertrag',5],['invoice',6],['debt collection',8],['supplier',6],['contract',5]],
   private:[['reise',12],['veranstalter',8],['airline',9],['gepack',9],['hotel',4],['kreditkartenanbieter',7],['fahrzeug',8],['travel',12],['tour operator',8],['luggage',9],['vehicle',8]],

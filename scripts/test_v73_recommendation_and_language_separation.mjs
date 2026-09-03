@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { recommendProblem } from '../app/modules/public/problemRecommendationV73.mjs'
+import { recommendProblem } from '../app/modules/public/problemRecommendationV74.mjs'
 import { getProblemLanguageProfile } from '../app/modules/public/problemNavigatorLanguagesV36.mjs'
 
 const profile=getProblemLanguageProfile('de')
@@ -51,4 +51,4 @@ assert.match(navigator,/getProblemLanguageProfile\(customerLanguage\)/)
 assert.match(tester,/Testerbetrieb V7[34]/)
 assert.match(tester,/Feedback zu V7[34] senden/)
 
-console.log('V73 recommendation/language guard passed: Min-to-Max is 5/5, case routing is corrected, and interface/output languages remain separate.')
+console.log('V74 recommendation/language guard passed: Min-to-Max is 5/5, case routing is corrected, and interface/output languages remain separate.')
