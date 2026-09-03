@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { recommendProblem } from '../app/modules/public/problemRecommendationV74.mjs'
-import { getProblemLanguageProfile } from '../app/modules/public/problemNavigatorLanguagesV36.mjs'
+import { recommendProblem } from '../app/modules/public/problemRecommendation.mjs'
+import { getProblemLanguageProfile } from '../app/modules/public/problemLanguageCatalog.mjs'
 
 const profile=getProblemLanguageProfile('de')
 const cases=[
@@ -56,4 +56,4 @@ for(const [label,text,planKey,caseKey] of [...cases,...languageCases]){
 }
 
 const total=cases.length+languageCases.length
-console.log(`V74 natural-language matrix passed: ${total}/${total} tariffs and case types correct.`)
+console.log(`V80 natural-language matrix passed through version-neutral recommendation modules: ${total}/${total} tariffs and case types correct.`)
