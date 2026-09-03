@@ -3,35 +3,19 @@ import fs from 'node:fs'
 
 const read=path=>fs.readFileSync(path,'utf8')
 const exists=path=>assert.ok(fs.existsSync(path),`missing workflow module: ${path}`)
-
-const paths={
-  controller:'app/modules/workspace/WorkspaceAppV2.js',
-  cases:'app/modules/cases/caseWorkflow.js',
-  approvals:'app/modules/cases/approvalWorkflow.js',
-  documents:'app/modules/documents/documentWorkflow.js',
-  exports:'app/modules/documents/exportWorkflow.js',
-  auth:'app/modules/auth/workspaceAuthWorkflow.js',
-  pricing:'app/modules/pricing/pricingWorkflow.js',
-  account:'app/modules/compliance/accountWorkflow.js'
-}
+const paths={controller:'app/modules/workspace/WorkspaceController.js',cases:'app/modules/cases/caseWorkflow.js',approvals:'app/modules/cases/approvalWorkflow.js',documents:'app/modules/documents/documentWorkflow.js',exports:'app/modules/documents/exportWorkflow.js',auth:'app/modules/auth/workspaceAuthWorkflow.js',pricing:'app/modules/pricing/pricingWorkflow.js',account:'app/modules/compliance/accountWorkflow.js'}
 for(const path of Object.values(paths)) exists(path)
-
 const page=read('app/page.js')
 const current=read('app/modules/workspace/WorkspaceAppCurrent.js')
+const legacy=read('app/modules/workspace/WorkspaceAppV2.js')
 const controller=read(paths.controller)
 const workflows=Object.fromEntries(Object.entries(paths).filter(([key])=>key!=='controller').map(([key,path])=>[key,read(path)]))
-
 assert.match(page,/modules\/workspace\/WorkspaceAppCurrent/,'root page must use the single current workspace entry')
-assert.match(current,/WorkspaceAppV2/,'current entry must delegate to the active controller')
+assert.match(current,/WorkspaceController/,'current entry must delegate directly to the active version-neutral controller')
+assert.match(legacy,/WorkspaceController/,'legacy V2 path must be compatibility-only')
 assert.equal(fs.existsSync('app/modules/workspace/WorkspaceApp.js'),false,'obsolete WorkspaceApp.js must stay removed')
-for(const expected of [
-  "from '../cases/caseWorkflow'","from '../cases/approvalWorkflow'","from '../documents/documentWorkflow'","from '../documents/exportWorkflow'","from '../auth/workspaceAuthWorkflow'","from '../pricing/pricingWorkflow'","from '../compliance/accountWorkflow'"
-]) assert.match(controller,new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')),`controller must import ${expected}`)
-
-for(const forbidden of [
-  'createClientRecord','createCaseRecord','updateCaseRecord','createAssessmentRecord','createApprovalRecord','updateApprovalRecord','approveApprovalRecord','rejectApprovalRecord','authorizeDocumentAnalysis','uploadWorkspaceDocument','updateDocumentRecord','createWorkspaceDocumentSignedUrl','invokeDocumentAnalysis','createWorkspaceExportArtifact','createAccountDataArtifact','recordExportEntry','getWorkspaceAccess','loadWorkspaceBundle','ensureRegistrationPrivacy','registerTestAccount','sendPasswordReset','signInSession','getUpgradeQuotes','requestUpgradeRecord','acknowledgeLegalSettings','requestDeletionRecord','cancelDeletionRecord','listDeletionRequests'
-]) assert.doesNotMatch(controller,new RegExp(`\\b${forbidden}\\b`),`controller must not own ${forbidden}`)
-
+for(const expected of ["from '../cases/caseWorkflow'","from '../cases/approvalWorkflow'","from '../documents/documentWorkflow'","from '../documents/exportWorkflow'","from '../auth/workspaceAuthWorkflow'","from '../pricing/pricingWorkflow'","from '../compliance/accountWorkflow'"]) assert.match(controller,new RegExp(expected.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')),`controller must import ${expected}`)
+for(const forbidden of ['createClientRecord','createCaseRecord','updateCaseRecord','createAssessmentRecord','createApprovalRecord','updateApprovalRecord','approveApprovalRecord','rejectApprovalRecord','authorizeDocumentAnalysis','uploadWorkspaceDocument','updateDocumentRecord','createWorkspaceDocumentSignedUrl','invokeDocumentAnalysis','createWorkspaceExportArtifact','createAccountDataArtifact','recordExportEntry','getWorkspaceAccess','loadWorkspaceBundle','ensureRegistrationPrivacy','registerTestAccount','sendPasswordReset','signInSession','getUpgradeQuotes','requestUpgradeRecord','acknowledgeLegalSettings','requestDeletionRecord','cancelDeletionRecord','listDeletionRequests']) assert.doesNotMatch(controller,new RegExp(`\\b${forbidden}\\b`),`controller must not own ${forbidden}`)
 for(const token of ['createClientRecord','createCaseRecord','updateCaseRecord','createAssessmentRecord']) assert.match(workflows.cases,new RegExp(token))
 for(const token of ['createApprovalRecord','approveApprovalRecord']) assert.match(workflows.approvals,new RegExp(token))
 for(const token of ['authorizeDocumentAnalysis','invokeDocumentAnalysis','uploadWorkspaceDocument']) assert.match(workflows.documents,new RegExp(token))
@@ -39,13 +23,6 @@ for(const token of ['createWorkspaceExportArtifact','createAccountDataArtifact',
 for(const token of ['getWorkspaceAccess','loadWorkspaceBundle','ensureRegistrationPrivacy','registerTestAccount','sendPasswordReset','signInSession']) assert.match(workflows.auth,new RegExp(token))
 for(const token of ['getUpgradeQuotes','requestUpgradeRecord']) assert.match(workflows.pricing,new RegExp(token))
 for(const token of ['acknowledgeLegalSettings','requestDeletionRecord','cancelDeletionRecord','listDeletionRequests']) assert.match(workflows.account,new RegExp(token))
-
 for(const source of [controller,...Object.values(workflows)]) assert.doesNotMatch(source,/MutationObserver|setInterval\(|history\.(back|pushState|replaceState)|window\.fetch\s*=/,'workflow/controller must not reintroduce post-render or global interception hacks')
-
-const testerPage=read('app/testen/page.js')
-const testerGuide=read('app/modules/tester/TesterGuide.js')
-assert.match(testerPage,/TesterGuide/)
-assert.doesNotMatch(testerPage,/TesterPaused/)
-assert.match(testerGuide,/APP_VERSION/)
-
-console.log('V80 controller workflow guard passed: one current controller entry delegates case, approval, document, export, auth, pricing and account sequencing to domain-owned workflow modules.')
+const testerPage=read('app/testen/page.js');const testerGuide=read('app/modules/tester/TesterGuide.js');assert.match(testerPage,/TesterGuide/);assert.doesNotMatch(testerPage,/TesterPaused/);assert.match(testerGuide,/APP_VERSION/)
+console.log('V80 controller workflow guard passed: WorkspaceController delegates case, approval, document, export, auth, pricing and account sequencing to domain-owned workflow modules.')
