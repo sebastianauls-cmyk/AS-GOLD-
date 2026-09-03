@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 
-// V37 final production verification trigger: 2026-09-01
+// Final production verification follows the active modular workspace.
 const page=fs.readFileSync('app/modules/workspace/WorkspaceApp.js','utf8')
 const pageEntry=fs.readFileSync('app/page.js','utf8')
 const layout=fs.readFileSync('app/layout.js','utf8')
@@ -22,21 +22,21 @@ const caseSurfaces=fs.readFileSync('app/modules/cases/WorkspaceCaseSurfaces.js',
 const dashboardSurface=fs.readFileSync('app/modules/workspace/DashboardSurface.js','utf8')
 
 const mustContain=(source,needle,label)=>{
-  if(!source.includes(needle)) throw new Error(`V37 E2E guard: missing ${label}: ${needle}`)
+  if(!source.includes(needle)) throw new Error(`E2E guard: missing ${label}: ${needle}`)
 }
 
 mustContain(pageEntry,"./modules/workspace/WorkspaceApp",'workspace page module boundary')
-if(publicLanding.includes('V37FirstAction')) throw new Error('V37 E2E guard: duplicate first-action card must not be mounted by PublicLanding')
+if(publicLanding.includes('V37FirstAction')) throw new Error('E2E guard: duplicate first-action card must not be mounted by PublicLanding')
 mustContain(publicLanding,'ProblemNavigator','problem navigator direct public mount')
 mustContain(publicLanding,"./ProblemNavigator",'problem navigator public ownership')
 mustContain(publicLanding,"./PublicHeader",'public header module boundary')
-if(layout.includes('V37FirstAction')||layout.includes('ProblemNavigator')) throw new Error('V37 E2E guard: public interaction modules must not be global layout mounts')
-mustContain(firstActionCompatibility,"../modules/public/V37FirstAction",'V37 first-action compatibility re-export')
+if(layout.includes('V37FirstAction')||layout.includes('ProblemNavigator')) throw new Error('E2E guard: public interaction modules must not be global layout mounts')
+mustContain(firstActionCompatibility,"../modules/public/V37FirstAction",'first-action compatibility re-export')
 mustContain(problemCompatibility,"../modules/public/ProblemNavigator",'problem navigator compatibility re-export')
 mustContain(firstAction,'Dokument hochladen','upload CTA')
 mustContain(firstAction,'Beispiel ansehen','sample CTA')
 mustContain(problem,'<V37FirstAction language={interfaceLanguage}','supplemental upload/example actions inside the single problem card')
-if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')) throw new Error('V37 E2E guard: duplicate describe/speak controls returned')
+if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')) throw new Error('E2E guard: duplicate describe/speak controls returned')
 mustContain(problem,'analyse()','problem analysis trigger')
 mustContain(problem,'recommendation','first recommendation result')
 
@@ -52,8 +52,8 @@ mustContain(documentsSurface,'DocumentSection','document workspace module')
 mustContain(page,'DocumentsSurface','document workspace composition')
 
 mustContain(page,'async function analyzeDocument','document analysis')
-mustContain(page,'invokeDocumentAnalysis','OCR/analysis service boundary')
-mustContain(analysisService,"supabase.functions.invoke('gold-ocr-v28'",'OCR/analysis backend')
+mustContain(page,'invokeDocumentAnalysis','document analysis service boundary')
+mustContain(analysisService,"supabase.functions.invoke('gold-document-analysis'",'current document analysis backend')
 mustContain(page,'analysis_summary','analysis summary persistence')
 mustContain(page,'analysis_next_step','next-step persistence')
 mustContain(page,'async function createAssessment','traffic-light assessment orchestration')
@@ -78,4 +78,4 @@ mustContain(caseSurfaces,'backClients','client-detail navigation')
 mustContain(dashboardSurface,'setSection','dashboard navigation ownership')
 mustContain(authSurface,'backExplanation','navigation backExplanation in auth module')
 
-console.log('V37 code-path end-to-end regression checks passed through modular workspace surfaces and repository services')
+console.log('Current code-path end-to-end regression checks passed through modular workspace surfaces and repository services')
