@@ -1,8 +1,8 @@
 'use client'
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { getProblemLanguageProfile, getSpeechLocale, multilingualKeywords, normalizeProblemLanguage } from './problemNavigatorLanguagesV36.mjs'
-import { caseFrequencyWeight } from './casePriorityV56.mjs'
+import { getProblemLanguageProfile, getSpeechLocale, normalizeProblemLanguage } from './problemNavigatorLanguagesV36.mjs'
+import { recommendProblem } from './problemRecommendationV73.mjs'
 import { jumpToPublicCaseResult } from './caseNavigation'
 import { V37FirstAction } from './V37FirstAction'
 
@@ -37,24 +37,7 @@ const voiceMessages={
   vi:{starting:'Đang bật micrô …',done:'Đã thêm lời nói.',noSpeech:'Không nhận diện được lời nói. Hãy nhấn lại micrô và nói sau khi micrô khởi động.',audio:'Micrô không khả dụng hoặc đang được ứng dụng khác sử dụng.',denied:'Quyền truy cập micrô bị chặn. Hãy cho phép AS Gold dùng micrô trong cài đặt ứng dụng hoặc trình duyệt.',network:'Nhận diện giọng nói tạm thời không khả dụng. Hãy thử lại hoặc dùng micrô trên bàn phím.',insecure:'Nhập liệu bằng giọng nói cần kết nối HTTPS an toàn.'}
 }
 
-function normalize(value){return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')}
-function hits(text,words){return words.reduce((total,word)=>total+(text.includes(normalize(word))?1:0),0)}
-function recommend(value,profile){
-  const text=normalize(value)
-  const matches=Object.fromEntries(Object.entries(multilingualKeywords).map(([key,words])=>[key,hits(text,words)]))
-  const weightedScores=Object.fromEntries(Object.entries(matches).map(([key,count])=>[key,(count*1000)+(caseFrequencyWeight[key]||0)]))
-  let caseKey=Object.entries(weightedScores).sort((left,right)=>right[1]-left[1])[0]?.[0]||'private'
-  if(Math.max(...Object.values(matches))===0)caseKey=text.length>180?'dispute':'private'
-  let planKey='start'
-  const has=terms=>terms.some(term=>text.includes(normalize(term)))
-  if(has(['mehrere kunden','team','wiederkehr','mandanten','portfolio','multiple clients','recurring','plusieurs clients','équipe','müşteri','ekip','klienci','zespół','клиент','команда','عملاء','فريق','مشتری','تیم','mai mulți clienți','echipă','recurent','няколко клиента','екип','повтарящ','nhiều khách hàng','đội nhóm','lặp lại','danh mục']))planKey='business'
-  else if(text.length>1800||has(['komplex','umfangreich','viele unterlagen','komplett','complex','extensive','many documents','complet','nombreux documents','karmaşık','kapsamlı','złożon','obszern','сложн','много документов','معقد','مستندات كثيرة','پیچیده','مدارک زیاد','complex','multe documente','сложен','много документи','phức tạp','toàn diện','nhiều tài liệu','đầy đủ']))planKey='komplett'
-  else if(text.length>360||has(['risiko','bewerten','analyse','anwalt','gericht','klage','risk','assess','lawyer','court','analysis','risque','avocat','tribunal','avukat','mahkeme','ryzyko','sąd','риск','суд','مخاطر','محكمة','ریسک','دادگاه','risc','evaluare','avocat','instanță','риск','оценка','адвокат','съд','rủi ro','đánh giá','phân tích','luật sư','tòa án','khởi kiện']))planKey='analyse'
-  else if(text.length>120||has(['frist','widerspruch','fehlt','unklar','prüfen','deadline','contradiction','missing','review','délai','eksik','süre','termin','brak','срок','противореч','موعد','تناقض','مهلت','termen','contradicție','lipsește','срок','противоречие','липсва','thời hạn','mâu thuẫn','thiếu','không rõ','kiểm tra']))planKey='klar'
-  return {caseKey,planKey,reason:profile.reasons[planKey]||profile.reasons.start}
-}
-
-export const ProblemNavigator=forwardRef(function ProblemNavigator({outputLanguage='de',onRegister,onSelectCase,voiceSignal=0,focusSignal=0},ref){
+export const ProblemNavigator=forwardRef(function ProblemNavigator({language='de',outputLanguage='de',onRegister,onSelectCase,voiceSignal=0,focusSignal=0},ref){
   const [value,setValue]=useState('')
   const [status,setStatus]=useState('')
   const [result,setResult]=useState(null)
@@ -65,10 +48,14 @@ export const ProblemNavigator=forwardRef(function ProblemNavigator({outputLangua
   const statusRef=useRef(null)
   const resultRef=useRef(null)
   const rootRef=useRef(null)
+  const interfaceLanguage=normalizeProblemLanguage(language)
   const customerLanguage=normalizeProblemLanguage(outputLanguage)
-  const profile=getProblemLanguageProfile(customerLanguage)
+  const interfaceRtl=interfaceLanguage==='ar'||interfaceLanguage==='fa'
+  const outputRtl=customerLanguage==='ar'||customerLanguage==='fa'
+  const profile=getProblemLanguageProfile(interfaceLanguage)
+  const outputProfile=getProblemLanguageProfile(customerLanguage)
   const c=profile.ui
-  const recommendation=useMemo(()=>result?recommend(result.value,profile):null,[result,profile])
+  const recommendation=useMemo(()=>result?recommendProblem(result.value,outputProfile):null,[result,outputProfile])
 
   function analyse(){
     const currentValue=String(textRef.current?.value??value).trim()
@@ -92,7 +79,7 @@ export const ProblemNavigator=forwardRef(function ProblemNavigator({outputLangua
   }
 
   async function voice(){
-    const messages=voiceMessages[customerLanguage]||voiceMessages.de
+    const messages=voiceMessages[interfaceLanguage]||voiceMessages.de
     if(!window.isSecureContext){setStatus(messages.insecure);return}
     const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition
     if(!SpeechRecognition){setStatus(c.unsupported);textRef.current?.focus();return}
@@ -104,7 +91,7 @@ export const ProblemNavigator=forwardRef(function ProblemNavigator({outputLangua
       setStatus(messages.starting)
       const recognition=new SpeechRecognition()
       recognitionRef.current=recognition
-      recognition.lang=getSpeechLocale(customerLanguage)
+      recognition.lang=getSpeechLocale(interfaceLanguage)
       recognition.interimResults=true
       recognition.continuous=false
       const base=value.trim()
@@ -170,28 +157,28 @@ export const ProblemNavigator=forwardRef(function ProblemNavigator({outputLangua
   function startFree(){onRegister?.()}
 
   const secondary={padding:'10px 13px',border:'1px solid #d5c38f',borderRadius:11,background:'#fffaf0',color:'#5b4618',fontWeight:800,textDecoration:'none',display:'inline-flex',alignItems:'center'}
-  const freeText=freeLabels[customerLanguage]||freeLabels.en
-  const helpText=inputHelp[customerLanguage]||inputHelp.en
-  const inputTitle=inputTitles[customerLanguage]||inputTitles.en
-  const concernTitle=concernTitles[customerLanguage]||concernTitles.de
+  const freeText=freeLabels[interfaceLanguage]||freeLabels.en
+  const helpText=inputHelp[interfaceLanguage]||inputHelp.en
+  const inputTitle=inputTitles[interfaceLanguage]||inputTitles.en
+  const concernTitle=concernTitles[interfaceLanguage]||concernTitles.de
 
-  return <section ref={rootRef} id="asgold-problem-navigator-react" data-customer-language={customerLanguage} lang={customerLanguage} dir={profile.rtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
+  return <section ref={rootRef} id="asgold-problem-navigator-react" data-interface-language={interfaceLanguage} data-customer-language={customerLanguage} lang={interfaceLanguage} dir={interfaceRtl?'rtl':'ltr'} style={{margin:'26px 0 18px',padding:18,border:'1px solid #dccb9f',borderRadius:18,background:'#fff',boxShadow:'0 12px 34px rgba(72,55,18,.08)'}}>
     <b style={{display:'block',fontSize:'1.35rem',color:'#4d3b14'}}>{concernTitle}</b>
     <p style={{margin:'8px 0 10px',color:'#626c78',lineHeight:1.45}}>{c.lead}</p>
     <div id="asgold-problem-input-help" style={{margin:'0 0 14px',padding:'10px 12px',borderRadius:12,background:'#fff8df',border:'1px solid #ead69e',color:'#554a32',lineHeight:1.45,fontSize:'.94rem'}}><b style={{display:'block',marginBottom:3}}>{inputTitle}</b>{helpText}</div>
     <form onSubmit={event=>{event.preventDefault();analyse()}} noValidate>
-      <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={concernTitle} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={profile.rtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
+      <textarea ref={textRef} value={value} onChange={event=>updateValue(event.target.value)} onInput={event=>updateValue(event.currentTarget.value)} onCompositionEnd={event=>updateValue(event.currentTarget.value)} name="problem-description" rows={4} placeholder={c.placeholder} aria-label={concernTitle} aria-describedby="asgold-problem-input-help asgold-problem-status" dir={interfaceRtl?'rtl':'ltr'} style={{width:'100%',boxSizing:'border-box',resize:'vertical',minHeight:110,padding:14,border:'2px solid #252525',borderRadius:14,background:'#fff',color:'#27303b',fontSize:'1rem',lineHeight:1.35}}/>
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:12}}>
-        <button type="button" data-problem-voice onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting?.7:1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[customerLanguage]||voiceMessages.de).starting:c.voice}</button>
+        <button type="button" data-problem-voice onClick={voice} aria-pressed={listening} disabled={voiceStarting} style={{...secondary,opacity:voiceStarting?.7:1}}>{listening?'⏹':'🎙'} {listening?c.stop:voiceStarting?(voiceMessages[interfaceLanguage]||voiceMessages.de).starting:c.voice}</button>
         <button type="submit" aria-controls="asgold-problem-result" style={{padding:'10px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.analyse}</button>
       </div>
       {status&&<div id="asgold-problem-status" ref={statusRef} role="status" aria-live="polite" style={{display:'block',marginTop:10,padding:'10px 12px',border:'1px solid #d9c792',borderRadius:11,background:'#fff8df',color:'#554515',fontWeight:700,lineHeight:1.4}}>{status}</div>}
     </form>
-    <V37FirstAction language={customerLanguage} onRegister={onRegister}/>
-    {recommendation&&<article id="asgold-problem-result" ref={resultRef} tabIndex={-1} lang={customerLanguage} dir={profile.rtl?'rtl':'ltr'} style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
+    <V37FirstAction language={interfaceLanguage} onRegister={onRegister}/>
+    {recommendation&&<article id="asgold-problem-result" ref={resultRef} tabIndex={-1} style={{marginTop:14,padding:16,border:'2px solid #c5a556',borderRadius:14,background:'linear-gradient(135deg,#fff8df,#fff)'}}>
       <small style={{display:'block',fontWeight:850,color:'#79601f',marginBottom:6}}>{c.recommendation}</small>
-      <div style={{padding:'12px 13px',borderRadius:12,background:'#fff',border:'1px solid #ead69e',marginBottom:10}}><span style={{display:'block',fontSize:'.78rem',fontWeight:800,color:'#707986',marginBottom:3}}>{c.caseLabel}</span><strong style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{profile.cases[recommendation.caseKey]}</strong></div>
-      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10}}><div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.planLabel}</span><b>{plans[recommendation.planKey]}</b></div><div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.why}</span><span style={{color:'#596472'}}>{recommendation.reason}</span></div></div>
+      <div style={{padding:'12px 13px',borderRadius:12,background:'#fff',border:'1px solid #ead69e',marginBottom:10}}><span style={{display:'block',fontSize:'.78rem',fontWeight:800,color:'#707986',marginBottom:3}}>{c.caseLabel}</span><strong lang={customerLanguage} dir={outputRtl?'rtl':'ltr'} style={{display:'block',fontSize:'1.2rem',color:'#4d3b14'}}>{outputProfile.cases[recommendation.caseKey]}</strong></div>
+      <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))',gap:10}}><div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.planLabel}</span><b>{plans[recommendation.planKey]}</b></div><div><span style={{display:'block',fontSize:'.78rem',color:'#707986'}}>{c.why}</span><span lang={customerLanguage} dir={outputRtl?'rtl':'ltr'} style={{color:'#596472'}}>{recommendation.reason}</span></div></div>
       <button type="button" onClick={startFree} style={{width:'100%',marginTop:14,padding:'12px 14px',border:0,borderRadius:11,background:'#8f6e25',color:'#fff',fontWeight:900,fontSize:'1rem'}}>✓ {freeText}</button>
       <div style={{display:'flex',gap:8,flexWrap:'wrap',marginTop:10}}><button type="button" onClick={showCase} style={{padding:'9px 12px',border:0,borderRadius:10,background:'#8f6e25',color:'#fff',fontWeight:800}}>{c.showCase}</button><button type="button" onClick={showPlans} style={secondary}>{c.showPlans}</button></div>
     </article>}

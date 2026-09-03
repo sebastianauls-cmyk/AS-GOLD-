@@ -35,7 +35,7 @@ mustContain(firstActionCompatibility,"../modules/public/V37FirstAction",'V37 fir
 mustContain(problemCompatibility,"../modules/public/ProblemNavigator",'problem navigator compatibility re-export')
 mustContain(firstAction,'Dokument hochladen','upload CTA')
 mustContain(firstAction,'Beispiel ansehen','sample CTA')
-mustContain(problem,'<V37FirstAction language={customerLanguage}','supplemental upload/example actions inside the single problem card')
+mustContain(problem,'<V37FirstAction language={interfaceLanguage}','supplemental upload/example actions inside the single problem card')
 if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')) throw new Error('V37 E2E guard: duplicate describe/speak controls returned')
 mustContain(problem,'analyse()','problem analysis trigger')
 mustContain(problem,'recommendation','first recommendation result')

@@ -138,7 +138,9 @@ export default function WorkspaceAppV2(){
   const promoAllInvalid=!!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
   const promoSomeInvalid=!!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='invalid')
 
-  const publicLanguage=outputLanguage
+  // The public interface follows the interface language. Output language is
+  // reserved for customer-facing results and generated documents.
+  const publicLanguage=language
   const publicT=ui[publicLanguage]||ui.de
   const publicA=appText[publicLanguage]||appText.de
   const publicLocalizedPlans=plans.map((plan,index)=>{

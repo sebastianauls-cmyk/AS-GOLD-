@@ -18,8 +18,8 @@ import { PublicPricingSection } from './PublicPricingSection'
 // PublicCaseDiscoverySection owns id="asgold-user-audience" and invokes jumpToPublicCaseResult().
 // PublicPricingSection owns id="preise"; PublicLanding only composes the domain-owned public sections.
 export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
-  const hero=heroTitleCopy[outputLanguage]||heroTitleCopy.de
-  const audience=audienceCopy[outputLanguage]||audienceCopy.de
+  const hero=heroTitleCopy[language]||heroTitleCopy.de
+  const audience=audienceCopy[language]||audienceCopy.de
   const outputLanguageLabel=supportedLanguages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
@@ -49,9 +49,9 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
             <div className="eyebrow">{a.eyebrow}</div>
             <h1>{hero.title}</h1>
             <p className="lead">{hero.lead}</p>
-            <ProductIntroCompact language={outputLanguage}/>
-            <ProblemNavigator outputLanguage={outputLanguage} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
-            <ExplainerVideo key={outputLanguage} language={outputLanguage} openSignal={explainerSignal}/>
+            <ProductIntroCompact language={language}/>
+            <ProblemNavigator outputLanguage={outputLanguage} language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/>
+            <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
             <div className="actions">
               <a className="primary btn" href="#fallarten">{cd.chooseCase}</a>
               <button className="secondary btn" onClick={()=>setScreen('register')}>{t.freeCta}</button>

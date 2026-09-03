@@ -12,7 +12,7 @@ const problem=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8')
 const requiredActions=['Dokument hochladen','Beispiel ansehen']
 for(const text of requiredActions){if(!firstAction.includes(text)) throw new Error(`V37 guard: missing primary action: ${text}`)}
 if(publicLanding.includes('V37FirstAction')) throw new Error('V37 guard: duplicate first-action card must not be mounted by PublicLanding')
-if(!problem.includes("./V37FirstAction")||!problem.includes('<V37FirstAction language={customerLanguage}')) throw new Error('V37 guard: upload and example actions must be embedded in the problem navigator')
+if(!problem.includes("./V37FirstAction")||!problem.includes('<V37FirstAction language={interfaceLanguage}')) throw new Error('V37 guard: upload and example actions must be embedded in the problem navigator')
 if(!publicLanding.includes("./ExplainerVideo")) throw new Error('V37 guard: explainer module is not owned by PublicLanding')
 if(publicLanding.includes('customerModule={customerModule}')||languageModules.includes('{customerModule}')||languageModules.includes('asgold-customer-module-slot')) throw new Error('V37 guard: customer navigator must be owned directly by PublicLanding')
 if(layout.includes('V37FirstAction')||layout.includes('ExplainerVideo')||layout.includes('ProblemNavigator')||layout.includes('ProductIntroCompact')) throw new Error('V37 guard: public hero modules must not be global layout enhancers')
@@ -27,7 +27,7 @@ if(!video.includes('AS Gold in 90 Sekunden ansehen')) throw new Error('V37 guard
 if(!video.includes('Weiblich') || !video.includes('Männlich')) throw new Error('V37 guard: presenter choice missing')
 if(!video.includes("setPresenter('female')") || !video.includes("setPresenter('male')")) throw new Error('V37 guard: presenter buttons are not interactive')
 
-const productIndex=publicLanding.indexOf('<ProductIntroCompact language={outputLanguage}/>')
+const productIndex=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
 const problemIndex=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
 const videoIndex=publicLanding.indexOf('<ExplainerVideo key=')
 if(!(productIndex>=0 && problemIndex>productIndex && videoIndex>problemIndex)) throw new Error('V37 guard: hero priority order must be explanation -> single problem input -> optional video')

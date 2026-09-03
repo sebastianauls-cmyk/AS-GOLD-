@@ -172,8 +172,9 @@ export default function Home(){
   const promoAllInvalid = !!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
   const promoSomeInvalid = !!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='invalid')
 
-  // Public/customer content follows the selected output language; the app interface stays independent.
-  const publicLanguage = outputLanguage
+  // Public controls and page copy follow the interface language. Output language
+  // is reserved for customer-facing results and generated documents.
+  const publicLanguage = language
   const publicT = ui[publicLanguage] || ui.de
   const publicA = appText[publicLanguage] || appText.de
   const publicLocalizedPlans = plans.map((p,index)=>{ const v=(planText[publicLanguage]||{})[p.key]; const j=(planJourney[publicLanguage]||planJourney.de)[p.key] || {}; const base=v?{...p,audience:v[0],checks:v[1],result:v[2],excluded:v[3]}:p; return {...base,...j,level:index+1} })

@@ -11,6 +11,7 @@ const publicLanding=read('app/modules/public/PublicLanding.js')
 const caseDiscovery=read('app/modules/public/PublicCaseDiscoverySection.js')
 const languageModules=read('app/modules/public/PublicLanguageModules.js')
 const navigator=read('app/modules/public/ProblemNavigator.js')
+const recommender=read('app/modules/public/problemRecommendationV73.mjs')
 const navigatorCompatibility=read('app/components/ProblemNavigator.js')
 const intro=read('app/modules/public/ProductIntroCompact.js')
 const introCopy=read('app/modules/public/asGoldIntroCopy.mjs')
@@ -29,7 +30,7 @@ expect(!languageModules.includes('createPortal')&&!languageModules.includes('Mut
 expect(!layout.includes('FreeEntryAfterRecommendation'),'legacy free-entry helper must not be mounted')
 expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not be mounted')
 
-const introPos=publicLanding.indexOf('<ProductIntroCompact language={outputLanguage}/>')
+const introPos=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
 const problemPos=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
 const videoPos=publicLanding.indexOf('<ExplainerVideo key=')
 expect(introPos>=0&&problemPos>introPos&&videoPos>problemPos,'hero order must remain explanation -> single problem input -> optional video')
@@ -54,12 +55,12 @@ expect(navigator.includes('So funktioniert die Eingabe:'),'German input explanat
 expect(navigator.includes('inputHelp'),'multilingual input help is missing')
 expect((navigator.match(/id="asgold-problem-navigator-react"/g)||[]).length===1,'problem navigator section must exist exactly once in component')
 expect(navigator.includes('data-customer-language={customerLanguage}'),'problem navigator must expose the selected customer language')
-expect(navigator.includes('getSpeechLocale(customerLanguage)'),'speech recognition must follow the customer language')
+expect(navigator.includes('getSpeechLocale(interfaceLanguage)'),'speech recognition must follow the interface/input language')
 expect(navigator.includes('3 Dokumente kostenlos kennenlernen'),'free 3-document entry is missing from recommendation flow')
-expect(navigator.includes("<V37FirstAction language={customerLanguage} onRegister={onRegister}/>") ,'upload and example actions must stay inside the single problem card')
+expect(navigator.includes("<V37FirstAction language={interfaceLanguage} onRegister={onRegister}/>") ,'upload and example actions must stay inside the single problem card')
 expect(navigator.includes('data-problem-voice onClick={voice}'),'the single problem card must activate speech directly')
-expect(navigator.includes('text.length>1800'),'complete-plan recommendation must be reserved for genuinely extensive narratives')
-expect(navigator.includes('text.length>360'),'medium narratives must enter analysis before the complete-plan threshold')
+expect(recommender.includes('completeSignals'),'complete-plan recommendation must use active-crisis and damage signals')
+expect(recommender.includes('analysisSignals'),'analysis recommendation must use explicit risk and evidence signals')
 
 const supported=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
 for(const code of supported){

@@ -167,7 +167,7 @@ for(const path of ['app/modules/public/V37FirstAction.js','app/modules/public/Pr
   const source=read(path)
   assert.doesNotMatch(source,/createPortal|MutationObserver|document\.createElement/,'public module must render directly: '+path)
 }
-assert.match(read('app/modules/public/ProblemNavigator.js'),/<V37FirstAction language=\{customerLanguage\}/)
+assert.match(read('app/modules/public/ProblemNavigator.js'),/<V37FirstAction language=\{interfaceLanguage\}/)
 assert.match(publicPricing,/id="preise"/)
 assert.match(publicHeader,/PublicLanguageModules/)
 assert.match(publicLanding,/\.\.\/compliance\/LegalFooter/)
@@ -231,7 +231,7 @@ assert.doesNotMatch(switcher,/history\.(back|pushState|replaceState)/)
 
 const tester=read('app/testen/page.js')+read('app/modules/tester/TesterGuide.js')
 assert.match(tester,/TesterGuide/)
-assert.match(tester,/Testerbetrieb V72/)
+assert.match(tester,/Testerbetrieb V73/)
 assert.match(tester,/TesterShareButton/)
 assert.match(tester,/11 App-Sprachen/)
 assert.doesNotMatch(read('app/testen/page.js'),/TesterPaused/)
