@@ -48,7 +48,8 @@ mustContain(authRepository,'auth.signUp','registration service action')
 
 for(const ext of ['pdf','jpg','png','docx','xlsx','pptx','eml','msg']) mustContain(uploadConfig,`'${ext}'`,`upload extension ${ext}`)
 mustContain(page,"action==='scan'||action==='upload'",'quick upload route')
-mustContain(documentsSurface,'DocumentSection','document workspace module')
+mustContain(documentsSurface,'name="file"','current document upload form')
+mustContain(documentsSurface,'APP_VERSION','current release badge in document workspace')
 mustContain(page,'DocumentsSurface','document workspace composition')
 
 mustContain(page,'async function analyzeDocument','document analysis')
