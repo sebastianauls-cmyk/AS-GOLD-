@@ -1,9 +1,9 @@
 import {
   pageTranslations as legacyPageTranslations,
   outputLanguageNames as legacyOutputLanguageNames
-} from './v35Languages.mjs'
-import { extraPageTranslations } from './v35RoBgExtras.mjs'
-import { vietnamesePageTranslations } from './v71VietnamesePageTranslations.mjs'
+} from './basePageTranslations.mjs'
+import { extraPageTranslations } from './roBgPageTranslations.mjs'
+import { vietnamesePageTranslations } from './vietnamesePageTranslations.mjs'
 
 // Single public language registry for the active application.
 // Adding a language should be isolated here plus its translation pack; business logic must stay untouched.
