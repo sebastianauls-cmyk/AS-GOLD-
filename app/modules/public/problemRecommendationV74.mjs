@@ -2,7 +2,7 @@ import { multilingualKeywords } from './problemNavigatorLanguagesV36.mjs'
 import { caseFrequencyWeight } from './casePriorityV56.mjs'
 
 function normalize(value){
-  return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/ł/g,'l').replace(/đ/g,'d').replace(/ı/g,'i').replace(/ß/g,'ss')
+  return String(value||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')
 }
 
 function hits(text,words){
@@ -38,7 +38,15 @@ const businessScopeSignals=[
 const businessOperationSignals=[
   'team','teams','mitarbeitende','beschaftigte','sachbearbeiter','nutzer','rollen','rechte','admin','administration','freigabe','audit','prufprotokoll','statuskontrolle','gesamtexport','zentrale auswertungen','berichte','wiederkehrend','standards','gemeinsame bearbeitung',
   'employees','users','roles','rights','administration','admin','approval','audit','status control','export','reports','recurring','standards',
-  'equipe','administration','audit','ekip','yonetim','denetim','zespol','administracja','команда','администрирование','فريق','إدارة','تیم','مدیریت','echipa','administrare','екип','администриране','doi nhom','quan tri'
+  'equipe','administration','audit','roles','validations','journal d’audit',
+  'ekip','yonetim','denetim','roller','haklar','onaylar',
+  'zespol','zespół','administracja','role','uprawnienia','akceptacje','dziennik audytu',
+  'команда','администрирование','роли','права','согласования','журнал аудита',
+  'فريق','إدارة','الأدوار','الحقوق','الموافقات','سجل تدقيق',
+  'تیم','مدیریت','نقش‌ها','حقوق دسترسی','تأییدها','گزارش ممیزی',
+  'echipa','administrare','roluri','drepturi','aprobari','jurnal de audit',
+  'екип','администриране','роли','права','одобрения','одитен дневник',
+  'doi nhom','đội nhóm','quan tri','vai tro','quyen','phe duyet','nhat ky kiem toan'
 ]
 
 const completeSignals=[
@@ -52,7 +60,11 @@ const completeSignals=[
 const fullHandlingSignals=[
   'vollstandige fallakte','vollstandiger fall','vollstandige bearbeitung','komplette bearbeitung','vollstandig geordnet','vollstandig bewertet','vollstandige chronologie','mehrere schreiben','mehreren schreiben','vorbereitete schreiben','antwortentwurfe','alle antwortentwurfe','ubergabeakte','chronologie, analyse, maßnahmen','chronologie, prufung','an alle beteiligten','an alle stellen','gesamte akte','rundumbearbeitung',
   'complete case file','complete handling','fully organized','full chronology','multiple letters','prepared letters','all reply drafts','handover file','to all parties','end-to-end handling',
-  'dossier complet','traitement complet','plusieurs courriers','lettres preparees','dosya tamami','tam isleme','birden fazla yazi','pelna dokumentacja','pelna obsluga','wiele pism','полное дело','полная обработка','несколько писем','ملف كامل','معالجة كاملة','رسائل متعددة','پرونده کامل','رسیدگی کامل','نامه‌های متعدد','dosar complet','procesare completa','mai multe scrisori','пълно досие','цялостна обработка','няколко писма','ho so day du','xu ly toan dien','nhieu thu'
+  'dossier complet','traitement complet','plusieurs courriers','lettres preparees','dosya tamami','tam isleme','birden fazla yazi',
+  'pelna dokumentacja','pelnej dokumentacji','pełna dokumentacja','pełnej dokumentacji','pelna obsluga','wiele pism','przygotowanych pism',
+  'полное дело','полная обработка','несколько писем','ملف كامل','معالجة كاملة','رسائل متعددة','پرونده کامل','رسیدگی کامل','نامه‌های متعدد',
+  'dosar complet','procesare completa','mai multe scrisori','пълно досие','цялостна обработка','няколко писма',
+  'ho so day du','hồ sơ đầy đủ','xu ly toan dien','nhieu thu','nhiều thư'
 ]
 
 const analysisSignals=[
@@ -74,9 +86,20 @@ const claritySignals=[
 const domainSignals={
   work:[['lohnabrechnung',12],['lohn',6],['arbeitgeberbescheinigung',9],['arbeitgeber',5],['arbeitszeit',6],['stundenzettel',7],['krankengeld',7],['krankmeldung',5],['kundigung',5],['zuschlage',4],['payroll',8],['employer',5],['working hours',6],['sick pay',7]],
   authority:[['behorde',9],['bescheid',9],['sozialversicherung',8],['krankenkasse',5],['kasse',2],['anmeldung',5],['formular',5],['agency',7],['authority',8],['social insurance',8],['official notice',8]],
-  property:[['betriebskostenabrechnung',12],['mietvertrag',11],['mietverhaltnis',9],['vermieter',7],['miete',6],['beendete pacht',15],['pacht',20],['ubergabeprotokoll',9],['gebaude',4],['immobiliengesellschaft',5],['tenancy',8],['landlord',7],['lease',8]],
-  insurance:[['versicherung',9],['versicherer',10],['versicherungsschutz',10],['deckungsrisiko',10],['deckung',7],['wasserschaden',7],['schaden',5],['gutachter',5],['insurer',10],['insurance',12],['coverage',8],['damage',5],['assurance',12],['sigorta',12],['ubezpieczenie',12],['страхов',12],['تأمين',12],['بیمه',12],['asigurare',12],['застрахов',12],['bao hiem',12]],
-  contract:[['stromrechnung',10],['rechnung',6],['mahnung',6],['inkasso',8],['forderung',7],['liefernachweis',7],['dienstleister',7],['versorger',7],['bank',3],['vertrag',5],['invoice',6],['debt collection',8],['supplier',6],['contract',5],['utility bill',10],['recouvrement',10],['fournisseur d’energie',10],['tahsilat',10],['enerji tedarikcisi',10],['rachunek za energie',10],['windykacja',10],['dostawca energii',10],['взыскание долга',10],['поставщик энергии',10],['تحصيل الديون',10],['مزود الطاقة',10],['قبض برق',10],['وصول مطالبات',10],['تامین کننده انرژی',10],['factura de energie',10],['colectare datorii',10],['furnizor de energie',10],['сметка за ток',10],['събиране на дълг',10],['доставчик на енергия',10],['hoa don tien dien',10],['thu hoi no',10],['nha cung cap nang luong',10]],
+  property:[['betriebskostenabrechnung',12],['mietvertrag',11],['mietverhaltnis',9],['vermieter',7],['miete',6],['pacht',14],['ubergabeprotokoll',9],['ubergabe',7],['ruckstande',4],['gebaude',4],['immobiliengesellschaft',5],['tenancy',8],['landlord',7],['lease',8]],
+  insurance:[
+    ['versicherung',9],['versicherer',10],['versicherungsschutz',10],['deckungsrisiko',10],['deckung',7],['wasserschaden',7],['schaden',5],['gutachter',5],
+    ['insurer',10],['insurance',9],['coverage',8],['damage',5],['assurance',9],['sigorta',9],
+    ['ubezpieczyciel',10],['ubezpieczenie',9],['страховая',10],['страхование',9],['التأمين',10],['تأمين',9],['بیمه',10],
+    ['asigurarea',10],['asigurare',9],['застрахователят',10],['застраховка',9],['bảo hiểm',10]
+  ],
+  contract:[
+    ['stromrechnung',10],['rechnung',6],['mahnung',6],['inkasso',8],['forderung',7],['liefernachweis',7],['dienstleister',7],['versorger',7],['bank',3],['vertrag',5],
+    ['invoice',6],['dunning notice',8],['debt collection',8],['supplier',6],['contract',5],
+    ['facture',6],['mise en demeure',8],['fatura',6],['ihtar',8],['faktura',6],['wezwanie do zapłaty',8],
+    ['счет',6],['требование об оплате',8],['فاتورة',6],['إنذار بالدفع',8],['فاکتور',6],['اخطار پرداخت',8],
+    ['factură',6],['somație de plată',8],['фактура',6],['покана за плащане',8],['hóa đơn',6],['thư nhắc nợ',8]
+  ],
   private:[['reise',12],['veranstalter',8],['airline',9],['gepack',9],['hotel',4],['kreditkartenanbieter',7],['fahrzeug',8],['travel',12],['tour operator',8],['luggage',9],['vehicle',8]],
   dispute:[['streit',4],['beweiskette',5],['beweislage',5],['zeuge',4],['konflikt',4],['dispute',4],['evidence chain',5]],
   business:[['unternehmen',4],['betrieb',3],['firma',3],['company',4],['business',4]]
