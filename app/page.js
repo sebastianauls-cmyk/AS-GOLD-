@@ -1,3 +1,3 @@
-import WorkspaceApp from './modules/workspace/WorkspaceAppV2'
+import WorkspaceApp from './modules/workspace/WorkspaceAppCurrent'
 
 export default function Page(){return <WorkspaceApp/>}
