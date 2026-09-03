@@ -48,7 +48,7 @@ assert.match(landing,/heroTitleCopy\[language\]/)
 assert.match(landing,/<ProblemNavigator outputLanguage=\{outputLanguage\} language=\{language\}/)
 assert.match(navigator,/data-interface-language=\{interfaceLanguage\}/)
 assert.match(navigator,/getProblemLanguageProfile\(customerLanguage\)/)
-assert.match(tester,/Testerbetrieb V7[34]/)
+assert.match(tester,/Testerbetrieb V7[3-6]/)
 assert.match(tester,/Feedback zu V7[34] senden/)
 
 console.log('V74 recommendation/language guard passed: Min-to-Max is 5/5, case routing is corrected, and interface/output languages remain separate.')
