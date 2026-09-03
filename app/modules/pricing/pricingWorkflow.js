@@ -1,6 +1,6 @@
-import { getWorkspaceAccess } from '../services/workspaceRepository'
-import { getUpgradeQuotes, redeemTestAccessRecord, requestUpgradeRecord } from '../services/pricingRepository'
-import { isTesterAccessQuote } from './testerAccess'
+import { getWorkspaceAccess } from '../services/workspaceRepository.js'
+import { getUpgradeQuotes, redeemTestAccessRecord, requestUpgradeRecord } from '../services/pricingRepository.js'
+import { isTesterAccessQuote } from './testerAccess.js'
 
 export function createPricingWorkflowActions({
   supabase,
