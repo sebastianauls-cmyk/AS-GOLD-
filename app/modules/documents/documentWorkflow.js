@@ -93,10 +93,8 @@ export function createDocumentWorkflowActions({
     const file=form.elements.file.files[0]
     const caseId=form.elements.case_id.value||null
     if(!file) return setMessage(notices.chooseFile)
-    const dataClassification=form.elements.data_classification?.value||'personal'
-    const processingConfirmed=!!form.elements.test_data_confirmed?.checked
-    if(!processingConfirmed) return setMessage(privacyCopy.required)
     if(!privacyCurrent) return setMessage(privacyCopy.required)
+    const dataClassification=form.elements.data_classification?.value||'personal'
     const extension=file.name.includes('.')?file.name.split('.').pop().toLowerCase():''
     if(!allowedUploadExtensions.has(extension)) return setMessage(uploadCopy.unsupported)
     if(file.size>maxUploadBytes) return setMessage(uploadCopy.tooLarge)
