@@ -4,7 +4,7 @@ import fs from 'node:fs'
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
 const exists=path=>fs.existsSync(new URL(`../${path}`,import.meta.url))
 
-const page=read('app/modules/workspace/WorkspaceAppV2.js')
+const page=read('app/modules/workspace/WorkspaceController.js')
 const authRepository=read('app/modules/services/authRepository.js')
 const pageEntry=read('app/page.js')
 const documentsSurface=read('app/modules/documents/DocumentsSurface.js')
@@ -32,7 +32,6 @@ const microsoftCallback=read('app/api/integrations/microsoft/callback/route.js')
 const integrationStatus=read('app/api/integrations/status/route.js')
 
 assert.match(pageEntry,/modules\/workspace\/WorkspaceAppCurrent/)
-
 assert.match(authRepository,/signInWithPassword/)
 assert.match(authRepository,/resetPasswordForEmail/)
 assert.match(authRepository,/auth\.signUp/)
@@ -42,18 +41,13 @@ assert.match(authRepository,/test_data_only:true/)
 assert.match(privacyControls,/PRIVACY_NOTICE_VERSION/)
 assert.match(privacyControls,/TERMS_VERSION/)
 assert.match(privacyControls,/Art\. 9 DSGVO/)
-
 assert.match(workspaceCopy,/Bezahlfunktion ist vorübergehend deaktiviert/)
 assert.match(workspaceCopy,/keine Zahlung ausgelöst/)
 assert.match(workspaceCopy,/Keine automatische Verlängerung/)
 assert.match(terms,/Keine Zahlung, kein Abo/)
 assert.match(terms,/Bezahlfunktion ist deaktiviert/)
 assert.equal(Boolean(packageJson.dependencies?.stripe),false,'Stripe darf im kontrollierten Test nicht als aktive Abhängigkeit eingebunden sein')
-
-for(const path of [
-  'app/impressum/page.js','app/datenschutz/page.js','app/datenschutzsteuerung/page.js','app/nutzungsbedingungen/page.js',
-  'app/widerruf/page.js','app/cookies/page.js','app/ki-transparenz/page.js','app/rechtliches/page.js','app/kontakt/page.js','app/testen/page.js'
-]) assert.ok(exists(path),`Pflicht-/Transparenzseite fehlt: ${path}`)
+for(const path of ['app/impressum/page.js','app/datenschutz/page.js','app/datenschutzsteuerung/page.js','app/nutzungsbedingungen/page.js','app/widerruf/page.js','app/cookies/page.js','app/ki-transparenz/page.js','app/rechtliches/page.js','app/kontakt/page.js','app/testen/page.js']) assert.ok(exists(path),`Pflicht-/Transparenzseite fehlt: ${path}`)
 assert.match(legalFooter,/Verbindlich sind die deutschen Rechtstexte/)
 assert.match(imprint,/§ 5 Digitale-Dienste-Gesetz \(DDG\)/)
 assert.match(privacy,/Art\. 6 Abs\. 1/)
@@ -63,15 +57,8 @@ assert.match(aiTransparency,/keine automatische Entscheidung und keine Rechtsber
 assert.match(aiTransparency,/store: false/)
 assert.match(cookies,/Kein Marketing-Tracking/)
 const testerPaused=/Testerzugang vorübergehend geschlossen/.test(testing)
-if(testerPaused){
-  assert.match(testing,/Aktuell keine Testerfreigabe/)
-  assert.match(testing,/Bitte noch keinen Test starten und keine Testdaten hochladen/)
-  assert.doesNotMatch(testing,/\?start=register/,'paused tester page must not expose the public registration start CTA')
-}else{
-  assert.match(testing,/Bezahlfunktion bleibt deaktiviert/)
-}
+if(testerPaused){assert.match(testing,/Aktuell keine Testerfreigabe/);assert.match(testing,/Bitte noch keinen Test starten und keine Testdaten hochladen/);assert.doesNotMatch(testing,/\?start=register/,'paused tester page must not expose the public registration start CTA')}else{assert.match(testing,/Bezahlfunktion bleibt deaktiviert/)}
 assert.match(legalHub,/Vor einem späteren Bezahlbetrieb/)
-
 assert.match(uploadConfig,/maxUploadBytes = 50 \* 1024 \* 1024/)
 assert.match(uploadConfig,/allowedUploadExtensions/)
 assert.match(uploadConfig,/tooLarge/)
@@ -82,12 +69,10 @@ for(const exportType of ['pdf','docx','xlsx','pptx','csv','txt']) assert.match(p
 assert.match(page,/exportMyData/)
 assert.match(page,/requestAccountDeletion/)
 assert.match(page,/serverAudit/)
-
 for(const token of ['Content-Security-Policy','Referrer-Policy','X-Content-Type-Options','X-Frame-Options','Cross-Origin-Opener-Policy','Permissions-Policy','Strict-Transport-Security']) assert.match(nextConfig,new RegExp(token))
 assert.match(nextConfig,/frame-ancestors 'none'/)
 assert.match(nextConfig,/object-src 'none'/)
 assert.match(nextConfig,/payment=\(\)/)
-
 assert.match(integrationStatus,/GOOGLE_CLIENT_ID/)
 assert.match(integrationStatus,/MICROSOFT_CLIENT_ID/)
 assert.match(integrationStatus,/INTEGRATION_TOKEN_KEY/)
@@ -101,7 +86,5 @@ assert.match(microsoftCallback,/state!==expected/)
 assert.match(microsoftCallback,/sealIntegrationToken/)
 assert.match(integrationTokens,/aes-256-gcm/)
 assert.match(integrationTokens,/createHash\('sha256'\)/)
-
 for(const guard of ['test:v37-readiness','test:v38-deadlines','test:v38-assessments','test:v38-next-step','test:v38-simulation','test:v38-mobile','test:v38-accessibility']) assert.match(packageJson.scripts.prebuild,new RegExp(guard.replace(':','\\:')))
-
-console.log('V80 pre-launch guard passed against the live workspace, current document surface, security controls and integration boundaries.')
+console.log('V80 pre-launch guard passed against WorkspaceController, current document surface, security controls and integration boundaries.')
