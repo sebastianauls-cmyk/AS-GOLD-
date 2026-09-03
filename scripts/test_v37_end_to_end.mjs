@@ -20,11 +20,9 @@ const documentsSurface=fs.readFileSync('app/modules/documents/DocumentsSurface.j
 const approvalsSurface=fs.readFileSync('app/modules/cases/ApprovalsSurface.js','utf8')
 const caseSurfaces=fs.readFileSync('app/modules/cases/WorkspaceCaseSurfaces.js','utf8')
 const dashboardSurface=fs.readFileSync('app/modules/workspace/DashboardSurface.js','utf8')
-const caseWorkspace=fs.readFileSync('app/modules/cases/V24Workspace.js','utf8')
+const caseWorkspace=fs.readFileSync('app/modules/cases/CaseWorkspace.js','utf8')
 
-const mustContain=(source,needle,label)=>{
-  if(!source.includes(needle)) throw new Error(`E2E guard: missing ${label}: ${needle}`)
-}
+const mustContain=(source,needle,label)=>{if(!source.includes(needle)) throw new Error(`E2E guard: missing ${label}: ${needle}`)}
 
 mustContain(pageEntry,"./modules/workspace/WorkspaceAppCurrent",'single workspace entrypoint')
 if(publicLanding.includes('V37FirstAction')) throw new Error('E2E guard: duplicate first-action card must not be mounted by PublicLanding')
@@ -40,19 +38,16 @@ mustContain(problem,'<V37FirstAction language={interfaceLanguage}','supplemental
 if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')) throw new Error('E2E guard: duplicate describe/speak controls returned')
 mustContain(problem,'analyse()','problem analysis trigger')
 mustContain(problem,'recommendation','first recommendation result')
-
 mustContain(publicLanding,"setScreen('register')",'registration route in public content')
 mustContain(publicHeader,"onScreenChange('register')",'registration route in public header')
 mustContain(publicHeader,"onScreenChange('login')",'login route in public header')
 mustContain(authRepository,'signInWithPassword','password login service')
 mustContain(authRepository,'auth.signUp','registration service action')
-
 for(const ext of ['pdf','jpg','png','docx','xlsx','pptx','eml','msg']) mustContain(uploadConfig,`'${ext}'`,`upload extension ${ext}`)
 mustContain(page,"action==='scan'||action==='upload'",'quick upload route')
 mustContain(documentsSurface,'name="file"','current document upload form')
 mustContain(documentsSurface,'APP_VERSION','current release badge in document workspace')
 mustContain(page,'DocumentsSurface','document workspace composition')
-
 mustContain(page,'createDocumentWorkflowActions','document workflow boundary')
 mustContain(analysisService,"supabase.functions.invoke('gold-document-analysis'",'current document analysis backend')
 mustContain(page,'analysisUi','analysis UI wiring')
@@ -61,15 +56,12 @@ mustContain(workspaceRepository,"traffic_light:'yellow'",'default case traffic l
 mustContain(workspaceRepository,"traffic_light:draft.traffic_light",'assessment traffic light')
 mustContain(workspaceRepository,"from('cases')",'case repository persistence')
 mustContain(workspaceRepository,"from('clients')",'client repository persistence')
-
 mustContain(page,'createApprovalWorkflowActions','approval workflow boundary')
 mustContain(approvalsSurface,'ApprovalSection','approval workspace module')
 mustContain(page,'ApprovalDetail','approval detail')
 mustContain(page,'prepareDocumentApproval','prepare approval from document')
-
 mustContain(page,'createExportWorkflowActions','export workflow boundary')
 mustContain(exportService,'function downloadExportArtifact','download delivery service')
-
 mustContain(caseSurfaces,'backOverview','cases/clients overview navigation')
 mustContain(page,'<CaseDetail','case detail active route')
 mustContain(page,'onBack={()=>setSelectedCase(null)}','case-detail back navigation')
@@ -77,5 +69,4 @@ mustContain(caseWorkspace,'export function CaseDetail','case detail module')
 mustContain(caseSurfaces,'backClients','client-detail navigation')
 mustContain(dashboardSurface,'setSection','dashboard navigation ownership')
 mustContain(authSurface,'backExplanation','navigation backExplanation in auth module')
-
 console.log('Current code-path end-to-end regression checks passed against the live WorkspaceAppV2 implementation and current service boundaries')
