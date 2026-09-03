@@ -78,195 +78,63 @@ export default function WorkspaceAppV2(){
   const [access,setAccess]=useState(null)
   const [upgrades,setUpgrades]=useState([])
   const [termMonths,setTermMonths]=useState(1)
-  const [quotes,setQuotes]=useState({})
-  const [quoteLoading,setQuoteLoading]=useState(false)
   const [promoCode,setPromoCode]=useState('')
   const [appliedPromoCode,setAppliedPromoCode]=useState('')
+  const [quotes,setQuotes]=useState({})
+  const [quoteLoading,setQuoteLoading]=useState(false)
   const [promoRevision,setPromoRevision]=useState(0)
-  const [newClient,setNewClient]=useState({name:'',email:'',phone:'',notes:''})
-  const [showClientForm,setShowClientForm]=useState(false)
-  const [newCase,setNewCase]=useState(emptyCase)
-  const [showCaseForm,setShowCaseForm]=useState(false)
-  const [documentMode,setDocumentMode]=useState('upload')
-  const [uploadCaseId,setUploadCaseId]=useState('')
-  const [uploading,setUploading]=useState(false)
-  const [exportType,setExportType]=useState('pdf')
+  const [activeDocumentBusy,setActiveDocumentBusy]=useState(false)
+  const [integrationStatus,setIntegrationStatus]=useState(null)
+  const [integrationBusy,setIntegrationBusy]=useState(false)
   const {language,setLanguage,outputLanguage,setOutputLanguage}=useLanguagePreferences()
-  const [selectedGoal,setSelectedGoal]=useState('overview')
-  const [showRecommendation,setShowRecommendation]=useState(false)
-  const [selectedPublicCase,setSelectedPublicCase]=useState('work')
-  const {activityLog,serverAudit,setServerAudit,recordLocalAction,recordServerAudit,resetAudit}=useWorkspaceAudit({supabase,userId:user?.id})
-  const [deletionRequests,setDeletionRequests]=useState([])
-  const [deletionBusy,setDeletionBusy]=useState(false)
+  const copy=useMemo(()=>Object.fromEntries(Object.entries(pageCatalogs).map(([key,catalog])=>[key,catalog[language]||catalog.de||catalog])),[language])
+  const outputCopy=useMemo(()=>({case:getV24Copy(outputLanguage),approval:getV25ApprovalCopy(outputLanguage),analysis:getV26AnalysisCopy(outputLanguage),privacy:getV28PrivacyCopy(outputLanguage),password:getV29PasswordCopy(outputLanguage),promo:promoTranslations[outputLanguage]||promoTranslations.de}),[outputLanguage])
+  const {activityLog,setActivityLog,recordServerAudit,resetAudit}=useWorkspaceAudit({supabase,user})
+  const {sessionReady}=useWorkspaceSession({supabase,setUser,onSignedOut:()=>{setScreen('public');setData(emptyData);setAccess(null);setUpgrades([]);setSelectedCase(null);setSelectedClient(null);setSelectedDocument(null);setSelectedApproval(null);resetAudit()}})
 
-  const t=ui[language]||ui.de
-  const a=appText[language]||appText.de
-  const n=notices[language]||notices.de
-  const pui=passwordUi[language]||passwordUi.de
-  const recoveryCopy=passwordRecoveryUi[language]||passwordRecoveryUi.de
-  const uui=uploadUi[language]||uploadUi.de
-  const v28=getV28PrivacyCopy(language)
-  const v29Password=getV29PasswordCopy(language)
-  const passwordPolicy=validateV29Password(password,{email,displayName})
-  const passwordMatches=password.length>0&&password===password2
-  const registerReady=acceptedLegal&&confirmedTestData&&passwordPolicy.valid&&passwordMatches
-  const recoveryReady=passwordPolicy.valid&&passwordMatches
-  const localizedPlans=plans.map((plan,index)=>{
-    const translated=(planText[language]||{})[plan.key]
-    const journey=(planJourney[language]||planJourney.de)[plan.key]||{}
-    const base=translated?{...plan,audience:translated[0],checks:translated[1],result:translated[2],excluded:translated[3]}:plan
-    return {...base,...journey,level:index+1}
-  })
-  const period=periodText[language]||periodText.de
-  const monthsLabel=value=>a.months.replace('{n}',value).replace('{plural}',value>1?(language==='de'?'e':language==='en'?'s':''):'')
-  const currentTier=access?.permissions?.tier||'free'
-  const currentPlan=useMemo(()=>plans.find(plan=>plan.key===currentTier)||plans[0],[currentTier])
-  const dg=(dashboardGuide[language]||dashboardGuide.de)[currentTier]||dashboardGuide.de.free
-  const rt=recommendationText[language]||recommendationText.de
-  const tt=transparencyText[language]||transparencyText.de
-  const lt=launchTrustText[language]||launchTrustText.de
-  const sct=serverControlText[language]||serverControlText.de
-  const promo=promoTranslations[language]||promoTranslations.de
-  const core=getV24Copy(language)
-  const approvalUi=getV25ApprovalCopy(language)
-  const analysisUi=getV26AnalysisCopy(language)
-  const privacyCurrent=privacySettings?.privacy_notice_version===PRIVACY_NOTICE_VERSION&&privacySettings?.terms_version===TERMS_VERSION&&!!privacySettings?.privacy_notice_acknowledged_at&&!!privacySettings?.terms_acknowledged_at
-  const recommendedTier=goalTier[selectedGoal]||'free'
-  const recommendedPlan=localizedPlans.find(plan=>plan.key===recommendedTier)||localizedPlans[0]
-  const currentSufficient=(tierRank[currentTier]||1)>=(tierRank[recommendedTier]||1)
-  const deadlineCases=useMemo(()=>data.cases.filter(item=>item.deadline_at).sort((left,right)=>new Date(left.deadline_at)-new Date(right.deadline_at)),[data.cases])
-  const promoQuotes=Object.values(quotes).filter(Boolean)
-  const promoAnyValid=!!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='valid')
-  const promoAllInvalid=!!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
-  const promoSomeInvalid=!!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='invalid')
+  useEffect(()=>{if(sessionReady&&screen==='loading')setScreen(user?'workspace':'public')},[sessionReady,user,screen])
 
-  // The public interface follows the interface language. Output language is
-  // reserved for customer-facing results and generated documents.
-  const publicLanguage=language
-  const publicT=ui[publicLanguage]||ui.de
-  const publicA=appText[publicLanguage]||appText.de
-  const publicLocalizedPlans=plans.map((plan,index)=>{
-    const translated=(planText[publicLanguage]||{})[plan.key]
-    const journey=(planJourney[publicLanguage]||planJourney.de)[plan.key]||{}
-    const base=translated?{...plan,audience:translated[0],checks:translated[1],result:translated[2],excluded:translated[3]}:plan
-    return {...base,...journey,level:index+1}
-  })
-  const publicPeriod=periodText[publicLanguage]||periodText.de
-  const publicJl=journeyLabels[publicLanguage]||journeyLabels.de
-  const publicRt=recommendationText[publicLanguage]||recommendationText.de
-  const publicTt=transparencyText[publicLanguage]||transparencyText.de
-  const publicCd=caseDiscoveryText[publicLanguage]||caseDiscoveryText.de
-  const publicOrderedPublicCases=orderCasesByResearch(publicCd.cases)
-  const publicPa=publicAudienceText[publicLanguage]||publicAudienceText.de
-  const publicActivePublicCase=publicOrderedPublicCases.find(item=>item.key===selectedPublicCase)||publicOrderedPublicCases[0]
-  const publicRecommendedPlan=publicLocalizedPlans.find(plan=>plan.key===recommendedTier)||publicLocalizedPlans[0]
-  const publicMonthsLabel=value=>publicA.months.replace('{n}',value).replace('{plural}',value>1?(publicLanguage==='de'?'e':publicLanguage==='en'?'s':''):'')
+  const allCases=useMemo(()=>orderCasesByResearch(data.cases||[]),[data.cases])
+  const selectedCaseRecord=useMemo(()=>allCases.find(item=>item.id===selectedCase)||null,[allCases,selectedCase])
+  const selectedClientRecord=useMemo(()=>(data.clients||[]).find(item=>item.id===selectedClient)||null,[data.clients,selectedClient])
+  const selectedDocumentRecord=useMemo(()=>(data.documents||[]).find(item=>item.id===selectedDocument)||null,[data.documents,selectedDocument])
+  const selectedApprovalRecord=useMemo(()=>(data.approvals||[]).find(item=>item.id===selectedApproval)||null,[data.approvals,selectedApproval])
 
-  const {createClient,createCase,updateCase,createAssessment}=createCaseWorkflowActions({
-    supabase,ownerId:user?.id,data,newClient,newCase,setData,setMessage,setNewClient,setShowClientForm,setSection,setNewCase,setShowCaseForm,setSelectedCase,recordLocalAction,recordServerAudit
-  })
+  const authActions=createWorkspaceAuthActions({supabase,email,password,password2,displayName,acceptedLegal,confirmedTestData,setMessage,setUser,setScreen,setData,setAccess,setUpgrades,setPrivacySettings,setActivityLog,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,passwordPolicy:{validate:validateV29Password,copy:outputCopy.password}})
+  const pricingActions=createPricingWorkflowActions({supabase,user,access,upgrades,setAccess,setUpgrades,termMonths,promoCode,appliedPromoCode,quotes,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setMessage,promoCopy:outputCopy.promo,notices:copy.notices,recordServerAudit})
+  const accountActions=createAccountWorkflowActions({supabase,user,privacySettings,setPrivacySettings,setPrivacyBusy,setMessage,recordServerAudit})
+  const caseActions=createCaseWorkflowActions({supabase,user,data,setData,setMessage,setSelectedCase,setSelectedClient,recordServerAudit})
+  const approvalActions=createApprovalWorkflowActions({supabase,user,data,setData,setMessage,setSelectedApproval,recordServerAudit})
+  const documentActions=createDocumentWorkflowActions({supabase,user,data,setData,setMessage,setSelectedDocument,setActiveDocumentBusy,recordServerAudit,outputLanguage,privacyCopy:outputCopy.privacy,analysisCopy:outputCopy.analysis})
+  const exportActions=createExportWorkflowActions({supabase,user,access,data,setMessage,recordServerAudit,outputLanguage})
 
-  const {createApproval,updateApproval,approveApproval,rejectApproval,prepareDocumentApproval}=createApprovalWorkflowActions({
-    supabase,ownerId:user?.id,data,approvalUi,setData,setMessage,setApprovalDefaults,setSelectedApproval,setSelectedDocument,setSelectedCase,setSection,recordLocalAction,recordServerAudit
-  })
+  function navigate(next){setSection(next);setMessage('')}
+  function openCase(id){setSelectedCase(id);navigate('case-detail')}
+  function openClient(id){setSelectedClient(id);navigate('client-detail')}
+  function openDocument(id){setSelectedDocument(id);navigate('document-detail')}
+  function openApproval(id){setSelectedApproval(id);navigate('approval-detail')}
 
-  const {analyzeDocument,updateDocument,uploadDocument,openDocument}=createDocumentWorkflowActions({
-    supabase,ownerId:user?.id,data,access,privacyCurrent,outputLanguage,privacyCopy:v28,notices:n,uploadCopy:uui,analysisCopy:analysisUi,caseCopy:core,serverCopy:sct,setData,setMessage,setPrivacySettings,setUploading,setSection,setSelectedDocument,recordLocalAction,recordServerAudit
-  })
+  if(screen==='loading')return <LoadingSurface/>
 
-  const {doExport,exportMyData}=createExportWorkflowActions({
-    supabase,access,data,outputLanguage,appCopy:a,notices:n,serverCopy:sct,trustCopy:lt,user,currentTier,currentPlan,privacySettings,setMessage,recordLocalAction,recordServerAudit
-  })
+  if(screen==='public') return <PublicLanding language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onOpenLogin={()=>setScreen('auth')} copy={copy}/>
 
-  const {acknowledgeCurrentLegal,requestAccountDeletion,cancelAccountDeletion}=createAccountWorkflowActions({
-    supabase,ownerId:user?.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,deletionRequests,deletionBusy,privacyBusy,privacyCopy:v28,serverCopy:sct,setDeletionBusy,setPrivacyBusy,setDeletionRequests,setPrivacySettings,setMessage,recordServerAudit
-  })
+  if(screen==='auth')return <AuthSurface language={language} copy={copy} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} displayName={displayName} setDisplayName={setDisplayName} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} onSignIn={authActions.signIn} onRegister={authActions.register} onPasswordReset={authActions.resetPassword} onBack={()=>setScreen('public')} message={message}/>
 
-  const {loadApp,signIn,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
-    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage
-  })
+  const workspaceProps={language,outputLanguage,setOutputLanguage,copy,outputCopy,user,access,data,message,navigate,activityLog,recordServerAudit}
 
-  const {loadQuotes,applyPromo,clearPromo,requestUpgrade}=createPricingWorkflowActions({
-    supabase,upgrades,termMonths,promoCode,appliedPromoCode,quotes,promoCopy:promo,notices:n,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setMessage,setAccess,setUpgrades,onTestAccessGranted:()=>setSection('dashboard'),formatAccessEnd:value=>new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(value)),recordServerAudit
-  })
+  let content=null
+  if(section==='dashboard')content=<DashboardSurface {...workspaceProps} cases={allCases} onOpenCase={openCase} onOpenDocument={openDocument} onOpenApproval={openApproval} onOpenClient={openClient} />
+  if(section==='cases')content=<CasesSurface {...workspaceProps} cases={allCases} onOpenCase={openCase} onCreateCase={()=>{setSelectedCase(null);navigate('case-new')}} />
+  if(section==='case-new')content=<CaseDetail caseItem={emptyCase} clients={data.clients||[]} documents={data.documents||[]} assessments={data.assessments||[]} copy={outputCopy.case} analysisCopy={outputCopy.analysis} onSave={caseActions.saveCase} onCancel={()=>navigate('cases')} />
+  if(section==='case-detail'&&selectedCaseRecord)content=<CaseDetail caseItem={selectedCaseRecord} clients={data.clients||[]} documents={data.documents||[]} assessments={data.assessments||[]} copy={outputCopy.case} analysisCopy={outputCopy.analysis} onSave={caseActions.saveCase} onCancel={()=>navigate('cases')} onOpenDocument={openDocument}/>
+  if(section==='clients')content=<ClientsSurface {...workspaceProps} clients={data.clients||[]} onOpenClient={openClient} />
+  if(section==='client-detail'&&selectedClientRecord)content=<ClientDetailSurface {...workspaceProps} client={selectedClientRecord} cases={allCases} onOpenCase={openCase}/>
+  if(section==='documents')content=<DocumentsSurface {...workspaceProps} documents={data.documents||[]} cases={allCases} onOpenDocument={openDocument} onUpload={documentActions.uploadDocument} allowedUploadAccept={allowedUploadAccept}/>
+  if(section==='document-detail'&&selectedDocumentRecord)content=<DocumentDetail document={selectedDocumentRecord} cases={allCases} copy={outputCopy.case} analysisCopy={outputCopy.analysis} privacy={outputCopy.privacy} busy={activeDocumentBusy} onAuthorize={documentActions.authorizeAnalysis} onAnalyze={documentActions.analyzeDocument} onSave={documentActions.saveDocument} onBack={()=>navigate('documents')}/>
+  if(section==='approvals')content=<ApprovalsSurface {...workspaceProps} approvals={data.approvals||[]} cases={allCases} documents={data.documents||[]} onOpenApproval={openApproval} onNewApproval={(caseId,documentId)=>{setApprovalDefaults({caseId:caseId||'',documentId:documentId||''});setSelectedApproval(null);navigate('approval-detail')}} />
+  if(section==='approval-detail')content=<ApprovalDetail approval={selectedApprovalRecord} defaults={approvalDefaults} cases={allCases} documents={data.documents||[]} copy={outputCopy.approval} onSave={approvalActions.saveApproval} onApprove={approvalActions.approveApproval} onReject={approvalActions.rejectApproval} onBack={()=>navigate('approvals')}/>
+  if(section==='pricing')content=<PricingSurface {...workspaceProps} plans={plans} upgrades={upgrades} termMonths={termMonths} setTermMonths={setTermMonths} promoCode={promoCode} setPromoCode={setPromoCode} appliedPromoCode={appliedPromoCode} quotes={quotes} quoteLoading={quoteLoading} onApplyPromo={pricingActions.applyPromo} onRequestUpgrade={pricingActions.requestUpgrade} eur={eur}/>
+  if(section==='account')content=<AccountSurface {...workspaceProps} privacySettings={privacySettings} privacyBusy={privacyBusy} onSavePrivacy={accountActions.savePrivacy} onRequestDeletion={accountActions.requestDeletion} onCancelDeletion={accountActions.cancelDeletion} integrationStatus={integrationStatus} integrationBusy={integrationBusy} setIntegrationStatus={setIntegrationStatus} setIntegrationBusy={setIntegrationBusy}/>
 
-  useWorkspaceSession({
-    supabase,
-    loadApp,
-    setScreen,
-    onPasswordRecovery:()=>{setMessage('');setScreen('recovery')},
-    onSignedOut:()=>{
-      setUser(null)
-      setAccess(null)
-      setPrivacySettings(null)
-      setData(emptyData)
-      setSelectedCase(null)
-      setSelectedClient(null)
-      setSelectedDocument(null)
-      setSelectedApproval(null)
-      setApprovalDefaults({caseId:'',documentId:''})
-      setDeletionRequests([])
-      resetAudit()
-      setSection('dashboard')
-      setScreen('public')
-    }
-  })
-
-  useEffect(()=>{
-    if(screen!=='app'||!upgrades.length) return
-    let cancelled=false
-    loadQuotes({isCancelled:()=>cancelled})
-    return ()=>{cancelled=true}
-  },[screen,termMonths,upgrades.length,appliedPromoCode,promoRevision])
-
-  function handleQuickAction(action,item=null){
-    setSelectedClient(null)
-    setSelectedDocument(null)
-    setSelectedApproval(null)
-    if(action==='open-case'&&item){setSelectedCase(item);return}
-    setSelectedCase(null)
-    if(action==='case'){setSection('cases');setShowCaseForm(true);return}
-    if(action==='scan'||action==='upload'){setDocumentMode(action);setUploadCaseId('');setSection('documents');return}
-    if(action==='clients'){setSection('clients');return}
-    if(action==='deadlines'){setSection('cases');return}
-    if(action==='approvals'){setApprovalDefaults({caseId:'',documentId:''});setSection('approvals')}
-  }
-
-  function protectedWorkspace(content){
-    return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} legalLabel={t.legal} languageLabel={t.language} outputLanguageLabel={t.outputLanguage} logoutLabel={a.logout} onLogout={()=>signOutSession(supabase)} message={message}>{content}</ProtectedWorkspaceShell>
-  }
-
-  if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
-
-  if(screen==='login'||screen==='register'||screen==='recovery') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signIn={signIn} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={setScreen}/>
-
-  if(screen==='app'&&!privacyCurrent) return protectedWorkspace(<LegalAcceptance copy={v28} onAccept={acknowledgeCurrentLegal} busy={privacyBusy}/>)
-
-  if(screen==='app'&&selectedApproval) return protectedWorkspace(<ApprovalDetail key={`${selectedApproval.id}-${selectedApproval.preview_revision}-${selectedApproval.status}`} copy={approvalUi} item={selectedApproval} cases={data.cases} documents={data.documents} onBack={()=>setSelectedApproval(null)} onSave={updateApproval} onApprove={approveApproval} onReject={rejectApproval}/>)
-
-  if(screen==='app'&&selectedDocument) return protectedWorkspace(<DocumentDetail key={selectedDocument.id} copy={core} analysis={analysisUi} language={language} item={selectedDocument} cases={data.cases} onBack={()=>setSelectedDocument(null)} onSave={updateDocument} onAnalyze={analyzeDocument} onOpen={openDocument} onPrepareApproval={prepareDocumentApproval} approvalLabel={approvalUi.prepareFromDocument}/>)
-
-  if(screen==='app'&&selectedCase){
-    const caseDocs=data.documents.filter(document=>document.case_id===selectedCase.id)
-    const caseAssessments=data.assessments.filter(assessment=>assessment.case_id===selectedCase.id)
-    return protectedWorkspace(<><CaseDetail key={selectedCase.id} copy={core} analysis={analysisUi} language={language} item={selectedCase} clients={data.clients} documents={caseDocs} assessments={caseAssessments} onBack={()=>setSelectedCase(null)} onSave={updateCase} onAddAssessment={createAssessment} onAddDocument={caseId=>{setUploadCaseId(caseId);setDocumentMode('upload');setSelectedCase(null);setSection('documents')}} onOpenDocument={setSelectedDocument}/><div className="exportBar"><b>{a.exportResult}</b><select value={exportType} onChange={event=>setExportType(event.target.value)}><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="csv">CSV (.csv)</option><option value="txt">Text (.txt)</option></select><button className="primary" onClick={()=>doExport({kind:'case',item:selectedCase},exportType)}>{a.export}</button></div></>)
-  }
-
-  if(screen==='app'&&!selectedClient&&section==='cases') return protectedWorkspace(<CasesSurface a={a} core={core} clients={data.clients} cases={data.cases} newCase={newCase} setNewCase={setNewCase} showCaseForm={showCaseForm} setShowCaseForm={setShowCaseForm} createCase={createCase} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
-
-  if(screen==='app'&&!selectedClient&&section==='documents') return protectedWorkspace(<DocumentsSurface a={a} access={access} documents={data.documents} core={core} v28={v28} cases={data.cases} documentMode={documentMode} setDocumentMode={setDocumentMode} uploadCaseId={uploadCaseId} uploadDocument={uploadDocument} uploading={uploading} allowedUploadAccept={allowedUploadAccept} setSelectedDocument={setSelectedDocument} onBack={()=>setSection('dashboard')}/>)
-
-  if(screen==='app'&&!selectedClient&&section==='approvals') return protectedWorkspace(<ApprovalsSurface a={a} approvalUi={approvalUi} cases={data.cases} documents={data.documents} approvals={data.approvals} approvalDefaults={approvalDefaults} createApproval={createApproval} setSelectedApproval={setSelectedApproval} onBack={()=>{setApprovalDefaults({caseId:'',documentId:''});setSection('dashboard')}}/>)
-
-  if(screen==='app'&&!selectedClient&&section==='pricing') return protectedWorkspace(<PricingSurface a={a} promo={promo} upgrades={upgrades} promoCode={promoCode} setPromoCode={setPromoCode} appliedPromoCode={appliedPromoCode} applyPromo={applyPromo} clearPromo={clearPromo} quoteLoading={quoteLoading} quotes={quotes} promoAnyValid={promoAnyValid} promoAllInvalid={promoAllInvalid} promoSomeInvalid={promoSomeInvalid} eur={eur} terms={terms} termMonths={termMonths} setTermMonths={setTermMonths} monthsLabel={monthsLabel} period={period} requestUpgrade={requestUpgrade} onBack={()=>setSection('dashboard')}/>)
-
-  if(screen==='app'&&!selectedClient&&section==='account') return protectedWorkspace(<AccountSurface a={a} currentPlan={currentPlan} currentTier={currentTier} lt={lt} exportMyData={exportMyData} activityLog={activityLog} localeForLanguage={localeForLanguage} language={language} sct={sct} serverAudit={serverAudit} deletionRequests={deletionRequests} deletionBusy={deletionBusy} cancelAccountDeletion={cancelAccountDeletion} requestAccountDeletion={requestAccountDeletion} onBack={()=>setSection('dashboard')}/>)
-
-  if(screen==='app'){
-    if(selectedClient) return protectedWorkspace(<ClientDetailSurface a={a} selectedClient={selectedClient} onBack={()=>setSelectedClient(null)}/>)
-    if(section==='dashboard') return protectedWorkspace(<DashboardSurface core={core} handleQuickAction={handleQuickAction} deadlineCases={deadlineCases} a={a} user={user} currentTier={currentTier} dg={dg} setSection={setSection} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} currentSufficient={currentSufficient} currentPlan={currentPlan} access={access} data={data} lt={lt} promo={promo} testAccessEnd={access?.permissions?.promo_access_ends_at?new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(access.permissions.promo_access_ends_at)):null}/>)
-    return protectedWorkspace(<ClientsSurface a={a} showClientForm={showClientForm} setShowClientForm={setShowClientForm} createClient={createClient} newClient={newClient} setNewClient={setNewClient} clients={data.clients} setSelectedClient={setSelectedClient} onBack={()=>setSection('dashboard')}/>)
-  }
-
-  return <PublicLanding t={publicT} a={publicA} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={setScreen} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
+  return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} user={user} onSignOut={async()=>{await signOutSession(supabase);setScreen('public')}} section={section} navigate={navigate} copy={copy} message={message}>{content}</ProtectedWorkspaceShell>
 }
