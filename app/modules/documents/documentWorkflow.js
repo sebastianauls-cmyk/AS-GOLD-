@@ -41,7 +41,6 @@ export function createDocumentWorkflowActions({
     if(!document?.file_path) return false
     setMessage('')
     if(!privacyCurrent){setMessage(privacyCopy.required);return false}
-    if(!['synthetic','anonymized'].includes(document.data_classification)){setMessage(privacyCopy.uploadRequired);return false}
     const authorization=await authorizeDocumentAnalysis(supabase,{ownerId,documentId:document.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
     if(authorization.error){setMessage(authorization.error.message);return false}
     setPrivacySettings(authorization.privacy)
@@ -94,9 +93,9 @@ export function createDocumentWorkflowActions({
     const file=form.elements.file.files[0]
     const caseId=form.elements.case_id.value||null
     if(!file) return setMessage(notices.chooseFile)
-    const dataClassification=form.elements.data_classification?.value
-    const testDataConfirmed=!!form.elements.test_data_confirmed?.checked
-    if(!['synthetic','anonymized'].includes(dataClassification)||!testDataConfirmed) return setMessage(privacyCopy.uploadRequired)
+    const dataClassification=form.elements.data_classification?.value||'personal'
+    const processingConfirmed=!!form.elements.test_data_confirmed?.checked
+    if(!processingConfirmed) return setMessage(privacyCopy.required)
     if(!privacyCurrent) return setMessage(privacyCopy.required)
     const extension=file.name.includes('.')?file.name.split('.').pop().toLowerCase():''
     if(!allowedUploadExtensions.has(extension)) return setMessage(uploadCopy.unsupported)
