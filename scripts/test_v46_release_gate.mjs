@@ -7,7 +7,7 @@ for(const p of [
 ])exists(p)
 const page=read('app/page.js');assert.match(page,/modules\/workspace\/WorkspaceAppCurrent/);assert.ok(page.length<500)
 const currentController=read('app/modules/workspace/WorkspaceAppCurrent.js');assert.match(currentController,/WorkspaceAppV2/)
-const legacyController=read('app/modules/workspace/WorkspaceApp.js');assert.match(legacyController,/WorkspaceAppCurrent/);assert.doesNotMatch(legacyController,/useState|createDocumentWorkflowActions|supabase/)
+assert.equal(fs.existsSync('app/modules/workspace/WorkspaceApp.js'),false,'obsolete WorkspaceApp.js facade must stay removed')
 const languageRegistry=read('app/modules/language/languageRegistry.mjs');assert.match(languageRegistry,/LANGUAGE_CATALOG/);assert.match(languageRegistry,/Tiếng Việt/);assert.match(languageRegistry,/rtl:true/)
 const languageFacade=read('app/modules/language/v36Languages.mjs');assert.match(languageFacade,/languageRegistry\.mjs/);assert.doesNotMatch(languageFacade,/v35Languages|v71VietnamesePageTranslations|v35RoBgExtras/)
 const layout=read('app/layout.js');assert.match(layout,/modules\/navigation\/AccessibilityHardening/);assert.match(layout,/modules\/navigation\/MobileResilience/);assert.doesNotMatch(layout,/V38Deadline|V38Assessment|V38Primary|V39Case|V40Professional|V41Case|V42Actionable|V43Visibility|V44Language|OutputLanguageBridge|MutationObserver/)
