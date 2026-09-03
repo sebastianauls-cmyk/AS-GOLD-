@@ -1,5 +1,5 @@
 import { ensureRegistrationPrivacy, getWorkspaceAccess, loadWorkspaceBundle } from '../services/workspaceRepository'
-import { registerTestAccount, sendPasswordReset, signInSession } from '../services/authRepository'
+import { getAuthSession, registerTestAccount, sendPasswordReset, signInSession, updatePassword } from '../services/authRepository'
 
 export function createWorkspaceAuthActions({
   supabase,
@@ -11,6 +11,7 @@ export function createWorkspaceAuthActions({
   passwordCopy,
   notices,
   trustCopy,
+  recoveryCopy,
   email,
   password,
   password2,
@@ -18,6 +19,8 @@ export function createWorkspaceAuthActions({
   acceptedLegal,
   confirmedTestData,
   validatePassword,
+  setPassword,
+  setPassword2,
   setAcceptedLegal,
   setConfirmedTestData,
   setAccess,
@@ -79,6 +82,23 @@ export function createWorkspaceAuthActions({
     return true
   }
 
+  async function completePasswordRecovery(event){
+    event.preventDefault()
+    setMessage('')
+    if(!validatePassword(password,{email,displayName}).valid){setMessage(passwordCopy.invalid);return false}
+    if(password!==password2){setMessage(notices.pwMismatch);return false}
+    const {error}=await updatePassword(supabase,{password})
+    if(error){setMessage(error.message);return false}
+    setPassword('')
+    setPassword2('')
+    const {data:{session}}=await getAuthSession(supabase)
+    if(!session){setScreen('login');setMessage(recoveryCopy.updated);return true}
+    const loaded=await loadApp(session)
+    if(loaded)setMessage(recoveryCopy.updated)
+    else setMessage(`${recoveryCopy.updated} ${pendingMessages[language]||pendingMessages.de}`)
+    return true
+  }
+
   async function register(event){
     event.preventDefault()
     setMessage('')
@@ -95,5 +115,5 @@ export function createWorkspaceAuthActions({
     return true
   }
 
-  return {loadApp,signIn,resetPassword,register}
+  return {loadApp,signIn,resetPassword,completePasswordRecovery,register}
 }

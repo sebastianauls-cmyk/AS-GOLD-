@@ -7,7 +7,7 @@ import { allowedUploadAccept, uploadUi } from '../documents/uploadConfig'
 import { exportUi } from '../documents/exportUi'
 import { appText } from './workspaceText'
 import { ui } from '../public/publicUi'
-import { passwordUi } from '../auth/passwordUi'
+import { passwordRecoveryUi, passwordUi } from '../auth/passwordUi'
 import { ProtectedWorkspaceShell } from './ProtectedWorkspaceShell'
 import { LoadingSurface } from './LoadingSurface'
 import { AuthSurface } from '../auth/AuthSurface'
@@ -103,12 +103,14 @@ export default function WorkspaceAppV2(){
   const a=appText[language]||appText.de
   const n=notices[language]||notices.de
   const pui=passwordUi[language]||passwordUi.de
+  const recoveryCopy=passwordRecoveryUi[language]||passwordRecoveryUi.de
   const uui=uploadUi[language]||uploadUi.de
   const v28=getV28PrivacyCopy(language)
   const v29Password=getV29PasswordCopy(language)
   const passwordPolicy=validateV29Password(password,{email,displayName})
   const passwordMatches=password.length>0&&password===password2
   const registerReady=acceptedLegal&&confirmedTestData&&passwordPolicy.valid&&passwordMatches
+  const recoveryReady=passwordPolicy.valid&&passwordMatches
   const localizedPlans=plans.map((plan,index)=>{
     const translated=(planText[language]||{})[plan.key]
     const journey=(planJourney[language]||planJourney.de)[plan.key]||{}
@@ -180,8 +182,8 @@ export default function WorkspaceAppV2(){
     supabase,ownerId:user?.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,deletionRequests,deletionBusy,privacyBusy,privacyCopy:v28,serverCopy:sct,setDeletionBusy,setPrivacyBusy,setDeletionRequests,setPrivacySettings,setMessage,recordServerAudit
   })
 
-  const {loadApp,signIn,resetPassword,register}=createWorkspaceAuthActions({
-    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage
+  const {loadApp,signIn,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
+    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage
   })
 
   const {loadQuotes,applyPromo,clearPromo,requestUpgrade}=createPricingWorkflowActions({
@@ -192,6 +194,7 @@ export default function WorkspaceAppV2(){
     supabase,
     loadApp,
     setScreen,
+    onPasswordRecovery:()=>{setMessage('');setScreen('recovery')},
     onSignedOut:()=>{
       setUser(null)
       setAccess(null)
@@ -235,7 +238,7 @@ export default function WorkspaceAppV2(){
 
   if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
 
-  if(screen==='login'||screen==='register') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} register={register} signIn={signIn} resetPassword={resetPassword} message={message} lt={lt} setScreen={setScreen}/>
+  if(screen==='login'||screen==='register'||screen==='recovery') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signIn={signIn} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={setScreen}/>
 
   if(screen==='app'&&!privacyCurrent) return protectedWorkspace(<LegalAcceptance copy={v28} onAccept={acknowledgeCurrentLegal} busy={privacyBusy}/>)
 
