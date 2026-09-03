@@ -2,8 +2,8 @@
 
 import { useState } from 'react'
 import { useLegalLanguage } from '../language/LegalLanguageContext'
-import { localeForLanguage } from '../language/v36Languages.mjs'
-import { withdrawalCopy } from './v31InteractiveLegalTranslations.mjs'
+import { localeForLanguage } from '../language/languageRegistry.mjs'
+import { withdrawalCopy } from './privacyInteractionTranslations.mjs'
 
 const endpoint='https://bcvggtnvuesaihqvgisg.supabase.co/functions/v1/gold-withdrawal'
 const publishableKey='sb_publishable_O0JQYoJW-60sh3_5f7yr2Q_czCPZNH0'
