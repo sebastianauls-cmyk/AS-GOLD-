@@ -1,1 +1,1 @@
-export * from './caseIntelligence.mjs'
+export * from '../cases/lib/caseIntelligence.mjs'
