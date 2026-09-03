@@ -8,7 +8,6 @@ const required=[
   'app/page.js',
   'app/modules/workspace/WorkspaceAppCurrent.js',
   'app/modules/workspace/WorkspaceAppV2.js',
-  'app/modules/workspace/WorkspaceApp.js',
   'app/modules/language/languageRegistry.mjs',
   'app/modules/language/v36Languages.mjs',
   'app/modules/language/useLanguagePreferences.js',
@@ -28,10 +27,11 @@ const required=[
 ]
 for(const path of required) exists(path)
 
+assert.equal(fs.existsSync('app/modules/workspace/WorkspaceApp.js'),false,'obsolete workspace facade must stay removed')
+
 const page=read('app/page.js')
 const current=read('app/modules/workspace/WorkspaceAppCurrent.js')
 const active=read('app/modules/workspace/WorkspaceAppV2.js')
-const legacy=read('app/modules/workspace/WorkspaceApp.js')
 const registry=read('app/modules/language/languageRegistry.mjs')
 const languageFacade=read('app/modules/language/v36Languages.mjs')
 const languagePreferences=read('app/modules/language/useLanguagePreferences.js')
@@ -43,8 +43,6 @@ const edge=read('supabase/functions/gold-document-analysis/index.ts')
 assert.match(page,/WorkspaceAppCurrent/,'root page must use the single current workspace entry')
 assert.ok(page.length<500,'root page must remain a thin entry point')
 assert.match(current,/WorkspaceAppV2/,'current controller entry must delegate to the single active implementation')
-assert.match(legacy,/WorkspaceAppCurrent/,'legacy workspace path must be compatibility-only')
-assert.doesNotMatch(legacy,/useState|useEffect|createDocumentWorkflowActions|PublicLanding/,'legacy workspace must contain no product logic')
 
 for(const workflow of ['createWorkspaceAuthActions','createPricingWorkflowActions','createAccountWorkflowActions','createCaseWorkflowActions','createApprovalWorkflowActions','createDocumentWorkflowActions','createExportWorkflowActions']){
   assert.match(active,new RegExp(workflow),`active controller must compose ${workflow}`)
@@ -79,4 +77,4 @@ assert.doesNotMatch(layout,/MutationObserver|OutputLanguageBridge|V44LanguageOrd
 assert.match(layout,/AccessibilityHardening/)
 assert.match(layout,/MobileResilience/)
 
-console.log('V80 modular-boundaries guard passed: one controller, one language registry, isolated workflows, current document service and compatibility-only legacy paths verified.')
+console.log('V80 modular-boundaries guard passed: one current entry, one active controller, one language registry, isolated workflows and current document service verified.')
