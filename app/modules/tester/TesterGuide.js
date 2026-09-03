@@ -1,8 +1,9 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../compliance/LegalDocument'
+import { APP_RELEASE, APP_VERSION } from '../release/appRelease.mjs'
 import { TesterShareButton } from './TesterShareButton'
 
 export function TesterGuide(){
-  return <LegalDocument pageId="testen" eyebrow="Testerbetrieb V76" title="AS Gold V76 sicher ausprobieren" intro="Hier können Sie den vollständigen modularen Ablauf prüfen, den Link weiterleiten und ohne echte Kundendaten oder eine Zahlung testen." updated="3. September 2026" localizedExtra={<TesterShareButton/>} localizedExtraAfterSection={0}>
+  return <LegalDocument pageId="testen" localizable showRelease eyebrow="Testerbetrieb" title="AS Gold sicher ausprobieren" intro="Hier können Sie den vollständigen modularen Ablauf prüfen, den Link weiterleiten und ohne echte Kundendaten oder eine Zahlung testen." updated={APP_RELEASE.updated} localizedExtra={<TesterShareButton/>} localizedExtraAfterSection={0}>
     <LegalSection title="Tester-Link weiterleiten">
       <p>Öffnen Sie mit einem Fingertipp das Teilen-Menü Ihres Handys oder senden Sie die vorbereitete Nachricht direkt per WhatsApp.</p>
       <TesterShareButton/>
@@ -21,6 +22,6 @@ export function TesterGuide(){
       <li>Darstellung und Bedienung in allen 11 App-Sprachen einschließlich Vietnamesisch</li>
     </ul></LegalSection>
     <LegalSection title="Synthetischer Musterfall"><p><a className="secondary btn" href="/testdaten/AS_Gold_Synthetischer_Testfall_V29.pdf">Musterdatei herunterladen</a></p><p>Die Musterdatei enthält keine echten personenbezogenen Daten und kann für Upload, Analyse, Ampel und Export verwendet werden.</p></LegalSection>
-    <LegalSection title="Testfeedback"><p><a className="primary btn" href="mailto:sebastian.auls@gmail.com?subject=AS%20Gold%20V76%20Testfeedback">Feedback zu V76 senden</a></p><p>V76 ist ein kontrollierter Produkttest. Ergebnisse müssen vor einer verbindlichen Verwendung weiterhin geprüft und ausdrücklich freigegeben werden.</p></LegalSection>
+    <LegalSection title="Testfeedback"><p><a className="primary btn" href={`mailto:sebastian.auls@gmail.com?subject=AS%20Gold%20${APP_VERSION}%20Testfeedback`}>Feedback zu {APP_VERSION} senden</a></p><p>{APP_VERSION} ist ein kontrollierter Produkttest. Ergebnisse müssen vor einer verbindlichen Verwendung weiterhin geprüft und ausdrücklich freigegeben werden.</p></LegalSection>
   </LegalDocument>
 }
