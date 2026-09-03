@@ -20,6 +20,7 @@ const documentsSurface=fs.readFileSync('app/modules/documents/DocumentsSurface.j
 const approvalsSurface=fs.readFileSync('app/modules/cases/ApprovalsSurface.js','utf8')
 const caseSurfaces=fs.readFileSync('app/modules/cases/WorkspaceCaseSurfaces.js','utf8')
 const dashboardSurface=fs.readFileSync('app/modules/workspace/DashboardSurface.js','utf8')
+const caseWorkspace=fs.readFileSync('app/modules/cases/V24Workspace.js','utf8')
 
 const mustContain=(source,needle,label)=>{
   if(!source.includes(needle)) throw new Error(`E2E guard: missing ${label}: ${needle}`)
@@ -70,7 +71,9 @@ mustContain(page,'createExportWorkflowActions','export workflow boundary')
 mustContain(exportService,'function downloadExportArtifact','download delivery service')
 
 mustContain(caseSurfaces,'backOverview','cases/clients overview navigation')
-mustContain(page,'backCases','case-detail navigation')
+mustContain(page,'<CaseDetail','case detail active route')
+mustContain(page,'onBack={()=>setSelectedCase(null)}','case-detail back navigation')
+mustContain(caseWorkspace,'export function CaseDetail','case detail module')
 mustContain(caseSurfaces,'backClients','client-detail navigation')
 mustContain(dashboardSurface,'setSection','dashboard navigation ownership')
 mustContain(authSurface,'backExplanation','navigation backExplanation in auth module')
