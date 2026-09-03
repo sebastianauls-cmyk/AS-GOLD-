@@ -1,1 +1,1 @@
-export * from './caseConsistency.mjs'
+export * from '../cases/lib/caseConsistency.mjs'
