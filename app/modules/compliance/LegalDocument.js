@@ -4,11 +4,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { LegalFooter } from './LegalFooter'
 import { LanguageSwitcher } from '../language/LanguageSwitcher'
 import { LegalLanguageContext } from '../language/LegalLanguageContext'
-import { localeForLanguage, rtlLanguages, supportedLanguages } from '../language/v36Languages.mjs'
+import { localeForLanguage, rtlLanguages, supportedLanguages } from '../language/languageRegistry.mjs'
 import { APP_VERSION, withAppVersion } from '../release/appRelease.mjs'
 import { ProductBrand } from '../brand/ProductBrand'
 import { PRODUCT_NAME } from '../brand/productBrand.mjs'
-import { getLegalPage, legalShellCopy } from './v31LegalTranslations.mjs'
+import { getLegalPage, legalShellCopy } from './legalTranslations.mjs'
 
 const languageKeys=new Set(supportedLanguages.map(item=>item.key))
 
