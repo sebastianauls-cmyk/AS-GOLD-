@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { analyzeCaseConsistency } from '../app/modules/lib/v41CaseConsistency.mjs'
+import { analyzeCaseConsistency } from '../app/modules/lib/caseConsistency.mjs'
 
 const result=analyzeCaseConsistency({caseItem:{title:'Test',goal:'Zahlung prüfen',summary:'Zwei Schreiben liegen vor',deadline_at:'2026-09-10',next_action:'Antwort vorbereiten'},documents:[{title:'Schreiben A',extracted_text:'Die Forderung beträgt 1.000,00 EUR. Zahlung bis 10.09.2026.'},{title:'Schreiben B',extracted_text:'Die Forderung beträgt 1.250,00 EUR. Zahlung bis 12.09.2026.'}],assessments:[{traffic_light:'yellow',next_step:'Beträge prüfen'}]})
 assert.equal(result.gaps.length,0)
@@ -42,4 +42,4 @@ assert.match(component,/result\.assessmentComplexes/)
 assert.doesNotMatch(component,/createClient|from\('documents'\)|from\('assessments'\)|MutationObserver|querySelector/)
 assert.match(adapter,/CaseCompletionPanels/)
 assert.doesNotMatch(layout,/V41CaseConsistency/)
-console.log('V41 case consistency guard passed: direct React evidence gaps and cautious deviations use existing case data without duplicate Supabase queries or DOM polling.')
+console.log('V80 case consistency guard passed against canonical engine and direct React panels.')
