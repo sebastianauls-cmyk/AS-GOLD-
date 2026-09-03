@@ -3,8 +3,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { APP_RELEASE, APP_VERSION, withAppVersion } from '../app/modules/release/appRelease.mjs'
 import { PRODUCT_BRAND, PRODUCT_DESCRIPTOR, PRODUCT_NAME } from '../app/modules/brand/productBrand.mjs'
-import { supportedLanguages } from '../app/modules/language/v36Languages.mjs'
-import { getLegalPage, legalPageIds, localizablePageIds } from '../app/modules/compliance/v31LegalTranslations.mjs'
+import { supportedLanguages } from '../app/modules/language/languageRegistry.mjs'
+import { getLegalPage, legalPageIds, localizablePageIds } from '../app/modules/compliance/legalTranslations.mjs'
 
 const read=file=>fs.readFileSync(file,'utf8')
 const languageKeys=supportedLanguages.map(language=>language.key)
@@ -29,7 +29,7 @@ for(const language of languageKeys){
   for(const pageId of legalPageIds.filter(pageId=>pageId!=='testen')) assert.equal(getLegalPage(pageId,language),null,`${language}/${pageId}: legal content must stay German`)
 }
 
-for(const file of ['app/testen/page.js','app/modules/tester/TesterGuide.js','app/modules/compliance/v31LegalTranslations.mjs']){
+for(const file of ['app/testen/page.js','app/modules/tester/TesterGuide.js','app/modules/compliance/legalTranslations.mjs']){
   const source=read(file).replaceAll('AS_Gold_Synthetischer_Testfall_V29.pdf','AS_Gold_Synthetischer_Testfall.pdf')
   assert.doesNotMatch(source,/\bV\d+\b/,`${file}: user-facing release numbers must come from appRelease.mjs`)
 }
@@ -51,4 +51,4 @@ assert.match(legalDocument,/localizable=false/)
 assert.match(legalDocument,/localizable\?getLegalPage\(pageId,language\):null/)
 assert.match(legalDocument,/if\(!localizable\)return/)
 assert.match(legalDocument,/if\(localizable\)localStorage\.setItem/)
-console.log(`${APP_VERSION} release and brand consistency passed: ${PRODUCT_NAME}, ${languageKeys.length} languages, German legal pages.`)
+console.log(`${APP_VERSION} release and brand consistency passed through version-neutral V80 language/legal modules: ${PRODUCT_NAME}, ${languageKeys.length} languages, German legal pages.`)
