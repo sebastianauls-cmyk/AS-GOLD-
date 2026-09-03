@@ -1,5 +1,5 @@
 export async function invokeDocumentAnalysis({supabase,documentId,filePath,outputLanguage,privacyNoticeVersion,termsVersion}){
-  return supabase.functions.invoke('gold-ocr-v28',{
+  return supabase.functions.invoke('gold-document-analysis',{
     body:{
       file_path:filePath,
       document_id:documentId,
