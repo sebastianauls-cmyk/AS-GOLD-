@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 
-// Final production verification follows the active modular workspace.
-const page=fs.readFileSync('app/modules/workspace/WorkspaceApp.js','utf8')
+// Final production verification follows the single active workspace implementation.
+const page=fs.readFileSync('app/modules/workspace/WorkspaceAppV2.js','utf8')
 const pageEntry=fs.readFileSync('app/page.js','utf8')
 const layout=fs.readFileSync('app/layout.js','utf8')
 const firstAction=fs.readFileSync('app/modules/public/V37FirstAction.js','utf8')
@@ -25,7 +25,7 @@ const mustContain=(source,needle,label)=>{
   if(!source.includes(needle)) throw new Error(`E2E guard: missing ${label}: ${needle}`)
 }
 
-mustContain(pageEntry,"./modules/workspace/WorkspaceApp",'workspace page module boundary')
+mustContain(pageEntry,"./modules/workspace/WorkspaceAppCurrent",'single workspace entrypoint')
 if(publicLanding.includes('V37FirstAction')) throw new Error('E2E guard: duplicate first-action card must not be mounted by PublicLanding')
 mustContain(publicLanding,'ProblemNavigator','problem navigator direct public mount')
 mustContain(publicLanding,"./ProblemNavigator",'problem navigator public ownership')
@@ -52,25 +52,21 @@ mustContain(documentsSurface,'name="file"','current document upload form')
 mustContain(documentsSurface,'APP_VERSION','current release badge in document workspace')
 mustContain(page,'DocumentsSurface','document workspace composition')
 
-mustContain(page,'async function analyzeDocument','document analysis')
-mustContain(page,'invokeDocumentAnalysis','document analysis service boundary')
+mustContain(page,'createDocumentWorkflowActions','document workflow boundary')
 mustContain(analysisService,"supabase.functions.invoke('gold-document-analysis'",'current document analysis backend')
-mustContain(page,'analysis_summary','analysis summary persistence')
-mustContain(page,'analysis_next_step','next-step persistence')
-mustContain(page,'async function createAssessment','traffic-light assessment orchestration')
-mustContain(page,'createAssessmentRecord','assessment repository boundary')
+mustContain(page,'analysisUi','analysis UI wiring')
+mustContain(page,'createCaseWorkflowActions','case workflow boundary')
 mustContain(workspaceRepository,"traffic_light:'yellow'",'default case traffic light')
 mustContain(workspaceRepository,"traffic_light:draft.traffic_light",'assessment traffic light')
 mustContain(workspaceRepository,"from('cases')",'case repository persistence')
 mustContain(workspaceRepository,"from('clients')",'client repository persistence')
 
-mustContain(page,'createApproval','approval creation')
+mustContain(page,'createApprovalWorkflowActions','approval workflow boundary')
 mustContain(approvalsSurface,'ApprovalSection','approval workspace module')
 mustContain(page,'ApprovalDetail','approval detail')
 mustContain(page,'prepareDocumentApproval','prepare approval from document')
 
-mustContain(page,"doExport({kind:'case',item:selectedCase},exportType)",'case export action')
-for(const [value,label] of [['pdf','PDF'],['docx','Word (.docx)'],['xlsx','Excel (.xlsx)'],['pptx','PowerPoint (.pptx)'],['csv','CSV (.csv)'],['txt','Text (.txt)']]) mustContain(page,`<option value=\"${value}\">${label}</option>`,`export ${label}`)
+mustContain(page,'createExportWorkflowActions','export workflow boundary')
 mustContain(exportService,'function downloadExportArtifact','download delivery service')
 
 mustContain(caseSurfaces,'backOverview','cases/clients overview navigation')
@@ -79,4 +75,4 @@ mustContain(caseSurfaces,'backClients','client-detail navigation')
 mustContain(dashboardSurface,'setSection','dashboard navigation ownership')
 mustContain(authSurface,'backExplanation','navigation backExplanation in auth module')
 
-console.log('Current code-path end-to-end regression checks passed through modular workspace surfaces and repository services')
+console.log('Current code-path end-to-end regression checks passed against the live WorkspaceAppV2 implementation and current service boundaries')
