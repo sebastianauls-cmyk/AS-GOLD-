@@ -17,7 +17,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Stage Drive-ready source archive contents
+      - name: Stage Drive-ready V80 source backup
         shell: bash
         run: |
           set -euo pipefail
@@ -27,33 +27,18 @@ jobs:
             --exclude '.git/' \
             --exclude 'node_modules/' \
             --exclude '.next/' \
+            --exclude 'public/videos/' \
             --exclude 'backup-source/' \
             --exclude 'AS-Workspace-Gold-*.zip'
           printf '%s\n' "${GITHUB_SHA}" > backup-source/BACKUP_COMMIT_SHA.txt
           printf '%s\n' "V80" > backup-source/APP_RELEASE.txt
+          printf '%s\n' "Large explainer videos are intentionally excluded from this source archive; their references remain in the repository." > backup-source/VIDEO_BACKUP_NOTE.txt
 
-      - name: Upload direct Drive-ready source artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: AS-Workspace-Gold-V80-Drive-Direkt-${{ github.sha }}
-          path: backup-source/
-          include-hidden-files: true
-          if-no-files-found: error
-          retention-days: 90
-
-      - name: Create Drive-friendly source archive
-        run: |
-          zip -r AS-Workspace-Gold-V80-Quellcode-${GITHUB_SHA}.zip . \
-            -x '.git/*' \
-               'node_modules/*' \
-               '.next/*' \
-               'backup-source/*' \
-               'AS-Workspace-Gold-*.zip'
-
-      - name: Upload source archive
+      - name: Upload Drive-ready V80 source backup
         uses: actions/upload-artifact@v4
         with:
           name: AS-Workspace-Gold-V80-Quellcode-${{ github.sha }}
-          path: AS-Workspace-Gold-V80-Quellcode-${GITHUB_SHA}.zip
+          path: backup-source/
+          include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
