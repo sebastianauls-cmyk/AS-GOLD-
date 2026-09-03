@@ -43,14 +43,24 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     return()=>{document.removeEventListener('pointerdown',closeOutside);document.removeEventListener('keydown',closeEscape)}
   },[open])
 
+  useEffect(()=>{
+    if(!open||!window.matchMedia('(max-width: 700px)').matches)return
+    const previousOverflow=document.body.style.overflow
+    document.body.style.overflow='hidden'
+    return()=>{document.body.style.overflow=previousOverflow}
+  },[open])
+
+  const mobileBackdrop=open&&<div className="flagLanguageBackdrop" aria-hidden="true" onPointerDown={()=>setOpen(false)}/>
+
   if(publicPicker){
-    return <div className={`flagLanguage flagLanguagePublicPicker ${className}`.trim()} ref={rootRef} style={{position:'relative',zIndex:120,direction:'ltr',display:'inline-flex',alignItems:'center',gap:8,width:'auto',maxWidth:'100%',minWidth:0,flexWrap:'wrap'}}>
+    return <div className={`flagLanguage flagLanguagePublicPicker ${open?'flagLanguageOpen':''} ${className}`.trim()} ref={rootRef} style={{position:'relative',zIndex:open?300:120,direction:'ltr',display:'inline-flex',alignItems:'center',gap:8,width:'auto',maxWidth:'100%',minWidth:0,flexWrap:'wrap'}}>
       <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(current=>!current)} style={{minWidth:mobilePublic?'150px':0}}>
         <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/>
         <span className="flagLanguagePublicText"><small>{label}</small><strong>{active.label}</strong></span>
         <span className="flagLanguageChevron" aria-hidden="true">{open?'▴':'▾'}</span>
       </button>
       {onExplainer&&<button type="button" className="secondary explainerVideoTrigger" onClick={()=>{setOpen(false);onExplainer(value)}}>▶ {explainerButtonText[value]||explainerButtonText.de}</button>}
+      {mobileBackdrop}
       {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
         <button type="button" className="flagLanguageMenuBack" onClick={()=>setOpen(false)} aria-label={backLabel.replace(/^←\s*|\s*→$/g,'')}>{backLabel}</button>
         {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}>
@@ -60,11 +70,12 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
     </div>
   }
 
-  return <div className={`flagLanguage flagLanguageModular ${showLabel?'flagLanguageLabeled':''} ${className}`.trim()} ref={rootRef}>
+  return <div className={`flagLanguage flagLanguageModular ${showLabel?'flagLanguageLabeled':''} ${open?'flagLanguageOpen':''} ${className}`.trim()} ref={rootRef}>
     {showLabel&&<span className="flagLanguageLabel">{label}</span>}
     <button type="button" className="flagLanguageTrigger" aria-label={`${label}: ${active.label}`} aria-haspopup="listbox" aria-expanded={open} aria-controls={open?menuId:undefined} title={`${label}: ${active.label}`} onClick={()=>setOpen(current=>!current)}>
       <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong>{active.label}</strong><span className="flagLanguageChevron" aria-hidden="true">{open?'▴':'▾'}</span>
     </button>
+    {mobileBackdrop}
     {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
       <button type="button" className="flagLanguageMenuBack" onClick={()=>setOpen(false)} aria-label={backLabel.replace(/^←\s*|\s*→$/g,'')}>{backLabel}</button>
       {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}>
