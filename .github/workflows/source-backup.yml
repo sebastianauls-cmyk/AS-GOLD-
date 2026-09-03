@@ -1,4 +1,4 @@
-name: AS Gold Source Backup
+name: AS Workspace Gold Source Backup
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   archive:
@@ -17,40 +17,7 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Persist current multilingual explainer videos
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p public/videos
-
-          download_if_missing() {
-            target="$1"
-            url="$2"
-            if [ ! -s "$target" ]; then
-              curl --fail --location --retry 3 --retry-delay 2 --output "$target" "$url"
-            fi
-          }
-
-          download_if_missing public/videos/as-gold-v35-de.mp4 'https://files2.heygen.ai/aws_pacific/avatar_tmp/969e7dea31614703a4c738c751f0195f/6c9d9075013e6f931578d77afa8c9f07.mp4?Expires=1788816789&Signature=LbtR~QuDek1UKe3orhlhcXtpDGSaLnObbK~WeE3aunm-jDJHj3QLf~btzVGQ5tLYLp1RLu4npwL636qyQZPRYDR0ngLSiY51Cz7AhmZnkCjQEMGDlXfaVG3CygjtCQiGqPmLsgpoXtMCEp3JghTdiVqAw322uc6AT4RmLXQy1fWHJ6VgEzgCnvFVcP79TSXijF5cqp2hvSXWzlcvTh7zYqZxF6Q4eJMNFDSOVZDMaS4t0TAMReC6saTXN6kRMhB~panKiVrfGAi7NaGZZ~uenyovRowBeC3L2EVM7T~94NLu4RG~bgPSyIf6UdYkuN0fVwOcGXc4H~fnJ0oiYfCggQ__&Key-Pair-Id=K38HBHX5LX3X2H'
-          download_if_missing public/videos/as-gold-v35-en.mp4 'https://resource2.heygen.ai/video_translate/3ccf94ed801641f585cd0620cc97de38-en/original.mp4'
-          download_if_missing public/videos/as-gold-v35-fr.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-fr/original.mp4'
-          download_if_missing public/videos/as-gold-v35-tr.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-tr/original.mp4'
-          download_if_missing public/videos/as-gold-v35-pl.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-pl/original.mp4'
-          download_if_missing public/videos/as-gold-v35-ru.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ru/original.mp4'
-          download_if_missing public/videos/as-gold-v35-ar.mp4 'https://resource2.heygen.ai/video_translate/612b49a63cc9445b91024a45151c6446-ar/original.mp4'
-          download_if_missing public/videos/as-gold-v35-fa.mp4 'https://resource2.heygen.ai/video_translate/4378b94dc0e84ad598a3742c105bbda7-fa_fa-IR/original.mp4'
-          download_if_missing public/videos/as-gold-v35-ro.mp4 'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-ro/original.mp4'
-          download_if_missing public/videos/as-gold-v35-bg.mp4 'https://resource2.heygen.ai/video_translate/57f2030d6e6c433997d8627f4c3f5902-bg/original.mp4'
-
-          if [ -n "$(git status --porcelain -- public/videos)" ]; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            git add public/videos
-            git commit -m 'Store V35 multilingual explainer videos permanently'
-            git push
-          fi
-
-      - name: Stage direct Drive-ready source archive contents
+      - name: Stage Drive-ready source archive contents
         shell: bash
         run: |
           set -euo pipefail
@@ -58,48 +25,35 @@ jobs:
           mkdir -p backup-source
           rsync -a ./ backup-source/ \
             --exclude '.git/' \
-            --exclude 'public/videos/' \
             --exclude 'node_modules/' \
             --exclude '.next/' \
             --exclude 'backup-source/' \
-            --exclude 'AS-Gold-*.zip'
+            --exclude 'AS-Workspace-Gold-*.zip'
           printf '%s\n' "${GITHUB_SHA}" > backup-source/BACKUP_COMMIT_SHA.txt
+          printf '%s\n' "V80" > backup-source/APP_RELEASE.txt
 
-      - name: Upload direct Drive-ready source ZIP artifact
+      - name: Upload direct Drive-ready source artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AS-Gold-Quellcode-Drive-Direkt-${{ github.sha }}
+          name: AS-Workspace-Gold-V80-Drive-Direkt-${{ github.sha }}
           path: backup-source/
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 90
 
-      - name: Create Drive-friendly source-only archive
+      - name: Create Drive-friendly source archive
         run: |
-          zip -r AS-Gold-V38-Quellcode-Drive-${GITHUB_SHA}.zip . \
+          zip -r AS-Workspace-Gold-V80-Quellcode-${GITHUB_SHA}.zip . \
             -x '.git/*' \
-               'public/videos/*' \
                'node_modules/*' \
                '.next/*' \
                'backup-source/*' \
-               'AS-Gold-*.zip'
-
-      - name: Upload Drive-friendly source-only archive
-        uses: actions/upload-artifact@v4
-        with:
-          name: AS-Gold-V38-Quellcode-Drive-${{ github.sha }}
-          path: AS-Gold-V38-Quellcode-Drive-${{ github.sha }}.zip
-          if-no-files-found: error
-          retention-days: 90
-
-      - name: Create source archive
-        run: |
-          zip -r AS-Gold-Quellcode-${GITHUB_SHA}.zip . -x '.git/*' 'backup-source/*'
+               'AS-Workspace-Gold-*.zip'
 
       - name: Upload source archive
         uses: actions/upload-artifact@v4
         with:
-          name: AS-Gold-Quellcode-${{ github.sha }}
-          path: AS-Gold-Quellcode-${{ github.sha }}.zip
+          name: AS-Workspace-Gold-V80-Quellcode-${{ github.sha }}
+          path: AS-Workspace-Gold-V80-Quellcode-${GITHUB_SHA}.zip
           if-no-files-found: error
           retention-days: 90
