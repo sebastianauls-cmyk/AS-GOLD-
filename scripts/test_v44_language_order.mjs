@@ -1,10 +1,12 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
-const workspace=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceApp.js',import.meta.url),'utf8')
+const workspace=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceAppV2.js',import.meta.url),'utf8')
+const currentWorkspace=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceAppCurrent.js',import.meta.url),'utf8')
 const publicSurface=fs.readFileSync(new URL('../app/modules/public/PublicLanding.js',import.meta.url),'utf8')
 const publicHeader=fs.readFileSync(new URL('../app/modules/public/PublicHeader.js',import.meta.url),'utf8')
 const languageSurface=fs.readFileSync(new URL('../app/modules/public/PublicLanguageModules.js',import.meta.url),'utf8')
+const languageRegistry=fs.readFileSync(new URL('../app/modules/language/languageRegistry.mjs',import.meta.url),'utf8')
 const pageEntry=fs.readFileSync(new URL('../app/page.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 const legacyPath=new URL('../app/components/V44LanguageOrder.js',import.meta.url)
@@ -12,7 +14,8 @@ const legacyPath=new URL('../app/components/V44LanguageOrder.js',import.meta.url
 const interfaceControl=languageSurface.indexOf('<LanguageSwitcher value={language} onChange={onLanguageChange}')
 const outputControl=languageSurface.indexOf('<LanguageSwitcher value={outputLanguage} onChange={onOutputLanguageChange}')
 
-assert.match(pageEntry,/modules\/workspace\/WorkspaceApp/,'root page must delegate to workspace module')
+assert.match(pageEntry,/modules\/workspace\/WorkspaceAppCurrent/,'root page must delegate to the single current workspace controller')
+assert.match(currentWorkspace,/WorkspaceAppV2/,'current workspace entry must delegate to the active implementation')
 assert.match(publicSurface,/PublicHeader/,'public landing must compose the public header directly')
 assert.match(publicHeader,/PublicLanguageModules/,'public header must compose the language module directly')
 assert.ok(interfaceControl>=0,'public interface-language control must exist in its owning module')
@@ -20,5 +23,7 @@ assert.ok(outputControl>interfaceControl,'public output-language control must fo
 assert.doesNotMatch(languageSurface,/MutationObserver|createPortal/,'language controls must render directly without DOM rearrangement')
 assert.doesNotMatch(layout,/V44LanguageOrder/,'legacy V44 DOM rearranger must not be mounted')
 assert.equal(fs.existsSync(legacyPath),false,'legacy V44 DOM rearranger must be removed after modular replacement')
-assert.match(workspace,/PublicLanding/,'workspace must delegate the public surface instead of owning language markup')
-console.log('V44 replacement guard passed: interface language naturally precedes customer/output language in the owning modular React component; DOM rearranger is removed.')
+assert.match(workspace,/PublicLanding/,'active workspace must delegate the public surface instead of owning language markup')
+assert.match(workspace,/languageRegistry/,'active workspace must consume the central language registry')
+assert.match(languageRegistry,/supportedLanguages/,'central language registry must expose supported languages')
+console.log('V80 language-order guard passed: the active controller uses one central language registry and interface language naturally precedes output language.')
