@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from './PrivacyControls'
 import { useLegalLanguage } from '../language/LegalLanguageContext'
-import { privacyDashboardCopy } from './v31InteractiveLegalTranslations.mjs'
+import { privacyDashboardCopy } from './privacyInteractionTranslations.mjs'
 import { supabase } from '../services/supabaseClient'
 
 export default function PrivacyDashboard(){
