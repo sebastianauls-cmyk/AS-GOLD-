@@ -2,7 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { getProblemLanguageProfile, getSpeechLocale, normalizeProblemLanguage } from './problemNavigatorLanguagesV36.mjs'
-import { recommendProblem } from './problemRecommendationV73.mjs'
+import { recommendProblem } from './problemRecommendationV74.mjs'
 import { jumpToPublicCaseResult } from './caseNavigation'
 import { V37FirstAction } from './V37FirstAction'
 
