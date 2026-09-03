@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
 const mobile=fs.readFileSync(new URL('../app/modules/navigation/MobileResilience.js',import.meta.url),'utf8')
-const compatibility=fs.readFileSync(new URL('../app/components/V38MobileResilience.js',import.meta.url),'utf8')
 const language=fs.readFileSync(new URL('../app/modules/language/LanguageSwitcher.js',import.meta.url),'utf8')
 const styles=fs.readFileSync(new URL('../app/globals.css',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
@@ -14,7 +13,6 @@ assert.match(mobile,/v38DeadlineWarningCard/)
 assert.match(mobile,/v38PrimaryNextStep/)
 assert.match(mobile,/v38AssessmentWhy/)
 assert.match(mobile,/flagLanguagePublicPicker/)
-assert.match(compatibility,/modules\/navigation\/MobileResilience/)
 assert.match(language,/backButtonText=\{de:'← Zurück'/,'German localized back label must remain available')
 assert.match(language,/className="flagLanguageMenuBack"/,'language menus must expose an explicit back control')
 assert.match(language,/aria-label=\{backLabel\.replace/,'back control must expose a localized accessible label')
@@ -24,4 +22,4 @@ assert.match(styles,/@media\(max-width:700px\)\{\s*\.flagLanguageMenu\{[^}]*posi
 assert.match(layout,/modules\/navigation\/MobileResilience/)
 assert.match(layout,/<MobileResilience\/>/)
 
-console.log('V38 mobile resilience guard passed: responsive behavior is owned by the navigation module and each rendered language menu exposes one scrollable localized back control.')
+console.log('V80 mobile resilience guard passed against canonical navigation module.')
