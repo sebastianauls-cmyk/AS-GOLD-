@@ -13,8 +13,21 @@ export function signInSession(supabase,{email,password}){
   return supabase.auth.signInWithPassword({email,password})
 }
 
-export function sendPasswordReset(supabase,{email,redirectTo}){
-  return supabase.auth.resetPasswordForEmail(email,{redirectTo})
+export async function sendPasswordReset(_supabase,{email}){
+  try{
+    const response=await fetch(`${AUTH_REDIRECT_URL}/api/auth/password-reset`,{
+      method:'POST',
+      headers:{'content-type':'application/json'},
+      body:JSON.stringify({email})
+    })
+    const payload=await response.json().catch(()=>({}))
+    if(!response.ok){
+      return {data:null,error:{code:payload.code||'reset_delivery_failed',message:'Password reset delivery failed'}}
+    }
+    return {data:payload,error:null}
+  }catch{
+    return {data:null,error:{code:'reset_delivery_failed',message:'Password reset delivery failed'}}
+  }
 }
 
 export function updatePassword(supabase,{password}){

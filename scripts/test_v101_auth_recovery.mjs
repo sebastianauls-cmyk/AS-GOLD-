@@ -7,7 +7,7 @@ const workflow=fs.readFileSync('app/modules/auth/workspaceAuthWorkflow.js','utf8
 const controller=fs.readFileSync('app/modules/workspace/WorkspaceController.js','utf8')
 const languages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 
-assert.equal(APP_VERSION,'V101')
+assert.ok(Number(APP_VERSION.slice(1))>=101,'V101 auth recovery must remain active in later releases')
 for(const language of languages){
   const message=getAuthErrorMessage({code:'invalid_credentials'},language)
   assert.ok(message.length>25,`${language}: invalid-credentials guidance is missing`)
