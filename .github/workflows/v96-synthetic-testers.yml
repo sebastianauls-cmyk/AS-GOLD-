@@ -1,0 +1,18 @@
+name: V96 Synthetic Tester Guard
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  synthetic-testers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Run V96 synthetic tester regression guard
+        run: node scripts/test_v96_synthetic_testers.mjs
