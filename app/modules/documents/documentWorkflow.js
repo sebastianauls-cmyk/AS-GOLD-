@@ -3,6 +3,7 @@ import { createWorkspaceDocumentSignedUrl, updateDocumentRecord, uploadWorkspace
 import { invokeDocumentAnalysis } from '../services/documentAnalysis'
 import { allowedUploadExtensions, maxUploadBytes } from './uploadConfig'
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../compliance/PrivacyControls'
+import { mapDocumentLanguageWorkflowResult } from '../language/documentLanguageWorkflow.mjs'
 
 async function functionErrorMessage(error,fallback){
   if(!error) return fallback
@@ -13,15 +14,6 @@ async function functionErrorMessage(error,fallback){
     }
   }catch{}
   return error.message||fallback
-}
-
-function bilingualAnalysisSummary(result,outputLanguage){
-  const sections=[]
-  if(result?.document_translation) sections.push(`ÜBERSETZUNG DES ORIGINALDOKUMENTS (${String(outputLanguage||'de').toUpperCase()})\n${result.document_translation}`)
-  if(result?.summary) sections.push(`ERKLÄRUNG FÜR DEN KUNDEN\n${result.summary}`)
-  if(result?.response_letter_de) sections.push(`VERSANDFERTIGER ENTWURF – DEUTSCH\n${result.response_letter_de}`)
-  if(result?.customer_copy) sections.push(`KUNDENKOPIE / ÜBERSETZUNG (${String(outputLanguage||'de').toUpperCase()})\n${result.customer_copy}`)
-  return sections.join('\n\n────────────────────────\n\n')
 }
 
 export function createDocumentWorkflowActions({
@@ -58,24 +50,8 @@ export function createDocumentWorkflowActions({
     if(error){setMessage(await functionErrorMessage(error,analysisCopy.failed));return false}
     if(result?.status==='configuration_required'){setMessage(result.message||analysisCopy.failed);return false}
     const suggestedCase=data.cases.some(item=>item.id===result?.suggested_case_id)?result.suggested_case_id:null
-    const generated={
-      fields:{
-        extracted_text:result?.extracted_text||'',
-        document_type:result?.document_type||document.document_type||'',
-        document_date:/^\d{4}-\d{2}-\d{2}$/.test(result?.document_date||'')?result.document_date:(document.document_date||''),
-        case_id:suggestedCase||document.case_id||'',
-        analysis_summary:bilingualAnalysisSummary(result,result?.output_language||outputLanguage)||result?.summary||'',
-        analysis_next_step:result?.next_step||''
-      },
-      facts:{
-        sender_or_author:result?.sender_or_author||null,
-        recipient:result?.recipient||null,
-        reference_numbers:Array.isArray(result?.reference_numbers)?result.reference_numbers:[],
-        deadlines:Array.isArray(result?.deadlines)?result.deadlines:[],
-        monetary_amounts:Array.isArray(result?.monetary_amounts)?result.monetary_amounts:[],
-        confidence:result?.confidence||null
-      }
-    }
+    const generated=mapDocumentLanguageWorkflowResult(result,document,result?.output_language||outputLanguage)
+    generated.fields.case_id=suggestedCase||document.case_id||''
     recordLocalAction('document_analysis_generated')
     const auditSaved=await recordServerAudit('document_analysis_generated',{status:'provisional',output_language:result?.output_language||outputLanguage,bilingual_response:!!result?.response_letter_de},'document',document.id)
     setMessage(auditSaved?analysisCopy.ready:`${analysisCopy.ready} · ${serverCopy.auditFailed}`)
