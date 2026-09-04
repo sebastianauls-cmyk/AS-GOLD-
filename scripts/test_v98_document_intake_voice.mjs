@@ -46,7 +46,9 @@ console.log('✓ Scenario 2: Polish/foreign document -> source language detectio
 // Scenario 3: Document plus spoken user context.
 must(surface,'<VoiceContextInput','document workspace mounts standalone microphone module')
 must(voice,'SpeechRecognition','microphone module owns browser speech recognition')
-must(voice,'function accept(){setConfirmed(draft.trim())}','transcript requires explicit acceptance')
+must(voice,'function accept(){','transcript acceptance has a dedicated handler')
+must(voice,'setConfirmed(draft.trim())','accepted transcript stores the trimmed draft')
+must(voice,'onClick={accept}','transcript requires an explicit acceptance action')
 must(voice,'name="voice_context"','confirmed spoken context submitted separately')
 must(voice,'name="voice_language"','spoken language submitted separately')
 must(repository,'voice_context:voiceContext','repository stores spoken context separately')
