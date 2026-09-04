@@ -6,7 +6,7 @@ import { isAllowedResetOrigin } from '../app/api/auth/password-reset/route.js'
 const repository=fs.readFileSync('app/modules/services/authRepository.js','utf8')
 const route=fs.readFileSync('app/api/auth/password-reset/route.js','utf8')
 
-assert.equal(APP_VERSION,'V102')
+assert.ok(Number(APP_VERSION.slice(1))>=102,'V102 password reset delivery must remain active in later releases')
 assert.equal(isAllowedResetOrigin('https://app-gold-workspace.vercel.app'),true)
 assert.equal(isAllowedResetOrigin('http://localhost:3000'),true)
 assert.equal(isAllowedResetOrigin('https://example.com'),false)

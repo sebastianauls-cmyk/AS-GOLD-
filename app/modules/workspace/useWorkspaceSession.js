@@ -10,6 +10,13 @@ function isPasswordRecoveryUrl(){
   return query.get('type')==='recovery'||hash.get('type')==='recovery'
 }
 
+function requestedPublicScreen(){
+  const start=new URLSearchParams(window.location.search).get('start')
+  if(start==='register')return 'register'
+  if(start==='reset')return 'request-reset'
+  return 'public'
+}
+
 export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecovery,onSignedOut}){
   const loadAppRef=useRef(loadApp)
   const recoveryRef=useRef(onPasswordRecovery)
@@ -24,7 +31,7 @@ export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecove
     getAuthSession(supabase).then(({data:{session}})=>{
       if(!alive)return
       if(isPasswordRecoveryUrl()){recoveryRef.current?.();return}
-      session?loadAppRef.current(session):setScreen(new URLSearchParams(window.location.search).get('start')==='register'?'register':'public')
+      session?loadAppRef.current(session):setScreen(requestedPublicScreen())
     })
     const subscription=watchAuthState(supabase,(event,session)=>{
       if(!alive) return
