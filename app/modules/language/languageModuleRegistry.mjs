@@ -1,7 +1,7 @@
 import { LANGUAGE_CATALOG, isSupportedLanguage } from './languageRegistry.mjs'
 import { COUNTRY_CATALOG } from '../country/countryRegistry.mjs'
 
-export const LANGUAGE_MODULE_REGISTRY_VERSION='v91'
+export const LANGUAGE_MODULE_REGISTRY_VERSION='v92'
 
 export const LANGUAGE_MODULE_CAPABILITIES=Object.freeze([
   'interface_texts',
@@ -30,6 +30,18 @@ export const LANGUAGE_ENRICHMENT_TOPICS=Object.freeze([
 
 export const ALL_COUNTRY_CODES=Object.freeze(COUNTRY_CATALOG.map(country=>country.key))
 
+function countrySubmodules(){
+  return COUNTRY_CATALOG.map(country=>Object.freeze({
+    key:country.key,
+    label:country.label,
+    jurisdiction_label:country.jurisdictionLabel,
+    locale:country.defaultLocale,
+    module_type:'country_submodule',
+    inherits_verified_country_sources:true,
+    topics:[...LANGUAGE_ENRICHMENT_TOPICS]
+  }))
+}
+
 export const LANGUAGE_MODULES=Object.freeze(
   LANGUAGE_CATALOG.map(language=>Object.freeze({
     key:language.key,
@@ -39,6 +51,7 @@ export const LANGUAGE_MODULES=Object.freeze(
     direction:language.rtl?'rtl':'ltr',
     associated_country_codes:[...(language.countryCodes||[])],
     available_country_codes:[...ALL_COUNTRY_CODES],
+    country_submodules:countrySubmodules(),
     capabilities:[...LANGUAGE_MODULE_CAPABILITIES],
     enrichment_topics:[...LANGUAGE_ENRICHMENT_TOPICS],
     independent_from_country:true,
@@ -54,6 +67,12 @@ export function languageModuleByKey(key){
   return LANGUAGE_MODULES.find(module=>module.key===key)||LANGUAGE_MODULES[0]
 }
 
+export function languageCountrySubmodule(languageKey,countryCode){
+  const module=languageModuleByKey(languageKey)
+  const code=String(countryCode||'').toUpperCase()
+  return module.country_submodules.find(country=>country.key===code)||null
+}
+
 export function createLanguageModuleContext({language='de',homeCountry=null,targetCountry=null}={}){
   const module=languageModuleByKey(language)
   return {
@@ -64,10 +83,11 @@ export function createLanguageModuleContext({language='de',homeCountry=null,targ
     direction:module.direction,
     associated_country_codes:[...module.associated_country_codes],
     available_country_codes:[...module.available_country_codes],
+    country_submodules:module.country_submodules.map(({key,label,jurisdiction_label})=>({key,label,jurisdiction_label})),
     home_country:homeCountry,
     target_country:targetCountry,
     enrichment_topics:[...module.enrichment_topics],
-    rule:'Changing the language module changes only language/output behaviour. Every language module can use every configured country. It must never change home country or target country.'
+    rule:'Changing the language module changes only language/output behaviour. Every language module contains a separate country submodule for every configured country. It must never change home country or target country.'
   }
 }
 
@@ -77,6 +97,7 @@ export function languageCountryEnrichmentPlan({language='de',homeCountry=null,ta
     version:LANGUAGE_MODULE_REGISTRY_VERSION,
     language:module.key,
     countries:[...module.available_country_codes],
+    country_submodules:module.country_submodules.map(({key,label})=>({key,label})),
     active_home_country:homeCountry,
     active_target_country:targetCountry,
     topics:[...LANGUAGE_ENRICHMENT_TOPICS],
@@ -89,11 +110,14 @@ export function enrichLanguageModuleFromCountryRecords({language='de',homeCountr
   const plan=languageCountryEnrichmentPlan({language,homeCountry,targetCountry})
   const records=Array.isArray(countryRecords)?countryRecords:[]
   const byCode=new Map(records.map(record=>[String(record.country_code||'').toUpperCase(),record]))
-  const countries=plan.countries.map(code=>{
-    const record=byCode.get(String(code).toUpperCase())||null
+  const country_submodules=plan.country_submodules.map(submodule=>{
+    const code=submodule.key
+    const record=byCode.get(code)||null
     const ready=record?.status==='ready'
     return {
+      module_type:'country_submodule',
       country_code:code,
+      label:submodule.label,
       ready,
       status:record?.status||'missing',
       official_sources:ready&&Array.isArray(record.official_sources)?record.official_sources:[],
@@ -106,26 +130,27 @@ export function enrichLanguageModuleFromCountryRecords({language='de',homeCountr
       residence_sources:Array.isArray(record?.residence_sources)?record.residence_sources:[]
     }
   })
-  const missing=countries.filter(country=>!country.ready||!country.entry_requirements_verified||!country.residence_requirements_verified)
+  const missing=country_submodules.filter(country=>!country.ready||!country.entry_requirements_verified||!country.residence_requirements_verified)
   return {
     version:LANGUAGE_MODULE_REGISTRY_VERSION,
     language:plan.language,
     topics:plan.topics,
-    countries,
+    country_submodules,
     active_home_country:plan.active_home_country,
     active_target_country:plan.active_target_country,
     status:missing.length===0?'ready':'needs_enrichment',
     missing:missing.map(country=>({country_code:country.country_code,status:country.status,entry_requirements_verified:country.entry_requirements_verified,residence_requirements_verified:country.residence_requirements_verified})),
-    rule:'Every language module contains every configured country. It may explain only verified country content; missing legal, entry or residence data must remain visibly unverified until official sources are added.'
+    rule:'Every language module contains every configured country as its own country submodule. It may explain only verified country content; missing legal, entry or residence data must remain visibly unverified until official sources are added.'
   }
 }
 
 export function languageModuleRegistryContract(){
   return {
     version:LANGUAGE_MODULE_REGISTRY_VERSION,
-    modules:LANGUAGE_MODULES.map(({key,label,locale,rtl,direction,associated_country_codes,available_country_codes})=>({key,label,locale,rtl,direction,associated_country_codes,available_country_codes})),
+    modules:LANGUAGE_MODULES.map(({key,label,locale,rtl,direction,associated_country_codes,available_country_codes,country_submodules})=>({key,label,locale,rtl,direction,associated_country_codes,available_country_codes,country_submodules:country_submodules.map(({key,label})=>({key,label}))})),
     oneModulePerLanguage:true,
     allCountriesPerLanguage:true,
+    countrySubmodulesPerLanguage:true,
     independentFromCountry:true,
     automaticCountryEnrichment:true,
     capabilities:[...LANGUAGE_MODULE_CAPABILITIES],
