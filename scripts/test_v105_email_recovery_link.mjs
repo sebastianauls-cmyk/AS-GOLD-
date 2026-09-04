@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import {inspectRecoveryLink} from '../app/modules/auth/recoveryLinkRepair.mjs'
 import {APP_VERSION} from '../app/modules/release/appRelease.mjs'
 
-assert.equal(APP_VERSION,'V105')
+assert.ok(Number(APP_VERSION.replace('V',''))>=105)
 
 const emailLink='https://bcvggtnvuesaihqvgisg.supabase.co/auth/v1/verify?token=hashed-recovery-token&type=recovery&redirect_to=http%3A%2F%2Flocalhost%3A3000'
 const inspected=inspectRecoveryLink(emailLink)
