@@ -1,1 +1,1 @@
-export * from '../modules/language/v36Languages.mjs'
+export * from '../modules/language/languageRegistry.mjs'
