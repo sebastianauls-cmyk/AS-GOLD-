@@ -1,10 +1,12 @@
 import { QuickActions } from '../cases/V24Workspace'
+import { EvidenceActionPanel } from '../intelligence/EvidenceActionPanel'
 
 export function DashboardSurface({core,handleQuickAction,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd}){
   return <>
     <QuickActions copy={core} onAction={handleQuickAction} deadlineCases={deadlineCases}/>
     <h2>{a.overview}</h2>
     <p className="muted">{a.signedInAs} {user?.email}</p>
+    <EvidenceActionPanel a={a} data={data}/>
     <section className={`dashboardGuide dash-${currentTier}`}>
       <div className="dashboardGuideMain"><span className="modeBadge">{dg.mode}</span><h3>{dg.title}</h3><p>{dg.lead}</p><button className="primary nextAction" onClick={()=>setSection(dg.nextSection)}>{dg.next} →</button></div>
       <div className="dashboardSteps">{dg.steps.map((step,i)=><div className="dashboardStep" key={step}><span>{i+1}</span><b>{step.replace(/^\d+\.\s*/,'')}</b></div>)}</div>
