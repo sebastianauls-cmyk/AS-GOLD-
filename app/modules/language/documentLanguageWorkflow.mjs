@@ -36,14 +36,24 @@ export function documentLanguageWorkflowLanguage(key){
   return DOCUMENT_LANGUAGE_WORKFLOW_LANGUAGES.find(language=>language.key===key)||DOCUMENT_LANGUAGE_WORKFLOW_LANGUAGES[0]
 }
 
-export function mapDocumentLanguageWorkflowResult(result={},document={}){
+export function composeDocumentLanguageWorkflowSummary(result={},outputLanguage='de'){
+  const language=documentLanguageWorkflowLanguage(outputLanguage)
+  const sections=[]
+  if(result.document_translation) sections.push(`ÜBERSETZUNG DES ORIGINALDOKUMENTS (${language.label})\n${result.document_translation}`)
+  if(result.summary) sections.push(`ERKLÄRUNG FÜR DEN KUNDEN (${language.label})\n${result.summary}`)
+  if(result.response_letter_de) sections.push(`VERSANDFERTIGER ENTWURF – DEUTSCH\n${result.response_letter_de}`)
+  if(result.customer_copy) sections.push(`KUNDENKOPIE / ÜBERSETZUNG (${language.label})\n${result.customer_copy}`)
+  return sections.join('\n\n────────────────────────\n\n')
+}
+
+export function mapDocumentLanguageWorkflowResult(result={},document={},outputLanguage='de'){
   return {
     fields:{
       extracted_text:result.extracted_text||'',
       document_translation:result.document_translation||'',
       document_type:result.document_type||document.document_type||'',
       document_date:/^\d{4}-\d{2}-\d{2}$/.test(result.document_date||'')?result.document_date:(document.document_date||''),
-      analysis_summary:result.summary||'',
+      analysis_summary:composeDocumentLanguageWorkflowSummary(result,outputLanguage)||result.summary||'',
       analysis_next_step:result.next_step||'',
       response_letter_de:result.response_letter_de||'',
       customer_copy:result.customer_copy||''
