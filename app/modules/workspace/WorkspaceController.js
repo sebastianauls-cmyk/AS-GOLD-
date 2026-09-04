@@ -22,14 +22,14 @@ import { emptyData, emptyCase } from './stateConfig'
 import { launchTrustText, serverControlText, accessPendingMessages } from '../compliance/workspaceControlText'
 import { notices, dashboardGuide, transparencyText, caseDiscoveryText, publicAudienceText, testerLinkText } from '../public/catalog'
 import { terms, plans, planJourney, planText, journeyLabels, recommendationText, periodText, goalTier, tierRank } from '../pricing/catalog'
-import { CaseDetail, DocumentDetail, getV24Copy } from '../cases/V24Workspace'
-import { ApprovalDetail, getV25ApprovalCopy } from '../cases/V25ApprovalWorkflow'
-import { getV26AnalysisCopy } from '../documents/V26DocumentAnalysis'
+import { CaseDetail, DocumentDetail, getV24Copy } from '../cases/CaseWorkspace'
+import { ApprovalDetail, getV25ApprovalCopy } from '../cases/ApprovalWorkflowUi'
+import { getV26AnalysisCopy } from '../documents/DocumentAnalysis'
 import { LegalAcceptance, PRIVACY_NOTICE_VERSION, TERMS_VERSION, getV28PrivacyCopy } from '../compliance/PrivacyControls'
 import { getV29PasswordCopy, validateV29Password } from '../auth/PasswordPolicy'
-import { localeForLanguage, pageTranslations } from '../language/v36Languages.mjs'
-import { promoTranslations } from '../pricing/v31PromoTranslations.mjs'
-import { orderCasesByResearch } from '../public/casePriorityV56.mjs'
+import { localeForLanguage, pageTranslations } from '../language/languageRegistry.mjs'
+import { promoTranslations } from '../pricing/promoTranslations.mjs'
+import { orderCasesByResearch } from '../public/casePriority.mjs'
 import { useLanguagePreferences } from '../language/useLanguagePreferences'
 import { createCaseWorkflowActions } from '../cases/caseWorkflow'
 import { createApprovalWorkflowActions } from '../cases/approvalWorkflow'
@@ -54,7 +54,7 @@ for(const [catalogName,translations] of Object.entries(pageTranslations)){
   Object.assign(pageCatalogs[catalogName],translations)
 }
 
-export default function WorkspaceAppV2(){
+export default function WorkspaceController(){
   const [screen,setScreen]=useState('loading')
   const [email,setEmail]=useState('')
   const [password,setPassword]=useState('')
