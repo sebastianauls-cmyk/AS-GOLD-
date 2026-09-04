@@ -1,4 +1,4 @@
-export const CONTINUOUS_IMPROVEMENT_VERSION='v83'
+export const CONTINUOUS_IMPROVEMENT_VERSION='v84'
 
 export const MONITOR_KINDS=Object.freeze({
   legal:'legal_monitor',
@@ -53,12 +53,26 @@ export function normalizeImprovementProposal(input={}){
   return proposal
 }
 
+export function ownerWasInformed(proposal){
+  return !!proposal?.owner_notified_at
+}
+
+export function ownerAcknowledged(proposal){
+  return ownerWasInformed(proposal)&&!!proposal?.owner_acknowledged_at
+}
+
+export function mayNotifyAudience(proposal){
+  return ownerAcknowledged(proposal)
+}
+
 export function canCreateImplementationTask(proposal){
-  return proposal?.status==='approved'&&!!proposal?.approved_at
+  return ownerAcknowledged(proposal)
+    && proposal?.status==='approved'
+    && !!proposal?.approved_at
 }
 
 export function implementationTaskFromProposal(proposal){
-  if(!canCreateImplementationTask(proposal)) throw new Error('Explicit approval is required before implementation')
+  if(!canCreateImplementationTask(proposal)) throw new Error('Owner notice, acknowledgement and explicit approval are required before implementation')
   return {
     proposal_id:proposal.id,
     monitor_kind:proposal.monitor_kind,
@@ -67,6 +81,7 @@ export function implementationTaskFromProposal(proposal){
     recommendation:proposal.recommendation,
     implementation_scope:Array.isArray(proposal.implementation_scope)?proposal.implementation_scope:[],
     source_urls:Array.isArray(proposal.source_urls)?proposal.source_urls:[],
+    owner_notice_required:false,
     approval_required:false,
     production_deploy_allowed:false
   }
@@ -77,6 +92,9 @@ export function continuousImprovementContract(){
     version:CONTINUOUS_IMPROVEMENT_VERSION,
     monitors:Object.values(MONITORS).map(({key,requiresCountryContext,mayAutoImplement})=>({key,requiresCountryContext,mayAutoImplement})),
     statuses:[...IMPROVEMENT_STATUSES],
-    approvalGate:'pending -> explicit approval -> implementation task -> tests -> explicit production release'
+    ownerFirst:true,
+    approvalAuthority:'primary_app_owner_only',
+    audienceGate:'owner must be informed and acknowledge before wider notification',
+    approvalGate:'finding -> owner notified -> owner acknowledged -> affected users informed -> owner explicit approval -> implementation task -> tests -> owner explicit production release'
   }
 }
