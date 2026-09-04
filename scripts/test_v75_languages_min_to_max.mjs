@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
-import { recommendProblem } from '../app/modules/public/problemRecommendationV74.mjs'
-import { getProblemLanguageProfile } from '../app/modules/public/problemNavigatorLanguagesV36.mjs'
-import { supportedLanguages, rtlLanguages } from '../app/modules/language/v36Languages.mjs'
+import { recommendProblem } from '../app/modules/public/problemRecommendation.mjs'
+import { getProblemLanguageProfile } from '../app/modules/public/problemLanguageCatalog.mjs'
+import { supportedLanguages, rtlLanguages } from '../app/modules/language/languageRegistry.mjs'
 import { OUTPUT_LANGUAGES } from '../app/modules/language/outputLanguage.js'
 
 const levels=['start','klar','analyse','komplett','business']
@@ -107,4 +107,4 @@ for(const language of expectedLanguages){
 
 assert.equal(total,55)
 assert.deepEqual(failures,[],failures.join('\n'))
-console.log(`V75 language Min-to-Max matrix passed: ${total}/55 recommendations across 11 languages and five levels.`)
+console.log(`V80 language Min-to-Max matrix passed: ${total}/55 recommendations across 11 languages and five levels.`)
