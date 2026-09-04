@@ -15,6 +15,15 @@ async function functionErrorMessage(error,fallback){
   return error.message||fallback
 }
 
+function bilingualAnalysisSummary(result,outputLanguage){
+  const sections=[]
+  if(result?.document_translation) sections.push(`ÜBERSETZUNG DES ORIGINALDOKUMENTS (${String(outputLanguage||'de').toUpperCase()})\n${result.document_translation}`)
+  if(result?.summary) sections.push(`ERKLÄRUNG FÜR DEN KUNDEN\n${result.summary}`)
+  if(result?.response_letter_de) sections.push(`VERSANDFERTIGER ENTWURF – DEUTSCH\n${result.response_letter_de}`)
+  if(result?.customer_copy) sections.push(`KUNDENKOPIE / ÜBERSETZUNG (${String(outputLanguage||'de').toUpperCase()})\n${result.customer_copy}`)
+  return sections.join('\n\n────────────────────────\n\n')
+}
+
 export function createDocumentWorkflowActions({
   supabase,
   ownerId,
@@ -55,7 +64,7 @@ export function createDocumentWorkflowActions({
         document_type:result?.document_type||document.document_type||'',
         document_date:/^\d{4}-\d{2}-\d{2}$/.test(result?.document_date||'')?result.document_date:(document.document_date||''),
         case_id:suggestedCase||document.case_id||'',
-        analysis_summary:result?.summary||'',
+        analysis_summary:bilingualAnalysisSummary(result,result?.output_language||outputLanguage)||result?.summary||'',
         analysis_next_step:result?.next_step||''
       },
       facts:{
@@ -68,7 +77,7 @@ export function createDocumentWorkflowActions({
       }
     }
     recordLocalAction('document_analysis_generated')
-    const auditSaved=await recordServerAudit('document_analysis_generated',{status:'provisional'},'document',document.id)
+    const auditSaved=await recordServerAudit('document_analysis_generated',{status:'provisional',output_language:result?.output_language||outputLanguage,bilingual_response:!!result?.response_letter_de},'document',document.id)
     setMessage(auditSaved?analysisCopy.ready:`${analysisCopy.ready} · ${serverCopy.auditFailed}`)
     return generated
   }
