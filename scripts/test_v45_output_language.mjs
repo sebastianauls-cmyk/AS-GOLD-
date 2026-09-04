@@ -11,7 +11,6 @@ const workflow=fs.readFileSync('app/modules/documents/documentWorkflow.js','utf8
 const layout=fs.readFileSync('app/layout.js','utf8')
 
 const languages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
-
 assert.match(module,/OUTPUT_LANGUAGE_STORAGE_KEY='asgold-output-language'/)
 assert.match(module,/normalizeOutputLanguage/)
 for(const language of languages){
@@ -27,10 +26,7 @@ assert.match(registry,/LANGUAGE_CATALOG/)
 assert.match(facade,/languageRegistry\.mjs/)
 assert.doesNotMatch(facade,/LANGUAGE_CATALOG\s*=|pageTranslations\s*=/)
 assert.doesNotMatch(layout,/OutputLanguageBridge/)
-
-for(const field of ['extracted_text','document_translation','summary','next_step','response_letter_de','customer_copy']){
-  assert.match(fn,new RegExp(field),`backend workflow field missing: ${field}`)
-}
+for(const field of ['extracted_text','document_translation','summary','next_step','response_letter_de','customer_copy']) assert.match(fn,new RegExp(field),`backend workflow field missing: ${field}`)
 assert.match(fn,/vollständige, gut lesbare Übersetzung/)
 assert.match(fn,/verständliche Erklärung/)
 assert.match(fn,/versandfertiges Antwortschreiben auf DEUTSCH/)
