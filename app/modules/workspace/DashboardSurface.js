@@ -1,8 +1,10 @@
 import { QuickActions } from '../cases/V24Workspace'
 import { EvidenceActionPanel } from '../intelligence/EvidenceActionPanel'
 import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
+import { appText } from './workspaceText'
 
-export function DashboardSurface({core,handleQuickAction,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,language='de'}){
+export function DashboardSurface({core,handleQuickAction,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd}){
+  const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
   return <>
     <QuickActions copy={core} onAction={handleQuickAction} deadlineCases={deadlineCases}/>
     <h2>{a.overview}</h2>
