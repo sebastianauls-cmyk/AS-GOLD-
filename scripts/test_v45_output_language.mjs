@@ -28,8 +28,6 @@ assert.match(facade,/languageRegistry\.mjs/)
 assert.doesNotMatch(facade,/LANGUAGE_CATALOG\s*=|pageTranslations\s*=/)
 assert.doesNotMatch(layout,/OutputLanguageBridge/)
 
-// Every supported customer language must receive the same complete workflow:
-// original -> translation -> explanation -> next step -> German send-ready reply -> customer-language copy.
 for(const field of ['extracted_text','document_translation','summary','next_step','response_letter_de','customer_copy']){
   assert.match(fn,new RegExp(field),`backend workflow field missing: ${field}`)
 }
