@@ -1,3 +1,5 @@
+export const AUTH_REDIRECT_URL='https://app-gold-workspace.vercel.app'
+
 export function getAuthSession(supabase){
   return supabase.auth.getSession()
 }

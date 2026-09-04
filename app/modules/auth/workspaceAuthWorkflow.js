@@ -1,5 +1,6 @@
 import { ensureRegistrationPrivacy, getWorkspaceAccess, loadWorkspaceBundle } from '../services/workspaceRepository'
-import { getAuthSession, registerTestAccount, sendPasswordReset, signInSession, updatePassword } from '../services/authRepository'
+import { AUTH_REDIRECT_URL, getAuthSession, registerTestAccount, sendPasswordReset, signInSession, updatePassword } from '../services/authRepository'
+import { getAuthErrorMessage } from './authMessages.mjs'
 
 export function createWorkspaceAuthActions({
   supabase,
@@ -66,7 +67,7 @@ export function createWorkspaceAuthActions({
     event.preventDefault()
     setMessage('')
     const {data:authData,error}=await signInSession(supabase,{email:email.trim(),password})
-    if(error){setMessage(error.message);return false}
+    if(error){setMessage(getAuthErrorMessage(error,language));return false}
     return loadApp(authData.session)
   }
 
@@ -76,8 +77,8 @@ export function createWorkspaceAuthActions({
       setMessage(language==='de'?'Bitte zuerst Ihre E-Mail-Adresse eingeben.':'Please enter your email address first.')
       return false
     }
-    const {error}=await sendPasswordReset(supabase,{email:email.trim(),redirectTo:window.location.origin})
-    if(error){setMessage(error.message);return false}
+    const {error}=await sendPasswordReset(supabase,{email:email.trim(),redirectTo:AUTH_REDIRECT_URL})
+    if(error){setMessage(getAuthErrorMessage(error,language));return false}
     setMessage(trustCopy.passwordSent)
     return true
   }
@@ -88,7 +89,7 @@ export function createWorkspaceAuthActions({
     if(!validatePassword(password,{email,displayName}).valid){setMessage(passwordCopy.invalid);return false}
     if(password!==password2){setMessage(notices.pwMismatch);return false}
     const {error}=await updatePassword(supabase,{password})
-    if(error){setMessage(error.message);return false}
+    if(error){setMessage(getAuthErrorMessage(error,language));return false}
     setPassword('')
     setPassword2('')
     const {data:{session}}=await getAuthSession(supabase)
@@ -105,8 +106,8 @@ export function createWorkspaceAuthActions({
     if(!acceptedLegal||!confirmedTestData){setMessage(legalCopy.required);return false}
     if(!validatePassword(password,{email,displayName}).valid){setMessage(passwordCopy.invalid);return false}
     if(password!==password2){setMessage(notices.pwMismatch);return false}
-    const {data:authData,error}=await registerTestAccount(supabase,{email:email.trim(),password,displayName:displayName.trim(),privacyNoticeVersion,termsVersion,emailRedirectTo:'https://app-gold-workspace.vercel.app'})
-    if(error){setMessage(error.message);return false}
+    const {data:authData,error}=await registerTestAccount(supabase,{email:email.trim(),password,displayName:displayName.trim(),privacyNoticeVersion,termsVersion,emailRedirectTo:AUTH_REDIRECT_URL})
+    if(error){setMessage(getAuthErrorMessage(error,language));return false}
     if(authData.session) return loadApp(authData.session)
     setAcceptedLegal(false)
     setConfirmedTestData(false)

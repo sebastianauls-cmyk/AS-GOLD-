@@ -161,6 +161,7 @@ export default function WorkspaceController(){
   const publicActivePublicCase=publicOrderedPublicCases.find(item=>item.key===selectedPublicCase)||publicOrderedPublicCases[0]
   const publicRecommendedPlan=publicLocalizedPlans.find(plan=>plan.key===recommendedTier)||publicLocalizedPlans[0]
   const publicMonthsLabel=value=>publicA.months.replace('{n}',value).replace('{plural}',value>1?(publicLanguage==='de'?'e':publicLanguage==='en'?'s':''):'')
+  const navigateToScreen=nextScreen=>{setMessage('');setScreen(nextScreen)}
 
   const {createClient,createCase,updateCase,createAssessment}=createCaseWorkflowActions({
     supabase,ownerId:user?.id,data,newClient,newCase,setData,setMessage,setNewClient,setShowClientForm,setSection,setNewCase,setShowCaseForm,setSelectedCase,recordLocalAction,recordServerAudit
@@ -238,7 +239,7 @@ export default function WorkspaceController(){
 
   if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
 
-  if(screen==='login'||screen==='register'||screen==='recovery') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signIn={signIn} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={setScreen}/>
+  if(screen==='login'||screen==='register'||screen==='recovery') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signIn={signIn} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={navigateToScreen}/>
 
   if(screen==='app'&&!privacyCurrent) return protectedWorkspace(<LegalAcceptance copy={v28} onAccept={acknowledgeCurrentLegal} busy={privacyBusy}/>)
 
@@ -268,5 +269,5 @@ export default function WorkspaceController(){
     return protectedWorkspace(<ClientsSurface a={a} showClientForm={showClientForm} setShowClientForm={setShowClientForm} createClient={createClient} newClient={newClient} setNewClient={setNewClient} clients={data.clients} setSelectedClient={setSelectedClient} onBack={()=>setSection('dashboard')}/>)
   }
 
-  return <PublicLanding t={publicT} a={publicA} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={setScreen} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
+  return <PublicLanding t={publicT} a={publicA} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={navigateToScreen} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
 }
