@@ -6,7 +6,7 @@ const surface=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')
 const session=fs.readFileSync('app/modules/workspace/useWorkspaceSession.js','utf8')
 const controller=fs.readFileSync('app/modules/workspace/WorkspaceController.js','utf8')
 
-assert.equal(APP_VERSION,'V103')
+assert.ok(Number(APP_VERSION.replace('V',''))>=103)
 assert.match(surface,/screen==='request-reset'/)
 assert.match(surface,/form onSubmit=\{submitResetRequest\}/)
 assert.match(surface,/autoComplete="email" required autoFocus/)
