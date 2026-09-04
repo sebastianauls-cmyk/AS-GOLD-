@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { APP_VERSION } from '../release/appRelease.mjs'
 import DocumentFileIntake from './DocumentFileIntake'
 import VoiceContextInput from './VoiceContextInput'
+import DeviceReadinessPanel from './DeviceReadinessPanel'
 
 function useActiveInterfaceLanguage(fallback='de'){
   const [current,setCurrent]=useState(fallback)
@@ -24,6 +25,7 @@ export function DocumentsSurface({a,access,documents,core,cases,documentMode,set
     {access?.app_role!=='owner'&&Number(access?.permissions?.document_limit||0)>0&&<p className="muted">{a.used.replace('{used}',documents.length).replace('{limit}',access.permissions.document_limit)}</p>}
     <form className="actionCard coreForm" onSubmit={uploadDocument}>
       <div className="formIntro"><span className="modeBadge">{APP_VERSION} · Dokument-Eingang</span><h3>{core.documentUpload}</h3><div className="modeSwitch"><button type="button" className={documentMode==='upload'?'active':''} onClick={()=>setDocumentMode('upload')}>{core.uploadMode}</button><button type="button" className={documentMode==='scan'?'active':''} onClick={()=>setDocumentMode('scan')}>{core.scanMode}</button></div><p>{documentMode==='scan'?core.scanHelp:core.uploadHelp}</p></div>
+      <DeviceReadinessPanel language={interfaceLanguage}/>
       <DocumentFileIntake language={interfaceLanguage} documentMode={documentMode} allowedUploadAccept={allowedUploadAccept}/>
       <VoiceContextInput language={interfaceLanguage}/>
       <label htmlFor="document-case">{core.selectCase}<select id="document-case" name="case_id" defaultValue={uploadCaseId||''}><option value="">{core.withoutCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
