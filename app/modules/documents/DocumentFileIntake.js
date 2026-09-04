@@ -2,16 +2,12 @@
 
 import { useState } from 'react'
 import { documentIntakeLanguages } from './documentIntakeLanguages.mjs'
-
-const copy={
-  de:{file:'Dokument',sourceLanguage:'Dokumentsprache',auto:'Automatisch bei Analyse erkennen',quality:'Vorprüfung',ready:'Datei technisch verwendbar',imageGood:'Bildauflösung ausreichend',imageWeak:'Bildauflösung niedrig – besser neu fotografieren',size:'Dateigröße',type:'Format'},
-  en:{file:'Document',sourceLanguage:'Document language',auto:'Detect automatically during analysis',quality:'Pre-check',ready:'File technically usable',imageGood:'Image resolution looks sufficient',imageWeak:'Low image resolution – retake the photo if possible',size:'File size',type:'Format'}
-}
+import { intakeCopy } from './documentIntakeCopy.mjs'
 
 function formatBytes(value){if(value<1024*1024)return `${Math.max(1,Math.round(value/1024))} KB`;return `${(value/1024/1024).toFixed(1)} MB`}
 
 export default function DocumentFileIntake({language='de',documentMode='upload',allowedUploadAccept}){
-  const c=copy[language]||copy.en
+  const c=intakeCopy(language)
   const [fileInfo,setFileInfo]=useState(null)
   const [quality,setQuality]=useState({state:'empty'})
   const [sourceLanguage,setSourceLanguage]=useState('')
