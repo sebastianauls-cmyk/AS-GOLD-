@@ -41,12 +41,12 @@ export function createExportWorkflowActions({
       approvalUi:getV25ApprovalCopy(outputLanguage)
     }
     try{
-      const artifact=await createWorkspaceExportArtifact({ref,type,data,copy})
+      const artifact=await createWorkspaceExportArtifact({ref,type,data,copy,outputLanguage})
       downloadExportArtifact(artifact)
       const {error:exportLogError}=await recordExportEntry(supabase,{ref,type})
       if(exportLogError) throw exportLogError
       recordLocalAction('export_created')
-      const auditSaved=await recordServerAudit('export_created',{format:type.toUpperCase()},ref.kind,ref.item.id)
+      const auditSaved=await recordServerAudit('export_created',{format:type.toUpperCase(),output_language:outputLanguage},ref.kind,ref.item.id)
       setMessage(appCopy.export+': '+type.toUpperCase()+' ✓'+(auditSaved?'':' · '+serverCopy.auditFailed))
     }catch(error){
       setMessage(appCopy.export+': '+error.message)
@@ -57,6 +57,7 @@ export function createExportWorkflowActions({
     const packageData={
       product:'AS Workspace Gold',
       exported_at:new Date().toISOString(),
+      output_language:outputLanguage,
       account:{email:user?.email||null,user_id:user?.id||null},
       access:{tier:currentTier,plan:currentPlan.name,status:access?.status||null,active:!!access?.active,payment:'disabled'},
       privacy_settings:privacySettings,
@@ -72,7 +73,7 @@ export function createExportWorkflowActions({
     }
     downloadExportArtifact(createAccountDataArtifact(packageData))
     recordLocalAction('account_data_export')
-    await recordServerAudit('account_data_export',{format:'JSON'},'account',null)
+    await recordServerAudit('account_data_export',{format:'JSON',output_language:outputLanguage},'account',null)
     setMessage(trustCopy.dataExport+' ✓')
   }
 
