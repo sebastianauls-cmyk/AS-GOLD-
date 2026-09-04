@@ -193,7 +193,7 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 
 @media(max-width:700px){
   .flagLanguageBackdrop{display:block;position:fixed;z-index:190;inset:0;background:rgba(20,24,30,.52);backdrop-filter:blur(2px)}
-  .flagLanguageMenu,.publicLanguageModule .flagLanguageMenu{z-index:200;right:12px;bottom:12px;left:12px;width:auto;max-height:calc(100dvh - 24px);border-color:#c9ad66;border-radius:18px;box-shadow:0 24px 70px rgba(13,16,21,.38)}
+  .flagLanguageMenu,.publicLanguageModule .flagLanguageMenu{z-index:200;top:max(8px,env(safe-area-inset-top));right:12px;bottom:max(8px,env(safe-area-inset-bottom));left:12px;width:auto;height:auto;max-height:none;align-content:start;overflow-y:scroll;-webkit-overflow-scrolling:touch;overscroll-behavior-y:contain;touch-action:pan-y;border-color:#c9ad66;border-radius:18px;box-shadow:0 24px 70px rgba(13,16,21,.38)}
 }
 
 .customerModuleSlot{min-height:220px;margin-top:10px}

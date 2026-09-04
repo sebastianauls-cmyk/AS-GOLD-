@@ -22,6 +22,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
   const [mobilePublic,setMobilePublic]=useState(false)
   const menuId=useId()
   const rootRef=useRef(null)
+  const menuRef=useRef(null)
   const active=supportedLanguages.find(item=>item.key===value)||supportedLanguages[0]
   const backLabel=backButtonText[value]||backButtonText.de
 
@@ -44,6 +45,14 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
   },[open])
 
   useEffect(()=>{
+    if(!open)return
+    const frame=window.requestAnimationFrame(()=>{
+      if(menuRef.current)menuRef.current.scrollTop=0
+    })
+    return()=>window.cancelAnimationFrame(frame)
+  },[open])
+
+  useEffect(()=>{
     if(!open||!window.matchMedia('(max-width: 700px)').matches)return
     const previousOverflow=document.body.style.overflow
     document.body.style.overflow='hidden'
@@ -61,7 +70,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
       </button>
       {onExplainer&&<button type="button" className="secondary explainerVideoTrigger" onClick={()=>{setOpen(false);onExplainer(value)}}>▶ {explainerButtonText[value]||explainerButtonText.de}</button>}
       {mobileBackdrop}
-      {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
+      {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label} ref={menuRef}>
         <button type="button" className="flagLanguageMenuBack" onClick={()=>setOpen(false)} aria-label={backLabel.replace(/^←\s*|\s*→$/g,'')}>{backLabel}</button>
         {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}>
           <span className="flagLanguageOptionMain"><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span className="flagLanguageName">{item.label}</span></span><small>{item.short}</small>
@@ -76,7 +85,7 @@ export function LanguageSwitcher({value,onChange,label='Sprache',className='',sh
       <FlagSet countryCodes={active.countryCodes} fallback={active.flags}/><strong>{active.label}</strong><span className="flagLanguageChevron" aria-hidden="true">{open?'▴':'▾'}</span>
     </button>
     {mobileBackdrop}
-    {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label}>
+    {open&&<div className="flagLanguageMenu" id={menuId} role="listbox" aria-label={label} ref={menuRef}>
       <button type="button" className="flagLanguageMenuBack" onClick={()=>setOpen(false)} aria-label={backLabel.replace(/^←\s*|\s*→$/g,'')}>{backLabel}</button>
       {supportedLanguages.map(item=><button type="button" role="option" aria-selected={item.key===value} aria-label={item.label} title={item.label} className={item.key===value?'active':''} onClick={()=>{onChange(item.key);setOpen(false)}} key={item.key}>
         <span className="flagLanguageOptionMain"><FlagSet countryCodes={item.countryCodes} fallback={item.flags}/><span className="flagLanguageName">{item.label}</span></span><small>{item.short}</small>
