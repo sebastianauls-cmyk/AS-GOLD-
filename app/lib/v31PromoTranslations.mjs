@@ -1,1 +1,1 @@
-export * from '../modules/pricing/v31PromoTranslations.mjs'
+export * from '../modules/pricing/promoTranslations.mjs'
