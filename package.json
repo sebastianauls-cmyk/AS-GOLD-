@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch && npm run test:v38-practical-simulation && npm run test:v38-tester-guide && npm run test:v38-integrations && npm run test:v38-supabase-security && npm run test:v39-case-intelligence && npm run test:v40-handoff && npm run test:v41-consistency && npm run test:v42-actions && npm run test:v43-visibility && npm run test:v44-language-order && npm run test:v45-output-language && npm run test:v46-modules && npm run test:v56-parity && npm run test:v69-public-parity && npm run test:v70-tester && npm run test:v71-microphone && npm run test:v46-controller && npm run test:v46-direct-imports && npm run test:v72-vietnamese && npm run test:v73-recommendation && npm run test:v74-matrix && npm run test:v75-languages && npm run test:v76-tester-access && npm run test:v77-mobile-language && npm run test:v79-release-brand && npm run test:v81-language-workflow && npm run test:v82-country-context && npm run test:v46-session-audit && npm run test:v46-release",
+    "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch && npm run test:v38-practical-simulation && npm run test:v38-tester-guide && npm run test:v38-integrations && npm run test:v38-supabase-security && npm run test:v39-case-intelligence && npm run test:v40-handoff && npm run test:v41-consistency && npm run test:v42-actions && npm run test:v43-visibility && npm run test:v44-language-order && npm run test:v45-output-language && npm run test:v46-modules && npm run test:v56-parity && npm run test:v69-public-parity && npm run test:v70-tester && npm run test:v71-microphone && npm run test:v46-controller && npm run test:v46-direct-imports && npm run test:v72-vietnamese && npm run test:v73-recommendation && npm run test:v74-matrix && npm run test:v75-languages && npm run test:v76-tester-access && npm run test:v77-mobile-language && npm run test:v79-release-brand && npm run test:v81-language-workflow && npm run test:v82-country-context && npm run test:v83-improvement && npm run test:v46-session-audit && npm run test:v46-release",
     "build": "next build",
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
@@ -54,7 +54,8 @@
     "test:v77-mobile-language": "node scripts/test_v77_mobile_language_overlay.mjs",
     "test:v79-release-brand": "node scripts/test_v79_release_and_brand_consistency.mjs",
     "test:v81-language-workflow": "node scripts/test_v81_document_language_workflow.mjs",
-    "test:v82-country-context": "node scripts/test_country_context_module.mjs"
+    "test:v82-country-context": "node scripts/test_country_context_module.mjs",
+    "test:v83-improvement": "node scripts/test_v83_continuous_improvement_architecture.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",
