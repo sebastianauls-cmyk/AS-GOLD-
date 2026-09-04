@@ -1,7 +1,8 @@
 import { countryByKey, normalizeCountryContext } from './countryRegistry.mjs'
 import { validateCountryLegalModule } from './countryLegalModuleRegistry.mjs'
+import { LEGALLY_RELEVANT_PRODUCT_MODULES, missingCountryModuleCoverage } from '../workspace/productModuleRegistry.mjs'
 
-export const COUNTRY_LEGAL_COMPARISON_VERSION='v85'
+export const COUNTRY_LEGAL_COMPARISON_VERSION='v86'
 
 export const LEGAL_COMPARISON_TRAFFIC_LIGHTS=Object.freeze({
   green:Object.freeze({key:'green',symbol:'🟢',label:'Grün',meaning:'vergleichbar geprüft / kein wesentlicher offener Unterschied im geprüften Bereich'}),
@@ -24,13 +25,7 @@ export function compareCountryLegalModules(referenceRecord,targetRecord){
   const rows=[]
 
   const readinessKey=targetRecord.status==='ready'?'green':targetRecord.status==='suspended'?'red':'yellow'
-  rows.push({
-    dimension:'Einsatzbereitschaft',
-    ...light(readinessKey),
-    reference:referenceRecord.status,
-    target:targetRecord.status,
-    explanation:targetRecord.status==='ready'?'Das Zielland ist nach Quellen- und Grundprüfung freigegeben.':targetRecord.status==='suspended'?'Das Zielland ist gesperrt und darf derzeit nicht als belastbarer Rechtsraum verwendet werden.':'Das Zielland ist noch nicht vollständig geprüft; Ergebnisse müssen als vorläufig gekennzeichnet werden.'
-  })
+  rows.push({dimension:'Einsatzbereitschaft',...light(readinessKey),reference:referenceRecord.status,target:targetRecord.status,explanation:targetRecord.status==='ready'?'Das Zielland ist nach Quellen- und Grundprüfung freigegeben.':targetRecord.status==='suspended'?'Das Zielland ist gesperrt und darf derzeit nicht als belastbarer Rechtsraum verwendet werden.':'Das Zielland ist noch nicht vollständig geprüft; Ergebnisse müssen als vorläufig gekennzeichnet werden.'})
 
   const sourceGroups=['official_sources','court_sources','authority_sources']
   for(const group of sourceGroups){
@@ -40,42 +35,28 @@ export function compareCountryLegalModules(referenceRecord,targetRecord){
   }
 
   const topics=setDiff(referenceRecord.covered_topics,targetRecord.covered_topics)
-  rows.push({
-    dimension:'Abgedeckte Rechtsgebiete',
-    ...light(topics.only_reference.length===0?'green':targetRecord.status==='ready'?'yellow':'red'),
-    differences:topics,
-    explanation:topics.only_reference.length===0?'Alle im Referenzmodul erfassten Rechtsgebiete sind auch im Zielland abgedeckt.':`Im Zielland fehlen noch ${topics.only_reference.length} im Referenzmodul vorhandene Rechtsgebiete.`
-  })
+  rows.push({dimension:'Abgedeckte Rechtsgebiete',...light(topics.only_reference.length===0?'green':targetRecord.status==='ready'?'yellow':'red'),differences:topics,explanation:topics.only_reference.length===0?'Alle im Referenzmodul erfassten Rechtsgebiete sind auch im Zielland abgedeckt.':`Im Zielland fehlen noch ${topics.only_reference.length} im Referenzmodul vorhandene Rechtsgebiete.`})
 
   const workflows=setDiff(referenceRecord.affected_workflows,targetRecord.affected_workflows)
+  rows.push({dimension:'Betroffene AS-Workflows',...light(workflows.only_reference.length===0?'green':'yellow'),differences:workflows,explanation:workflows.only_reference.length===0?'Die bekannten Workflow-Auswirkungen sind vollständig gespiegelt.':'Einige im Referenzland betroffene Workflows sind im Zielland noch nicht zugeordnet; vor automatischer Nutzung prüfen.'})
+
+  const missingModules=missingCountryModuleCoverage(targetRecord)
   rows.push({
-    dimension:'Betroffene AS-Workflows',
-    ...light(workflows.only_reference.length===0?'green':'yellow'),
-    differences:workflows,
-    explanation:workflows.only_reference.length===0?'Die bekannten Workflow-Auswirkungen sind vollständig gespiegelt.':'Einige im Referenzland betroffene Workflows sind im Zielland noch nicht zugeordnet; vor automatischer Nutzung prüfen.'
+    dimension:'Neue / rechtlich relevante Produktmodule',
+    ...light(missingModules.length===0?'green':targetRecord.status==='ready'?'yellow':'red'),
+    required_modules:LEGALLY_RELEVANT_PRODUCT_MODULES.map(module=>module.key),
+    missing_modules:missingModules.map(({key,label})=>({key,label})),
+    explanation:missingModules.length===0?'Alle zentral registrierten rechtlich relevanten Produktmodule sind in der Länderprüfung berücksichtigt.':`${missingModules.length} rechtlich relevante Produktmodule sind für dieses Land noch nicht in affected_workflows abgedeckt; dadurch ist eine erneute Länderprüfung erforderlich.`
   })
 
   const hasBaseline=!!targetRecord.baseline_checked_at
   const hasDelta=!!targetRecord.delta_checked_at
-  rows.push({
-    dimension:'Aktualität der Rechtsprüfung',
-    ...light(!hasBaseline?'red':!hasDelta?'yellow':'green'),
-    baseline_checked_at:targetRecord.baseline_checked_at||null,
-    delta_checked_at:targetRecord.delta_checked_at||null,
-    explanation:!hasBaseline?'Es gibt noch keine abgeschlossene Grundprüfung des Ziellandes.':!hasDelta?'Die Grundprüfung existiert, aber eine laufende Änderungsprüfung ist noch nicht dokumentiert.':'Grundprüfung und laufende Änderungsprüfung sind dokumentiert.'
-  })
+  rows.push({dimension:'Aktualität der Rechtsprüfung',...light(!hasBaseline?'red':!hasDelta?'yellow':'green'),baseline_checked_at:targetRecord.baseline_checked_at||null,delta_checked_at:targetRecord.delta_checked_at||null,explanation:!hasBaseline?'Es gibt noch keine abgeschlossene Grundprüfung des Ziellandes.':!hasDelta?'Die Grundprüfung existiert, aber eine laufende Änderungsprüfung ist noch nicht dokumentiert.':'Grundprüfung und laufende Änderungsprüfung sind dokumentiert.'})
 
   const severity=rows.some(row=>row.key==='red')?'red':rows.some(row=>row.key==='yellow')?'yellow':'green'
-  return {
-    version:COUNTRY_LEGAL_COMPARISON_VERSION,
-    reference_country:{code:reference.key,label:reference.label,jurisdiction:reference.jurisdictionLabel},
-    target_country:{code:target.key,label:target.label,jurisdiction:target.jurisdictionLabel},
-    overall:light(severity),
-    rows,
-    rule:'Ampel bewertet Prüf- und Abdeckungsunterschiede; sie ersetzt keine inhaltliche Rechtsvergleichung. Inhaltliche Rechtsunterschiede dürfen erst nach belegter Quellenprüfung als solche behauptet werden.'
-  }
+  return {version:COUNTRY_LEGAL_COMPARISON_VERSION,reference_country:{code:reference.key,label:reference.label,jurisdiction:reference.jurisdictionLabel},target_country:{code:target.key,label:target.label,jurisdiction:target.jurisdictionLabel},overall:light(severity),rows,rule:'Ampel bewertet Prüf- und Abdeckungsunterschiede. Neue rechtlich relevante Produktmodule werden automatisch zur Länderprüfungspflicht. Inhaltliche Rechtsunterschiede dürfen erst nach belegter Quellenprüfung als solche behauptet werden.'}
 }
 
 export function countryLegalComparisonContract(){
-  return {version:COUNTRY_LEGAL_COMPARISON_VERSION,lights:Object.values(LEGAL_COMPARISON_TRAFFIC_LIGHTS),dimensions:['Einsatzbereitschaft','official_sources','court_sources','authority_sources','Abgedeckte Rechtsgebiete','Betroffene AS-Workflows','Aktualität der Rechtsprüfung']}
+  return {version:COUNTRY_LEGAL_COMPARISON_VERSION,lights:Object.values(LEGAL_COMPARISON_TRAFFIC_LIGHTS),dimensions:['Einsatzbereitschaft','official_sources','court_sources','authority_sources','Abgedeckte Rechtsgebiete','Betroffene AS-Workflows','Neue / rechtlich relevante Produktmodule','Aktualität der Rechtsprüfung'],autoIncludesNewLegalModules:true}
 }
