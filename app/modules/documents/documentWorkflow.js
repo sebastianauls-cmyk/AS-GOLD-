@@ -16,6 +16,11 @@ async function functionErrorMessage(error,fallback){
   return error.message||fallback
 }
 
+function parseIntakeQuality(value){
+  if(!value) return {}
+  try{return JSON.parse(value)}catch{return {state:'unknown'}}
+}
+
 export function createDocumentWorkflowActions({
   supabase,
   ownerId,
@@ -86,10 +91,11 @@ export function createDocumentWorkflowActions({
     const limit=Number(access?.permissions?.document_limit||0)
     if(access?.app_role!=='owner' && limit>0 && data.documents.length>=limit) return setMessage(notices.docLimit.replace('{limit}',limit))
     setUploading(true)
-    const {data:created,error}=await uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,documentType:form.elements.document_type?.value.trim()||extension.toUpperCase(),documentDate:form.elements.document_date?.value||null,source:form.elements.source?.value||'upload'})
+    const intakeQuality=parseIntakeQuality(form.elements.intake_quality?.value)
+    const {data:created,error}=await uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,documentType:form.elements.document_type?.value.trim()||extension.toUpperCase(),documentDate:form.elements.document_date?.value||null,source:form.elements.source?.value||'upload',sourceLanguage:form.elements.source_language?.value||null,voiceContext:form.elements.voice_context?.value.trim()||null,voiceLanguage:form.elements.voice_language?.value||null,intakeQuality})
     if(error){setUploading(false);return setMessage(error.message)}
     recordLocalAction('document_uploaded')
-    await recordServerAudit('document_uploaded',{classification:dataClassification},'document',created.id)
+    await recordServerAudit('document_uploaded',{classification:dataClassification,source_language:created.source_language||null,voice_context:!!created.voice_context,intake_quality:created.intake_quality||{}},'document',created.id)
     setData(previous=>({...previous,documents:[created,...previous.documents]}))
     setUploading(false)
     form.reset()
