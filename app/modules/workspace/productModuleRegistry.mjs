@@ -1,7 +1,7 @@
 // Central registry for AS Workspace Gold product modules.
 // Every new product module must be registered here so country/legal checks,
 // comparison guards and continuous-improvement monitoring inherit it automatically.
-export const PRODUCT_MODULE_REGISTRY_VERSION='v89'
+export const PRODUCT_MODULE_REGISTRY_VERSION='v93'
 
 export const PRODUCT_MODULES=Object.freeze([
   {key:'cases',label:'Fälle',legal_relevance:true},
@@ -16,6 +16,7 @@ export const PRODUCT_MODULES=Object.freeze([
   {key:'country_comparison',label:'Ländervergleich',legal_relevance:true},
   {key:'home_country_comparison',label:'Heimatland-vs.-Zielland-Vergleich',legal_relevance:true},
   {key:'cross_country_explanation',label:'Länderunterschiede in gewählter Sprache erklären',legal_relevance:true},
+  {key:'evidence_action_layer',label:'Quellen-, Vertrauens- und Handlungslogik',legal_relevance:false},
   {key:'legal_monitor',label:'Rechtsprechungs- und Rechtsänderungsmonitor',legal_relevance:true},
   {key:'competitor_monitor',label:'Wettbewerbs- und Verbesserungsmonitor',legal_relevance:false},
   {key:'integrations',label:'Integrationen',legal_relevance:false},
