@@ -11,6 +11,8 @@ for(const route of legalRoutes){
   const page=read(`app/${route}/page.js`)
   assert.doesNotMatch(page,/title:\s*['"`][^'"`]*\|\s*AS Workspace Gold/ ,`${route} must let the root title template append the product name exactly once`)
 }
+const testerPage=read('app/testen/page.js')
+assert.doesNotMatch(testerPage,/title:\s*`AS Workspace Gold/,'the tester page must let the root title template append the product name exactly once')
 const legalDocument=read('app/modules/compliance/LegalDocument.js')
 assert.match(legalDocument,/legalBackBtn[\s\S]*?shell\.back/,'all legal pages need the shared localized route back to the app')
 
