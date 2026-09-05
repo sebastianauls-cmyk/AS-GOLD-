@@ -13,6 +13,11 @@ export function signInSession(supabase,{email,password}){
   return supabase.auth.signInWithPassword({email,password})
 }
 
+export function startAnonymousTestSession(supabase,{displayName,privacyNoticeVersion,termsVersion}){
+  const legalAcknowledgedAt=new Date().toISOString()
+  return supabase.auth.signInAnonymously({options:{data:{display_name:displayName,privacy_notice_version:privacyNoticeVersion,terms_version:termsVersion,legal_acknowledged_at:legalAcknowledgedAt,test_data_only:true}}})
+}
+
 export async function sendPasswordReset(_supabase,{email}){
   try{
     const response=await fetch(`${AUTH_REDIRECT_URL}/api/auth/password-reset`,{

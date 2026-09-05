@@ -177,6 +177,9 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 /* V108 visible synthetic test cases */
 .syntheticTesterPanel{margin:18px 0}.syntheticTesterBody{margin-top:4px}.syntheticTesterBody .sectionHead{justify-content:space-between}.syntheticTesterBody .sectionHead h3{margin:0 0 6px}.syntheticTesterBody .sectionHead p{margin:0;color:#65707d}.syntheticTesterFlags{display:block;margin-top:8px;font-size:18px}.syntheticTesterEntry{display:grid;gap:8px}.syntheticTesterEntry .buttonRow.selected{border-color:#b58b2d;background:#fffaf0;box-shadow:0 0 0 3px #b58b2d20}.syntheticTesterDetail{margin:0 0 8px;border-color:#dac58d;box-shadow:none}.syntheticCaseNotice{grid-column:1/-1;display:flex;gap:12px;align-items:center;padding:15px 16px;border:1px solid #d6bd75;border-radius:14px;background:#fff8df}.syntheticCaseNotice>span{font-size:28px}.syntheticCaseNotice p{margin:4px 0 0;color:#6c5a2d}.syntheticCasePill{background:#fff1bd;border:1px solid #dcc16f;color:#664e12;font-weight:800}.caseTitleRow .syntheticCasePill{margin-inline-start:8px}
 
+/* V112 passwordless synthetic test access */
+.guestTestStart{display:grid;gap:12px;margin:18px 0;padding:18px;border:1px solid #d6bd75;border-radius:16px;background:#fffaf0}.guestTestStart h3,.guestTestStart p{margin:0}.guestTestStart small{color:#65707d}.guestSessionNotice{display:grid;gap:4px;margin:10px 0 16px}
+
 /* V50 modular public navigation */
 .flagLanguageMenu .flagLanguageMenuBack{position:sticky;top:0;z-index:3;justify-content:flex-start;border-color:#c9ad66;background:#2f291b;color:#fff;font-weight:900}
 .flagLanguageMenu .flagLanguageMenuBack:hover{border-color:#c9ad66;background:#453a20}

@@ -1,5 +1,5 @@
 import { ensureRegistrationPrivacy, getWorkspaceAccess, loadWorkspaceBundle } from '../services/workspaceRepository'
-import { AUTH_REDIRECT_URL, getAuthSession, registerTestAccount, sendPasswordReset, signInSession, updatePassword } from '../services/authRepository'
+import { AUTH_REDIRECT_URL, getAuthSession, registerTestAccount, sendPasswordReset, signInSession, startAnonymousTestSession, updatePassword } from '../services/authRepository'
 import { getAuthErrorMessage } from './authMessages.mjs'
 
 export function createWorkspaceAuthActions({
@@ -13,6 +13,7 @@ export function createWorkspaceAuthActions({
   notices,
   trustCopy,
   recoveryCopy,
+  guestCopy,
   email,
   password,
   password2,
@@ -71,6 +72,17 @@ export function createWorkspaceAuthActions({
     return loadApp(authData.session)
   }
 
+  async function startGuestTest(){
+    setMessage('')
+    const {data:authData,error}=await startAnonymousTestSession(supabase,{displayName:guestCopy.displayName,privacyNoticeVersion,termsVersion})
+    if(error||!authData.session){
+      setMessage(guestCopy.unavailable)
+      setScreen('login')
+      return false
+    }
+    return loadApp(authData.session)
+  }
+
   async function resetPassword(){
     setMessage('')
     if(!email.trim()){
@@ -116,5 +128,5 @@ export function createWorkspaceAuthActions({
     return true
   }
 
-  return {loadApp,signIn,resetPassword,completePasswordRecovery,register}
+  return {loadApp,signIn,startGuestTest,resetPassword,completePasswordRecovery,register}
 }

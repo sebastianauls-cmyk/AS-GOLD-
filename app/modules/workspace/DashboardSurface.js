@@ -3,12 +3,14 @@ import { EvidenceActionPanel } from '../intelligence/EvidenceActionPanel'
 import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
 import { appText } from './workspaceText'
 
-export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd}){
+export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
+  const guestAccess=access?.permissions?.guest_access===true
   return <>
     <QuickActions copy={core} onAction={handleQuickAction} deadlineCases={deadlineCases}/>
     <h2>{a.overview}</h2>
-    <p className="muted">{a.signedInAs} {user?.email}</p>
+    <p className="muted">{a.signedInAs} {user?.email||guestCopy.displayName}</p>
+    {guestAccess&&<div className="note guestSessionNotice"><b>{guestCopy.active}</b><span>{guestCopy.scope}</span></div>}
     <SyntheticTesterPanel language={language} onOpenCase={onStartSyntheticCase}/>
     <EvidenceActionPanel a={a} data={data}/>
     <section className={`dashboardGuide dash-${currentTier}`}>
@@ -23,7 +25,7 @@ export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,de
     <div className="trialPromise"><b>{currentTier==='free'?a.freeActive:a.planActive.replace('{plan}',currentPlan.name)}</b><span>{currentTier==='free'?a.freePromise.replace('{limit}',access?.permissions?.document_limit||3):a.paidPromise}</span>{testAccessEnd&&<span><b>{promo.testAccessStatus.replace('{date}',testAccessEnd)}</b></span>}</div>
     <div className="stats">{[['cases',a.sections.cases],['clients',a.sections.clients],['documents',a.sections.documents],['approvals',a.sections.approvals]].map(([k,l])=><button className="stat statButton" onClick={()=>setSection(k)} key={k}><b>{data[k].length}</b><span>{l}</span><small>{a.open}</small></button>)}</div>
     <div className="stats">
-      <button className="stat statButton" onClick={()=>setSection('pricing')}><b>↗</b><span>{a.upgrade}</span><small>{a.open}</small></button>
+      {!guestAccess&&<button className="stat statButton" onClick={()=>setSection('pricing')}><b>↗</b><span>{a.upgrade}</span><small>{a.open}</small></button>}
       <button className="stat statButton" onClick={()=>setSection('account')}><b>✓</b><span>{lt.contract}</span><small>{a.open}</small></button>
     </div>
   </>

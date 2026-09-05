@@ -14,7 +14,15 @@ function requestedPublicScreen(){
   const start=new URLSearchParams(window.location.search).get('start')
   if(start==='register')return 'register'
   if(start==='reset')return 'request-reset'
+  if(start==='guest-test')return 'guest-test'
   return 'public'
+}
+
+function clearGuestTestRequest(){
+  const url=new URL(window.location.href)
+  if(url.searchParams.get('start')!=='guest-test')return
+  url.searchParams.delete('start')
+  window.history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`)
 }
 
 export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecovery,onSignedOut}){
@@ -31,12 +39,13 @@ export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecove
     getAuthSession(supabase).then(({data:{session}})=>{
       if(!alive)return
       if(isPasswordRecoveryUrl()){recoveryRef.current?.();return}
-      session?loadAppRef.current(session):setScreen(requestedPublicScreen())
+      if(session){clearGuestTestRequest();loadAppRef.current(session)}
+      else setScreen(requestedPublicScreen())
     })
     const subscription=watchAuthState(supabase,(event,session)=>{
       if(!alive) return
       if(event==='PASSWORD_RECOVERY'){recoveryRef.current?.();return}
-      if(event==='SIGNED_IN'&&session) loadAppRef.current(session)
+      if(event==='SIGNED_IN'&&session){clearGuestTestRequest();loadAppRef.current(session)}
       if(event==='SIGNED_OUT') signedOutRef.current?.()
     })
     return ()=>{alive=false;subscription.unsubscribe()}

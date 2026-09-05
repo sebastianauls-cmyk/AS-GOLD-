@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
 import { signOutSession } from '../services/authRepository'
 import { allowedUploadAccept, uploadUi } from '../documents/uploadConfig'
@@ -41,6 +41,20 @@ import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
 import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
+
+const guestTestCopy={
+  de:{starting:'Sicherer Testarbeitsbereich wird geöffnet …',unavailable:'Der passwortlose Testzugang ist momentan nicht verfügbar. Bitte verwenden Sie die normale Anmeldung.',displayName:'Synthetischer Testzugang',active:'Passwortloser Testzugang aktiv',scope:'Nur synthetische oder wirksam anonymisierte Daten · höchstens 2 Dokumente · 2 Stunden'},
+  en:{starting:'Opening the secure test workspace …',unavailable:'Passwordless testing is currently unavailable. Please use the regular sign-in.',displayName:'Synthetic test access',active:'Passwordless test access is active',scope:'Synthetic or effectively anonymised data only · up to 2 documents · 2 hours'},
+  tr:{starting:'Güvenli test alanı açılıyor …',unavailable:'Parolasız test şu anda kullanılamıyor. Normal giriş yöntemini kullanın.',displayName:'Sentetik test erişimi',active:'Parolasız test erişimi etkin',scope:'Yalnızca sentetik veya etkili anonim veri · en fazla 2 belge · 2 saat'},
+  pl:{starting:'Otwieranie bezpiecznego obszaru testowego …',unavailable:'Test bez hasła jest chwilowo niedostępny. Użyj zwykłego logowania.',displayName:'Syntetyczny dostęp testowy',active:'Dostęp testowy bez hasła jest aktywny',scope:'Tylko dane syntetyczne lub skutecznie anonimowe · maks. 2 dokumenty · 2 godziny'},
+  ru:{starting:'Открывается безопасная тестовая область …',unavailable:'Тест без пароля сейчас недоступен. Используйте обычный вход.',displayName:'Синтетический тестовый доступ',active:'Доступ без пароля активен',scope:'Только синтетические или надёжно анонимизированные данные · до 2 документов · 2 часа'},
+  ar:{starting:'جارٍ فتح مساحة الاختبار الآمنة …',unavailable:'الاختبار بلا كلمة مرور غير متاح حالياً. استخدم تسجيل الدخول العادي.',displayName:'وصول اختباري اصطناعي',active:'الوصول بلا كلمة مرور نشط',scope:'بيانات اصطناعية أو مجهولة بفعالية فقط · مستندان كحد أقصى · ساعتان'},
+  fa:{starting:'فضای آزمایش امن در حال باز شدن است …',unavailable:'آزمایش بدون گذرواژه اکنون در دسترس نیست. از ورود عادی استفاده کنید.',displayName:'دسترسی آزمایشی ساختگی',active:'دسترسی بدون گذرواژه فعال است',scope:'فقط داده ساختگی یا واقعاً ناشناس · حداکثر ۲ سند · ۲ ساعت'},
+  fr:{starting:'Ouverture de l’espace de test sécurisé …',unavailable:'Le test sans mot de passe est indisponible pour le moment. Utilisez la connexion normale.',displayName:'Accès de test synthétique',active:'Accès de test sans mot de passe actif',scope:'Données synthétiques ou effectivement anonymisées uniquement · 2 documents maximum · 2 heures'},
+  ro:{starting:'Se deschide spațiul de test sigur …',unavailable:'Testul fără parolă nu este disponibil momentan. Folosiți autentificarea normală.',displayName:'Acces de test sintetic',active:'Accesul de test fără parolă este activ',scope:'Doar date sintetice sau anonimizate efectiv · maximum 2 documente · 2 ore'},
+  bg:{starting:'Безопасното тестово пространство се отваря …',unavailable:'Тестът без парола временно не е достъпен. Използвайте обичайното влизане.',displayName:'Синтетичен тестов достъп',active:'Достъпът без парола е активен',scope:'Само синтетични или ефективно анонимизирани данни · до 2 документа · 2 часа'},
+  vi:{starting:'Đang mở không gian thử nghiệm an toàn …',unavailable:'Thử nghiệm không mật khẩu hiện chưa khả dụng. Hãy dùng đăng nhập thông thường.',displayName:'Quyền truy cập thử nghiệm tổng hợp',active:'Quyền thử nghiệm không mật khẩu đang hoạt động',scope:'Chỉ dữ liệu tổng hợp hoặc ẩn danh hiệu quả · tối đa 2 tài liệu · 2 giờ'}
+}
 
 const eur=value=>`${Number(value||0).toFixed(2).replace('.',',')} €`
 
@@ -99,12 +113,14 @@ export default function WorkspaceController(){
   const {activityLog,serverAudit,setServerAudit,recordLocalAction,recordServerAudit,resetAudit}=useWorkspaceAudit({supabase,userId:user?.id})
   const [deletionRequests,setDeletionRequests]=useState([])
   const [deletionBusy,setDeletionBusy]=useState(false)
+  const guestStartAttempted=useRef(false)
 
   const t=ui[language]||ui.de
   const a=appText[language]||appText.de
   const n=notices[language]||notices.de
   const pui=passwordUi[language]||passwordUi.de
   const recoveryCopy=passwordRecoveryUi[language]||passwordRecoveryUi.de
+  const guestCopy=guestTestCopy[language]||guestTestCopy.de
   const uui=uploadUi[language]||uploadUi.de
   const v28=getV28PrivacyCopy(language)
   const v29Password=getV29PasswordCopy(language)
@@ -193,9 +209,16 @@ export default function WorkspaceController(){
     supabase,ownerId:user?.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,deletionRequests,deletionBusy,privacyBusy,privacyCopy:v28,serverCopy:sct,setDeletionBusy,setPrivacyBusy,setDeletionRequests,setPrivacySettings,setMessage,recordServerAudit
   })
 
-  const {loadApp,signIn,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
-    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage
+  const {loadApp,signIn,startGuestTest,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
+    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,guestCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage
   })
+
+  useEffect(()=>{
+    if(screen!=='guest-test'){guestStartAttempted.current=false;return}
+    if(guestStartAttempted.current)return
+    guestStartAttempted.current=true
+    startGuestTest()
+  },[screen])
 
   const {loadQuotes,applyPromo,clearPromo,requestUpgrade}=createPricingWorkflowActions({
     supabase,upgrades,termMonths,promoCode,appliedPromoCode,quotes,promoCopy:promo,notices:n,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setMessage,setAccess,setUpgrades,onTestAccessGranted:()=>setSection('dashboard'),formatAccessEnd:value=>new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(value)),recordServerAudit
@@ -262,6 +285,8 @@ export default function WorkspaceController(){
 
   if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
 
+  if(screen==='guest-test') return <LoadingSurface language={language} checking={guestCopy.starting}/>
+
   if(screen==='login'||screen==='register'||screen==='recovery'||screen==='request-reset') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signIn={signIn} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={navigateToScreen}/>
 
   if(screen==='app'&&!privacyCurrent) return protectedWorkspace(<LegalAcceptance copy={v28} onAccept={acknowledgeCurrentLegal} busy={privacyBusy}/>)
@@ -293,7 +318,7 @@ export default function WorkspaceController(){
       const clientDocuments=data.documents.filter(item=>clientCaseIds.has(item.case_id))
       return protectedWorkspace(<ClientDetailSurface a={a} core={core} selectedClient={selectedClient} cases={clientCases} documents={clientDocuments} onSave={updateClient} onOpenCase={item=>{setSelectedClient(null);setSelectedCase(item)}} onOpenDocument={item=>{setSelectedClient(null);setSelectedDocument(item)}} onBack={()=>setSelectedClient(null)}/>)
     }
-    if(section==='dashboard') return protectedWorkspace(<DashboardSurface core={core} handleQuickAction={handleQuickAction} onStartSyntheticCase={startSyntheticCase} deadlineCases={deadlineCases} a={a} user={user} currentTier={currentTier} dg={dg} setSection={setSection} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} currentSufficient={currentSufficient} currentPlan={currentPlan} access={access} data={data} lt={lt} promo={promo} testAccessEnd={access?.permissions?.promo_access_ends_at?new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(access.permissions.promo_access_ends_at)):null}/>)
+    if(section==='dashboard') return protectedWorkspace(<DashboardSurface core={core} handleQuickAction={handleQuickAction} onStartSyntheticCase={startSyntheticCase} deadlineCases={deadlineCases} a={a} user={user} currentTier={currentTier} dg={dg} setSection={setSection} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} currentSufficient={currentSufficient} currentPlan={currentPlan} access={access} data={data} lt={lt} promo={promo} guestCopy={guestCopy} testAccessEnd={(access?.permissions?.promo_access_ends_at||access?.permissions?.guest_access_ends_at)?new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium',timeStyle:'short'}).format(new Date(access.permissions.promo_access_ends_at||access.permissions.guest_access_ends_at)):null}/>)
     return protectedWorkspace(<ClientsSurface a={a} showClientForm={showClientForm} setShowClientForm={setShowClientForm} createClient={createClient} newClient={newClient} setNewClient={setNewClient} clients={data.clients} setSelectedClient={setSelectedClient} onBack={()=>setSection('dashboard')}/>)
   }
 

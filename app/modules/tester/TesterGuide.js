@@ -1,16 +1,20 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../compliance/LegalDocument'
 import { APP_RELEASE, APP_VERSION } from '../release/appRelease.mjs'
 import { TesterShareButton } from './TesterShareButton'
+import { GuestTestStartButton } from './GuestTestStartButton'
 import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
 
 export function TesterGuide(){
-  return <LegalDocument pageId="testen" localizable showRelease eyebrow="Testerbetrieb" title="AS Workspace Gold sicher ausprobieren" intro="Hier können Sie den vollständigen modularen Ablauf prüfen, den Link weiterleiten und ohne echte Kundendaten oder eine Zahlung testen." updated={APP_RELEASE.updated} localizedExtra={<TesterShareButton/>} localizedExtraAfterSection={0}>
+  return <LegalDocument pageId="testen" localizable showRelease eyebrow="Testerbetrieb" title="AS Workspace Gold sicher ausprobieren" intro="Hier können Sie den vollständigen modularen Ablauf prüfen, den Link weiterleiten und ohne echte Kundendaten oder eine Zahlung testen." updated={APP_RELEASE.updated} localizedExtra={<><GuestTestStartButton/><TesterShareButton/></>} localizedExtraAfterSection={0}>
+    <LegalSection title="Direktzugang ohne Passwort">
+      <GuestTestStartButton/>
+    </LegalSection>
     <LegalSection title="Tester-Link weiterleiten">
       <p>Öffnen Sie mit einem Fingertipp das Teilen-Menü Ihres Handys oder senden Sie die vorbereitete Nachricht direkt per WhatsApp.</p>
       <TesterShareButton/>
     </LegalSection>
     <LegalNotice tone="warning"><b>Nur sichere Testdaten verwenden.</b><p>Bitte ausschließlich synthetische oder wirksam anonymisierte Unterlagen hochladen. Die Bezahlfunktion bleibt deaktiviert.</p></LegalNotice>
-    <LegalSection title="Geschützter Tester-Vollzugang"><p>Nach Registrierung und Anmeldung unter „Tarif / Upgrade“ den bereitgestellten Tester-Code anwenden. Bei Gold Business erscheint anschließend „Tester-Vollzugang aktivieren“. Nach der ausdrücklichen Aktivierung werden Enddatum, 0 € und keine automatische Verlängerung sichtbar bestätigt.</p></LegalSection>
+    <LegalSection title="Geschützter Tester-Vollzugang"><p>Für den schnellen Test genügt der Direktzugang oben. Er benötigt weder E-Mail noch Passwort, läuft nach zwei Stunden ab und erlaubt höchstens zwei Testdokumente. Ein dauerhaftes Konto kann weiterhin regulär registriert werden.</p></LegalSection>
     <LegalSection title="Diese Punkte bitte prüfen"><ul>
       <li>Genau ein Sprachmenü und genau ein Zurück-Element im geöffneten Sprachmenü</li>
       <li>Zurück schließt das Sprachmenü zuverlässig, auch auf Mobilgeräten</li>
