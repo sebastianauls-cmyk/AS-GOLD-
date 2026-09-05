@@ -1,7 +1,7 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
 import WithdrawalForm from '../modules/compliance/WithdrawalForm'
 
-export const metadata={title:'Vertrag widerrufen | AS Workspace Gold',description:'Elektronische Widerrufsfunktion und Widerrufsinformation für AS Workspace Gold.'}
+export const metadata={title:'Vertrag widerrufen',description:'Elektronische Widerrufsfunktion und Widerrufsinformation für AS Workspace Gold.'}
 
 export default function Withdrawal(){
   return <LegalDocument pageId="widerruf" title="Vertrag widerrufen" intro="Öffentlich erreichbare, zweistufige Widerrufsfunktion nach § 356a BGB und ergänzende Widerrufsinformation." localizedExtra={<WithdrawalForm/>}>

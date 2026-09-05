@@ -1,6 +1,6 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
 
-export const metadata={title:'Kontakt | AS Workspace Gold',description:'Kontakt zu AS Workspace Gold und Sebastian Auls.'}
+export const metadata={title:'Kontakt',description:'Kontakt zu AS Workspace Gold und Sebastian Auls.'}
 
 export default function Contact(){
   return <LegalDocument pageId="kontakt" title="Kontakt" intro="Direkter Kontakt ohne zusätzliches Webformular und ohne weitere Tracking-Dienste.">

@@ -1,6 +1,6 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
 
-export const metadata={title:'Datenschutzerklärung | AS Workspace Gold',description:'Datenschutzerklärung für AS Workspace Gold.'}
+export const metadata={title:'Datenschutzerklärung',description:'Datenschutzerklärung für AS Workspace Gold.'}
 
 export default function Privacy(){
   return <LegalDocument pageId="datenschutz" title="Datenschutzerklärung" intro="Diese Erklärung beschreibt den tatsächlichen Datenfluss des kontrollierten AS-Gold-Tests." updated="30. August 2026 · Version 2026-08-30-v1">

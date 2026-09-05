@@ -3,6 +3,7 @@
 import {useState} from 'react'
 import {inspectRecoveryLink,RECOVERY_LIVE_URL} from '../modules/auth/recoveryLinkRepair.mjs'
 import {supabase} from '../modules/services/supabaseClient.js'
+import {APP_VERSION} from '../modules/release/appRelease.mjs'
 
 export default function ResetRepairPage(){
   const [rawLink,setRawLink]=useState('')
@@ -39,7 +40,7 @@ export default function ResetRepairPage(){
       setMessage('Der Link ist abgelaufen oder wurde bereits verwendet. Bitte einen neuen Reset-Link anfordern und den neuesten Link kopieren.')
       return
     }
-    window.location.replace(`${RECOVERY_LIVE_URL}?type=recovery&release=V105`)
+    window.location.replace(`${RECOVERY_LIVE_URL}?type=recovery&release=${APP_VERSION}`)
   }
 
   return <main className="center">
@@ -73,7 +74,8 @@ export default function ResetRepairPage(){
       </form>
 
       {message&&<p className="note" role="status">{message}</p>}
-      <a className="backBtn full btn" href="/?start=reset&release=V105">← Neuen Reset-Link anfordern</a>
+      <a className="backBtn full btn" href={`/?start=reset&release=${APP_VERSION}`}>← Neuen Reset-Link anfordern</a>
+      <a className="backBtn full btn" href={`/?release=${APP_VERSION}`}>← Zurück zur App</a>
     </section>
   </main>
 }

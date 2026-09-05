@@ -1,6 +1,6 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
 
-export const metadata={title:'Nutzungsbedingungen | AS Workspace Gold',description:'Nutzungsbedingungen für den kontrollierten Testbetrieb von AS Workspace Gold.'}
+export const metadata={title:'Nutzungsbedingungen',description:'Nutzungsbedingungen für den kontrollierten Testbetrieb von AS Workspace Gold.'}
 
 export default function Terms(){
   return <LegalDocument pageId="nutzungsbedingungen" title="Nutzungsbedingungen" intro="Bedingungen für den aktuellen kostenlosen und kontrollierten Testbetrieb von AS Workspace Gold." updated="30. August 2026 · Version 2026-08-30-test-v1">

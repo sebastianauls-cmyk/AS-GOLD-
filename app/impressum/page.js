@@ -1,6 +1,6 @@
 import { LegalDocument, LegalSection } from '../components/LegalDocument'
 
-export const metadata={title:'Impressum | AS Workspace Gold',description:'Anbieterkennzeichnung von AS Workspace Gold.'}
+export const metadata={title:'Impressum',description:'Anbieterkennzeichnung von AS Workspace Gold.'}
 
 export default function Imprint(){
   return <LegalDocument pageId="impressum" title="Impressum" intro="Anbieterkennzeichnung für AS Workspace Gold gemäß § 5 Digitale-Dienste-Gesetz (DDG).">

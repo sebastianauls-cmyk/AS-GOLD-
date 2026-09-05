@@ -1,6 +1,6 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
 
-export const metadata={title:'Rechtliches | AS Workspace Gold',description:'Zentrale rechtliche Informationen zu AS Workspace Gold.'}
+export const metadata={title:'Rechtliches',description:'Zentrale rechtliche Informationen zu AS Workspace Gold.'}
 
 const cards=[
   ['/impressum','Impressum','Anbieter, Anschrift, Kontakt und Streitbeilegung.'],

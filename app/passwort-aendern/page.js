@@ -63,6 +63,7 @@ export default function ChangePasswordPage(){
       {!checking&&!user&&<>
         <p className="note" role="alert">Ihre Anmeldung ist in diesem Browser nicht mehr aktiv.</p>
         <a className="primary full btn" href={`/?start=reset&release=${APP_VERSION}`}>Neuen Passwort-Link anfordern</a>
+        <a className="backBtn full btn" href={`/?release=${APP_VERSION}`}>← Zurück zur App</a>
       </>}
 
       {!checking&&user&&<>

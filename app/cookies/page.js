@@ -1,6 +1,6 @@
 import { LegalDocument, LegalNotice, LegalSection } from '../components/LegalDocument'
 
-export const metadata={title:'Cookies & Browser-Speicher | AS Workspace Gold',description:'Informationen zu Cookies, Sitzungen und lokalem Speicher bei AS Workspace Gold.'}
+export const metadata={title:'Cookies & Browser-Speicher',description:'Informationen zu Cookies, Sitzungen und lokalem Speicher bei AS Workspace Gold.'}
 
 export default function Cookies(){
   return <LegalDocument pageId="cookies" title="Cookies & Browser-Speicher" intro="AS Workspace Gold setzt derzeit keine Werbe-, Reichweitenmessungs- oder Profiling-Cookies ein.">
