@@ -16,7 +16,7 @@ const countryHook=read('app/modules/country/useCountryContext.js')
 const migration=read('supabase/migrations/20260905125528_v107_atomic_assessment_and_case_status.sql')
 const passwordPage=read('app/passwort-aendern/page.js')
 
-assert.equal(APP_VERSION,'V107')
+assert.ok(Number(APP_VERSION.slice(1))>=107)
 
 assert.match(documents,/name="data_classification"/)
 assert.match(documents,/value="synthetic"/)

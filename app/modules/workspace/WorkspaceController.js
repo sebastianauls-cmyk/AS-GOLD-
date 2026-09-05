@@ -242,7 +242,7 @@ export default function WorkspaceController(){
     setSelectedDocument(null)
     setSelectedApproval(null)
     setSelectedCase(null)
-    setNewCase({...emptyCase,title:`${tester.id} · ${tester.problem}`,goal:tester.problem,summary:`${tester.profile}\n${tester.home_country} → ${tester.target_country}\n${tester.documents.join(' · ')}`,next_action:tester.expected_actions?.[0]||''})
+    setNewCase({...emptyCase,title:`${tester.id} · ${tester.problem}`,reference_no:`TEST-${tester.id}`,goal:tester.problem,summary:`${tester.profile}\n${tester.home_country} → ${tester.target_country}\n${tester.documents.join(' · ')}`,next_action:tester.expected_actions?.[0]||'',test_case_id:tester.id,test_case_expected_ampel:tester.expected_ampel,test_case_language:tester.language,test_case_home_country:tester.home_country,test_case_target_country:tester.target_country})
     setShowCaseForm(true)
     setSection('cases')
   }

@@ -32,34 +32,35 @@ function countryLabel(key){
 }
 
 export function SyntheticTesterPanel({language='de',onOpenCase}){
-  const [open,setOpen]=useState(false)
+  const [open,setOpen]=useState(true)
   const [selected,setSelected]=useState(null)
   const c=COPY[language]||COPY.de
   const rtl=language==='ar'||language==='fa'
   const allFlags=LANGUAGE_CATALOG.map(item=>item.flags.split(' ')[0]).join(' ')
 
-  function openTester(tester){
+  function selectTester(tester){
     setSelected(tester)
-    if(onOpenCase) onOpenCase(tester)
   }
 
   return <section className="recommendationBox syntheticTesterPanel" dir={rtl?'rtl':'ltr'}>
-    <button className="primary full" type="button" onClick={()=>setOpen(value=>!value)}>🧪 {c.button}<span style={{display:'block',marginTop:6,fontSize:18}} aria-hidden="true">{allFlags}</span></button>
+    {!open&&<button className="primary full" type="button" aria-expanded="false" onClick={()=>setOpen(true)}>🧪 {c.button}<span style={{display:'block',marginTop:6,fontSize:18}} aria-hidden="true">{allFlags}</span></button>}
     {open&&<div className="syntheticTesterBody">
-      <div className="sectionHead"><div><h3>{c.title}</h3><p>{c.lead}</p></div><button className="secondary" type="button" onClick={()=>{setOpen(false);setSelected(null)}}>{c.close}</button></div>
-      <div className="itemList">{SYNTHETIC_TESTERS.map(tester=><button className="itemRow buttonRow" type="button" key={tester.id} onClick={()=>openTester(tester)}><div><b>{tester.expected_ampel} {languageLabel(tester.language)} · {tester.name}</b><p>{countryLabel(tester.home_country)} → {countryLabel(tester.target_country)} · {tester.complexity}</p><small>{tester.problem}</small></div><span className="chev">›</span></button>)}</div>
-      {selected&&<article className="detailCard syntheticTesterDetail">
-        <div className="detailCardHead"><h3>{selected.expected_ampel} {selected.name}</h3><span className="modeBadge">{selected.id}</span></div>
-        <p><b>{c.language}:</b> {languageLabel(selected.language)}</p>
-        <p><b>{c.home}:</b> {countryLabel(selected.home_country)}</p>
-        <p><b>{c.target}:</b> {countryLabel(selected.target_country)}</p>
-        <p><b>{c.complexity}:</b> {selected.complexity}</p>
-        <p><b>{c.problem}:</b> {selected.problem}</p>
-        <p><b>{c.documents}:</b> {selected.documents.join(' · ')}</p>
-        <p><b>{c.expected}:</b> {selected.expected_ampel}</p>
-        <p><b>{c.actions}:</b> {selected.expected_actions.join(' → ')}</p>
-        <button className="secondary full" type="button" onClick={()=>openTester(selected)}>{c.start}</button>
-      </article>}
+      <div className="sectionHead"><div><h3>🧪 {c.title}</h3><p>{c.lead}</p><span className="syntheticTesterFlags" aria-hidden="true">{allFlags}</span></div><button className="secondary" type="button" aria-expanded="true" onClick={()=>{setOpen(false);setSelected(null)}}>{c.close}</button></div>
+      <div className="itemList">{SYNTHETIC_TESTERS.map(tester=><div className="syntheticTesterEntry" key={tester.id}>
+        <button className={`itemRow buttonRow ${selected?.id===tester.id?'selected':''}`} type="button" aria-pressed={selected?.id===tester.id} onClick={()=>selectTester(tester)}><div><b>{tester.expected_ampel} <span className="modeBadge">{tester.id}</span> {languageLabel(tester.language)} · {tester.name}</b><p>{countryLabel(tester.home_country)} → {countryLabel(tester.target_country)} · {tester.complexity}</p><small>{tester.problem}</small></div><span className="chev">›</span></button>
+        {selected?.id===tester.id&&<article className="detailCard syntheticTesterDetail">
+          <div className="detailCardHead"><h3>{selected.expected_ampel} {selected.name}</h3><span className="modeBadge">{selected.id}</span></div>
+          <p><b>{c.language}:</b> {languageLabel(selected.language)}</p>
+          <p><b>{c.home}:</b> {countryLabel(selected.home_country)}</p>
+          <p><b>{c.target}:</b> {countryLabel(selected.target_country)}</p>
+          <p><b>{c.complexity}:</b> {selected.complexity}</p>
+          <p><b>{c.problem}:</b> {selected.problem}</p>
+          <p><b>{c.documents}:</b> {selected.documents.join(' · ')}</p>
+          <p><b>{c.expected}:</b> {selected.expected_ampel}</p>
+          <p><b>{c.actions}:</b> {selected.expected_actions.join(' → ')}</p>
+          <button className="secondary full" type="button" onClick={()=>onOpenCase?.(selected)}>{c.start}</button>
+        </article>}
+      </div>)}</div>
     </div>}
   </section>
 }

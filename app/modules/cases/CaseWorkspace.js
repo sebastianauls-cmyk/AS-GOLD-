@@ -20,9 +20,20 @@ const copy = {
 
 Object.assign(copy, componentTranslations.workspaceCopy)
 
+const syntheticCaseLabels={de:'Synthetischer Testfall',en:'Synthetic test case',tr:'Sentetik test vakası',pl:'Syntetyczna sprawa testowa',ru:'Синтетическое тестовое дело',ar:'حالة اختبار اصطناعية',fa:'پرونده آزمایشی ساختگی',fr:'Cas de test synthétique',ro:'Caz de test sintetic',bg:'Синтетичен тестов случай',vi:'Tình huống thử nghiệm tổng hợp'}
+for(const [language,label] of Object.entries(syntheticCaseLabels)) if(copy[language]) copy[language].syntheticCase=label
+
 export function getV24Copy(language){ return copy[language] || copy.de }
 
 function fieldId(prefix,name){ return `${prefix}-${name}` }
+
+function syntheticCaseId(item={}){
+  if(item.test_case_id) return item.test_case_id
+  const reference=String(item.reference_no||'').match(/^TEST-(ST\d{2})$/i)
+  if(reference) return reference[1].toUpperCase()
+  const title=String(item.title||'').match(/^(ST\d{2})\s*·/i)
+  return title?title[1].toUpperCase():''
+}
 
 function localDateTime(value){
   if(!value) return ''
@@ -40,10 +51,12 @@ export function QuickActions({copy:on, onAction, deadlineCases=[]}){
 }
 
 export function CaseSection({copy:on, clients, cases, newCase, setNewCase, showForm, setShowForm, onSubmit, onSelect}){
+  const draftTestId=syntheticCaseId(newCase)
   return <>
     <button className="primary actionBtn" type="button" onClick={()=>setShowForm(value=>!value)}>{showForm?on.cancel:`＋ ${on.newCase}`}</button>
     {showForm&&<form className="actionCard coreForm" onSubmit={onSubmit}>
       <div className="formIntro"><h3>{on.caseSetup}</h3><p>{on.caseSetupHelp}</p></div>
+      {draftTestId&&<div className="syntheticCaseNotice"><span aria-hidden="true">🧪</span><div><b>{on.syntheticCase}</b><p>{draftTestId}{newCase.test_case_expected_ampel?` · ${newCase.test_case_expected_ampel}`:''}{newCase.test_case_language?` · ${newCase.test_case_language.toUpperCase()}`:''}{newCase.test_case_home_country&&newCase.test_case_target_country?` · ${newCase.test_case_home_country} → ${newCase.test_case_target_country}`:''}</p></div></div>}
       <label htmlFor={fieldId('new-case','title')}>{on.title}<input id={fieldId('new-case','title')} value={newCase.title} onChange={event=>setNewCase({...newCase,title:event.target.value})} required/></label>
       <label htmlFor={fieldId('new-case','client')}>{on.client}<select id={fieldId('new-case','client')} value={newCase.client_id} onChange={event=>setNewCase({...newCase,client_id:event.target.value})}><option value="">{on.noClient}</option>{clients.map(client=><option value={client.id} key={client.id}>{client.name}</option>)}</select></label>
       <label htmlFor={fieldId('new-case','reference')}>{on.reference}<input id={fieldId('new-case','reference')} value={newCase.reference_no} onChange={event=>setNewCase({...newCase,reference_no:event.target.value})}/></label>
@@ -53,7 +66,7 @@ export function CaseSection({copy:on, clients, cases, newCase, setNewCase, showF
       <label htmlFor={fieldId('new-case','next')}>{on.nextAction}<textarea id={fieldId('new-case','next')} value={newCase.next_action} onChange={event=>setNewCase({...newCase,next_action:event.target.value})}/></label>
       <button className="primary full">{on.createCase}</button>
     </form>}
-    {cases.length?<div className="itemList">{cases.map(item=><button className="itemRow buttonRow" type="button" onClick={()=>onSelect(item)} key={item.id}><div><b>{item.title}</b><div className="pills"><span className="pill">{item.status}</span><span className={`pill ${item.traffic_light||'yellow'}`}>{item.traffic_light==='red'?`🔴 ${on.red}`:item.traffic_light==='green'?`🟢 ${on.green}`:`🟡 ${on.yellow}`}</span>{item.deadline_at&&<span className="pill">{new Date(item.deadline_at).toLocaleDateString()}</span>}</div></div><span className="chev">›</span></button>)}</div>:null}
+    {cases.length?<div className="itemList">{cases.map(item=>{const testId=syntheticCaseId(item);return <button className="itemRow buttonRow" type="button" onClick={()=>onSelect(item)} key={item.id}><div><b>{item.title}</b><div className="pills">{testId&&<span className="pill syntheticCasePill">🧪 {testId} · {on.syntheticCase}</span>}<span className="pill">{item.status}</span><span className={`pill ${item.traffic_light||'yellow'}`}>{item.traffic_light==='red'?`🔴 ${on.red}`:item.traffic_light==='green'?`🟢 ${on.green}`:`🟡 ${on.yellow}`}</span>{item.deadline_at&&<span className="pill">{new Date(item.deadline_at).toLocaleDateString()}</span>}</div></div><span className="chev">›</span></button>})}</div>:null}
   </>
 }
 
@@ -65,7 +78,7 @@ export function CaseDetail({copy:on, analysis, language='de', item, clients, doc
   const readiness=!documents.length?on.notAssessable:!assessments.length?on.reviewRequired:on.reviewed
   return <>
     <button className="backBtn" type="button" onClick={onBack}>{on.back}</button>
-    <div className="caseTitleRow"><div><span className="modeBadge">{on.caseRecord}</span><h2>{item.title}</h2><p>{client?.name||on.clientUnknown}{item.reference_no?` · ${item.reference_no}`:''}</p></div><button className="secondary" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button></div>
+    <div className="caseTitleRow"><div><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2>{item.title}</h2><p>{client?.name||on.clientUnknown}{item.reference_no?` · ${item.reference_no}`:''}</p></div><button className="secondary" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button></div>
     {editing&&<form className="actionCard coreForm" onSubmit={event=>{event.preventDefault();onSave(item.id,draft).then(saved=>{if(saved)setEditing(false)})}}>
       <label htmlFor={fieldId(item.id,'title')}>{on.title}<input id={fieldId(item.id,'title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
       <label htmlFor={fieldId(item.id,'client')}>{on.client}<select id={fieldId(item.id,'client')} value={draft.client_id} onChange={event=>setDraft({...draft,client_id:event.target.value})}><option value="">{on.noClient}</option>{clients.map(entry=><option value={entry.id} key={entry.id}>{entry.name}</option>)}</select></label>
