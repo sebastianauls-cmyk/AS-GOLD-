@@ -89,7 +89,7 @@ export function createPricingWorkflowActions({
 
     const {data:upgradeData,error}=await requestUpgradeRecord(supabase,{planKey:plan.plan_key,termMonths,promoCode:appliedPromoCode})
     if(error){setMessage(appliedPromoCode?promoCopy.invalid:error.message);return false}
-    await recordServerAudit('upgrade_requested',{plan_key:plan.plan_key,term_months:Number(termMonths),promo_applied:upgradeData?.promo_code_state==='valid'},'account',null)
+    await recordServerAudit('upgrade_requested',{plan_key:plan.plan_key,term_months:Number(termMonths)},'account',null)
     setMessage(`${notices.upgradeReserved} ${notices.selected}: ${upgradeData?.to_plan_name||plan.plan_name}, ${termMonths} ${termMonths===1?notices.monthOne:notices.monthMany}.`)
     return true
   }

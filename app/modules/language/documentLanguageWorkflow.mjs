@@ -56,7 +56,12 @@ export function mapDocumentLanguageWorkflowResult(result={},document={},outputLa
       analysis_summary:composeDocumentLanguageWorkflowSummary(result,outputLanguage)||result.summary||'',
       analysis_next_step:result.next_step||'',
       response_letter_de:result.response_letter_de||'',
-      customer_copy:result.customer_copy||''
+      customer_copy:result.customer_copy||'',
+      response_recipient:result.response_recipient||result.sender_or_author||'',
+      response_subject:result.response_subject||document.title||'',
+      analysis_traffic_light:result.traffic_light||'yellow',
+      analysis_reasoning:result.assessment_reasoning||result.summary||'',
+      analysis_confidence:result.confidence||null
     },
     facts:{
       sender_or_author:result.sender_or_author||null,

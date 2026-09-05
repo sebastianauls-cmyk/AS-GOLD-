@@ -21,14 +21,14 @@ function typeText(on,type){ return on.types[type] || type }
 
 export function ApprovalSection({copy:on,cases,documents,approvals,defaults,onCreate,onSelect}){
   const [showForm,setShowForm]=useState(Boolean(defaults?.caseId||defaults?.documentId))
-  const [draft,setDraft]=useState({case_id:defaults?.caseId||'',document_id:defaults?.documentId||'',approval_type:'send',recipient:'',subject:'',body:''})
+  const [draft,setDraft]=useState({case_id:defaults?.caseId||'',document_id:defaults?.documentId||'',approval_type:'send',recipient:defaults?.recipient||'',subject:defaults?.subject||'',body:defaults?.body||''})
   const matchingDocuments=useMemo(()=>documents.filter(item=>item.case_id===draft.case_id),[documents,draft.case_id])
 
   useEffect(()=>{
     if(!defaults?.caseId&&!defaults?.documentId) return
-    setDraft(previous=>({...previous,case_id:defaults.caseId||'',document_id:defaults.documentId||''}))
+    setDraft(previous=>({...previous,case_id:defaults.caseId||'',document_id:defaults.documentId||'',recipient:defaults.recipient||'',subject:defaults.subject||'',body:defaults.body||''}))
     setShowForm(true)
-  },[defaults?.caseId,defaults?.documentId])
+  },[defaults?.caseId,defaults?.documentId,defaults?.recipient,defaults?.subject,defaults?.body])
 
   async function submit(event){
     event.preventDefault()

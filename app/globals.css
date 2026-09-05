@@ -233,3 +233,7 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 /* V69 modular public-language parity */
 .publicWelcome{grid-column:1/-1;margin:0;padding:14px 16px;border:1px solid #e2d6b7;border-radius:14px;background:linear-gradient(135deg,#fff8df,#fff);color:#4d3b14;font-size:1.08rem;font-weight:850;line-height:1.4}.publicWelcome span{font-size:1.35rem}.publicBackButton{grid-column:1/-1;justify-self:end;min-height:42px;padding:9px 12px;border:1px solid #c9ad66;border-radius:11px;background:#fff;color:#4d3b14;font-weight:850}.publicBackButton:hover{background:#fff8e8}
 @media(max-width:760px){.publicBackButton{width:100%;max-width:none;justify-self:stretch}}
+
+/* V109: explicit unverified/white traffic-light state */
+.pill.white{background:#fff;border:1px solid #cbd1d9}
+.assessment.white{border-inline-start-color:#94a3b8}

@@ -12,7 +12,12 @@ const allowedOrigin=(origin:string|null)=>origin==='https://app-gold-workspace.v
 const headersFor=(req:Request)=>{const origin=allowedOrigin(req.headers.get('Origin'));return {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store, max-age=0','X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Vary':'Origin',...(origin?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS'}:{})};};
 const reply=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:headersFor(req)});
 function base64(bytes:Uint8Array){let binary='';for(let index=0;index<bytes.length;index+=0x8000) binary+=String.fromCharCode(...bytes.subarray(index,Math.min(index+0x8000,bytes.length)));return btoa(binary);}
-function mime(path:string,type?:string){if(type)return type;const lower=path.toLowerCase();if(lower.endsWith('.pdf'))return'application/pdf';if(lower.endsWith('.png'))return'image/png';if(lower.endsWith('.webp'))return'image/webp';if(lower.endsWith('.gif'))return'image/gif';return'image/jpeg';}
+function mime(path:string,type?:string){
+  if(type&&type!=='application/octet-stream')return type;
+  const extension=path.toLowerCase().split('.').pop()||'';
+  const types:Record<string,string>={pdf:'application/pdf',png:'image/png',webp:'image/webp',gif:'image/gif',jpg:'image/jpeg',jpeg:'image/jpeg',txt:'text/plain',csv:'text/csv',rtf:'application/rtf',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',odt:'application/vnd.oasis.opendocument.text',ods:'application/vnd.oasis.opendocument.spreadsheet',odp:'application/vnd.oasis.opendocument.presentation',eml:'message/rfc822'};
+  return types[extension]||'application/octet-stream';
+}
 
 Deno.serve(async(req:Request)=>{
   if(req.method==='OPTIONS') return allowedOrigin(req.headers.get('Origin'))?new Response(null,{status:204,headers:headersFor(req)}):reply(req,{error:'Origin not allowed'},403);
@@ -45,16 +50,16 @@ Deno.serve(async(req:Request)=>{
   if(!providerKey) return reply(req,{status:'configuration_required',message:'KI-Dienst ist serverseitig noch nicht freigegeben.'},503);
   const {data:file,error:downloadError}=await client.storage.from('goldstandard-private').download(filePath);
   if(downloadError||!file) return reply(req,{error:'Datei konnte nicht geladen werden'},400);
-  const fileMime=mime(filePath,file.type);if(!(fileMime.startsWith('image/')||fileMime==='application/pdf')) return reply(req,{error:'Automatisches Auslesen unterstützt Bilder und PDF-Dateien.'},415);
+  const fileMime=mime(filePath,file.type);const supportedDocumentMime=new Set(['application/pdf','text/plain','text/csv','application/rtf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.oasis.opendocument.text','application/vnd.oasis.opendocument.spreadsheet','application/vnd.oasis.opendocument.presentation','message/rfc822']);if(!(fileMime.startsWith('image/')||supportedDocumentMime.has(fileMime))) return reply(req,{error:'Dieses Dateiformat kann gespeichert, aber noch nicht automatisch ausgelesen werden.'},415);
   const bytes=new Uint8Array(await file.arrayBuffer());if(bytes.byteLength>MAX_BYTES) return reply(req,{error:'Datei ist für die direkte Analyse zu groß (max. 18 MB).'},413);
 
   const voiceContext=typeof document.voice_context==='string'&&document.voice_context.trim()?document.voice_context.trim().slice(0,4000):null;
   const voiceLanguage=typeof document.voice_language==='string'&&document.voice_language.trim()?document.voice_language.trim():null;
   const dataUrl=`data:${fileMime};base64,${base64(bytes)}`;
-  const filePart=fileMime==='application/pdf'?{type:'input_file',filename:'document.pdf',file_data:dataUrl}:{type:'input_image',image_url:dataUrl,detail:'high'};
+  const filePart=fileMime.startsWith('image/')?{type:'input_image',image_url:dataUrl,detail:'high'}:{type:'input_file',filename:filePath.split('/').pop()||'document',file_data:dataUrl};
   const schema={type:'object',additionalProperties:false,properties:{
-    source_language:{type:'string'},extracted_text:{type:'string'},document_translation:{type:'string'},document_type:{type:['string','null']},summary:{type:'string'},next_step:{type:'string'},response_letter_de:{type:'string'},customer_copy:{type:'string'},document_date:{type:['string','null']},sender_or_author:{type:['string','null']},recipient:{type:['string','null']},reference_numbers:{type:'array',items:{type:'string'}},deadlines:{type:'array',items:{type:'string'}},monetary_amounts:{type:'array',items:{type:'string'}},confidence:{type:'string',enum:['hoch','mittel','niedrig']}
-  },required:['source_language','extracted_text','document_translation','document_type','summary','next_step','response_letter_de','customer_copy','document_date','sender_or_author','recipient','reference_numbers','deadlines','monetary_amounts','confidence']};
+    source_language:{type:'string'},extracted_text:{type:'string'},document_translation:{type:'string'},document_type:{type:['string','null']},summary:{type:'string'},next_step:{type:'string'},response_letter_de:{type:'string'},customer_copy:{type:'string'},response_recipient:{type:['string','null']},response_subject:{type:'string'},traffic_light:{type:'string',enum:['green','yellow','red','white']},assessment_reasoning:{type:'string'},document_date:{type:['string','null']},sender_or_author:{type:['string','null']},recipient:{type:['string','null']},reference_numbers:{type:'array',items:{type:'string'}},deadlines:{type:'array',items:{type:'string'}},monetary_amounts:{type:'array',items:{type:'string'}},confidence:{type:'string',enum:['hoch','mittel','niedrig']}
+  },required:['source_language','extracted_text','document_translation','document_type','summary','next_step','response_letter_de','customer_copy','response_recipient','response_subject','traffic_light','assessment_reasoning','document_date','sender_or_author','recipient','reference_numbers','deadlines','monetary_amounts','confidence']};
 
   const spokenContextInstruction=voiceContext?`\n\nZusätzlicher, vom Nutzer bestätigter gesprochener Kontext (${voiceLanguage||'Sprache unbekannt'}): ${voiceContext}\nDieser Kontext ist NICHT Teil des Dokuments. Verwende ihn nur zur Einordnung in summary, next_step und gegebenenfalls response_letter_de/customer_copy. Er darf niemals in extracted_text oder document_translation hineingemischt werden.`:'';
   const instructions=`Du verarbeitest ein Dokument für AS Workspace Gold in einem kontrollierten Arbeitsablauf. Kundensprache/Ausgabesprache: ${outputLanguageName}. Gewählter Länder-/Rechtsraum-Kontext: ${countryContextName}. Sprache und Land sind getrennte Parameter. Das Land bestimmt nur den Kontext, in dem landesspezifische Begriffe, Behörden, Fristen oder organisatorische Besonderheiten vorsichtig eingeordnet werden sollen. Behaupte keine landesspezifische Rechtslage, wenn sie aus dem Dokument oder gesicherten Kenntnissen nicht belastbar folgt. Im Zweifel kennzeichne die Unsicherheit ausdrücklich.
@@ -69,6 +74,10 @@ Erzeuge GENAU diese getrennten Ergebnisse:
 4. next_step: konkrete organisatorische nächste Schritte auf ${outputLanguageName}, priorisiert und kurz. Bei landesspezifischer Unsicherheit darauf hinweisen, dass eine Prüfung für ${countryContextName} erforderlich ist.
 5. response_letter_de: ein sachliches, professionelles, versandfertiges Antwortschreiben auf DEUTSCH. Es muss zum Dokument passen, darf keine nicht belegten Rechtsbehauptungen oder Anerkenntnisse erfinden und soll vorhandene Referenzen/Aktenzeichen korrekt übernehmen. Wenn noch eine zwingende Angabe fehlt, verwende [PLATZHALTER]. Kein Kommentar vor oder nach dem Schreiben.
 6. customer_copy: inhaltlich möglichst genaue Übersetzung genau dieses deutschen Antwortschreibens auf ${outputLanguageName}, damit der Kunde versteht, was versendet werden soll. Keine neuen Inhalte hinzufügen.
+7. response_recipient: der aus dem Dokument belastbar erkennbare Empfänger des Antwortschreibens, regelmäßig der Absender des eingegangenen Dokuments. Bei Unklarheit null, niemals raten.
+8. response_subject: kurzer deutscher Betreff für das Antwortschreiben mit vorhandener Referenz oder Aktenzeichen.
+9. traffic_light: green nur bei geklärter, unkritischer Lage; yellow bei offenen Angaben oder normalem Prüfbedarf; red bei erkennbarer akuter Frist, Vollstreckungs-/Kündigungs-/Zahlungsgefahr; white wenn ohne verifizierte Grundlage keine fachliche Einstufung möglich ist.
+10. assessment_reasoning: kurze, konkrete Begründung der Ampel auf ${outputLanguageName}, einschließlich der entscheidenden Dokumentstelle und offener Prüflücken. Keine unbestätigte Rechtsbehauptung.
 
 Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar aus einem ausdrücklich genannten Datum und Zeitraum folgen. Das Ergebnis bleibt ein prüfbarer Entwurf vor Freigabe.${spokenContextInstruction}`;
 
@@ -86,5 +95,5 @@ Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar a
   if(consumeError) return reply(req,{error:'Analyse war erfolgreich, konnte aber nicht sicher abgeschlossen werden'},503);
   if(!consumed) return reply(req,{error:'Die Analysefreigabe wurde zwischenzeitlich bereits verwendet. Bitte erneut bestätigen.'},409);
 
-  return reply(req,{status:'completed',message:'Dokument wurde mit erkannter Originalsprache, Ausgabesprache und Länder-/Rechtsraum-Kontext verarbeitet. Bitte alles prüfen und bewusst freigeben.',release:'V98',output_language:requestedOutputLanguage,target_country:requestedCountry,target_country_label:countryContextName,suggested_case_id:null,case_match_reason:null,...parsed,source_language:detectedSourceLanguage});
+  return reply(req,{status:'completed',message:'Dokument wurde mit erkannter Originalsprache, Ausgabesprache, Ampel und Länder-/Rechtsraum-Kontext verarbeitet. Bitte alles prüfen und bewusst freigeben.',release:'V109',output_language:requestedOutputLanguage,target_country:requestedCountry,target_country_label:countryContextName,suggested_case_id:null,case_match_reason:null,...parsed,source_language:detectedSourceLanguage});
 });

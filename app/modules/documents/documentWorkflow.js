@@ -52,7 +52,8 @@ export function createDocumentWorkflowActions({
     if(authorization.error){setMessage(authorization.error.message);return false}
     setPrivacySettings(authorization.privacy)
     await recordServerAudit('document_ai_transfer_authorized',{classification:document.data_classification},'document',document.id)
-    const {data:result,error}=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
+    const linkedCase=data.cases.find(item=>item.id===document.case_id)
+    const {data:result,error}=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,countryContext:linkedCase?.target_country})
     if(error){setMessage(await functionErrorMessage(error,analysisCopy.failed));return false}
     if(result?.status==='configuration_required'){setMessage(result.message||analysisCopy.failed);return false}
     const suggestedCase=data.cases.some(item=>item.id===result?.suggested_case_id)?result.suggested_case_id:null
@@ -75,7 +76,26 @@ export function createDocumentWorkflowActions({
     const eventType=draft.analysis_generated?'document_analysis_saved':'document_reviewed'
     recordLocalAction(eventType)
     const auditSaved=await recordServerAudit(eventType,{status:'saved'},'document',updated.id)
-    setData(previous=>({...previous,documents:previous.documents.map(item=>item.id===updated.id?updated:item)}))
+    let createdAssessment=null
+    let createdSource=null
+    let updatedCase=null
+    if(draft.analysis_generated&&updated.case_id){
+      const trafficLight=['green','yellow','red','white'].includes(draft.analysis_traffic_light)?draft.analysis_traffic_light:'yellow'
+      const assessmentResult=await supabase.rpc('create_gold_assessment',{p_case_id:updated.case_id,p_title:updated.title||analysisCopy.badge,p_traffic_light:trafficLight,p_reasoning:String(draft.analysis_reasoning||updated.analysis_summary||'').trim()||null,p_next_step:updated.analysis_next_step||null})
+      if(!assessmentResult.error){
+        createdAssessment=assessmentResult.data?.assessment||null
+        updatedCase=assessmentResult.data?.case||null
+      }
+      const sourceResult=await supabase.from('source_status').insert({owner_id:ownerId,case_id:updated.case_id,source_kind:'uploaded_document',source_label:updated.title,status:'PASSENDER TREFFER – ZU BESTÄTIGEN',details:String(draft.analysis_reasoning||'KI-Dokumentanalyse gespeichert; fachliche Bestätigung erforderlich.').trim(),checked_at:new Date().toISOString()}).select().single()
+      if(!sourceResult.error) createdSource=sourceResult.data
+    }
+    setData(previous=>({
+      ...previous,
+      documents:previous.documents.map(item=>item.id===updated.id?updated:item),
+      assessments:createdAssessment?[createdAssessment,...previous.assessments]:previous.assessments,
+      sourceStatus:createdSource?[createdSource,...previous.sourceStatus]:previous.sourceStatus,
+      cases:updatedCase?previous.cases.map(item=>item.id===updatedCase.id?updatedCase:item):previous.cases
+    }))
     setSelectedDocument(updated)
     setMessage(auditSaved?(draft.analysis_generated?analysisCopy.savedMessage:`${caseCopy.documentReview} ✓`):serverCopy.auditFailed)
     return true

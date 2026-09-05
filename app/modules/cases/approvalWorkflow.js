@@ -1,4 +1,7 @@
 import { approveApprovalRecord, createApprovalRecord, rejectApprovalRecord, updateApprovalRecord } from '../services/approvalRepository'
+import { approvalDefaultsForDocument } from './approvalDefaults.mjs'
+
+export { approvalDefaultsForDocument } from './approvalDefaults.mjs'
 
 export function createApprovalWorkflowActions({
   supabase,
@@ -27,7 +30,7 @@ export function createApprovalWorkflowActions({
     recordLocalAction('approval_created')
     await recordServerAudit('approval_created',{revision:Number(created.preview_revision)},'approval',created.id)
     setData(previous=>({...previous,approvals:[created,...previous.approvals]}))
-    setApprovalDefaults({caseId:'',documentId:''})
+    setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''})
     setSelectedApproval(created)
     setMessage(approvalUi.created)
     return created
@@ -81,7 +84,7 @@ export function createApprovalWorkflowActions({
     setSelectedDocument(null)
     setSelectedCase(null)
     setSelectedApproval(null)
-    setApprovalDefaults({caseId:document.case_id||'',documentId:document.id})
+    setApprovalDefaults(approvalDefaultsForDocument(document))
     setSection('approvals')
   }
 

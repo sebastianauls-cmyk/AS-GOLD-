@@ -31,7 +31,7 @@ function countryLabel(key){
   return item?`${item.flag||''} ${item.label}`.trim():key
 }
 
-export function SyntheticTesterPanel({language='de',onOpenCase}){
+export function SyntheticTesterPanel({language='de',onOpenCase,showStart=true}){
   const [open,setOpen]=useState(true)
   const [selected,setSelected]=useState(null)
   const c=COPY[language]||COPY.de
@@ -58,7 +58,7 @@ export function SyntheticTesterPanel({language='de',onOpenCase}){
           <p><b>{c.documents}:</b> {selected.documents.join(' · ')}</p>
           <p><b>{c.expected}:</b> {selected.expected_ampel}</p>
           <p><b>{c.actions}:</b> {selected.expected_actions.join(' → ')}</p>
-          <button className="secondary full" type="button" onClick={()=>onOpenCase?.(selected)}>{c.start}</button>
+          {showStart&&onOpenCase&&<button className="secondary full" type="button" onClick={()=>onOpenCase(selected)}>{c.start}</button>}
         </article>}
       </div>)}</div>
     </div>}

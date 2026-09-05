@@ -1,6 +1,9 @@
 'use client'
 
 import { appText } from '../workspace/workspaceText'
+import { selectEvidenceContext } from './evidenceContext.mjs'
+
+export { selectEvidenceContext } from './evidenceContext.mjs'
 
 export const EVIDENCE_PANEL_COPY={
   de:{title:'Geprüfte Grundlage & nächste Handlung',verified:'Geprüft',review:'Prüfung erforderlich',source:'Quellenbasis',confidence:'Vertrauensstufe',meaning:'Bedeutet für Sie',next:'Nächster Schritt',gaps:'Offene Punkte',noSources:'Noch keine verifizierte Quellenbasis vorhanden.',noAction:'Noch keine konkrete Handlung hinterlegt.',noGaps:'Keine offenen Prüflücken erkannt.',high:'hoch',medium:'mittel',low:'niedrig'},
@@ -23,22 +26,20 @@ function languageFromAppCopy(a){
 export function EvidenceActionPanel({a,data}){
   const language=languageFromAppCopy(a)
   const c=EVIDENCE_PANEL_COPY[language]||EVIDENCE_PANEL_COPY.de
-  const assessments=Array.isArray(data?.assessments)?data.assessments:[]
-  const sourceStatus=Array.isArray(data?.sourceStatus)?data.sourceStatus:[]
-  const latest=assessments[0]||null
-  const sources=sourceStatus.filter(Boolean)
+  const {latest,caseId,sources}=selectEvidenceContext(data)
+  const activeCase=(Array.isArray(data?.cases)?data.cases:[]).find(item=>item.id===caseId)
   const traffic=latest?.traffic_light||latest?.trafficLight||latest?.status||'white'
   const dot=traffic==='green'?'🟢':traffic==='yellow'?'🟡':traffic==='red'?'🔴':'⚪'
-  const verified=sources.length>0 && traffic!=='red'
+  const verified=sources.some(source=>source.status==='AUTO GEFUNDEN/AUSGEWERTET') && traffic!=='red'
   const confidence=verified?(traffic==='green'?'high':'medium'):'low'
   const action=latest?.next_step||latest?.next_action||latest?.nextAction||''
   const reasoning=latest?.reasoning||latest?.summary||''
   const gapCount=verified?0:1
 
   return <section className="recommendationBox evidenceActionPanel" dir={language==='ar'||language==='fa'?'rtl':'ltr'}>
-    <div><span className="modeBadge">{dot} {verified?c.verified:c.review}</span><h3>{c.title}</h3></div>
+    <div><span className="modeBadge">{dot} {verified?c.verified:c.review}</span><h3>{c.title}</h3>{activeCase&&<p>{activeCase.title}</p>}</div>
     <div className="recommendationResult"><div><b>{c.confidence}: {c[confidence]}</b><p>{c.meaning}: {reasoning||c.noSources}</p></div></div>
-    <p><b>{c.source}:</b> {sources.length?sources.length:c.noSources}</p>
+    <p><b>{c.source}:</b> {sources.length?sources.map(source=>`${source.source_label||source.source_kind}: ${source.status}`).join(' · '):c.noSources}</p>
     <p><b>{c.next}:</b> {action||c.noAction}</p>
     <p><b>{c.gaps}:</b> {gapCount?c.noSources:c.noGaps}</p>
   </section>

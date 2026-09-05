@@ -75,7 +75,7 @@ export default function WorkspaceController(){
   const [selectedClient,setSelectedClient]=useState(null)
   const [selectedDocument,setSelectedDocument]=useState(null)
   const [selectedApproval,setSelectedApproval]=useState(null)
-  const [approvalDefaults,setApprovalDefaults]=useState({caseId:'',documentId:''})
+  const [approvalDefaults,setApprovalDefaults]=useState({caseId:'',documentId:'',recipient:'',subject:'',body:''})
   const [access,setAccess]=useState(null)
   const [upgrades,setUpgrades]=useState([])
   const [termMonths,setTermMonths]=useState(1)
@@ -140,6 +140,15 @@ export default function WorkspaceController(){
   const promoAnyValid=!!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='valid')
   const promoAllInvalid=!!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
   const promoSomeInvalid=!!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='invalid')
+  const activeCaseContext=useMemo(()=>{
+    if(selectedCase) return selectedCase
+    const linkedCaseId=selectedDocument?.case_id||selectedApproval?.case_id
+    return linkedCaseId?data.cases.find(item=>item.id===linkedCaseId)||null:null
+  },[selectedCase,selectedDocument,selectedApproval,data.cases])
+
+  useEffect(()=>{
+    if(screen==='app'&&activeCaseContext?.target_country) broadcastCountryContext(activeCaseContext.target_country)
+  },[screen,activeCaseContext?.id,activeCaseContext?.target_country])
 
   // The public interface follows the interface language. Output language is
   // reserved for customer-facing results and generated documents.
@@ -206,7 +215,7 @@ export default function WorkspaceController(){
       setSelectedClient(null)
       setSelectedDocument(null)
       setSelectedApproval(null)
-      setApprovalDefaults({caseId:'',documentId:''})
+      setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''})
       setDeletionRequests([])
       resetAudit()
       setSection('dashboard')
@@ -231,7 +240,7 @@ export default function WorkspaceController(){
     if(action==='scan'||action==='upload'){setDocumentMode(action);setUploadCaseId('');setSection('documents');return}
     if(action==='clients'){setSection('clients');return}
     if(action==='deadlines'){setSection('cases');return}
-    if(action==='approvals'){setApprovalDefaults({caseId:'',documentId:''});setSection('approvals')}
+    if(action==='approvals'){setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''});setSection('approvals')}
   }
 
   function startSyntheticCase(tester){
@@ -271,7 +280,7 @@ export default function WorkspaceController(){
 
   if(screen==='app'&&!selectedClient&&section==='documents') return protectedWorkspace(<DocumentsSurface a={a} access={access} documents={data.documents} core={core} v28={v28} cases={data.cases} documentMode={documentMode} setDocumentMode={setDocumentMode} uploadCaseId={uploadCaseId} uploadDocument={uploadDocument} uploading={uploading} allowedUploadAccept={allowedUploadAccept} setSelectedDocument={setSelectedDocument} onBack={()=>setSection('dashboard')}/>)
 
-  if(screen==='app'&&!selectedClient&&section==='approvals') return protectedWorkspace(<ApprovalsSurface a={a} approvalUi={approvalUi} cases={data.cases} documents={data.documents} approvals={data.approvals} approvalDefaults={approvalDefaults} createApproval={createApproval} setSelectedApproval={setSelectedApproval} onBack={()=>{setApprovalDefaults({caseId:'',documentId:''});setSection('dashboard')}}/>)
+  if(screen==='app'&&!selectedClient&&section==='approvals') return protectedWorkspace(<ApprovalsSurface a={a} approvalUi={approvalUi} cases={data.cases} documents={data.documents} approvals={data.approvals} approvalDefaults={approvalDefaults} createApproval={createApproval} setSelectedApproval={setSelectedApproval} onBack={()=>{setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''});setSection('dashboard')}}/>)
 
   if(screen==='app'&&!selectedClient&&section==='pricing') return protectedWorkspace(<PricingSurface a={a} promo={promo} upgrades={upgrades} promoCode={promoCode} setPromoCode={setPromoCode} appliedPromoCode={appliedPromoCode} applyPromo={applyPromo} clearPromo={clearPromo} quoteLoading={quoteLoading} quotes={quotes} promoAnyValid={promoAnyValid} promoAllInvalid={promoAllInvalid} promoSomeInvalid={promoSomeInvalid} eur={eur} terms={terms} termMonths={termMonths} setTermMonths={setTermMonths} monthsLabel={monthsLabel} period={period} requestUpgrade={requestUpgrade} onBack={()=>setSection('dashboard')}/>)
 

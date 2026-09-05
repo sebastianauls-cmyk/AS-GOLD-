@@ -1,20 +1,10 @@
 import { createAssessmentRecord, createCaseRecord, createClientRecord, updateCaseRecord, updateClientRecord } from '../services/workspaceRepository'
 import { emptyCase } from '../workspace/stateConfig'
+import { normalizeCasePayload } from './casePayload.mjs'
+
+export { normalizeCasePayload } from './casePayload.mjs'
 
 const emptyClient={name:'',email:'',phone:'',notes:''}
-
-export function normalizeCasePayload(draft){
-  return {
-    client_id:draft.client_id||null,
-    title:draft.title.trim(),
-    reference_no:draft.reference_no.trim()||null,
-    goal:draft.goal.trim()||null,
-    summary:draft.summary.trim()||null,
-    deadline_at:draft.deadline_at?new Date(draft.deadline_at).toISOString():null,
-    next_action:draft.next_action.trim()||null,
-    status:draft.status||'open'
-  }
-}
 
 export function createCaseWorkflowActions({
   supabase,
