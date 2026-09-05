@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "next dev",
     "prebuild": "npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch && npm run test:v38-practical-simulation && npm run test:v38-tester-guide && npm run test:v38-integrations && npm run test:v38-supabase-security && npm run test:v39-case-intelligence && npm run test:v40-handoff && npm run test:v41-consistency && npm run test:v42-actions && npm run test:v43-visibility && npm run test:v44-language-order && npm run test:v45-output-language && npm run test:v46-modules && npm run test:v56-parity && npm run test:v69-public-parity && npm run test:v70-tester && npm run test:v71-microphone && npm run test:v46-controller && npm run test:v46-direct-imports && npm run test:v72-vietnamese && npm run test:v73-recommendation && npm run test:v74-matrix && npm run test:v75-languages && npm run test:v76-tester-access && npm run test:v77-mobile-language && npm run test:v79-release-brand && npm run test:v81-language-workflow && npm run test:v82-country-context && npm run test:v83-improvement && npm run test:v84-country-legal && npm run test:v85-country-comparison && npm run test:v86-module-country-coverage && npm run test:v87-home-country-comparison && npm run test:v88-germany-master && npm run test:v89-cross-country-explanation && npm run test:v90-language-modules && npm run test:v91-all-countries-per-language && npm run test:v93-evidence-action && npm run test:v95-multisurface-evidence && npm run test:v98-intake && npm run test:v99-device && npm run test:v100-quality && npm run test:v101-auth && npm run test:v102-reset && npm run test:v103-reset-screen && npm run test:v104-reset-repair && npm run test:v105-email-reset && npm run test:v106-password-change && npm run test:v107-core && npm run test:v108-visible-testcases && npm run test:v46-session-audit && npm run test:v46-release",
-    "build": "npm run test:v109-corrections && npm run test:v110-navigation && next build",
+    "build": "npm run test:v109-corrections && npm run test:v110-navigation && npm run test:v111-auth-trigger && next build",
     "start": "next start",
     "test:v29-password": "node scripts/test_v29_password_policy.mjs",
     "test:v30-languages": "node scripts/test_v30_languages.mjs",
@@ -78,7 +78,8 @@
     "test:v107-core": "node scripts/test_v107_core_customer_workflow.mjs",
     "test:v108-visible-testcases": "node scripts/test_v108_visible_synthetic_cases.mjs",
     "test:v109-corrections": "node scripts/test_v109_customer_workflow_corrections.mjs",
-    "test:v110-navigation": "node scripts/test_v110_navigation_and_metadata.mjs"
+    "test:v110-navigation": "node scripts/test_v110_navigation_and_metadata.mjs",
+    "test:v111-auth-trigger": "node scripts/test_v111_auth_trigger_deduplication.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",

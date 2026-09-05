@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { APP_VERSION } from '../app/modules/release/appRelease.mjs'
+import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
 
-assert.equal(APP_VERSION,'V110')
+assert.ok(APP_RELEASE.number>=110,'navigation and metadata corrections require release V110 or newer')
 
 const legalRoutes=['cookies','datenschutz','datenschutzsteuerung','impressum','ki-transparenz','kontakt','nutzungsbedingungen','rechtliches','widerruf']
 for(const route of legalRoutes){
@@ -37,4 +37,4 @@ for(const surface of ['ApprovalDetail','DocumentDetail','CaseDetail','CasesSurfa
   assert.match(controller,new RegExp(`<${surface}[\\s\\S]*?onBack=`),`${surface} must remain reachable and reversible`)
 }
 
-console.log('V110 navigation/metadata regression passed: public utility routes, protected surfaces and title templates have explicit non-duplicated return paths.')
+console.log(`${APP_VERSION} navigation/metadata regression passed: public utility routes, protected surfaces and title templates have explicit non-duplicated return paths.`)
