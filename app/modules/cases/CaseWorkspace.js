@@ -105,15 +105,16 @@ export function DocumentSection({copy:on, privacy, cases, documents, mode, setMo
   </>
 }
 
-export function DocumentDetail({copy:on, analysis, language='de', item, cases, onBack, onSave, onAnalyze, onOpen, onPrepareApproval, approvalLabel}){
-  const [draft,setDraft]=useState({title:item.title||'',case_id:item.case_id||'',document_type:item.document_type||'',document_date:item.document_date||'',extracted_text:item.extracted_text||'',analysis_summary:item.analysis_summary||'',analysis_next_step:item.analysis_next_step||''})
+export function DocumentDetail({copy:on, analysis, privacy, language='de', item, cases, onBack, onSave, onAnalyze, onOpen, onPrepareApproval, approvalLabel}){
+  const allowedClassifications=['synthetic','anonymized']
+  const [draft,setDraft]=useState({title:item.title||'',case_id:item.case_id||'',document_type:item.document_type||'',document_date:item.document_date||'',extracted_text:item.extracted_text||'',analysis_summary:item.analysis_summary||'',analysis_next_step:item.analysis_next_step||'',data_classification:allowedClassifications.includes(item.data_classification)?item.data_classification:'',test_data_confirmed:false})
   const [analysisPhase,setAnalysisPhase]=useState(item.extracted_text||item.analysis_summary||item.analysis_next_step?'saved':'uploaded')
   async function save(event){
     event.preventDefault()
     const saved=await onSave(item.id,draft)
     if(saved){
       setAnalysisPhase('saved')
-      setDraft(current=>({...current,analysis_generated:false}))
+      setDraft(current=>({...current,analysis_generated:false,test_data_confirmed:false}))
     }
   }
   return <>
@@ -122,12 +123,13 @@ export function DocumentDetail({copy:on, analysis, language='de', item, cases, o
     <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document"/>
     <DocumentAutoAssessment language={language} text={draft.extracted_text}/>
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</p></div>
-    {analysis&&onAnalyze&&<ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} phase={analysisPhase} onPhase={setAnalysisPhase}/>}
+    {analysis&&onAnalyze&&<ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} phase={analysisPhase} onPhase={setAnalysisPhase} analysisAllowed={allowedClassifications.includes(item.data_classification)} classificationMessage={privacy?.uploadRequired}/>}
     <form className="actionCard coreForm documentReviewForm" onSubmit={save}>
       <label htmlFor={fieldId(item.id,'document-title')}>{on.documentTitle}<input id={fieldId(item.id,'document-title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
       <label htmlFor={fieldId(item.id,'document-case')}>{on.selectCase}<select id={fieldId(item.id,'document-case')} value={draft.case_id} onChange={event=>setDraft({...draft,case_id:event.target.value})}><option value="">{on.withoutCase}</option>{cases.map(entry=><option value={entry.id} key={entry.id}>{entry.title}</option>)}</select></label>
       <label htmlFor={fieldId(item.id,'document-type')}>{on.documentType}<input id={fieldId(item.id,'document-type')} value={draft.document_type} onChange={event=>setDraft({...draft,document_type:event.target.value})}/></label>
       <label htmlFor={fieldId(item.id,'document-date')}>{on.documentDate}<input id={fieldId(item.id,'document-date')} type="date" value={draft.document_date} onChange={event=>setDraft({...draft,document_date:event.target.value})}/></label>
+      {privacy&&<><div className="documentPrivacyIntro"><b>{privacy.classification}</b><p>{privacy.uploadHelp}</p></div><label htmlFor={fieldId(item.id,'classification')}>{privacy.classification}<select id={fieldId(item.id,'classification')} value={draft.data_classification} onChange={event=>setDraft({...draft,data_classification:event.target.value,test_data_confirmed:false})} required><option value="" disabled>—</option><option value="synthetic">{privacy.synthetic}</option><option value="anonymized">{privacy.anonymized}</option></select></label>{draft.data_classification!==item.data_classification&&<label className="documentPrivacyConfirm"><input type="checkbox" checked={draft.test_data_confirmed} onChange={event=>setDraft({...draft,test_data_confirmed:event.target.checked})} required/><span>{privacy.uploadConfirm}</span></label>}</>}
       <label className="wideField" htmlFor={fieldId(item.id,'extracted')}>{on.extractedText}<textarea id={fieldId(item.id,'extracted')} value={draft.extracted_text} onChange={event=>setDraft({...draft,extracted_text:event.target.value})} rows="10"/></label>
       <label className="wideField" htmlFor={fieldId(item.id,'analysis')}>{on.analysisSummary}<textarea id={fieldId(item.id,'analysis')} value={draft.analysis_summary} onChange={event=>setDraft({...draft,analysis_summary:event.target.value})} rows="5"/></label>
       <label className="wideField" htmlFor={fieldId(item.id,'analysis-next')}>{on.analysisNext}<textarea id={fieldId(item.id,'analysis-next')} value={draft.analysis_next_step} onChange={event=>setDraft({...draft,analysis_next_step:event.target.value})}/></label>

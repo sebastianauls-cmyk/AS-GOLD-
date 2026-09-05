@@ -3,13 +3,13 @@ import { EvidenceActionPanel } from '../intelligence/EvidenceActionPanel'
 import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
 import { appText } from './workspaceText'
 
-export function DashboardSurface({core,handleQuickAction,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd}){
+export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
   return <>
     <QuickActions copy={core} onAction={handleQuickAction} deadlineCases={deadlineCases}/>
     <h2>{a.overview}</h2>
     <p className="muted">{a.signedInAs} {user?.email}</p>
-    <SyntheticTesterPanel language={language}/>
+    <SyntheticTesterPanel language={language} onOpenCase={onStartSyntheticCase}/>
     <EvidenceActionPanel a={a} data={data}/>
     <section className={`dashboardGuide dash-${currentTier}`}>
       <div className="dashboardGuideMain"><span className="modeBadge">{dg.mode}</span><h3>{dg.title}</h3><p>{dg.lead}</p><button className="primary nextAction" onClick={()=>setSection(dg.nextSection)}>{dg.next} →</button></div>

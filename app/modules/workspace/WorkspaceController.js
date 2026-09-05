@@ -6,6 +6,7 @@ import { signOutSession } from '../services/authRepository'
 import { allowedUploadAccept, uploadUi } from '../documents/uploadConfig'
 import { exportUi } from '../documents/exportUi'
 import { appText } from './workspaceText'
+import { broadcastCountryContext } from '../country/countryRegistry.mjs'
 import { ui } from '../public/publicUi'
 import { passwordRecoveryUi, passwordUi } from '../auth/passwordUi'
 import { ProtectedWorkspaceShell } from './ProtectedWorkspaceShell'
@@ -163,7 +164,7 @@ export default function WorkspaceController(){
   const publicMonthsLabel=value=>publicA.months.replace('{n}',value).replace('{plural}',value>1?(publicLanguage==='de'?'e':publicLanguage==='en'?'s':''):'')
   const navigateToScreen=nextScreen=>{setMessage('');setScreen(nextScreen)}
 
-  const {createClient,createCase,updateCase,createAssessment}=createCaseWorkflowActions({
+  const {createClient,updateClient,createCase,updateCase,createAssessment}=createCaseWorkflowActions({
     supabase,ownerId:user?.id,data,newClient,newCase,setData,setMessage,setNewClient,setShowClientForm,setSection,setNewCase,setShowCaseForm,setSelectedCase,recordLocalAction,recordServerAudit
   })
 
@@ -233,6 +234,19 @@ export default function WorkspaceController(){
     if(action==='approvals'){setApprovalDefaults({caseId:'',documentId:''});setSection('approvals')}
   }
 
+  function startSyntheticCase(tester){
+    if(!tester) return
+    setOutputLanguage(tester.language||outputLanguage)
+    broadcastCountryContext(tester.target_country||'DE')
+    setSelectedClient(null)
+    setSelectedDocument(null)
+    setSelectedApproval(null)
+    setSelectedCase(null)
+    setNewCase({...emptyCase,title:`${tester.id} · ${tester.problem}`,goal:tester.problem,summary:`${tester.profile}\n${tester.home_country} → ${tester.target_country}\n${tester.documents.join(' · ')}`,next_action:tester.expected_actions?.[0]||''})
+    setShowCaseForm(true)
+    setSection('cases')
+  }
+
   function protectedWorkspace(content){
     return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} legalLabel={t.legal} languageLabel={t.language} outputLanguageLabel={t.outputLanguage} logoutLabel={a.logout} onLogout={()=>signOutSession(supabase)} message={message}>{content}</ProtectedWorkspaceShell>
   }
@@ -245,7 +259,7 @@ export default function WorkspaceController(){
 
   if(screen==='app'&&selectedApproval) return protectedWorkspace(<ApprovalDetail key={`${selectedApproval.id}-${selectedApproval.preview_revision}-${selectedApproval.status}`} copy={approvalUi} item={selectedApproval} cases={data.cases} documents={data.documents} onBack={()=>setSelectedApproval(null)} onSave={updateApproval} onApprove={approveApproval} onReject={rejectApproval}/>)
 
-  if(screen==='app'&&selectedDocument) return protectedWorkspace(<DocumentDetail key={selectedDocument.id} copy={core} analysis={analysisUi} language={language} item={selectedDocument} cases={data.cases} onBack={()=>setSelectedDocument(null)} onSave={updateDocument} onAnalyze={analyzeDocument} onOpen={openDocument} onPrepareApproval={prepareDocumentApproval} approvalLabel={approvalUi.prepareFromDocument}/>)
+  if(screen==='app'&&selectedDocument) return protectedWorkspace(<DocumentDetail key={selectedDocument.id} copy={core} analysis={analysisUi} privacy={v28} language={language} item={selectedDocument} cases={data.cases} onBack={()=>setSelectedDocument(null)} onSave={updateDocument} onAnalyze={analyzeDocument} onOpen={openDocument} onPrepareApproval={prepareDocumentApproval} approvalLabel={approvalUi.prepareFromDocument}/>)
 
   if(screen==='app'&&selectedCase){
     const caseDocs=data.documents.filter(document=>document.case_id===selectedCase.id)
@@ -264,8 +278,13 @@ export default function WorkspaceController(){
   if(screen==='app'&&!selectedClient&&section==='account') return protectedWorkspace(<AccountSurface a={a} currentPlan={currentPlan} currentTier={currentTier} lt={lt} exportMyData={exportMyData} activityLog={activityLog} localeForLanguage={localeForLanguage} language={language} sct={sct} serverAudit={serverAudit} deletionRequests={deletionRequests} deletionBusy={deletionBusy} cancelAccountDeletion={cancelAccountDeletion} requestAccountDeletion={requestAccountDeletion} onBack={()=>setSection('dashboard')}/>)
 
   if(screen==='app'){
-    if(selectedClient) return protectedWorkspace(<ClientDetailSurface a={a} selectedClient={selectedClient} onBack={()=>setSelectedClient(null)}/>)
-    if(section==='dashboard') return protectedWorkspace(<DashboardSurface core={core} handleQuickAction={handleQuickAction} deadlineCases={deadlineCases} a={a} user={user} currentTier={currentTier} dg={dg} setSection={setSection} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} currentSufficient={currentSufficient} currentPlan={currentPlan} access={access} data={data} lt={lt} promo={promo} testAccessEnd={access?.permissions?.promo_access_ends_at?new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(access.permissions.promo_access_ends_at)):null}/>)
+    if(selectedClient){
+      const clientCases=data.cases.filter(item=>item.client_id===selectedClient.id)
+      const clientCaseIds=new Set(clientCases.map(item=>item.id))
+      const clientDocuments=data.documents.filter(item=>clientCaseIds.has(item.case_id))
+      return protectedWorkspace(<ClientDetailSurface a={a} core={core} selectedClient={selectedClient} cases={clientCases} documents={clientDocuments} onSave={updateClient} onOpenCase={item=>{setSelectedClient(null);setSelectedCase(item)}} onOpenDocument={item=>{setSelectedClient(null);setSelectedDocument(item)}} onBack={()=>setSelectedClient(null)}/>)
+    }
+    if(section==='dashboard') return protectedWorkspace(<DashboardSurface core={core} handleQuickAction={handleQuickAction} onStartSyntheticCase={startSyntheticCase} deadlineCases={deadlineCases} a={a} user={user} currentTier={currentTier} dg={dg} setSection={setSection} rt={rt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} currentSufficient={currentSufficient} currentPlan={currentPlan} access={access} data={data} lt={lt} promo={promo} testAccessEnd={access?.permissions?.promo_access_ends_at?new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(access.permissions.promo_access_ends_at)):null}/>)
     return protectedWorkspace(<ClientsSurface a={a} showClientForm={showClientForm} setShowClientForm={setShowClientForm} createClient={createClient} newClient={newClient} setNewClient={setNewClient} clients={data.clients} setSelectedClient={setSelectedClient} onBack={()=>setSection('dashboard')}/>)
   }
 

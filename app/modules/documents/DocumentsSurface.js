@@ -18,7 +18,7 @@ function useActiveInterfaceLanguage(fallback='de'){
   return current
 }
 
-export function DocumentsSurface({a,access,documents,core,cases,documentMode,setDocumentMode,uploadCaseId,uploadDocument,uploading,allowedUploadAccept,setSelectedDocument,onBack,language='de'}){
+export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode,setDocumentMode,uploadCaseId,uploadDocument,uploading,allowedUploadAccept,setSelectedDocument,onBack,language='de'}){
   const interfaceLanguage=useActiveInterfaceLanguage(language)
   return <>
     <div className="sectionHead"><button className="backBtn" onClick={onBack}>{a.backOverview}</button><h2>{a.sections.documents}</h2></div>
@@ -31,7 +31,9 @@ export function DocumentsSurface({a,access,documents,core,cases,documentMode,set
       <label htmlFor="document-case">{core.selectCase}<select id="document-case" name="case_id" defaultValue={uploadCaseId||''}><option value="">{core.withoutCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
       <label htmlFor="document-type">{core.documentType}<input id="document-type" name="document_type"/></label>
       <label htmlFor="document-date">{core.documentDate}<input id="document-date" name="document_date" type="date"/></label>
-      <input type="hidden" name="data_classification" value="personal"/>
+      <div className="documentPrivacyIntro"><b>{v28.classification}</b><p>{v28.uploadHelp}</p><a href="/datenschutz" target="_blank" rel="noreferrer">{v28.privacy} →</a></div>
+      <label htmlFor="document-classification">{v28.classification}<select id="document-classification" name="data_classification" defaultValue="" required><option value="" disabled>—</option><option value="synthetic">{v28.synthetic}</option><option value="anonymized">{v28.anonymized}</option></select></label>
+      <label className="documentPrivacyConfirm"><input name="test_data_confirmed" type="checkbox" required/><span>{v28.uploadConfirm}</span></label>
       <input type="hidden" name="source" value={documentMode}/>
       <button className="primary full" disabled={uploading}>{uploading?core.uploading:core.upload}</button>
     </form>

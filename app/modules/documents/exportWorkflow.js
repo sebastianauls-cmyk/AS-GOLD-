@@ -46,7 +46,7 @@ export function createExportWorkflowActions({
       const {error:exportLogError}=await recordExportEntry(supabase,{ref,type})
       if(exportLogError) throw exportLogError
       recordLocalAction('export_created')
-      const auditSaved=await recordServerAudit('export_created',{format:type.toUpperCase(),output_language:outputLanguage},ref.kind,ref.item.id)
+      const auditSaved=await recordServerAudit('export_created',{format:type.toUpperCase()},ref.kind,ref.item.id)
       setMessage(appCopy.export+': '+type.toUpperCase()+' ✓'+(auditSaved?'':' · '+serverCopy.auditFailed))
     }catch(error){
       setMessage(appCopy.export+': '+error.message)
@@ -73,7 +73,7 @@ export function createExportWorkflowActions({
     }
     downloadExportArtifact(createAccountDataArtifact(packageData))
     recordLocalAction('account_data_export')
-    await recordServerAudit('account_data_export',{format:'JSON',output_language:outputLanguage},'account',null)
+    await recordServerAudit('account_data_export',{format:'JSON'},'account',null)
     setMessage(trustCopy.dataExport+' ✓')
   }
 

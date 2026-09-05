@@ -37,7 +37,7 @@ function factValue(value){
   return value==null?'':String(value)
 }
 
-export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyze,phase,onPhase}){
+export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyze,phase,onPhase,analysisAllowed=true,classificationMessage=''}){
   const [confirmed,setConfirmed]=useState(false)
   const [busy,setBusy]=useState(false)
   const [facts,setFacts]=useState(null)
@@ -45,7 +45,7 @@ export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyz
   const status=phase==='draft'?on.draft:phase==='saved'?on.saved:on.uploaded
 
   async function analyze(){
-    if(!confirmed||!analyzable||busy) return
+    if(!confirmed||!analyzable||!analysisAllowed||busy) return
     setBusy(true)
     try{
       const result=await onAnalyze(item)
@@ -63,7 +63,7 @@ export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyz
 
   return <section className="controlledAnalysis" aria-live="polite">
     <div className="analysisHead"><div><span className="modeBadge">{on.badge}</span><h3>{on.title}</h3><p>{on.lead}</p></div><span className={`analysisStatus analysis-${phase}`}>{status}</span></div>
-    <div className="analysisConsent"><div><b>{on.privacyTitle}</b><p>{on.privacyText}</p><a href="/ki-transparenz" target="_blank" rel="noreferrer">{on.details||'KI-Transparenz'} →</a></div><button type="button" className="primary" disabled={!confirmed||!analyzable||busy} onClick={analyze}>{busy?on.analyzing:on.start}</button><label><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>{on.confirm}</span></label><small>{on.limit}</small>{!analyzable&&<small className="analysisUnsupported">{on.unsupported}</small>}</div>
+    <div className="analysisConsent"><div><b>{on.privacyTitle}</b><p>{on.privacyText}</p><a href="/ki-transparenz" target="_blank" rel="noreferrer">{on.details||'KI-Transparenz'} →</a></div><button type="button" className="primary" disabled={!confirmed||!analyzable||!analysisAllowed||busy} onClick={analyze}>{busy?on.analyzing:on.start}</button><label><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)} disabled={!analysisAllowed}/><span>{on.confirm}</span></label><small>{on.limit}</small>{!analysisAllowed&&<small className="analysisUnsupported">{classificationMessage}</small>}{!analyzable&&<small className="analysisUnsupported">{on.unsupported}</small>}</div>
     {factRows.length>0&&<div className="analysisFacts"><b>{on.facts}</b><div>{factRows.map(([label,value])=><span key={label}><small>{label}</small><strong>{value||on.none}</strong></span>)}</div></div>}
     <p className="analysisManualNote">{on.manual}</p>
   </section>

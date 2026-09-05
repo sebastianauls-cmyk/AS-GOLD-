@@ -2,6 +2,7 @@
 // Country context is deliberately independent from interface/output language.
 // Add a new country here once; consuming workflows inherit it automatically.
 export const COUNTRY_CONTEXT_STORAGE_KEY='asgold-country-context'
+export const COUNTRY_CONTEXT_EVENT='asgold-country-context-change'
 
 export const COUNTRY_CATALOG=Object.freeze([
   {key:'DE',label:'Deutschland',flag:'🇩🇪',jurisdictionLabel:'Deutschland / deutsches Recht',defaultLocale:'de-DE'},
@@ -39,6 +40,12 @@ export function readCountryContext(storage=globalThis?.localStorage){
 export function writeCountryContext(country,storage=globalThis?.localStorage){
   const normalized=normalizeCountryContext(country)
   try{storage?.setItem(COUNTRY_CONTEXT_STORAGE_KEY,normalized)}catch{}
+  return normalized
+}
+
+export function broadcastCountryContext(country,eventTarget=globalThis){
+  const normalized=writeCountryContext(country)
+  try{eventTarget?.dispatchEvent(new CustomEvent(COUNTRY_CONTEXT_EVENT,{detail:normalized}))}catch{}
   return normalized
 }
 

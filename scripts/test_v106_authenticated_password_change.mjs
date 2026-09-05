@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import {APP_VERSION} from '../app/modules/release/appRelease.mjs'
 
-assert.equal(APP_VERSION,'V106')
+assert.ok(Number(APP_VERSION.slice(1))>=106)
 
 const page=fs.readFileSync(new URL('../app/passwort-aendern/page.js',import.meta.url),'utf8')
 assert.match(page,/^'use client'/)

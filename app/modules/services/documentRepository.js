@@ -1,5 +1,5 @@
 export function updateDocumentRecord(supabase,{ownerId,documentId,draft}){
-  const payload={title:String(draft.title||'').trim(),case_id:draft.case_id||null,document_type:String(draft.document_type||'').trim()||null,document_date:draft.document_date||null,extracted_text:String(draft.extracted_text||'').trim()||null,analysis_summary:String(draft.analysis_summary||'').trim()||null,analysis_next_step:String(draft.analysis_next_step||'').trim()||null,updated_at:new Date().toISOString()}
+  const payload={title:String(draft.title||'').trim(),case_id:draft.case_id||null,document_type:String(draft.document_type||'').trim()||null,document_date:draft.document_date||null,extracted_text:String(draft.extracted_text||'').trim()||null,analysis_summary:String(draft.analysis_summary||'').trim()||null,analysis_next_step:String(draft.analysis_next_step||'').trim()||null,data_classification:draft.data_classification,ai_processing_allowed:false,updated_at:new Date().toISOString()}
   return supabase.from('documents').update(payload).eq('id',documentId).eq('owner_id',ownerId).select().single()
 }
 

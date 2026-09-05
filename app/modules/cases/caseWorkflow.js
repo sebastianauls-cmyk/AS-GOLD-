@@ -1,4 +1,4 @@
-import { createAssessmentRecord, createCaseRecord, createClientRecord, updateCaseRecord } from '../services/workspaceRepository'
+import { createAssessmentRecord, createCaseRecord, createClientRecord, updateCaseRecord, updateClientRecord } from '../services/workspaceRepository'
 import { emptyCase } from '../workspace/stateConfig'
 
 const emptyClient={name:'',email:'',phone:'',notes:''}
@@ -60,6 +60,17 @@ export function createCaseWorkflowActions({
     return true
   }
 
+  async function updateClient(clientId,draft){
+    setMessage('')
+    if(!draft.name.trim()) return false
+    const {data:updated,error}=await updateClientRecord(supabase,{ownerId,clientId,draft})
+    if(error){setMessage(error.message);return false}
+    recordLocalAction('client_updated')
+    setData(previous=>({...previous,clients:previous.clients.map(item=>item.id===updated.id?updated:item)}))
+    setSelectedClient(updated)
+    return true
+  }
+
   async function updateCase(caseId,draft){
     setMessage('')
     const {data:updated,error}=await updateCaseRecord(supabase,{ownerId,caseId,payload:normalizeCasePayload(draft)})
@@ -73,8 +84,7 @@ export function createCaseWorkflowActions({
 
   async function createAssessment(caseId,draft){
     setMessage('')
-    const currentTrafficLight=data.cases.find(item=>item.id===caseId)?.traffic_light||'green'
-    const {assessment:created,updatedCase,error}=await createAssessmentRecord(supabase,{ownerId,caseId,draft,currentTrafficLight})
+    const {assessment:created,updatedCase,error}=await createAssessmentRecord(supabase,{caseId,draft})
     if(error){setMessage(error.message);return false}
     recordLocalAction('assessment_created')
     await recordServerAudit('assessment_created',{},'case',caseId)
@@ -83,5 +93,5 @@ export function createCaseWorkflowActions({
     return true
   }
 
-  return {createClient,createCase,updateCase,createAssessment}
+  return {createClient,updateClient,createCase,updateCase,createAssessment}
 }

@@ -7,6 +7,7 @@ export async function getWorkspaceAccess(supabase){
 }
 
 export async function loadWorkspaceBundle(supabase,ownerId){
+  const modules=['cases','clients','documents','approvals','assessments','source_status','audit_events','deletion_requests','privacy_settings']
   const results=await Promise.all([
     supabase.from('cases').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
     supabase.from('clients').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
@@ -19,12 +20,13 @@ export async function loadWorkspaceBundle(supabase,ownerId){
     supabase.from('account_privacy_settings').select('*').eq('owner_id',ownerId).maybeSingle()
   ])
   const [cases,clients,documents,approvals,assessments,sourceStatus,auditRows,deletionRows,privacyRow]=results
+  const failed=results.map((result,index)=>result.error?`${modules[index]}: ${result.error.message}`:null).filter(Boolean)
   return {
     data:{cases:cases.data||[],clients:clients.data||[],documents:documents.data||[],approvals:approvals.data||[],assessments:assessments.data||[],sourceStatus:sourceStatus.data||[]},
     audit:auditRows.data||[],
     deletionRequests:deletionRows.data||[],
     privacy:privacyRow.data||null,
-    error:results.find(result=>result.error)?.error||null
+    error:failed.length?new Error(`Arbeitsbereich unvollständig geladen · ${failed.join(' · ')}`):null
   }
 }
 
@@ -58,6 +60,11 @@ export function createClientRecord(supabase,{ownerId,draft}){
   return supabase.from('clients').insert(payload).select().single()
 }
 
+export function updateClientRecord(supabase,{ownerId,clientId,draft}){
+  const payload={name:draft.name.trim(),email:draft.email.trim()||null,phone:draft.phone.trim()||null,notes:draft.notes.trim()||null,updated_at:new Date().toISOString()}
+  return supabase.from('clients').update(payload).eq('id',clientId).eq('owner_id',ownerId).select().single()
+}
+
 export function createCaseRecord(supabase,{ownerId,payload}){
   return supabase.from('cases').insert({...payload,owner_id:ownerId,traffic_light:'yellow'}).select().single()
 }
@@ -66,12 +73,14 @@ export function updateCaseRecord(supabase,{ownerId,caseId,payload}){
   return supabase.from('cases').update({...payload,updated_at:new Date().toISOString()}).eq('id',caseId).eq('owner_id',ownerId).select().single()
 }
 
-export async function createAssessmentRecord(supabase,{ownerId,caseId,draft,currentTrafficLight='green'}){
-  const payload={owner_id:ownerId,case_id:caseId,title:draft.title.trim(),traffic_light:draft.traffic_light,reasoning:draft.reasoning.trim()||null,next_step:draft.next_step.trim()||null}
-  const assessment=await supabase.from('assessments').insert(payload).select().single()
-  if(assessment.error)return {assessment:null,updatedCase:null,error:assessment.error}
-  const ranking={green:1,yellow:2,red:3}
-  const overall=ranking[assessment.data.traffic_light]>ranking[currentTrafficLight]?assessment.data.traffic_light:currentTrafficLight
-  const caseResult=await supabase.from('cases').update({traffic_light:overall,updated_at:new Date().toISOString()}).eq('id',caseId).eq('owner_id',ownerId).select().single()
-  return {assessment:assessment.data,updatedCase:caseResult.data||null,error:caseResult.error||null}
+export async function createAssessmentRecord(supabase,{caseId,draft}){
+  const result=await supabase.rpc('create_gold_assessment',{
+    p_case_id:caseId,
+    p_title:draft.title.trim(),
+    p_traffic_light:draft.traffic_light,
+    p_reasoning:draft.reasoning.trim()||null,
+    p_next_step:draft.next_step.trim()||null
+  })
+  if(result.error)return {assessment:null,updatedCase:null,error:result.error}
+  return {assessment:result.data?.assessment||null,updatedCase:result.data?.case||null,error:null}
 }
