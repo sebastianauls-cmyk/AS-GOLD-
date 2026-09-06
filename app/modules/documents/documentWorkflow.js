@@ -4,6 +4,7 @@ import { invokeDocumentAnalysis } from '../services/documentAnalysis'
 import { allowedUploadExtensions, maxUploadBytes } from './uploadConfig'
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../compliance/PrivacyControls'
 import { mapDocumentLanguageWorkflowResult } from '../language/documentLanguageWorkflow.mjs'
+import { documentUploadReadinessMessage, parseIntakeQuality, validateDocumentUploadReadiness } from './documentUploadReadiness.mjs'
 
 async function functionErrorMessage(error,fallback){
   if(!error) return fallback
@@ -16,16 +17,12 @@ async function functionErrorMessage(error,fallback){
   return error.message||fallback
 }
 
-function parseIntakeQuality(value){
-  if(!value) return {}
-  try{return JSON.parse(value)}catch{return {state:'unknown'}}
-}
-
 export function createDocumentWorkflowActions({
   supabase,
   ownerId,
   data,
   access,
+  language,
   privacyCurrent,
   outputLanguage,
   privacyCopy,
@@ -107,27 +104,38 @@ export function createDocumentWorkflowActions({
     const form=event.currentTarget
     const file=form.elements.file.files[0]
     const caseId=form.elements.case_id.value||null
-    if(!file) return setMessage(notices.chooseFile)
-    if(!privacyCurrent) return setMessage(privacyCopy.required)
+    if(!file){setMessage(notices.chooseFile);return false}
+    if(!privacyCurrent){setMessage(privacyCopy.required);return false}
     const dataClassification=form.elements.data_classification?.value||''
     const testDataConfirmed=!!form.elements.test_data_confirmed?.checked
-    if(!['synthetic','anonymized'].includes(dataClassification)||!testDataConfirmed) return setMessage(privacyCopy.uploadRequired)
+    if(!['synthetic','anonymized'].includes(dataClassification)||!testDataConfirmed){setMessage(privacyCopy.uploadRequired);return false}
     const extension=file.name.includes('.')?file.name.split('.').pop().toLowerCase():''
-    if(!allowedUploadExtensions.has(extension)) return setMessage(uploadCopy.unsupported)
-    if(file.size>maxUploadBytes) return setMessage(uploadCopy.tooLarge)
+    if(!allowedUploadExtensions.has(extension)){setMessage(uploadCopy.unsupported);return false}
+    if(file.size>maxUploadBytes){setMessage(uploadCopy.tooLarge);return false}
     const limit=Number(access?.permissions?.document_limit||0)
-    if(access?.app_role!=='owner' && limit>0 && data.documents.length>=limit) return setMessage(notices.docLimit.replace('{limit}',limit))
-    setUploading(true)
+    if(access?.app_role!=='owner' && limit>0 && data.documents.length>=limit){setMessage(notices.docLimit.replace('{limit}',limit));return false}
     const intakeQuality=parseIntakeQuality(form.elements.intake_quality?.value)
-    const {data:created,error}=await uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,documentType:form.elements.document_type?.value.trim()||extension.toUpperCase(),documentDate:form.elements.document_date?.value||null,source:form.elements.source?.value||'upload',sourceLanguage:form.elements.source_language?.value||null,voiceContext:form.elements.voice_context?.value.trim()||null,voiceLanguage:form.elements.voice_language?.value||null,intakeQuality})
-    if(error){setUploading(false);return setMessage(error.message)}
-    recordLocalAction('document_uploaded')
-    await recordServerAudit('document_uploaded',{classification:dataClassification},'document',created.id)
-    setData(previous=>({...previous,documents:[created,...previous.documents]}))
-    setUploading(false)
-    form.reset()
-    setSection('documents')
-    setSelectedDocument(created)
+    const source=form.elements.source?.value||'upload'
+    const readiness=validateDocumentUploadReadiness({fileType:file.type,extension,source,intakeQuality})
+    if(!readiness.ok){setMessage(documentUploadReadinessMessage(language,readiness.code));return false}
+    setUploading(true)
+    try{
+      const {data:created,error}=await uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,documentType:form.elements.document_type?.value.trim()||extension.toUpperCase(),documentDate:form.elements.document_date?.value||null,source,sourceLanguage:form.elements.source_language?.value||null,voiceContext:form.elements.voice_context?.value.trim()||null,voiceLanguage:form.elements.voice_language?.value||null,intakeQuality})
+      if(error){setMessage(error.message);return false}
+      recordLocalAction('document_uploaded')
+      await recordServerAudit('document_uploaded',{classification:dataClassification},'document',created.id)
+      setData(previous=>({...previous,documents:[created,...previous.documents]}))
+      form.reset()
+      setSection('documents')
+      setSelectedDocument(created)
+      return true
+    }catch(error){
+      console.error('Document upload failed',error)
+      setMessage(documentUploadReadinessMessage(language,'upload_failed'))
+      return false
+    }finally{
+      setUploading(false)
+    }
   }
 
   async function openDocument(document){
