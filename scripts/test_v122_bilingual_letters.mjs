@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import { APP_VERSION } from '../app/modules/release/appRelease.mjs'
 import { approvalDefaultsForDocument } from '../app/modules/cases/approvalDefaults.mjs'
 import {
   bilingualLetterStatus,
@@ -21,19 +20,18 @@ const document={
 }
 
 const body=composeBilingualLetter(document,'pl')
-assert.match(body,/VERSANDFASSUNG – DEUTSCH/)
+assert.match(body,/REFERENZFASSUNG \/ REFERENCE VERSION – Deutsch/)
 assert.match(body,/Sehr geehrte Damen und Herren/)
-assert.match(body,/KUNDENFASSUNG \/ ÜBERSETZUNG – Polski/)
+assert.match(body,/KUNDENFASSUNG \/ CUSTOMER VERSION – Polski/)
 assert.match(body,/Szanowni Państwo/)
 assert.equal(isCompleteBilingualLetterBody(body,'pl'),true)
 assert.equal(isCompleteBilingualLetterBody(document.response_letter_de,'pl'),false)
-assert.deepEqual(bilingualLetterStatus(document,'pl'),{
-  complete:true,
-  language:'pl',
-  matchesRequestedLanguage:true,
-  german:document.response_letter_de,
-  customer:document.customer_copy
-})
+const status=bilingualLetterStatus(document,'pl')
+assert.equal(status.complete,true)
+assert.equal(status.matchesRequestedLanguage,true)
+assert.deepEqual(status.languages,{reference:'de',customer:'pl'})
+assert.equal(status.reference,document.response_letter_de)
+assert.equal(status.customer,document.customer_copy)
 assert.equal(bilingualLetterStatus(document,'tr').matchesRequestedLanguage,false)
 
 assert.deepEqual(approvalDefaultsForDocument(document,'pl'),{
@@ -67,6 +65,4 @@ assert.match(exportService,/composeBilingualLetter/)
 assert.match(repository,/customer_copy_language/)
 assert.match(migration,/documents_customer_copy_language_v122_check/)
 assert.match(backfill,/customer_copy_language = case/)
-assert.equal(APP_VERSION,'V122')
-
-console.log('V122 bilingual letters passed: German sending version and customer-language copy stay paired in document review, approval preview and export.')
+console.log('V122 compatibility passed: legacy German response fields still produce a complete paired approval and export.')

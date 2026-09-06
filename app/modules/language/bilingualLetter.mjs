@@ -2,63 +2,91 @@ import { normalizeOutputLanguage, outputLanguageLabels } from './outputLanguage.
 
 export const BILINGUAL_LETTER_SEPARATOR='\n\n────────────────────────\n\n'
 
-export function bilingualLetterLabels(outputLanguage='de'){
-  const language=normalizeOutputLanguage(outputLanguage)
+function clean(value){ return String(value||'').trim() }
+
+function requestedLanguages(value={}){
+  if(typeof value==='string') return {customerLanguage:normalizeOutputLanguage(value)}
   return {
-    language,
-    german:'VERSANDFASSUNG – DEUTSCH',
-    customer:`KUNDENFASSUNG / ÜBERSETZUNG – ${outputLanguageLabels[language]||outputLanguageLabels.de}`
+    referenceLanguage:value?.referenceLanguage?normalizeOutputLanguage(value.referenceLanguage):null,
+    customerLanguage:value?.customerLanguage?normalizeOutputLanguage(value.customerLanguage):null
   }
 }
 
-function clean(value){ return String(value||'').trim() }
-
-export function bilingualLetterStatus(document={},requestedOutputLanguage){
-  const requested=normalizeOutputLanguage(requestedOutputLanguage||document.customer_copy_language||'de')
-  const stored=document.customer_copy_language?normalizeOutputLanguage(document.customer_copy_language):null
-  const german=clean(document.response_letter_de)
-  const customer=clean(document.customer_copy)
+export function bilingualLetterLabels(languages={}){
+  const requested=requestedLanguages(languages)
+  const referenceLanguage=requested.referenceLanguage||'de'
+  const customerLanguage=requested.customerLanguage||referenceLanguage
   return {
-    complete:Boolean(german&&customer&&stored),
-    language:stored||requested,
-    matchesRequestedLanguage:Boolean(stored&&stored===requested),
-    german,
+    referenceLanguage,
+    customerLanguage,
+    reference:`REFERENZFASSUNG / REFERENCE VERSION – ${outputLanguageLabels[referenceLanguage]||outputLanguageLabels.de}`,
+    customer:`KUNDENFASSUNG / CUSTOMER VERSION – ${outputLanguageLabels[customerLanguage]||outputLanguageLabels.de}`
+  }
+}
+
+export function bilingualLetterStatus(document={},requested={}){
+  const expected=requestedLanguages(requested)
+  const legacyGerman=clean(document.response_letter_de)
+  const reference=clean(document.reference_copy)||legacyGerman
+  const referenceLanguage=document.reference_copy_language
+    ?normalizeOutputLanguage(document.reference_copy_language)
+    :legacyGerman?'de':expected.referenceLanguage
+  const customer=clean(document.customer_copy)
+  const customerLanguage=document.customer_copy_language
+    ?normalizeOutputLanguage(document.customer_copy_language)
+    :expected.customerLanguage
+  const sameLanguage=Boolean(referenceLanguage&&customerLanguage&&referenceLanguage===customerLanguage)
+  const matchesRequestedLanguages=Boolean(
+    referenceLanguage&&customerLanguage&&
+    (!expected.referenceLanguage||expected.referenceLanguage===referenceLanguage)&&
+    (!expected.customerLanguage||expected.customerLanguage===customerLanguage)
+  )
+  return {
+    complete:Boolean(reference&&referenceLanguage&&customerLanguage&&(sameLanguage||customer)),
+    sameLanguage,
+    languages:{reference:referenceLanguage||'de',customer:customerLanguage||referenceLanguage||'de'},
+    matchesRequestedLanguages,
+    matchesRequestedLanguage:matchesRequestedLanguages,
+    reference,
     customer
   }
 }
 
-export function composeBilingualLetter(document={},outputLanguage){
-  const status=bilingualLetterStatus(document,outputLanguage)
-  const labels=bilingualLetterLabels(status.language)
-  return [
-    status.german?`${labels.german}\n${status.german}`:'',
-    status.customer?`${labels.customer}\n${status.customer}`:''
-  ].filter(Boolean).join(BILINGUAL_LETTER_SEPARATOR)
+export function composeBilingualLetter(document={},languages={}){
+  const status=bilingualLetterStatus(document,languages)
+  const labels=bilingualLetterLabels({referenceLanguage:status.languages.reference,customerLanguage:status.languages.customer})
+  const sections=[status.reference?`${labels.reference}\n${status.reference}`:'']
+  if(!status.sameLanguage&&status.customer) sections.push(`${labels.customer}\n${status.customer}`)
+  return sections.filter(Boolean).join(BILINGUAL_LETTER_SEPARATOR)
 }
 
-export function isCompleteBilingualLetterBody(body='',outputLanguage='de'){
+export function isCompleteBilingualLetterBody(body='',languages={}){
   const text=clean(body)
-  const labels=bilingualLetterLabels(outputLanguage)
-  const germanStart=text.indexOf(labels.german)
+  const labels=bilingualLetterLabels(languages)
+  const referenceStart=text.indexOf(labels.reference)
+  if(referenceStart<0) return false
+  if(labels.referenceLanguage===labels.customerLanguage){
+    return Boolean(text.slice(referenceStart+labels.reference.length).trim())
+  }
   const customerStart=text.indexOf(labels.customer)
-  if(germanStart<0||customerStart<=germanStart) return false
-  const german=text.slice(germanStart+labels.german.length,customerStart).replace(/[─\s]+$/u,'').trim()
+  if(customerStart<=referenceStart) return false
+  const reference=text.slice(referenceStart+labels.reference.length,customerStart).replace(/[─\s]+$/u,'').trim()
   const customer=text.slice(customerStart+labels.customer.length).trim()
-  return Boolean(german&&customer)
+  return Boolean(reference&&customer)
 }
 
 const ui={
-  de:{german:'Versandfertiger Entwurf – Deutsch',customer:'Kundenfassung / Übersetzung',language:'Sprache der Kundenfassung',choose:'Sprache wählen',note:'Beide Fassungen müssen vor der Freigabe vollständig geprüft werden.'},
-  en:{german:'Ready-to-send draft – German',customer:'Customer copy / translation',language:'Customer-copy language',choose:'Choose language',note:'Both versions must be fully reviewed before approval.'},
-  fr:{german:'Projet prêt à envoyer – allemand',customer:'Copie client / traduction',language:'Langue de la copie client',choose:'Choisir la langue',note:'Les deux versions doivent être entièrement vérifiées avant approbation.'},
-  tr:{german:'Gönderime hazır taslak – Almanca',customer:'Müşteri nüshası / çeviri',language:'Müşteri nüshasının dili',choose:'Dil seçin',note:'Onaydan önce her iki metin de tamamen kontrol edilmelidir.'},
-  pl:{german:'Projekt gotowy do wysłania – niemiecki',customer:'Kopia dla klienta / tłumaczenie',language:'Język kopii dla klienta',choose:'Wybierz język',note:'Przed zatwierdzeniem należy dokładnie sprawdzić obie wersje.'},
-  ru:{german:'Готовый к отправке проект – немецкий',customer:'Копия для клиента / перевод',language:'Язык копии для клиента',choose:'Выберите язык',note:'Перед согласованием необходимо полностью проверить обе версии.'},
-  ar:{german:'مسودة جاهزة للإرسال – بالألمانية',customer:'نسخة العميل / الترجمة',language:'لغة نسخة العميل',choose:'اختر اللغة',note:'يجب مراجعة النسختين بالكامل قبل الموافقة.'},
-  fa:{german:'پیش‌نویس آماده ارسال – آلمانی',customer:'نسخه مشتری / ترجمه',language:'زبان نسخه مشتری',choose:'زبان را انتخاب کنید',note:'هر دو نسخه باید پیش از تأیید به‌طور کامل بررسی شوند.'},
-  ro:{german:'Proiect gata de expediere – germană',customer:'Copie pentru client / traducere',language:'Limba copiei pentru client',choose:'Alegeți limba',note:'Ambele versiuni trebuie verificate integral înainte de aprobare.'},
-  bg:{german:'Готов проект за изпращане – немски',customer:'Копие за клиента / превод',language:'Език на копието за клиента',choose:'Изберете език',note:'И двете версии трябва да бъдат проверени изцяло преди одобрение.'},
-  vi:{german:'Bản dự thảo sẵn sàng gửi – tiếng Đức',customer:'Bản dành cho khách hàng / bản dịch',language:'Ngôn ngữ bản dành cho khách hàng',choose:'Chọn ngôn ngữ',note:'Cả hai bản phải được kiểm tra đầy đủ trước khi phê duyệt.'}
+  de:{reference:'Referenzfassung',customer:'Kundenfassung / Übersetzung',referenceLanguage:'Referenzsprache',customerLanguage:'Kundensprache',choose:'Sprache wählen',sameLanguage:'Sind beide Sprachen gleich, wird das Anschreiben nur einmal ausgegeben.',note:'Alle ausgegebenen Fassungen müssen vor der Freigabe vollständig geprüft werden.'},
+  en:{reference:'Reference version',customer:'Customer version / translation',referenceLanguage:'Reference language',customerLanguage:'Customer language',choose:'Choose language',sameLanguage:'If both languages are the same, the letter is output only once.',note:'Every output version must be fully reviewed before approval.'},
+  fr:{reference:'Version de référence',customer:'Version client / traduction',referenceLanguage:'Langue de référence',customerLanguage:'Langue du client',choose:'Choisir la langue',sameLanguage:'Si les deux langues sont identiques, le courrier n’est produit qu’une seule fois.',note:'Toutes les versions produites doivent être entièrement vérifiées avant approbation.'},
+  tr:{reference:'Referans sürüm',customer:'Müşteri sürümü / çeviri',referenceLanguage:'Referans dili',customerLanguage:'Müşteri dili',choose:'Dil seçin',sameLanguage:'İki dil aynıysa yazı yalnızca bir kez oluşturulur.',note:'Oluşturulan tüm sürümler onaydan önce tamamen kontrol edilmelidir.'},
+  pl:{reference:'Wersja referencyjna',customer:'Wersja dla klienta / tłumaczenie',referenceLanguage:'Język referencyjny',customerLanguage:'Język klienta',choose:'Wybierz język',sameLanguage:'Jeśli oba języki są takie same, pismo jest wyświetlane tylko raz.',note:'Przed zatwierdzeniem należy dokładnie sprawdzić wszystkie wersje.'},
+  ru:{reference:'Эталонная версия',customer:'Версия для клиента / перевод',referenceLanguage:'Язык эталонной версии',customerLanguage:'Язык клиента',choose:'Выберите язык',sameLanguage:'Если языки совпадают, письмо выводится только один раз.',note:'Перед согласованием необходимо полностью проверить все версии.'},
+  ar:{reference:'النسخة المرجعية',customer:'نسخة العميل / الترجمة',referenceLanguage:'اللغة المرجعية',customerLanguage:'لغة العميل',choose:'اختر اللغة',sameLanguage:'إذا كانت اللغتان متماثلتين، تُعرض الرسالة مرة واحدة فقط.',note:'يجب مراجعة جميع النسخ المعروضة بالكامل قبل الموافقة.'},
+  fa:{reference:'نسخه مرجع',customer:'نسخه مشتری / ترجمه',referenceLanguage:'زبان مرجع',customerLanguage:'زبان مشتری',choose:'زبان را انتخاب کنید',sameLanguage:'اگر دو زبان یکسان باشند، نامه فقط یک بار نمایش داده می‌شود.',note:'همه نسخه‌های خروجی باید پیش از تأیید به‌طور کامل بررسی شوند.'},
+  ro:{reference:'Versiune de referință',customer:'Versiune pentru client / traducere',referenceLanguage:'Limba de referință',customerLanguage:'Limba clientului',choose:'Alegeți limba',sameLanguage:'Dacă ambele limbi sunt identice, scrisoarea este afișată o singură dată.',note:'Toate versiunile generate trebuie verificate integral înainte de aprobare.'},
+  bg:{reference:'Референтна версия',customer:'Версия за клиента / превод',referenceLanguage:'Референтен език',customerLanguage:'Език на клиента',choose:'Изберете език',sameLanguage:'Ако двата езика са еднакви, писмото се извежда само веднъж.',note:'Всички изведени версии трябва да бъдат проверени изцяло преди одобрение.'},
+  vi:{reference:'Bản tham chiếu',customer:'Bản dành cho khách hàng / bản dịch',referenceLanguage:'Ngôn ngữ tham chiếu',customerLanguage:'Ngôn ngữ khách hàng',choose:'Chọn ngôn ngữ',sameLanguage:'Nếu hai ngôn ngữ giống nhau, thư chỉ được xuất một lần.',note:'Mọi phiên bản được xuất phải được kiểm tra đầy đủ trước khi phê duyệt.'}
 }
 
 export function bilingualLetterUi(language='de'){ return ui[language]||ui.de }

@@ -28,8 +28,8 @@ export function createApprovalWorkflowActions({
     const linkedDocument=draft.document_id?data.documents.find(item=>item.id===draft.document_id):null
     if(linkedDocument?.case_id!==draft.case_id&&draft.document_id){setMessage(approvalUi.documentMismatch);return false}
     if(linkedDocument){
-      const bilingual=bilingualLetterStatus(linkedDocument,outputLanguage)
-      if(!bilingual.complete||!bilingual.matchesRequestedLanguage||!isCompleteBilingualLetterBody(draft.body,bilingual.language)){setMessage(approvalUi.bilingualRequired);return false}
+      const bilingual=bilingualLetterStatus(linkedDocument,{customerLanguage:outputLanguage})
+      if(!bilingual.complete||!bilingual.matchesRequestedLanguages||!isCompleteBilingualLetterBody(draft.body,{referenceLanguage:bilingual.languages.reference,customerLanguage:bilingual.languages.customer})){setMessage(approvalUi.bilingualRequired);return false}
     }
     const {data:created,error}=await createApprovalRecord(supabase,{ownerId,draft,linkedDocument})
     if(error){setMessage(error.message);return false}
@@ -50,8 +50,8 @@ export function createApprovalWorkflowActions({
     if(current.approval_type==='send'&&!draft.recipient.trim()){setMessage(approvalUi.recipientRequired);return false}
     const linkedDocument=current.document_id?data.documents.find(item=>item.id===current.document_id):null
     if(linkedDocument){
-      const bilingual=bilingualLetterStatus(linkedDocument,linkedDocument.customer_copy_language)
-      if(!bilingual.complete||!isCompleteBilingualLetterBody(draft.body,bilingual.language)){setMessage(approvalUi.bilingualRequired);return false}
+      const bilingual=bilingualLetterStatus(linkedDocument)
+      if(!bilingual.complete||!isCompleteBilingualLetterBody(draft.body,{referenceLanguage:bilingual.languages.reference,customerLanguage:bilingual.languages.customer})){setMessage(approvalUi.bilingualRequired);return false}
     }
     const {data:updated,error,invalidated}=await updateApprovalRecord(supabase,{ownerId,approvalId,current,draft})
     if(error){setMessage(error.message);return false}

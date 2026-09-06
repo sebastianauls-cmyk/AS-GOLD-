@@ -4,6 +4,7 @@ import { invokeDocumentAnalysis } from '../services/documentAnalysis'
 import { allowedUploadExtensions, maxUploadBytes } from './uploadConfig'
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../compliance/PrivacyControls'
 import { mapDocumentLanguageWorkflowResult } from '../language/documentLanguageWorkflow.mjs'
+import { normalizeOutputLanguage } from '../language/outputLanguage'
 import { documentUploadReadinessMessage, parseIntakeQuality, validateDocumentUploadReadiness } from './documentUploadReadiness.mjs'
 
 async function functionErrorMessage(error,fallback){
@@ -50,11 +51,13 @@ export function createDocumentWorkflowActions({
     setPrivacySettings(authorization.privacy)
     await recordServerAudit('document_ai_transfer_authorized',{classification:document.data_classification},'document',document.id)
     const linkedCase=data.cases.find(item=>item.id===document.case_id)
-    const {data:result,error}=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,countryContext:linkedCase?.target_country})
+    const referenceLanguage=normalizeOutputLanguage(document.reference_copy_language||'de')
+    const customerLanguage=normalizeOutputLanguage(document.customer_copy_language||outputLanguage)
+    const {data:result,error}=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage:customerLanguage,referenceLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,countryContext:linkedCase?.target_country})
     if(error){setMessage(await functionErrorMessage(error,analysisCopy.failed));return false}
     if(result?.status==='configuration_required'){setMessage(result.message||analysisCopy.failed);return false}
     const suggestedCase=data.cases.some(item=>item.id===result?.suggested_case_id)?result.suggested_case_id:null
-    const generated=mapDocumentLanguageWorkflowResult(result,document,result?.output_language||outputLanguage)
+    const generated=mapDocumentLanguageWorkflowResult(result,document,result?.output_language||customerLanguage,result?.reference_language||referenceLanguage)
     generated.fields.case_id=suggestedCase||document.case_id||''
     recordLocalAction('document_analysis_generated')
     const auditSaved=await recordServerAudit('document_analysis_generated',{status:'provisional'},'document',document.id)

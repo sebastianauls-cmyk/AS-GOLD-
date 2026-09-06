@@ -48,10 +48,10 @@ export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyz
     if(!confirmed||!analyzable||!analysisAllowed||busy) return
     setBusy(true)
     try{
-      const result=await onAnalyze(item)
+      const result=await onAnalyze({...item,reference_copy_language:draft.reference_copy_language||'de',customer_copy_language:draft.customer_copy_language})
       if(result){
         const fields=result.fields||{}
-        onChange({...draft,extracted_text:fields.extracted_text||draft.extracted_text,document_type:fields.document_type||draft.document_type,document_date:fields.document_date||draft.document_date,case_id:fields.case_id||draft.case_id,analysis_summary:fields.analysis_summary||draft.analysis_summary,analysis_next_step:fields.analysis_next_step||draft.analysis_next_step,response_letter_de:fields.response_letter_de||draft.response_letter_de,customer_copy:fields.customer_copy||draft.customer_copy,customer_copy_language:fields.customer_copy_language||draft.customer_copy_language,response_recipient:fields.response_recipient||draft.response_recipient,response_subject:fields.response_subject||draft.response_subject,analysis_traffic_light:fields.analysis_traffic_light||draft.analysis_traffic_light,analysis_reasoning:fields.analysis_reasoning||draft.analysis_reasoning,analysis_confidence:fields.analysis_confidence||draft.analysis_confidence,analysis_generated:true})
+        onChange({...draft,extracted_text:fields.extracted_text||draft.extracted_text,document_type:fields.document_type||draft.document_type,document_date:fields.document_date||draft.document_date,case_id:fields.case_id||draft.case_id,analysis_summary:fields.analysis_summary||draft.analysis_summary,analysis_next_step:fields.analysis_next_step||draft.analysis_next_step,reference_copy:fields.reference_copy??draft.reference_copy,reference_copy_language:fields.reference_copy_language||draft.reference_copy_language,customer_copy:fields.customer_copy??draft.customer_copy,customer_copy_language:fields.customer_copy_language||draft.customer_copy_language,response_recipient:fields.response_recipient||draft.response_recipient,response_subject:fields.response_subject||draft.response_subject,analysis_traffic_light:fields.analysis_traffic_light||draft.analysis_traffic_light,analysis_reasoning:fields.analysis_reasoning||draft.analysis_reasoning,analysis_confidence:fields.analysis_confidence||draft.analysis_confidence,analysis_generated:true})
         setFacts(result.facts)
         setConfirmed(false)
         onPhase('draft')
