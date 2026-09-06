@@ -51,8 +51,13 @@ assert.deepEqual(concurrent.calls.map(call=>call.operation),['update','insert','
 
 const complianceSource=fs.readFileSync(new URL('../app/modules/services/complianceRepository.js',import.meta.url),'utf8')
 const workspaceSource=fs.readFileSync(new URL('../app/modules/services/workspaceRepository.js',import.meta.url),'utf8')
+const documentIntakeSource=fs.readFileSync(new URL('../app/modules/documents/DocumentFileIntake.js',import.meta.url),'utf8')
+const documentWorkflowSource=fs.readFileSync(new URL('../app/modules/documents/documentWorkflow.js',import.meta.url),'utf8')
 assert.doesNotMatch(complianceSource,/\.upsert\([^\n]*account_privacy_settings|account_privacy_settings'\)\.upsert/,'privacy persistence must not use the guest-blocked upsert path')
 assert.match(workspaceSource,/persistLegalSettings/,'registration and manual acknowledgement must share the idempotent persistence path')
+assert.match(documentIntakeSource,/name="sample_document"/,'the document intake must expose the built-in synthetic sample without a local file picker')
+assert.match(documentIntakeSource,/required=\{!sampleSelected\}/,'a selected sample must satisfy native form validation')
+assert.match(documentWorkflowSource,/fetch\('\/testdaten\/AS_Gold_Synthetischer_Testfall_V29\.pdf'/,'the upload workflow must load the real same-origin sample bytes')
 assert.equal(APP_RELEASE.number,116)
 assert.equal(APP_VERSION,'V116')
 

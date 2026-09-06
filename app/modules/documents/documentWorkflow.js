@@ -102,7 +102,17 @@ export function createDocumentWorkflowActions({
     event.preventDefault()
     setMessage('')
     const form=event.currentTarget
-    const file=form.elements.file.files[0]
+    let file=form.elements.file.files[0]
+    if(!file&&form.elements.sample_document?.value==='synthetic-v29'){
+      try{
+        const response=await fetch('/testdaten/AS_Gold_Synthetischer_Testfall_V29.pdf',{cache:'no-store'})
+        if(!response.ok)throw new Error('Sample document unavailable')
+        file=new File([await response.blob()],'AS_Gold_Synthetischer_Testfall_V29.pdf',{type:'application/pdf'})
+      }catch{
+        setMessage(documentUploadReadinessMessage(language,'upload_failed'))
+        return false
+      }
+    }
     const caseId=form.elements.case_id.value||null
     if(!file){setMessage(notices.chooseFile);return false}
     if(!privacyCurrent){setMessage(privacyCopy.required);return false}
