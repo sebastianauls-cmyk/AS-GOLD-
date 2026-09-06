@@ -1,3 +1,5 @@
+import { isAnonymousTestSession } from '../auth/sessionIdentity.mjs'
+
 export const AUTH_REDIRECT_URL='https://app-gold-workspace.vercel.app'
 
 export function getAuthSession(supabase){
@@ -17,10 +19,10 @@ export async function startAnonymousTestSession(supabase,{displayName,privacyNot
   const current=await supabase.auth.getSession()
   if(current.error)return {data:{session:null},error:current.error}
   const session=current.data?.session||null
-  if(session&&!session.user?.is_anonymous){
+  if(session&&!isAnonymousTestSession(session)){
     return {data:{session:null},error:{code:'permanent_session_active',message:'A permanent session is already active'}}
   }
-  if(session?.user?.is_anonymous){
+  if(isAnonymousTestSession(session)){
     const signedOut=await supabase.auth.signOut({scope:'local'})
     if(signedOut.error)return {data:{session:null},error:signedOut.error}
   }

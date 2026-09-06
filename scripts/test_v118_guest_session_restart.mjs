@@ -35,7 +35,7 @@ const failedSignOut=mockSupabase({user:{id:'expired-guest',is_anonymous:true}},{
 assert.equal((await startAnonymousTestSession(failedSignOut,input)).error.code,'signout_failed')
 assert.deepEqual(failedSignOut.calls.map(call=>call[0]),['getSession','signOut'],'a failed local sign-out must stop before creating another account')
 
-assert.equal(APP_RELEASE.number,118)
-assert.equal(APP_VERSION,'V118')
+assert.ok(APP_RELEASE.number>=118)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 console.log('V118 guest-session restart passed: expired anonymous sessions are replaced locally while permanent accounts remain protected.')
