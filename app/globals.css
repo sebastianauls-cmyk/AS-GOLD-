@@ -240,3 +240,6 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 /* V109: explicit unverified/white traffic-light state */
 .pill.white{background:#fff;border:1px solid #cbd1d9}
 .assessment.white{border-inline-start-color:#94a3b8}
+
+/* V114 resilient recovery surfaces */
+.recoveryCard{width:min(560px,100%)}.recoveryCard h1{font-size:clamp(1.65rem,5vw,2.25rem);line-height:1.2;margin:18px 0 10px}.recoveryCard .muted{line-height:1.65}.errorReference{font-size:.8rem;color:#737d8a;overflow-wrap:anywhere}
