@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect,useMemo,useState } from 'react'
+import { isImageDocument } from './documentUploadReadiness.mjs'
 
 const copy={
   de:{title:'Bildqualität',good:'Bildqualität ausreichend',dark:'Foto ist zu dunkel',bright:'Foto ist sehr hell',blur:'Foto wirkt unscharf',cropped:'Dokument könnte abgeschnitten sein',skew:'Dokument wirkt schief fotografiert',resolution:'Auflösung zu niedrig',retake:'Bitte neu fotografieren: Dokument vollständig, gerade und gut beleuchtet aufnehmen.',notImage:'Qualitätsprüfung ist nur bei Bildern nötig.'},
@@ -22,11 +23,14 @@ function edgeVariance(data,width,height){let sum=0,sumSq=0,n=0;for(let y=1;y<hei
 export default function DocumentImageQualityCheck({file,language='de',onResult}){
   const c=copy[language]||copy.de
   const [result,setResult]=useState(null)
-  const isImage=!!file?.type?.startsWith('image/')
+  const extension=file?.name?.includes('.')?file.name.split('.').pop().toLowerCase():''
+  const isImage=!!file&&isImageDocument({fileType:file.type,extension})
   useEffect(()=>{
     if(!file||!isImage){setResult(file?{status:'not-image',issues:[]} : null);return}
+    let active=true
     const url=URL.createObjectURL(file);const img=new Image()
     img.onload=()=>{
+      if(!active)return
       const max=900;const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const width=Math.max(1,Math.round(img.naturalWidth*scale));const height=Math.max(1,Math.round(img.naturalHeight*scale));
       const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,width,height);const data=ctx.getImageData(0,0,width,height).data
       const lum=luminance(data);const variance=edgeVariance(data,width,height);const issues=[]
@@ -39,8 +43,8 @@ export default function DocumentImageQualityCheck({file,language='de',onResult})
       const next={status:issues.length?(severe?'bad':'warn'):'good',issues,width:img.naturalWidth,height:img.naturalHeight,luminance:Math.round(lum),sharpness:Math.round(variance)}
       setResult(next);onResult?.(next);URL.revokeObjectURL(url)
     }
-    img.onerror=()=>{const next={status:'bad',issues:['blur']};setResult(next);onResult?.(next);URL.revokeObjectURL(url)};img.src=url
-    return()=>URL.revokeObjectURL(url)
+    img.onerror=()=>{if(!active)return;const next={status:'bad',issues:['blur']};setResult(next);onResult?.(next);URL.revokeObjectURL(url)};img.src=url
+    return()=>{active=false;URL.revokeObjectURL(url)}
   },[file,isImage,language])
 
   const rows=useMemo(()=>result?.issues||[],[result])
