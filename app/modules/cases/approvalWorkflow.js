@@ -1,5 +1,6 @@
 import { approveApprovalRecord, createApprovalRecord, rejectApprovalRecord, updateApprovalRecord } from '../services/approvalRepository'
 import { approvalDefaultsForDocument } from './approvalDefaults.mjs'
+import { bilingualLetterStatus, isCompleteBilingualLetterBody } from '../language/bilingualLetter.mjs'
 
 export { approvalDefaultsForDocument } from './approvalDefaults.mjs'
 
@@ -8,6 +9,7 @@ export function createApprovalWorkflowActions({
   ownerId,
   data,
   approvalUi,
+  outputLanguage,
   setData,
   setMessage,
   setApprovalDefaults,
@@ -25,6 +27,10 @@ export function createApprovalWorkflowActions({
     if(draft.approval_type==='send'&&!draft.recipient.trim()){setMessage(approvalUi.recipientRequired);return false}
     const linkedDocument=draft.document_id?data.documents.find(item=>item.id===draft.document_id):null
     if(linkedDocument?.case_id!==draft.case_id&&draft.document_id){setMessage(approvalUi.documentMismatch);return false}
+    if(linkedDocument){
+      const bilingual=bilingualLetterStatus(linkedDocument,outputLanguage)
+      if(!bilingual.complete||!bilingual.matchesRequestedLanguage||!isCompleteBilingualLetterBody(draft.body,bilingual.language)){setMessage(approvalUi.bilingualRequired);return false}
+    }
     const {data:created,error}=await createApprovalRecord(supabase,{ownerId,draft,linkedDocument})
     if(error){setMessage(error.message);return false}
     recordLocalAction('approval_created')
@@ -42,6 +48,11 @@ export function createApprovalWorkflowActions({
     if(!current) return false
     if(!draft.subject.trim()||!draft.body.trim()){setMessage(approvalUi.contentRequired);return false}
     if(current.approval_type==='send'&&!draft.recipient.trim()){setMessage(approvalUi.recipientRequired);return false}
+    const linkedDocument=current.document_id?data.documents.find(item=>item.id===current.document_id):null
+    if(linkedDocument){
+      const bilingual=bilingualLetterStatus(linkedDocument,linkedDocument.customer_copy_language)
+      if(!bilingual.complete||!isCompleteBilingualLetterBody(draft.body,bilingual.language)){setMessage(approvalUi.bilingualRequired);return false}
+    }
     const {data:updated,error,invalidated}=await updateApprovalRecord(supabase,{ownerId,approvalId,current,draft})
     if(error){setMessage(error.message);return false}
     if(!updated){setMessage(approvalUi.stale);return false}
@@ -84,7 +95,7 @@ export function createApprovalWorkflowActions({
     setSelectedDocument(null)
     setSelectedCase(null)
     setSelectedApproval(null)
-    setApprovalDefaults(approvalDefaultsForDocument(document))
+    setApprovalDefaults(approvalDefaultsForDocument(document,outputLanguage))
     setSection('approvals')
   }
 

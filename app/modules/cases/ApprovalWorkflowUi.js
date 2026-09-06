@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { componentTranslations } from '../lib/v30ComponentTranslations.mjs'
+import { approvalDefaultsForDocument } from './approvalDefaults.mjs'
 
 const copy = {
   de:{title:'Freigaben',lead:'Entwürfe werden erst nach einer sichtbaren Vorschau ausdrücklich freigegeben. AS Workspace Gold versendet dabei noch nichts automatisch.',newApproval:'Neue Freigabe vorbereiten',cancel:'Abbrechen',case:'Fall',chooseCase:'Fall auswählen',document:'Bezugsdokument',noDocument:'Ohne einzelnes Bezugsdokument',type:'Verwendung',types:{send:'Versand',binding_use:'Verbindliche Verwendung',export_delivery:'Export / Übergabe'},recipient:'Empfänger',subject:'Betreff / Bezeichnung',body:'Freizugebender Inhalt',create:'Vorschau anlegen',none:'Noch keine Freigabe vorbereitet.',pending:'Prüfung offen',approved:'Freigegeben',rejected:'Abgelehnt',revision:'Vorschau-Revision',back:'← Zurück',preview:'Verbindliche Vorschau',previewHelp:'Nur der hier sichtbare Inhalt wird freigegeben. Änderungen erzeugen eine neue Revision und heben eine bestehende Freigabe auf.',attachments:'Anlagen',noAttachments:'Keine Anlagen hinterlegt',edit:'Entwurf bearbeiten',save:'Änderungen speichern',confirm:'Ich habe Empfänger, Inhalt und Anlagen dieser Revision vollständig geprüft.',approve:'Diese Revision ausdrücklich freigeben',reject:'Ablehnen',approvedAt:'Freigegeben am',approvedRevision:'Freigegebene Revision',invalidated:'Eine frühere Freigabe wurde durch eine Inhaltsänderung ungültig.',stale:'Die Vorschau wurde zwischenzeitlich geändert. Bitte neu laden und erneut prüfen.',saved:'Freigabe aktualisiert.',created:'Freigabevorschau angelegt.',approvedMessage:'Revision ausdrücklich freigegeben.',rejectedMessage:'Freigabe abgelehnt.',prepareFromDocument:'Zur Freigabe vorbereiten',caseRequired:'Bitte zuerst einen Fall auswählen.',contentRequired:'Bitte Betreff und freizugebenden Inhalt ausfüllen.',documentMismatch:'Das gewählte Dokument gehört nicht zum ausgewählten Fall.',recipientRequired:'Für einen Versand ist ein Empfänger erforderlich.'},
@@ -14,12 +15,27 @@ const copy = {
 
 Object.assign(copy, componentTranslations.approvalCopy)
 
+const bilingualApprovalCopy={
+  de:['Für dokumentbezogene Anschreiben sind die deutsche Versandfassung und die Kundenfassung in der aktuell gewählten Ausgabesprache erforderlich. Bitte beide Fassungen im Dokument speichern oder die Analyse erneut starten.','Deutsch und Kundensprache werden gemeinsam als verbindliche Vorschau freigegeben.'],
+  en:['Document-based letters require the German sending version and the customer copy in the currently selected output language. Save both versions in the document or run the analysis again.','German and the customer language are approved together in one binding preview.'],
+  fr:["Les courriers liés à un document nécessitent la version allemande à envoyer et la copie client dans la langue de sortie actuellement choisie. Enregistrez les deux versions ou relancez l’analyse.","L’allemand et la langue du client sont approuvés ensemble dans un aperçu contraignant."],
+  tr:['Belgeye bağlı yazışmalar için Almanca gönderim metni ve seçili çıktı dilindeki müşteri nüshası gereklidir. Her iki metni belgede kaydedin veya analizi yeniden başlatın.','Almanca ve müşteri dili aynı bağlayıcı önizlemede birlikte onaylanır.'],
+  pl:['Pisma powiązane z dokumentem wymagają niemieckiej wersji do wysłania oraz kopii dla klienta w aktualnie wybranym języku wyniku. Zapisz obie wersje albo ponownie uruchom analizę.','Wersja niemiecka i język klienta są zatwierdzane razem w jednym wiążącym podglądzie.'],
+  ru:['Для письма, связанного с документом, нужны немецкая версия для отправки и копия для клиента на выбранном языке результата. Сохраните обе версии или повторите анализ.','Немецкая версия и язык клиента согласуются вместе в одном обязательном предпросмотре.'],
+  ar:['تتطلب المراسلات المرتبطة بمستند نسخة ألمانية للإرسال ونسخة للعميل بلغة الإخراج المختارة حاليًا. احفظ النسختين أو أعد تشغيل التحليل.','تتم الموافقة على النسخة الألمانية ولغة العميل معًا في معاينة ملزمة واحدة.'],
+  fa:['نامه‌های مرتبط با سند به نسخه آلمانی برای ارسال و نسخه مشتری به زبان خروجی انتخاب‌شده نیاز دارند. هر دو نسخه را ذخیره کنید یا تحلیل را دوباره اجرا کنید.','نسخه آلمانی و زبان مشتری با هم در یک پیش‌نمایش الزام‌آور تأیید می‌شوند.'],
+  ro:['Scrisorile legate de un document necesită versiunea germană pentru expediere și copia pentru client în limba de ieșire selectată. Salvați ambele versiuni sau reluați analiza.','Versiunea germană și limba clientului sunt aprobate împreună într-o singură previzualizare obligatorie.'],
+  bg:['Писмата, свързани с документ, изискват немска версия за изпращане и копие за клиента на избрания език за резултата. Запазете и двете версии или стартирайте анализа отново.','Немската версия и езикът на клиента се одобряват заедно в един задължителен преглед.'],
+  vi:['Thư gắn với tài liệu phải có bản tiếng Đức để gửi và bản dành cho khách hàng bằng ngôn ngữ đầu ra đang chọn. Hãy lưu cả hai bản hoặc chạy lại phân tích.','Bản tiếng Đức và ngôn ngữ khách hàng được phê duyệt cùng nhau trong một bản xem trước có hiệu lực.']
+}
+for(const [language,[required,hint]] of Object.entries(bilingualApprovalCopy)) Object.assign(copy[language]||(copy[language]={...copy.de}),{bilingualRequired:required,bilingualHint:hint})
+
 export function getV25ApprovalCopy(language){ return copy[language] || copy.de }
 
 function statusText(on,status){ return on[status] || status }
 function typeText(on,type){ return on.types[type] || type }
 
-export function ApprovalSection({copy:on,cases,documents,approvals,defaults,onCreate,onSelect}){
+export function ApprovalSection({copy:on,outputLanguage='de',cases,documents,approvals,defaults,onCreate,onSelect}){
   const [showForm,setShowForm]=useState(Boolean(defaults?.caseId||defaults?.documentId))
   const [draft,setDraft]=useState({case_id:defaults?.caseId||'',document_id:defaults?.documentId||'',approval_type:'send',recipient:defaults?.recipient||'',subject:defaults?.subject||'',body:defaults?.body||''})
   const matchingDocuments=useMemo(()=>documents.filter(item=>item.case_id===draft.case_id),[documents,draft.case_id])
@@ -39,15 +55,23 @@ export function ApprovalSection({copy:on,cases,documents,approvals,defaults,onCr
     }
   }
 
+  function selectDocument(documentId){
+    const document=documents.find(item=>item.id===documentId)
+    if(!document){setDraft(previous=>({...previous,document_id:''}));return}
+    const prepared=approvalDefaultsForDocument(document,outputLanguage)
+    setDraft(previous=>({...previous,document_id:documentId,recipient:prepared.recipient,subject:prepared.subject,body:prepared.body}))
+  }
+
   return <>
     <section className="approvalIntro"><div><h3>{on.title}</h3><p>{on.lead}</p></div><button type="button" className="primary" onClick={()=>setShowForm(value=>!value)}>{showForm?on.cancel:`＋ ${on.newApproval}`}</button></section>
     {showForm&&<form className="actionCard approvalForm" onSubmit={submit}>
       <label>{on.case}<select value={draft.case_id} onChange={event=>setDraft({...draft,case_id:event.target.value,document_id:''})} required><option value="">{on.chooseCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
-      <label>{on.document}<select value={draft.document_id} onChange={event=>setDraft({...draft,document_id:event.target.value})}><option value="">{on.noDocument}</option>{matchingDocuments.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
+      <label>{on.document}<select value={draft.document_id} onChange={event=>selectDocument(event.target.value)}><option value="">{on.noDocument}</option>{matchingDocuments.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
       <label>{on.type}<select value={draft.approval_type} onChange={event=>setDraft({...draft,approval_type:event.target.value})}>{Object.entries(on.types).map(([value,label])=><option value={value} key={value}>{label}</option>)}</select></label>
       <label>{on.recipient}<input value={draft.recipient} onChange={event=>setDraft({...draft,recipient:event.target.value})} required={draft.approval_type==='send'}/></label>
       <label className="approvalWide">{on.subject}<input value={draft.subject} onChange={event=>setDraft({...draft,subject:event.target.value})} required/></label>
       <label className="approvalWide">{on.body}<textarea value={draft.body} onChange={event=>setDraft({...draft,body:event.target.value})} rows="9" required/></label>
+      {draft.document_id&&<small className="approvalWide analysisManualNote">{on.bilingualHint}</small>}
       <button className="primary full approvalWide">{on.create}</button>
     </form>}
     {approvals.length?<div className="itemList approvalList">{approvals.map(item=>{const linkedCase=cases.find(entry=>entry.id===item.case_id);return <button className="itemRow buttonRow" type="button" onClick={()=>onSelect(item)} key={item.id}><div><b>{item.subject||typeText(on,item.approval_type)}</b><p>{linkedCase?.title||on.case} · {typeText(on,item.approval_type)}</p><div className="pills"><span className={`pill approval-${item.status}`}>{statusText(on,item.status)}</span><span className="pill">{on.revision} {item.preview_revision}</span></div></div><span className="chev">›</span></button>})}</div>:<div className="emptyState">{on.none}</div>}

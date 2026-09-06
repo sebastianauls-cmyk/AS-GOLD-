@@ -47,6 +47,7 @@ export function composeDocumentLanguageWorkflowSummary(result={},outputLanguage=
 }
 
 export function mapDocumentLanguageWorkflowResult(result={},document={},outputLanguage='de'){
+  const customerCopyLanguage=documentLanguageWorkflowLanguage(outputLanguage).key
   return {
     fields:{
       extracted_text:result.extracted_text||'',
@@ -57,6 +58,7 @@ export function mapDocumentLanguageWorkflowResult(result={},document={},outputLa
       analysis_next_step:result.next_step||'',
       response_letter_de:result.response_letter_de||'',
       customer_copy:result.customer_copy||'',
+      customer_copy_language:customerCopyLanguage,
       response_recipient:result.response_recipient||result.sender_or_author||'',
       response_subject:result.response_subject||document.title||'',
       analysis_traffic_light:result.traffic_light||'yellow',

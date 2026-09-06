@@ -9,7 +9,7 @@ assert.match(hook,/if\(isGuestTestRequest\(\)&&isAnonymousTestSession\(session\)
 assert.match(hook,/if\(event==='SIGNED_OUT'\)\{\s*if\(isGuestTestRequest\(\)\)return/,'the intentional local guest sign-out must not reset the controller mid-replacement')
 assert.match(controller,/if\(guestStartAttempted\.current\)return\s*guestStartAttempted\.current=true\s*startGuestTest\(\)/,'the controller must keep a single in-flight guest start')
 
-assert.equal(APP_RELEASE.number,121)
-assert.equal(APP_VERSION,'V121')
+assert.ok(APP_RELEASE.number>=121)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 console.log('V121 single guest start passed: auth events cannot trigger a duplicate anonymous account during guest replacement.')

@@ -18,7 +18,11 @@ assert.equal(generated.fields.analysis_traffic_light,'red')
 assert.equal(generated.fields.response_recipient,'Behörde')
 assert.equal(generated.fields.response_letter_de,'Sehr geehrte Damen und Herren')
 
-assert.deepEqual(approvalDefaultsForDocument({id:'doc-1',case_id:'case-a',title:'Eingang',response_recipient:'Behörde',response_subject:'Antwort',response_letter_de:'Text'}),{caseId:'case-a',documentId:'doc-1',recipient:'Behörde',subject:'Antwort',body:'Text'})
+const approvalDefaults=approvalDefaultsForDocument({id:'doc-1',case_id:'case-a',title:'Eingang',response_recipient:'Behörde',response_subject:'Antwort',response_letter_de:'Text',customer_copy:'Tekst',customer_copy_language:'pl'},'pl')
+assert.equal(approvalDefaults.caseId,'case-a')
+assert.equal(approvalDefaults.documentId,'doc-1')
+assert.match(approvalDefaults.body,/VERSANDFASSUNG – DEUTSCH/)
+assert.match(approvalDefaults.body,/KUNDENFASSUNG \/ ÜBERSETZUNG – Polski/)
 
 const evidence=selectEvidenceContext({assessments:[{id:'a2',case_id:'case-b'}],sourceStatus:[{id:'s1',case_id:'case-a'},{id:'s2',case_id:'case-b'}]})
 assert.equal(evidence.caseId,'case-b')
