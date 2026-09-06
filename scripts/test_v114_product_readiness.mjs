@@ -19,6 +19,7 @@ for(const language of ['de','en','pl','tr','ru','ar','fr','fa','ro','bg','vi']){
   assert.ok(documentUploadReadinessMessage(language,'quality_pending'))
   assert.ok(documentUploadReadinessMessage(language,'quality_bad'))
   assert.ok(documentUploadReadinessMessage(language,'upload_failed'))
+  assert.ok(documentUploadReadinessMessage(language,'upload_network'))
 }
 
 const workflow=fs.readFileSync(new URL('../app/modules/documents/documentWorkflow.js',import.meta.url),'utf8')

@@ -4,8 +4,8 @@ import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
 
 const read=path=>fs.readFileSync(new URL(path,import.meta.url),'utf8')
 
-assert.equal(APP_RELEASE.number,115)
-assert.equal(APP_VERSION,'V115')
+assert.ok(APP_RELEASE.number>=115)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 const repository=read('../app/modules/services/documentRepository.js')
 assert.match(repository,/export_type:type,format:type/,'every export entry must persist the selected format in both schema fields')

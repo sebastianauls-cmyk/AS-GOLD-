@@ -1,3 +1,5 @@
+import { persistLegalSettings } from './complianceRepository.js'
+
 export async function getWorkspaceAccess(supabase){
   const accessResult=await supabase.rpc('current_gold_access')
   if(accessResult.error)return {access:null,upgrades:[],error:accessResult.error}
@@ -33,7 +35,7 @@ export async function loadWorkspaceBundle(supabase,ownerId){
 export async function ensureRegistrationPrivacy(supabase,{ownerId,registrationMeta,privacyNoticeVersion,termsVersion}){
   if(registrationMeta?.privacy_notice_version!==privacyNoticeVersion||registrationMeta?.terms_version!==termsVersion||registrationMeta?.test_data_only!==true)return {data:null,error:null}
   const acknowledgedAt=registrationMeta.legal_acknowledged_at||new Date().toISOString()
-  return supabase.from('account_privacy_settings').insert({owner_id:ownerId,privacy_notice_version:privacyNoticeVersion,privacy_notice_acknowledged_at:acknowledgedAt,terms_version:termsVersion,terms_acknowledged_at:acknowledgedAt,real_data_authorized:false,ai_processing_enabled:false,special_categories_authorized:false,retention_days:90}).select().single()
+  return persistLegalSettings(supabase,{ownerId,privacyNoticeVersion,termsVersion,acknowledgedAt})
 }
 
 export async function recordAuditEvent(supabase,{ownerId,eventType,metadata={},entityType=null,entityId=null}){
