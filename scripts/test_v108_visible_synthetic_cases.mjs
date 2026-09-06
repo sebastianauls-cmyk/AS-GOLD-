@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
+import { buildSyntheticCaseDraft } from '../app/modules/testing/syntheticCaseDraft.mjs'
 import { SYNTHETIC_TESTERS } from '../app/modules/testing/syntheticTesterRegistry.mjs'
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
@@ -15,8 +16,12 @@ assert.match(panel,/function selectTester\(tester\)/)
 assert.doesNotMatch(panel,/function selectTester\(tester\)[\s\S]*?onOpenCase\(tester\)/)
 assert.match(panel,/showStart&&onOpenCase/)
 assert.match(panel,/aria-pressed=\{selected\?\.id===tester\.id\}/)
-assert.match(controller,/reference_no:`TEST-\$\{tester\.id\}`/)
-assert.match(controller,/test_case_id:tester\.id/)
+assert.match(controller,/buildSyntheticCaseDraft\(tester\)/)
+for(const tester of SYNTHETIC_TESTERS){
+  const draft=buildSyntheticCaseDraft(tester)
+  assert.equal(draft.reference_no,`TEST-${tester.id}`)
+  assert.equal(draft.test_case_id,tester.id)
+}
 assert.match(cases,/syntheticCaseNotice/)
 assert.match(cases,/syntheticCasePill/)
 assert.match(cases,/TEST-\(ST\\d\{2\}\)/)

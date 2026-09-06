@@ -41,6 +41,7 @@ import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
 import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
+import { buildSyntheticCaseDraft } from '../testing/syntheticCaseDraft.mjs'
 
 const guestTestCopy={
   de:{starting:'Sicherer Testarbeitsbereich wird geöffnet …',unavailable:'Der passwortlose Testzugang ist momentan nicht verfügbar. Bitte verwenden Sie die normale Anmeldung.',displayName:'Synthetischer Testzugang',active:'Passwortloser Testzugang aktiv',scope:'Nur synthetische oder wirksam anonymisierte Daten · höchstens 2 Dokumente · 2 Stunden'},
@@ -274,7 +275,7 @@ export default function WorkspaceController(){
     setSelectedDocument(null)
     setSelectedApproval(null)
     setSelectedCase(null)
-    setNewCase({...emptyCase,title:`${tester.id} · ${tester.problem}`,reference_no:`TEST-${tester.id}`,goal:tester.problem,summary:`${tester.profile}\n${tester.home_country} → ${tester.target_country}\n${tester.documents.join(' · ')}`,next_action:tester.expected_actions?.[0]||'',test_case_id:tester.id,test_case_expected_ampel:tester.expected_ampel,test_case_language:tester.language,test_case_home_country:tester.home_country,test_case_target_country:tester.target_country})
+    setNewCase({...emptyCase,...buildSyntheticCaseDraft(tester)})
     setShowCaseForm(true)
     setSection('cases')
   }
