@@ -3,8 +3,8 @@ import fs from 'node:fs'
 import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
 import { documentUploadReadinessMessage, isImageDocument, parseIntakeQuality, validateDocumentUploadReadiness } from '../app/modules/documents/documentUploadReadiness.mjs'
 
-assert.equal(APP_RELEASE.number,114)
-assert.equal(APP_VERSION,'V114')
+assert.ok(APP_RELEASE.number>=114)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 const check=input=>validateDocumentUploadReadiness(input)
 assert.equal(check({fileType:'application/pdf',extension:'pdf',intakeQuality:{state:'unknown'}}).ok,true,'non-image documents must remain uploadable')

@@ -40,7 +40,7 @@ export function ApprovalSection({copy:on,cases,documents,approvals,defaults,onCr
   }
 
   return <>
-    <section className="approvalIntro"><div><span className="modeBadge">V26</span><h3>{on.title}</h3><p>{on.lead}</p></div><button type="button" className="primary" onClick={()=>setShowForm(value=>!value)}>{showForm?on.cancel:`＋ ${on.newApproval}`}</button></section>
+    <section className="approvalIntro"><div><h3>{on.title}</h3><p>{on.lead}</p></div><button type="button" className="primary" onClick={()=>setShowForm(value=>!value)}>{showForm?on.cancel:`＋ ${on.newApproval}`}</button></section>
     {showForm&&<form className="actionCard approvalForm" onSubmit={submit}>
       <label>{on.case}<select value={draft.case_id} onChange={event=>setDraft({...draft,case_id:event.target.value,document_id:''})} required><option value="">{on.chooseCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
       <label>{on.document}<select value={draft.document_id} onChange={event=>setDraft({...draft,document_id:event.target.value})}><option value="">{on.noDocument}</option>{matchingDocuments.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
@@ -79,7 +79,7 @@ export function ApprovalDetail({copy:on,item,cases,documents,onBack,onSave,onApp
 
   return <>
     <button className="backBtn" type="button" onClick={onBack}>{on.back}</button>
-    <section className="approvalDetailHead"><div><span className="modeBadge">V26</span><h2>{item.subject||on.preview}</h2><p>{linkedCase?.title||on.case} · {typeText(on,item.approval_type)}</p></div><span className={`approvalState approval-${item.status}`}>{statusText(on,item.status)}</span></section>
+    <section className="approvalDetailHead"><div><h2>{item.subject||on.preview}</h2><p>{linkedCase?.title||on.case} · {typeText(on,item.approval_type)}</p></div><span className={`approvalState approval-${item.status}`}>{statusText(on,item.status)}</span></section>
     {item.invalidated_at&&<div className="note approvalWarning">{on.invalidated}</div>}
     <section className="approvalPreview">
       <div className="approvalPreviewHead"><div><h3>{on.preview}</h3><p>{on.previewHelp}</p></div><b>{on.revision} {item.preview_revision}</b></div>

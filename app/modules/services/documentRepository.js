@@ -22,5 +22,5 @@ export function createWorkspaceDocumentSignedUrl(supabase,filePath,expiresIn=300
 }
 
 export function recordExportEntry(supabase,{ref,type}){
-  return supabase.from('exports').insert({case_id:ref.kind==='case'?ref.item.id:ref.item.case_id||null,document_id:ref.kind==='document'?ref.item.id:null,export_type:type,title:`${ref.item.title||'AS Workspace Gold Export'} (${type.toUpperCase()})`,status:'ready'})
+  return supabase.from('exports').insert({case_id:ref.kind==='case'?ref.item.id:ref.item.case_id||null,document_id:ref.kind==='document'?ref.item.id:null,export_type:type,format:type,title:`${ref.item.title||'AS Workspace Gold Export'} (${type.toUpperCase()})`,status:'ready'})
 }

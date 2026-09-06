@@ -30,7 +30,7 @@ export function PrimaryNextStepCard({language='de',item,documents=[],assessments
     caseNext:item?.next_action||''
   })
   return <section className="detailCard v38PrimaryNextStep" data-v38-primary-next-step="true" style={{border:'2px solid #b89242',background:'linear-gradient(135deg,#fffaf0,#fff)'}}>
-    <div className="detailCardHead"><div><span className="modeBadge">V38</span><h3 style={{margin:'.55rem 0 .2rem'}}>{t.title}</h3></div><strong>1</strong></div>
+    <div className="detailCardHead"><div><h3 style={{margin:'.55rem 0 .2rem'}}>{t.title}</h3></div><strong>1</strong></div>
     <p style={{fontSize:'1.16rem',fontWeight:900,lineHeight:1.45,margin:'.8rem 0'}}>{result.action}</p>
     <p><b>{t.when}</b> {result.when}</p>
     <p><b>{t.why}</b> {result.why}</p>

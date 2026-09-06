@@ -153,7 +153,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', item,
   }
   return <>
     <button className="backBtn" type="button" onClick={onBack}>{on.back}</button>
-    <section className="documentReviewHead"><div><span className="modeBadge">V28</span><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={()=>onOpen(item)}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
+    <section className="documentReviewHead"><div><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={()=>onOpen(item)}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
     <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document"/>
     <DocumentAutoAssessment language={language} text={draft.extracted_text}/>
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</p></div>

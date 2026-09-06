@@ -37,7 +37,7 @@ export function DocumentAutoAssessment({language='de',text=''}){
   const result=autoDocumentAssessment(text,deadline)
   const icon=result.trafficLight==='red'?'🔴':result.trafficLight==='green'?'🟢':'🟡'
   return <section className="detailCard v39AutoAssessment" data-v39-auto-assessment="true">
-    <div className="detailCardHead"><div><span className="modeBadge">V39</span><h3>{t.auto}</h3></div><strong>{icon} {t[result.trafficLight]}</strong></div>
+    <div className="detailCardHead"><div><h3>{t.auto}</h3></div><strong>{icon} {t[result.trafficLight]}</strong></div>
     <p><b>{result.title}</b></p>
     <small>{t.provisional}</small>
     <p><b>{t.basis}:</b> {result.reason}</p>
@@ -49,17 +49,17 @@ export function CaseTimeline({language='de',caseDeadline='',documents=[]}){
   const t=copyFor(language)
   const entries=[]
   const deadlineDate=isoDate(caseDeadline)
-  if(deadlineDate) entries.push({date:deadlineDate,type:'deadline',title:t.deadline,detail:String(caseDeadline)})
+  if(deadlineDate) entries.push({date:deadlineDate,type:'deadline',title:t.deadline,detail:''})
   for(const document of documents){
     const rawDate=document?.document_date||document?.created_at||''
     const date=isoDate(rawDate)
-    if(date) entries.push({date,type:'document',title:document?.title||t.document,detail:String(rawDate)})
+    if(date) entries.push({date,type:'document',title:document?.title||t.document,detail:document?.document_type||''})
   }
   const sorted=sortTimelineEntries(entries)
   return <section className="detailCard v39Timeline" data-v39-timeline="true">
-    <div className="detailCardHead"><div><span className="modeBadge">V39</span><h3>{t.timeline}</h3></div></div>
+    <div className="detailCardHead"><div><h3>{t.timeline}</h3></div></div>
     <ol className="v39TimelineList">
-      {sorted.length?sorted.map((entry,index)=><li key={`${entry.type}-${entry.date}-${index}`}><time>{entry.date}</time><div><b>{entry.type==='deadline'?t.deadline:t.document} · {entry.title}</b><small>{entry.detail||''}</small></div></li>):<li className="emptyState">{t.noTimeline}</li>}
+      {sorted.length?sorted.map((entry,index)=><li key={`${entry.type}-${entry.date}-${index}`}><time dateTime={entry.date}>{entry.date}</time><div><b>{entry.type==='deadline'?t.deadline:t.document} · {entry.title}</b>{entry.detail?<small>{entry.detail}</small>:null}</div></li>):<li className="emptyState">{t.noTimeline}</li>}
     </ol>
   </section>
 }
