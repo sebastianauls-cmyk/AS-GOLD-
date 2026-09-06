@@ -115,6 +115,7 @@ export default function WorkspaceController(){
   const [deletionRequests,setDeletionRequests]=useState([])
   const [deletionBusy,setDeletionBusy]=useState(false)
   const guestStartAttempted=useRef(false)
+  const sessionLoadRef=useRef({key:null,promise:null})
 
   const t=ui[language]||ui.de
   const a=appText[language]||appText.de
@@ -211,7 +212,7 @@ export default function WorkspaceController(){
   })
 
   const {loadApp,signIn,startGuestTest,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
-    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,guestCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage
+    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,guestCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage,sessionLoadRef
   })
 
   useEffect(()=>{
@@ -231,6 +232,7 @@ export default function WorkspaceController(){
     setScreen,
     onPasswordRecovery:()=>{setMessage('');setScreen('recovery')},
     onSignedOut:()=>{
+      sessionLoadRef.current={key:null,promise:null}
       setUser(null)
       setAccess(null)
       setPrivacySettings(null)

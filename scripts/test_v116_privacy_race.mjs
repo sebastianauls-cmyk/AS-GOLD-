@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
 import { persistLegalSettings } from '../app/modules/services/complianceRepository.js'
 import { uploadPrivateObject } from '../app/modules/services/documentRepository.js'
+import { retrySessionClock } from '../app/modules/services/workspaceRepository.js'
 
 function mockSupabase({updates,inserts}){
   const calls=[]
@@ -80,5 +81,16 @@ const transientStorage={
 }
 assert.equal((await uploadPrivateObject(transientStorage,'guest/synthetic.pdf',file)).error,null)
 assert.equal(retryUploads,2,'a missing object must be retried exactly once after a network interruption')
+
+let clockAttempts=0
+const recoveredClock=await retrySessionClock(async()=>{
+  clockAttempts+=1
+  return clockAttempts<3?{data:null,error:{message:'JWT issued at future'}}:{data:[{active:true}],error:null}
+},{delay:async()=>{}})
+assert.equal(recoveredClock.error,null)
+assert.equal(clockAttempts,3,'a freshly issued guest JWT must receive bounded clock-skew retries')
+
+const authWorkflowSource=fs.readFileSync(new URL('../app/modules/auth/workspaceAuthWorkflow.js',import.meta.url),'utf8')
+assert.match(authWorkflowSource,/active\?\.key===key&&active\.promise/,'parallel SIGNED_IN and direct sign-in callbacks must share one workspace load')
 
 console.log('V116 regression passed: guest privacy is idempotent under RLS and interrupted private uploads recover without overwriting files.')
