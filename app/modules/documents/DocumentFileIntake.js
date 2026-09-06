@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { documentIntakeLanguages } from './documentIntakeLanguages.mjs'
 import { intakeCopy } from './documentIntakeCopy.mjs'
 import DocumentImageQualityCheck from './DocumentImageQualityCheck'
+import { isImageDocument } from './documentUploadReadiness.mjs'
 
 function formatBytes(value){if(value<1024*1024)return `${Math.max(1,Math.round(value/1024))} KB`;return `${(value/1024/1024).toFixed(1)} MB`}
 
@@ -19,7 +20,9 @@ export default function DocumentFileIntake({language='de',documentMode='upload',
     setFile(selected)
     if(!selected){setFileInfo(null);setQuality({state:'empty'});return}
     setFileInfo({name:selected.name,size:selected.size,type:selected.type||'unknown'})
-    if(!selected.type.startsWith('image/'))setQuality({state:'good',kind:'file'})
+    const extension=selected.name.includes('.')?selected.name.split('.').pop().toLowerCase():''
+    if(isImageDocument({fileType:selected.type,extension,source:documentMode}))setQuality({state:'checking',kind:'image'})
+    else setQuality({state:'good',kind:'file'})
   }
 
   function onQualityResult(result){
