@@ -20,6 +20,8 @@ function mime(path:string,type?:string){
 }
 
 Deno.serve(async(req:Request)=>{
+  const attemptId=crypto.randomUUID();
+  const log=(level:'info'|'error',stage:string,details:Record<string,unknown>={})=>console[level]('[gold-document-analysis]',{attempt_id:attemptId,stage,...details});
   if(req.method==='OPTIONS') return allowedOrigin(req.headers.get('Origin'))?new Response(null,{status:204,headers:headersFor(req)}):reply(req,{error:'Origin not allowed'},403);
   if(req.method!=='POST') return reply(req,{error:'Method not allowed'},405);
   if(req.headers.get('Origin')&&!allowedOrigin(req.headers.get('Origin'))) return reply(req,{error:'Origin not allowed'},403);
@@ -27,6 +29,7 @@ Deno.serve(async(req:Request)=>{
   const url=Deno.env.get('SUPABASE_URL'),anon=Deno.env.get('SUPABASE_ANON_KEY');if(!url||!anon) return reply(req,{error:'Dienst nicht konfiguriert'},503);
   const client=createClient(url,anon,{global:{headers:{Authorization:authorization}},auth:{persistSession:false,autoRefreshToken:false}});
   const {data:userData,error:userError}=await client.auth.getUser();const user=userData?.user;if(userError||!user) return reply(req,{error:'Sitzung ungültig'},401);
+  log('info','authenticated');
 
   const body=await req.json().catch(()=>({}));const filePath=body?.file_path,documentId=body?.document_id;
   const requestedOutputLanguage=typeof body?.output_language==='string'&&OUTPUT_LANGUAGES.has(body.output_language)?body.output_language:'de';
@@ -47,9 +50,9 @@ Deno.serve(async(req:Request)=>{
   if(!document.ai_processing_allowed||document.privacy_notice_version!==PRIVACY_NOTICE_VERSION) return reply(req,{error:'Dokument ist nicht für KI-Verarbeitung freigegeben'},403);
 
   const providerKey=Deno.env.get('OPENAI_API_KEY');
-  if(!providerKey) return reply(req,{status:'configuration_required',message:'KI-Dienst ist serverseitig noch nicht freigegeben.'},503);
+  if(!providerKey){log('error','configuration_required');return reply(req,{status:'configuration_required',message:'KI-Dienst ist serverseitig noch nicht freigegeben.',attempt_id:attemptId},200);}
   const {data:file,error:downloadError}=await client.storage.from('goldstandard-private').download(filePath);
-  if(downloadError||!file) return reply(req,{error:'Datei konnte nicht geladen werden'},400);
+  if(downloadError||!file){log('error','storage_download_failed');return reply(req,{error:'Datei konnte nicht geladen werden',attempt_id:attemptId},400);}
   const fileMime=mime(filePath,file.type);const supportedDocumentMime=new Set(['application/pdf','text/plain','text/csv','application/rtf','application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/vnd.oasis.opendocument.text','application/vnd.oasis.opendocument.spreadsheet','application/vnd.oasis.opendocument.presentation','message/rfc822']);if(!(fileMime.startsWith('image/')||supportedDocumentMime.has(fileMime))) return reply(req,{error:'Dieses Dateiformat kann gespeichert, aber noch nicht automatisch ausgelesen werden.'},415);
   const bytes=new Uint8Array(await file.arrayBuffer());if(bytes.byteLength>MAX_BYTES) return reply(req,{error:'Datei ist für die direkte Analyse zu groß (max. 18 MB).'},413);
 
@@ -81,13 +84,14 @@ Erzeuge GENAU diese getrennten Ergebnisse:
 
 Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar aus einem ausdrücklich genannten Datum und Zeitraum folgen. Das Ergebnis bleibt ein prüfbarer Entwurf vor Freigabe.${spokenContextInstruction}`;
 
+  log('info','provider_request_started',{file_mime:fileMime,file_bytes:bytes.byteLength,output_language:requestedOutputLanguage,target_country:requestedCountry});
   const provider=await fetch('https://api.openai.com/v1/responses',{method:'POST',signal:AbortSignal.timeout(90000),headers:{Authorization:`Bearer ${providerKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-5.6-luna',store:false,reasoning:{effort:'low'},instructions,input:[{role:'user',content:[{type:'input_text',text:`Verarbeite dieses Dokument vollständig. Ausgabesprache: ${outputLanguageName}. Länder-/Rechtsraum-Kontext: ${countryContextName}. Gib ausschließlich das strukturierte Ergebnis zurück.`},filePart]}],text:{format:{type:'json_schema',name:'as_workspace_gold_document_workflow_v98',strict:true,schema}},max_output_tokens:12000})}).catch(()=>null);
-  if(!provider) return reply(req,{error:'KI-Dienst ist derzeit nicht erreichbar'},502);
+  if(!provider){log('error','provider_unreachable');return reply(req,{error:'KI-Dienst ist derzeit nicht erreichbar',attempt_id:attemptId},502);}
   const raw=await provider.json().catch(()=>({}));
-  if(!provider.ok) return reply(req,{error:'KI-Dienst konnte das Dokument nicht verarbeiten',provider_status:provider.status},502);
+  if(!provider.ok){log('error','provider_rejected',{provider_status:provider.status});return reply(req,{error:'KI-Dienst konnte das Dokument nicht verarbeiten',provider_status:provider.status,attempt_id:attemptId},502);}
   const output=raw?.output_text??raw?.output?.flatMap((item:any)=>item?.content||[]).find((item:any)=>item?.type==='output_text')?.text;
-  if(!output) return reply(req,{error:'KI-Dienst hat kein auswertbares Ergebnis geliefert'},502);
-  let parsed;try{parsed=JSON.parse(output);}catch{return reply(req,{error:'KI-Ergebnis hatte ein ungültiges Format'},502);}
+  if(!output){log('error','provider_output_missing');return reply(req,{error:'KI-Dienst hat kein auswertbares Ergebnis geliefert',attempt_id:attemptId},502);}
+  let parsed;try{parsed=JSON.parse(output);}catch{log('error','provider_output_invalid');return reply(req,{error:'KI-Ergebnis hatte ein ungültiges Format',attempt_id:attemptId},502);}
 
   const processedAt=new Date().toISOString();
   const detectedSourceLanguage=typeof parsed?.source_language==='string'&&parsed.source_language.trim()?parsed.source_language.trim().toLowerCase().slice(0,16):(document.source_language||null);
@@ -95,5 +99,6 @@ Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar a
   if(consumeError) return reply(req,{error:'Analyse war erfolgreich, konnte aber nicht sicher abgeschlossen werden'},503);
   if(!consumed) return reply(req,{error:'Die Analysefreigabe wurde zwischenzeitlich bereits verwendet. Bitte erneut bestätigen.'},409);
 
-  return reply(req,{status:'completed',message:'Dokument wurde mit erkannter Originalsprache, Ausgabesprache, Ampel und Länder-/Rechtsraum-Kontext verarbeitet. Bitte alles prüfen und bewusst freigeben.',release:'V109',output_language:requestedOutputLanguage,target_country:requestedCountry,target_country_label:countryContextName,suggested_case_id:null,case_match_reason:null,...parsed,source_language:detectedSourceLanguage});
+  log('info','completed',{output_language:requestedOutputLanguage,target_country:requestedCountry});
+  return reply(req,{status:'completed',message:'Dokument wurde mit erkannter Originalsprache, Ausgabesprache, Ampel und Länder-/Rechtsraum-Kontext verarbeitet. Bitte alles prüfen und bewusst freigeben.',release:'V115',attempt_id:attemptId,output_language:requestedOutputLanguage,target_country:requestedCountry,target_country_label:countryContextName,suggested_case_id:null,case_match_reason:null,...parsed,source_language:detectedSourceLanguage});
 });

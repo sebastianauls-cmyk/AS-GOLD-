@@ -44,7 +44,7 @@ export function DeadlineWarningCard({language='de',caseDeadline='',text='',mode=
   const primary=result.primary
   const status=t[result.status]||t.uncertain
   return <section className="detailCard v38DeadlineWarningCard" data-v38-deadline-card="true" data-v38-deadline-mode={mode} style={{borderWidth:'2px',marginTop:'14px'}}>
-    <div className="detailCardHead"><div><span className="modeBadge">V38</span><h3 style={{margin:'.55rem 0 .2rem'}}>{t.title}</h3></div><strong>{status}</strong></div>
+    <div className="detailCardHead"><div><h3 style={{margin:'.55rem 0 .2rem'}}>{t.title}</h3></div><strong>{status}</strong></div>
     <p style={{fontSize:'1.1rem',fontWeight:800,margin:'.65rem 0'}}>{formatDeadline(primary,language,t)}</p>
     <p><b>{t.basis}:</b> {basisText(primary,t)}</p>
     <p><b>{t.consequence}:</b> {consequenceText(result,t)}</p>

@@ -39,8 +39,9 @@ export function RegistrationLegalFields({copy:on,accepted,onAccepted,testOnly,on
 export function LegalAcceptance({copy:on,onAccept,busy=false}){
   const [accepted,setAccepted]=useState(false)
   const [testOnly,setTestOnly]=useState(false)
+  const gateBadge=String(on.gateBadge||'').replace(/^V\d+\s*·\s*/,'')
   return <section className="legalGate">
-    <span className="modeBadge">{on.gateBadge}</span><h1>{on.gateTitle}</h1><p>{on.gateLead}</p>
+    {gateBadge?<span className="modeBadge">{gateBadge}</span>:null}<h1>{on.gateTitle}</h1><p>{on.gateLead}</p>
     <RegistrationLegalFields copy={on} accepted={accepted} onAccepted={setAccepted} testOnly={testOnly} onTestOnly={setTestOnly}/>
     <button type="button" className="primary full" disabled={!accepted||!testOnly||busy} onClick={()=>onAccept({accepted,testOnly})}>{on.gateAction}</button>
   </section>
