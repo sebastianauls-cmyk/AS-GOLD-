@@ -33,9 +33,10 @@ export function createWorkspaceAuthActions({
   setPrivacySettings,
   setUser,
   setScreen,
-  setMessage
+  setMessage,
+  sessionLoadRef
 }){
-  async function loadApp(session){
+  async function performLoadApp(session){
     setMessage('')
     const accessSnapshot=await getWorkspaceAccess(supabase)
     if(accessSnapshot.error){setMessage(accessSnapshot.error.message);setScreen('login');return false}
@@ -62,6 +63,15 @@ export function createWorkspaceAuthActions({
     setUser(session.user)
     setScreen('app')
     return true
+  }
+
+  function loadApp(session){
+    const key=`${session?.user?.id||''}:${session?.access_token||''}`
+    const active=sessionLoadRef?.current
+    if(key&&active?.key===key&&active.promise)return active.promise
+    const promise=performLoadApp(session)
+    if(sessionLoadRef)sessionLoadRef.current={key,promise}
+    return promise
   }
 
   async function signIn(event){

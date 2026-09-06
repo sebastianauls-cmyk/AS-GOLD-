@@ -3,10 +3,50 @@ export function updateDocumentRecord(supabase,{ownerId,documentId,draft}){
   return supabase.from('documents').update(payload).eq('id',documentId).eq('owner_id',ownerId).select().single()
 }
 
+function isUploadNetworkError(error){
+  return error?.name==='StorageUnknownError'||/failed to fetch|networkerror|network request failed|load failed/i.test(String(error?.message||''))
+}
+
+function networkUploadError(error){
+  const wrapped=new Error(String(error?.message||'Document upload network request failed'))
+  wrapped.name='DocumentUploadNetworkError'
+  wrapped.code='DOCUMENT_UPLOAD_NETWORK_ERROR'
+  wrapped.stage='storage'
+  return wrapped
+}
+
+async function storedObjectExists(storage,path){
+  try{
+    const result=await storage.createSignedUrl(path,30)
+    return !result.error&&!!result.data?.signedUrl
+  }catch{return false}
+}
+
+export async function uploadPrivateObject(storage,path,file){
+  let first
+  try{first=await storage.upload(path,file,{upsert:false})}
+  catch(error){first={data:null,error}}
+  if(!first.error)return first
+  if(!isUploadNetworkError(first.error))return first
+
+  // A broken mobile connection can lose the response after Storage already
+  // accepted the file. Confirm the exact private object before retrying so the
+  // recovery stays idempotent and never overwrites an existing upload.
+  if(await storedObjectExists(storage,path))return {data:{path,recovered:true},error:null}
+
+  let retried
+  try{retried=await storage.upload(path,file,{upsert:false})}
+  catch(error){retried={data:null,error}}
+  if(!retried.error)return retried
+  if(await storedObjectExists(storage,path))return {data:{path,recovered:true},error:null}
+  if(!isUploadNetworkError(retried.error))return retried
+  return {data:null,error:networkUploadError(retried.error)}
+}
+
 export async function uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion,documentType,documentDate,source,sourceLanguage,voiceContext,voiceLanguage,intakeQuality}){
   const extension=file.name.includes('.')?file.name.split('.').pop().toLowerCase():''
   const path=`${ownerId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`
-  const upload=await supabase.storage.from('goldstandard-private').upload(path,file,{upsert:false})
+  const upload=await uploadPrivateObject(supabase.storage.from('goldstandard-private'),path,file)
   if(upload.error)return {data:null,error:upload.error}
   let extractedText=null
   if(['txt','csv'].includes(extension)&&file.size<=2*1024*1024){

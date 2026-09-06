@@ -1,7 +1,33 @@
+function legalSettingsPayload({ownerId,privacyNoticeVersion,termsVersion,acknowledgedAt}){
+  const timestamp=acknowledgedAt||new Date().toISOString()
+  return {owner_id:ownerId,privacy_notice_version:privacyNoticeVersion,privacy_notice_acknowledged_at:timestamp,terms_version:termsVersion,terms_acknowledged_at:timestamp,real_data_authorized:false,ai_processing_enabled:false,special_categories_authorized:false,retention_days:90}
+}
+
+async function updateExistingLegalSettings(supabase,payload){
+  const {owner_id:ownerId,...changes}=payload
+  return supabase.from('account_privacy_settings').update({...changes,updated_at:new Date().toISOString()}).eq('owner_id',ownerId).select().maybeSingle()
+}
+
+export async function persistLegalSettings(supabase,input){
+  const payload=legalSettingsPayload(input)
+  const updated=await updateExistingLegalSettings(supabase,payload)
+  if(updated.error)return updated
+  if(updated.data)return updated
+
+  const inserted=await supabase.from('account_privacy_settings').insert(payload).select().single()
+  if(!inserted.error)return inserted
+
+  // Two session callbacks may initialise the same new account at once. If the
+  // other callback inserted first, the guest INSERT quota correctly rejects
+  // this request. Re-reading through UPDATE makes that race idempotent without
+  // weakening the database policy.
+  const retried=await updateExistingLegalSettings(supabase,payload)
+  if(!retried.error&&retried.data)return retried
+  return inserted
+}
+
 export function acknowledgeLegalSettings(supabase,{ownerId,privacyNoticeVersion,termsVersion}){
-  const now=new Date().toISOString()
-  const payload={owner_id:ownerId,privacy_notice_version:privacyNoticeVersion,privacy_notice_acknowledged_at:now,terms_version:termsVersion,terms_acknowledged_at:now,real_data_authorized:false,ai_processing_enabled:false,special_categories_authorized:false,retention_days:90}
-  return supabase.from('account_privacy_settings').upsert(payload,{onConflict:'owner_id'}).select().single()
+  return persistLegalSettings(supabase,{ownerId,privacyNoticeVersion,termsVersion})
 }
 
 export async function authorizeDocumentAnalysis(supabase,{ownerId,documentId,privacyNoticeVersion,termsVersion}){

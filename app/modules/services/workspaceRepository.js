@@ -1,8 +1,24 @@
+import { persistLegalSettings } from './complianceRepository.js'
+
+function jwtIssuedInFuture(error){
+  return /jwt issued at future/i.test(String(error?.message||''))
+}
+
+export async function retrySessionClock(operation,{attempts=3,delay=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds))}={}){
+  let result
+  for(let attempt=0;attempt<attempts;attempt+=1){
+    result=await operation()
+    if(!result?.error||!jwtIssuedInFuture(result.error))return result
+    if(attempt<attempts-1)await delay(750*(attempt+1))
+  }
+  return result
+}
+
 export async function getWorkspaceAccess(supabase){
-  const accessResult=await supabase.rpc('current_gold_access')
+  const accessResult=await retrySessionClock(()=>supabase.rpc('current_gold_access'))
   if(accessResult.error)return {access:null,upgrades:[],error:accessResult.error}
   const access=accessResult.data?.[0]||null
-  const upgradesResult=await supabase.rpc('gold_available_upgrades')
+  const upgradesResult=await retrySessionClock(()=>supabase.rpc('gold_available_upgrades'))
   return {access,upgrades:upgradesResult.data||[],error:null}
 }
 
@@ -33,7 +49,7 @@ export async function loadWorkspaceBundle(supabase,ownerId){
 export async function ensureRegistrationPrivacy(supabase,{ownerId,registrationMeta,privacyNoticeVersion,termsVersion}){
   if(registrationMeta?.privacy_notice_version!==privacyNoticeVersion||registrationMeta?.terms_version!==termsVersion||registrationMeta?.test_data_only!==true)return {data:null,error:null}
   const acknowledgedAt=registrationMeta.legal_acknowledged_at||new Date().toISOString()
-  return supabase.from('account_privacy_settings').insert({owner_id:ownerId,privacy_notice_version:privacyNoticeVersion,privacy_notice_acknowledged_at:acknowledgedAt,terms_version:termsVersion,terms_acknowledged_at:acknowledgedAt,real_data_authorized:false,ai_processing_enabled:false,special_categories_authorized:false,retention_days:90}).select().single()
+  return persistLegalSettings(supabase,{ownerId,privacyNoticeVersion,termsVersion,acknowledgedAt})
 }
 
 export async function recordAuditEvent(supabase,{ownerId,eventType,metadata={},entityType=null,entityId=null}){

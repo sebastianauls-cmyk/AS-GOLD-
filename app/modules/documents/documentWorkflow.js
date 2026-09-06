@@ -102,7 +102,17 @@ export function createDocumentWorkflowActions({
     event.preventDefault()
     setMessage('')
     const form=event.currentTarget
-    const file=form.elements.file.files[0]
+    let file=form.elements.file.files[0]
+    if(!file&&form.elements.sample_document?.value==='synthetic-v29'){
+      try{
+        const response=await fetch('/testdaten/AS_Gold_Synthetischer_Testfall_V29.pdf',{cache:'no-store'})
+        if(!response.ok)throw new Error('Sample document unavailable')
+        file=new File([await response.blob()],'AS_Gold_Synthetischer_Testfall_V29.pdf',{type:'application/pdf'})
+      }catch{
+        setMessage(documentUploadReadinessMessage(language,'upload_failed'))
+        return false
+      }
+    }
     const caseId=form.elements.case_id.value||null
     if(!file){setMessage(notices.chooseFile);return false}
     if(!privacyCurrent){setMessage(privacyCopy.required);return false}
@@ -121,7 +131,7 @@ export function createDocumentWorkflowActions({
     setUploading(true)
     try{
       const {data:created,error}=await uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,documentType:form.elements.document_type?.value.trim()||extension.toUpperCase(),documentDate:form.elements.document_date?.value||null,source,sourceLanguage:form.elements.source_language?.value||null,voiceContext:form.elements.voice_context?.value.trim()||null,voiceLanguage:form.elements.voice_language?.value||null,intakeQuality})
-      if(error){setMessage(error.message);return false}
+      if(error){setMessage(error.code==='DOCUMENT_UPLOAD_NETWORK_ERROR'?documentUploadReadinessMessage(language,'upload_network'):error.message);return false}
       recordLocalAction('document_uploaded')
       await recordServerAudit('document_uploaded',{classification:dataClassification},'document',created.id)
       setData(previous=>({...previous,documents:[created,...previous.documents]}))
