@@ -18,7 +18,7 @@ assert.deepEqual(
 assert.deepEqual(resolveWorkspaceEntry(null,'guest-test'),{kind:'screen',screen:'guest-test'})
 assert.deepEqual(resolveWorkspaceEntry(null,'register'),{kind:'screen',screen:'register'})
 assert.deepEqual(resolveWorkspaceEntry(permanentSession,'public'),{kind:'session'})
-assert.equal(APP_RELEASE.number,117)
-assert.equal(APP_VERSION,'V117')
+assert.ok(APP_RELEASE.number>=117)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 console.log('V117 guest-session re-entry passed: expired anonymous sessions can start a fresh test while permanent sessions remain protected.')

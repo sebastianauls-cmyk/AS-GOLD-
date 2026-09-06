@@ -13,7 +13,17 @@ export function signInSession(supabase,{email,password}){
   return supabase.auth.signInWithPassword({email,password})
 }
 
-export function startAnonymousTestSession(supabase,{displayName,privacyNoticeVersion,termsVersion}){
+export async function startAnonymousTestSession(supabase,{displayName,privacyNoticeVersion,termsVersion}){
+  const current=await supabase.auth.getSession()
+  if(current.error)return {data:{session:null},error:current.error}
+  const session=current.data?.session||null
+  if(session&&!session.user?.is_anonymous){
+    return {data:{session:null},error:{code:'permanent_session_active',message:'A permanent session is already active'}}
+  }
+  if(session?.user?.is_anonymous){
+    const signedOut=await supabase.auth.signOut({scope:'local'})
+    if(signedOut.error)return {data:{session:null},error:signedOut.error}
+  }
   const legalAcknowledgedAt=new Date().toISOString()
   return supabase.auth.signInAnonymously({options:{data:{display_name:displayName,privacy_notice_version:privacyNoticeVersion,terms_version:termsVersion,legal_acknowledged_at:legalAcknowledgedAt,test_data_only:true}}})
 }

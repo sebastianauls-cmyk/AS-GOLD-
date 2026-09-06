@@ -10,7 +10,7 @@ const controller=read('app/modules/workspace/WorkspaceController.js')
 const tester=read('app/modules/tester/TesterGuide.js')
 const guestButton=read('app/modules/tester/GuestTestStartButton.js')
 const migration=read('supabase/migrations/20260905233240_v112_passwordless_synthetic_test.sql')
-const anonymousFunction=repository.match(/export function startAnonymousTestSession[\s\S]*?\n}\n/)?.[0]||''
+const anonymousFunction=repository.match(/export (?:async )?function startAnonymousTestSession[\s\S]*?\n}\n/)?.[0]||''
 
 assert.ok(APP_RELEASE.number>=112,'passwordless synthetic testing requires release V112 or newer')
 assert.match(repository,/auth\.signInAnonymously\(/)
