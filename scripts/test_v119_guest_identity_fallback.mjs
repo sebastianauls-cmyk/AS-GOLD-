@@ -36,7 +36,7 @@ const memberResult=await startAnonymousTestSession(memberClient,{displayName:'Sy
 assert.equal(memberResult.error.code,'permanent_session_active')
 assert.deepEqual(memberClient.calls,['getSession'])
 
-assert.equal(APP_RELEASE.number,119)
-assert.equal(APP_VERSION,'V119')
+assert.ok(APP_RELEASE.number>=119)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 console.log('V119 guest identity fallback passed: real anonymous-session shapes restart while permanent accounts remain protected.')

@@ -2,6 +2,8 @@
 
 import { useEffect, useRef } from 'react'
 import { getAuthSession, watchAuthState } from '../services/authRepository'
+import { clearGuestTestRequest, isGuestTestRequest } from '../auth/guestTestRequest.mjs'
+import { isAnonymousTestSession } from '../auth/sessionIdentity.mjs'
 import { resolveWorkspaceEntry } from './sessionEntry.mjs'
 
 function isPasswordRecoveryUrl(){
@@ -17,13 +19,6 @@ function requestedPublicScreen(){
   if(start==='reset')return 'request-reset'
   if(start==='guest-test')return 'guest-test'
   return 'public'
-}
-
-function clearGuestTestRequest(){
-  const url=new URL(window.location.href)
-  if(url.searchParams.get('start')!=='guest-test')return
-  url.searchParams.delete('start')
-  window.history.replaceState({},'',`${url.pathname}${url.search}${url.hash}`)
 }
 
 export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecovery,onSignedOut}){
@@ -48,7 +43,11 @@ export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecove
     const subscription=watchAuthState(supabase,(event,session)=>{
       if(!alive) return
       if(event==='PASSWORD_RECOVERY'){recoveryRef.current?.();return}
-      if(event==='SIGNED_IN'&&session){clearGuestTestRequest();loadAppRef.current(session)}
+      if(event==='SIGNED_IN'&&session){
+        if(isGuestTestRequest()&&isAnonymousTestSession(session)){setScreen('guest-test');return}
+        clearGuestTestRequest()
+        loadAppRef.current(session)
+      }
       if(event==='SIGNED_OUT') signedOutRef.current?.()
     })
     return ()=>{alive=false;subscription.unsubscribe()}

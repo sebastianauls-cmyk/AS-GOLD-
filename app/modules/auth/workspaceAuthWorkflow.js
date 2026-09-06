@@ -1,5 +1,6 @@
 import { ensureRegistrationPrivacy, getWorkspaceAccess, loadWorkspaceBundle } from '../services/workspaceRepository'
 import { AUTH_REDIRECT_URL, getAuthSession, registerTestAccount, sendPasswordReset, signInSession, startAnonymousTestSession, updatePassword } from '../services/authRepository'
+import { clearGuestTestRequest } from './guestTestRequest.mjs'
 import { getAuthErrorMessage } from './authMessages.mjs'
 
 export function createWorkspaceAuthActions({
@@ -90,6 +91,7 @@ export function createWorkspaceAuthActions({
       setScreen('login')
       return false
     }
+    clearGuestTestRequest()
     return loadApp(authData.session)
   }
 
