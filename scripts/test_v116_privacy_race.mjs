@@ -59,8 +59,8 @@ assert.match(workspaceSource,/persistLegalSettings/,'registration and manual ack
 assert.match(documentIntakeSource,/name="sample_document"/,'the document intake must expose the built-in synthetic sample without a local file picker')
 assert.match(documentIntakeSource,/required=\{!sampleSelected\}/,'a selected sample must satisfy native form validation')
 assert.match(documentWorkflowSource,/fetch\('\/testdaten\/AS_Gold_Synthetischer_Testfall_V29\.pdf'/,'the upload workflow must load the real same-origin sample bytes')
-assert.equal(APP_RELEASE.number,116)
-assert.equal(APP_VERSION,'V116')
+assert.ok(APP_RELEASE.number>=116)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 const file={name:'synthetic.pdf'}
 const acceptedStorage={upload:async()=>({data:{path:'guest/synthetic.pdf'},error:null})}

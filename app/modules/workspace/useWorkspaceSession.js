@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { getAuthSession, watchAuthState } from '../services/authRepository'
+import { resolveWorkspaceEntry } from './sessionEntry.mjs'
 
 function isPasswordRecoveryUrl(){
   if(typeof window==='undefined')return false
@@ -39,8 +40,10 @@ export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecove
     getAuthSession(supabase).then(({data:{session}})=>{
       if(!alive)return
       if(isPasswordRecoveryUrl()){recoveryRef.current?.();return}
-      if(session){clearGuestTestRequest();loadAppRef.current(session)}
-      else setScreen(requestedPublicScreen())
+      const entry=resolveWorkspaceEntry(session,requestedPublicScreen())
+      if(entry.kind==='guest-test'){setScreen('guest-test');return}
+      if(entry.kind==='session'){clearGuestTestRequest();loadAppRef.current(session);return}
+      setScreen(entry.screen)
     })
     const subscription=watchAuthState(supabase,(event,session)=>{
       if(!alive) return
