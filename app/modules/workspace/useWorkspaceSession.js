@@ -44,11 +44,14 @@ export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecove
       if(!alive) return
       if(event==='PASSWORD_RECOVERY'){recoveryRef.current?.();return}
       if(event==='SIGNED_IN'&&session){
-        if(isGuestTestRequest()&&isAnonymousTestSession(session)){setScreen('guest-test');return}
+        if(isGuestTestRequest()&&isAnonymousTestSession(session))return
         clearGuestTestRequest()
         loadAppRef.current(session)
       }
-      if(event==='SIGNED_OUT') signedOutRef.current?.()
+      if(event==='SIGNED_OUT'){
+        if(isGuestTestRequest())return
+        signedOutRef.current?.()
+      }
     })
     return ()=>{alive=false;subscription.unsubscribe()}
   },[supabase,setScreen])

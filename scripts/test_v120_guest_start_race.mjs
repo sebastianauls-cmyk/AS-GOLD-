@@ -17,7 +17,7 @@ const workflow=readFileSync(new URL('../app/modules/auth/workspaceAuthWorkflow.j
 assert.match(sessionHook,/isGuestTestRequest\(\)&&isAnonymousTestSession\(session\)/,'restored anonymous SIGNED_IN events must defer to the explicit guest restart')
 assert.match(workflow,/clearGuestTestRequest\(\)\s*\n\s*return loadApp\(authData\.session\)/,'only the fresh guest session clears the request before loading')
 
-assert.equal(APP_RELEASE.number,120)
-assert.equal(APP_VERSION,'V120')
+assert.ok(APP_RELEASE.number>=120)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 console.log('V120 guest-start race passed: restored anonymous sessions cannot consume the restart request before a fresh guest session exists.')
