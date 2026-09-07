@@ -45,7 +45,8 @@ import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
 import { buildSyntheticCaseDraft } from '../testing/syntheticCaseDraft.mjs'
-import { orderDeadlineCases } from '../cases/deadlineCases.mjs'
+import { buildDeadlineOverview } from '../cases/deadlineCases.mjs'
+import { getDeadlineUi } from '../cases/deadlineUi.mjs'
 
 const guestTestCopy={
   de:{starting:'Sicherer Testarbeitsbereich wird geöffnet …',unavailable:'Der passwortlose Testzugang ist momentan nicht verfügbar. Bitte verwenden Sie die normale Anmeldung.',displayName:'Synthetischer Testzugang',active:'Passwortloser Testzugang aktiv',scope:'Nur synthetische oder wirksam anonymisierte Daten · höchstens 2 Dokumente · 2 Stunden'},
@@ -161,7 +162,9 @@ export default function WorkspaceController(){
   const recommendedTier=goalTier[selectedGoal]||'free'
   const recommendedPlan=localizedPlans.find(plan=>plan.key===recommendedTier)||localizedPlans[0]
   const currentSufficient=(tierRank[currentTier]||1)>=(tierRank[recommendedTier]||1)
-  const deadlineCases=useMemo(()=>orderDeadlineCases(data.cases),[data.cases])
+  const deadlineOverview=useMemo(()=>buildDeadlineOverview(data.cases),[data.cases])
+  const deadlineCases=deadlineOverview.dated
+  const deadlineCopy=getDeadlineUi(language)
   const promoQuotes=Object.values(quotes).filter(Boolean)
   const promoAnyValid=!!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='valid')
   const promoAllInvalid=!!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
@@ -293,8 +296,16 @@ export default function WorkspaceController(){
     if(action==='case'){setSection('cases');setShowCaseForm(true);return}
     if(action==='scan'||action==='upload'){setDocumentMode(action);setUploadCaseId('');setSection('documents');return}
     if(action==='clients'){setSection('clients');return}
-    if(action==='deadlines'){setSection('deadlines');return}
+    if(action==='deadlines'){openDeadlines();return}
     if(action==='approvals'){setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''});setSection('approvals')}
+  }
+
+  function openDeadlines(){
+    setSelectedClient(null)
+    setSelectedDocument(null)
+    setSelectedApproval(null)
+    setSelectedCase(null)
+    setSection('deadlines')
   }
 
   function startSyntheticCase(tester){
@@ -311,7 +322,7 @@ export default function WorkspaceController(){
   }
 
   function protectedWorkspace(content){
-    return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} legalLabel={t.legal} languageLabel={t.language} outputLanguageLabel={t.outputLanguage} logoutLabel={a.logout} onLogout={()=>signOutSession(supabase)} message={message}>{content}</ProtectedWorkspaceShell>
+    return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} legalLabel={t.legal} languageLabel={t.language} outputLanguageLabel={t.outputLanguage} logoutLabel={a.logout} onLogout={()=>signOutSession(supabase)} message={message} deadlineCopy={deadlineCopy} deadlineCount={deadlineOverview.dated.length} unresolvedDeadlineCount={deadlineOverview.unresolved.length} onOpenDeadlines={openDeadlines}>{content}</ProtectedWorkspaceShell>
   }
 
   if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
@@ -334,7 +345,7 @@ export default function WorkspaceController(){
 
   if(screen==='app'&&!selectedClient&&section==='cases') return protectedWorkspace(<CasesSurface a={a} core={core} clients={data.clients} cases={data.cases} newCase={newCase} setNewCase={setNewCase} showCaseForm={showCaseForm} setShowCaseForm={setShowCaseForm} createCase={createCase} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
 
-  if(screen==='app'&&!selectedClient&&section==='deadlines') return protectedWorkspace(<DeadlinesSurface a={a} core={core} deadlineCases={deadlineCases} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
+  if(screen==='app'&&!selectedClient&&section==='deadlines') return protectedWorkspace(<DeadlinesSurface a={a} core={core} copy={deadlineCopy} datedCases={deadlineOverview.dated} unresolvedCases={deadlineOverview.unresolved} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
 
   if(screen==='app'&&!selectedClient&&section==='documents') return protectedWorkspace(<DocumentsSurface a={a} access={access} documents={data.documents} core={core} v28={v28} cases={data.cases} documentMode={documentMode} setDocumentMode={setDocumentMode} uploadCaseId={uploadCaseId} uploadDocument={uploadDocument} uploading={uploading} allowedUploadAccept={allowedUploadAccept} setSelectedDocument={setSelectedDocument} onBack={()=>setSection('dashboard')} language={language}/>)
 
