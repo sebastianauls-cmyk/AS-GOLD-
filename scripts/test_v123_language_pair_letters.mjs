@@ -63,6 +63,6 @@ assert.match(approval,/matchesRequestedLanguages/)
 assert.match(repository,/reference_copy:referenceCopy/)
 assert.match(migration,/documents_reference_copy_language_v123_check/)
 assert.match(migration,/response_letter_de/)
-assert.equal(APP_VERSION,'V123')
+assert.ok(Number(APP_VERSION.slice(1))>=123)
 
 console.log('V123 language-pair letters passed: any reference/customer language pair is supported and identical languages produce one version.')

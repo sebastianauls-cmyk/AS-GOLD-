@@ -1,9 +1,13 @@
-# AS Workspace Gold Workspace – V33
+# AS Workspace Gold Workspace – V124
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt-, Arbeits- und Freigabestand: **V33 zur Veröffentlichung vorbereitet** unter `https://app-gold-workspace.vercel.app`.
+- Gesamt- und Arbeitsstand: **V124** unter `https://app-gold-workspace.vercel.app`.
+- V124 ergänzt den serverseitig abgesicherten Stripe-Checkout zunächst ausschließlich im Testmodus: feste Laufzeiten, keine automatische Verlängerung, signaturgeprüfte Webhook-Freischaltung und optionaler Promo-Code.
+- Ein gültiger 100-%-Promo-Code gewährt den vorgesehenen Tester-Zugang direkt ohne Checkout; Teilrabatte reduzieren den serverseitig berechneten Zahlbetrag.
+- Live-Zahlungen bleiben bis zur gesonderten rechtlichen und betrieblichen Freigabe technisch gesperrt.
+- V123 ermöglicht bei zweisprachigen Anschreiben jede unterstützte Kombination aus Ausgangs- und Zielsprache.
 - V33 ordnet alle Sprachoptionen vertikal und vollständig sichtbar an und macht die Zurück-Navigation auf jeder betroffenen Oberfläche eindeutig erkennbar.
 - V32 ersetzt systemabhängige Emoji-Flaggen durch echte SVG-Landesflaggen und kennzeichnet App- und Ausgabesprache in der oberen App-Leiste eindeutig.
 - V31 ergänzt V30 um flaggenbasierte Sprachwahl, automatisch lokalisierte Rechtsseiten und sicher serverseitig validierte Promo-Codes.

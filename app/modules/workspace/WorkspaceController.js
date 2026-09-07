@@ -30,6 +30,8 @@ import { LegalAcceptance, PRIVACY_NOTICE_VERSION, TERMS_VERSION, getV28PrivacyCo
 import { getV29PasswordCopy, validateV29Password } from '../auth/PasswordPolicy'
 import { localeForLanguage, pageTranslations } from '../language/languageRegistry.mjs'
 import { promoTranslations } from '../pricing/promoTranslations.mjs'
+import { paymentTranslations } from '../payments/paymentTranslations.mjs'
+import { cleanPaymentReturnUrl } from '../payments/paymentReturn.js'
 import { orderCasesByResearch } from '../public/casePriority.mjs'
 import { useLanguagePreferences } from '../language/useLanguagePreferences'
 import { createCaseWorkflowActions } from '../cases/caseWorkflow'
@@ -38,6 +40,7 @@ import { createDocumentWorkflowActions } from '../documents/documentWorkflow'
 import { createExportWorkflowActions } from '../documents/exportWorkflow'
 import { createWorkspaceAuthActions } from '../auth/workspaceAuthWorkflow'
 import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
+import { getPaymentConfig } from '../services/pricingRepository.js'
 import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
@@ -99,6 +102,8 @@ export default function WorkspaceController(){
   const [promoCode,setPromoCode]=useState('')
   const [appliedPromoCode,setAppliedPromoCode]=useState('')
   const [promoRevision,setPromoRevision]=useState(0)
+  const [paymentConfig,setPaymentConfig]=useState({enabled:false,mode:'disabled',liveLocked:false})
+  const [checkoutPlan,setCheckoutPlan]=useState('')
   const [newClient,setNewClient]=useState({name:'',email:'',phone:'',notes:''})
   const [showClientForm,setShowClientForm]=useState(false)
   const [newCase,setNewCase]=useState(emptyCase)
@@ -115,6 +120,7 @@ export default function WorkspaceController(){
   const [deletionRequests,setDeletionRequests]=useState([])
   const [deletionBusy,setDeletionBusy]=useState(false)
   const guestStartAttempted=useRef(false)
+  const checkoutReturnHandled=useRef(false)
   const sessionLoadRef=useRef({key:null,promise:null})
 
   const t=ui[language]||ui.de
@@ -146,6 +152,7 @@ export default function WorkspaceController(){
   const lt=launchTrustText[language]||launchTrustText.de
   const sct=serverControlText[language]||serverControlText.de
   const promo=promoTranslations[language]||promoTranslations.de
+  const payment=paymentTranslations[language]||paymentTranslations.de
   const core=getV24Copy(language)
   const approvalUi=getV25ApprovalCopy(language)
   const analysisUi=getV26AnalysisCopy(language)
@@ -222,9 +229,31 @@ export default function WorkspaceController(){
     startGuestTest()
   },[screen])
 
-  const {loadQuotes,applyPromo,clearPromo,requestUpgrade}=createPricingWorkflowActions({
-    supabase,upgrades,termMonths,promoCode,appliedPromoCode,quotes,promoCopy:promo,notices:n,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setMessage,setAccess,setUpgrades,onTestAccessGranted:()=>setSection('dashboard'),formatAccessEnd:value=>new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(value)),recordServerAudit
+  const {loadQuotes,applyPromo,clearPromo,requestUpgrade,handleCheckoutReturn}=createPricingWorkflowActions({
+    supabase,upgrades,termMonths,promoCode,appliedPromoCode,quotes,promoCopy:promo,paymentCopy:payment,paymentConfig,notices:n,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setCheckoutPlan,setMessage,setAccess,setUpgrades,onTestAccessGranted:()=>setSection('dashboard'),onPaymentAccessGranted:()=>setSection('dashboard'),formatAccessEnd:value=>new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(value)),recordServerAudit
   })
+
+  useEffect(()=>{
+    let cancelled=false
+    getPaymentConfig().then(config=>{if(!cancelled)setPaymentConfig(config)})
+    return ()=>{cancelled=true}
+  },[])
+
+  useEffect(()=>{
+    if(screen!=='app'||checkoutReturnHandled.current||typeof window==='undefined')return
+    const url=new URL(window.location.href)
+    const paymentState=url.searchParams.get('payment')
+    if(paymentState!=='success'&&paymentState!=='cancelled')return
+    checkoutReturnHandled.current=true
+    const sessionId=url.searchParams.get('session_id')||''
+    const requestId=url.searchParams.get('request_id')||''
+    handleCheckoutReturn({
+      sessionId,
+      requestId,
+      cancelled:paymentState==='cancelled',
+      cleanUrl:()=>cleanPaymentReturnUrl(url)
+    })
+  },[screen,user?.id])
 
   useWorkspaceSession({
     supabase,
@@ -310,9 +339,9 @@ export default function WorkspaceController(){
 
   if(screen==='app'&&!selectedClient&&section==='approvals') return protectedWorkspace(<ApprovalsSurface a={a} approvalUi={approvalUi} outputLanguage={outputLanguage} cases={data.cases} documents={data.documents} approvals={data.approvals} approvalDefaults={approvalDefaults} createApproval={createApproval} setSelectedApproval={setSelectedApproval} onBack={()=>{setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''});setSection('dashboard')}}/>)
 
-  if(screen==='app'&&!selectedClient&&section==='pricing') return protectedWorkspace(<PricingSurface a={a} promo={promo} upgrades={upgrades} promoCode={promoCode} setPromoCode={setPromoCode} appliedPromoCode={appliedPromoCode} applyPromo={applyPromo} clearPromo={clearPromo} quoteLoading={quoteLoading} quotes={quotes} promoAnyValid={promoAnyValid} promoAllInvalid={promoAllInvalid} promoSomeInvalid={promoSomeInvalid} eur={eur} terms={terms} termMonths={termMonths} setTermMonths={setTermMonths} monthsLabel={monthsLabel} period={period} requestUpgrade={requestUpgrade} onBack={()=>setSection('dashboard')}/>)
+  if(screen==='app'&&!selectedClient&&section==='pricing') return protectedWorkspace(<PricingSurface a={a} promo={promo} payment={payment} paymentConfig={paymentConfig} checkoutPlan={checkoutPlan} upgrades={upgrades} promoCode={promoCode} setPromoCode={setPromoCode} appliedPromoCode={appliedPromoCode} applyPromo={applyPromo} clearPromo={clearPromo} quoteLoading={quoteLoading} quotes={quotes} promoAnyValid={promoAnyValid} promoAllInvalid={promoAllInvalid} promoSomeInvalid={promoSomeInvalid} eur={eur} terms={terms} termMonths={termMonths} setTermMonths={setTermMonths} monthsLabel={monthsLabel} period={period} requestUpgrade={requestUpgrade} onBack={()=>setSection('dashboard')}/>)
 
-  if(screen==='app'&&!selectedClient&&section==='account') return protectedWorkspace(<AccountSurface a={a} currentPlan={currentPlan} currentTier={currentTier} lt={lt} exportMyData={exportMyData} activityLog={activityLog} localeForLanguage={localeForLanguage} language={language} sct={sct} serverAudit={serverAudit} deletionRequests={deletionRequests} deletionBusy={deletionBusy} cancelAccountDeletion={cancelAccountDeletion} requestAccountDeletion={requestAccountDeletion} onBack={()=>setSection('dashboard')}/>)
+  if(screen==='app'&&!selectedClient&&section==='account') return protectedWorkspace(<AccountSurface a={a} currentPlan={currentPlan} currentTier={currentTier} lt={lt} payment={payment} paymentConfig={paymentConfig} exportMyData={exportMyData} activityLog={activityLog} localeForLanguage={localeForLanguage} language={language} sct={sct} serverAudit={serverAudit} deletionRequests={deletionRequests} deletionBusy={deletionBusy} cancelAccountDeletion={cancelAccountDeletion} requestAccountDeletion={requestAccountDeletion} onBack={()=>setSection('dashboard')}/>)
 
   if(screen==='app'){
     if(selectedClient){
@@ -325,5 +354,5 @@ export default function WorkspaceController(){
     return protectedWorkspace(<ClientsSurface a={a} showClientForm={showClientForm} setShowClientForm={setShowClientForm} createClient={createClient} newClient={newClient} setNewClient={setNewClient} clients={data.clients} setSelectedClient={setSelectedClient} onBack={()=>setSection('dashboard')}/>)
   }
 
-  return <PublicLanding t={publicT} a={publicA} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={navigateToScreen} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
+  return <PublicLanding t={publicT} a={publicA} payment={payment} paymentConfig={paymentConfig} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={navigateToScreen} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
 }

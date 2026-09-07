@@ -1,5 +1,5 @@
 import { getWorkspaceAccess } from '../services/workspaceRepository.js'
-import { getUpgradeQuotes, redeemTestAccessRecord, requestUpgradeRecord } from '../services/pricingRepository.js'
+import { awaitCheckoutApplied, cancelCheckoutRecord, getUpgradeQuotes, redeemTestAccessRecord, startCheckoutRecord } from '../services/pricingRepository.js'
 import { isTesterAccessQuote } from './testerAccess.js'
 
 export function createPricingWorkflowActions({
@@ -10,18 +10,23 @@ export function createPricingWorkflowActions({
   appliedPromoCode,
   quotes,
   promoCopy,
+  paymentCopy,
+  paymentConfig,
   notices,
   setQuotes,
   setPromoCode,
   setAppliedPromoCode,
   setPromoRevision,
   setQuoteLoading,
+  setCheckoutPlan,
   setMessage,
   setAccess,
   setUpgrades,
   onTestAccessGranted=()=>{},
+  onPaymentAccessGranted=()=>{},
   formatAccessEnd=value=>value,
-  recordServerAudit
+  recordServerAudit,
+  redirectToCheckout=url=>window.location.assign(url)
 }){
   async function loadQuotes({isCancelled=()=>false}={}){
     setQuoteLoading(true)
@@ -87,12 +92,61 @@ export function createPricingWorkflowActions({
       return activateTesterAccess()
     }
 
-    const {data:upgradeData,error}=await requestUpgradeRecord(supabase,{planKey:plan.plan_key,termMonths,promoCode:appliedPromoCode})
-    if(error){setMessage(appliedPromoCode?promoCopy.invalid:error.message);return false}
-    await recordServerAudit('upgrade_requested',{plan_key:plan.plan_key,term_months:Number(termMonths)},'account',null)
-    setMessage(`${notices.upgradeReserved} ${notices.selected}: ${upgradeData?.to_plan_name||plan.plan_name}, ${termMonths} ${termMonths===1?notices.monthOne:notices.monthMany}.`)
+    if(!paymentConfig?.enabled){
+      setMessage(paymentCopy.unavailable)
+      return false
+    }
+
+    setCheckoutPlan(plan.plan_key)
+    setMessage(paymentCopy.starting)
+    const {data,error}=await startCheckoutRecord(supabase,{planKey:plan.plan_key,termMonths,promoCode:appliedPromoCode})
+    if(error){
+      setCheckoutPlan('')
+      const errorCopy={
+        permanent_account_required:paymentCopy.permanentAccountRequired,
+        checkout_already_pending:paymentCopy.alreadyPending,
+        promo_invalid:promoCopy.invalid,
+        payment_not_configured:paymentCopy.unavailable,
+        live_payments_locked:paymentCopy.unavailable
+      }
+      setMessage(errorCopy[error.code]||paymentCopy.failed)
+      return false
+    }
+    redirectToCheckout(data.checkoutUrl)
     return true
   }
 
-  return {loadQuotes,applyPromo,clearPromo,requestUpgrade}
+  async function handleCheckoutReturn({sessionId,requestId,cancelled=false,cleanUrl=()=>{}}={}){
+    cleanUrl()
+    if(cancelled){
+      if(requestId)await cancelCheckoutRecord(supabase,{requestId})
+      setCheckoutPlan('')
+      setMessage(paymentCopy.cancelled)
+      return false
+    }
+    if(!sessionId)return false
+
+    setMessage(paymentCopy.successPending)
+    const result=await awaitCheckoutApplied(supabase,{sessionId})
+    if(result.error){
+      setMessage(result.error.code==='checkout_status_timeout'?paymentCopy.statusTimeout:paymentCopy.failed)
+      return false
+    }
+
+    const accessSnapshot=await getWorkspaceAccess(supabase)
+    if(accessSnapshot.error){
+      setMessage(accessSnapshot.error.message)
+      return false
+    }
+    setAccess(accessSnapshot.access)
+    setUpgrades(accessSnapshot.upgrades||[])
+    setQuotes({})
+    setCheckoutPlan('')
+    onPaymentAccessGranted()
+    const end=accessSnapshot.access?.permissions?.paid_access_ends_at
+    setMessage(paymentCopy.success.replace('{date}',end?formatAccessEnd(end):''))
+    return true
+  }
+
+  return {loadQuotes,applyPromo,clearPromo,requestUpgrade,handleCheckoutReturn}
 }

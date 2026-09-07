@@ -17,7 +17,7 @@ import { PublicPricingSection } from './PublicPricingSection'
 // Ownership map for legacy regression guards: PublicHeader owns className="publicTop" and PublicLanguageModules;
 // PublicCaseDiscoverySection owns id="asgold-user-audience" and invokes jumpToPublicCaseResult().
 // PublicPricingSection owns id="preise"; PublicLanding only composes the domain-owned public sections.
-export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
+export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
   const hero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
   const outputLanguageLabel=supportedLanguages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
@@ -80,6 +80,8 @@ export function PublicLanding({t,a,language,setLanguage,outputLanguage,setOutput
 
       <PublicPricingSection
         a={a}
+        payment={payment}
+        paymentConfig={paymentConfig}
         jl={jl}
         localizedPlans={localizedPlans}
         rt={rt}

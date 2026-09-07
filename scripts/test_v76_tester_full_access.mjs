@@ -4,7 +4,7 @@ import { redeemTestAccessRecord } from '../app/modules/services/pricingRepositor
 import { createPricingWorkflowActions } from '../app/modules/pricing/pricingWorkflow.js'
 import { isTesterAccessQuote } from '../app/modules/pricing/testerAccess.js'
 
-const quote={promo_code_state:'valid',promo_discount_percent:100,package_total:0,payment_enabled:false}
+const quote={promo_code_state:'valid',promo_discount_percent:100,package_total:0,promo_grants_access:true}
 assert.equal(isTesterAccessQuote({planKey:'business',termMonths:1,quote,promoCode:'provided-code'}),true)
 assert.equal(isTesterAccessQuote({planKey:'business',termMonths:3,quote,promoCode:'provided-code'}),false)
 assert.equal(isTesterAccessQuote({planKey:'analyse',termMonths:1,quote,promoCode:'provided-code'}),false)
@@ -40,6 +40,7 @@ const workflow=createPricingWorkflowActions({
   setAppliedPromoCode:()=>{},
   setPromoRevision:()=>{},
   setQuoteLoading:()=>{},
+  setCheckoutPlan:()=>{},
   setMessage:value=>{message=value},
   setAccess:value=>{access=value},
   setUpgrades:value=>{upgrades=value},

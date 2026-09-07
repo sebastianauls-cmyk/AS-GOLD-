@@ -206,6 +206,9 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 
 #asgold-problem-navigator-react{scroll-margin-top:16px}
 
+/* V124 fixed-term Stripe test checkout and optional promo action */
+.promoToggle{width:100%;margin:16px 0;border-style:dashed}.paymentBadge{border-color:#9cc8a7;background:#ecf8ef;color:#245c32}.quoteRow.paymentTotal{margin-top:9px;padding:12px;border:1px solid #c9ad66;border-radius:11px;background:#fff8df;color:#493914}.paymentTotal b{font-size:1.08rem}
+
 
 /* V58 modular public language shell */
 .publicHeader{display:grid;grid-template-columns:auto minmax(0,1fr);gap:12px 20px;align-items:center;padding:12px 0 14px}

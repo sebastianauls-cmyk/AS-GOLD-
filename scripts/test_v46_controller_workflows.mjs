@@ -21,7 +21,7 @@ for(const token of ['createApprovalRecord','approveApprovalRecord']) assert.matc
 for(const token of ['authorizeDocumentAnalysis','invokeDocumentAnalysis','uploadWorkspaceDocument']) assert.match(workflows.documents,new RegExp(token))
 for(const token of ['createWorkspaceExportArtifact','createAccountDataArtifact','recordExportEntry']) assert.match(workflows.exports,new RegExp(token))
 for(const token of ['getWorkspaceAccess','loadWorkspaceBundle','ensureRegistrationPrivacy','registerTestAccount','sendPasswordReset','signInSession']) assert.match(workflows.auth,new RegExp(token))
-for(const token of ['getUpgradeQuotes','requestUpgradeRecord']) assert.match(workflows.pricing,new RegExp(token))
+for(const token of ['getUpgradeQuotes','startCheckoutRecord','awaitCheckoutApplied']) assert.match(workflows.pricing,new RegExp(token))
 for(const token of ['acknowledgeLegalSettings','requestDeletionRecord','cancelDeletionRecord','listDeletionRequests']) assert.match(workflows.account,new RegExp(token))
 for(const source of [controller,...Object.values(workflows)]) assert.doesNotMatch(source,/MutationObserver|setInterval\(|history\.(back|pushState|replaceState)|window\.fetch\s*=/,'workflow/controller must not reintroduce post-render or global interception hacks')
 const testerPage=read('app/testen/page.js');const testerGuide=read('app/modules/tester/TesterGuide.js');assert.match(testerPage,/TesterGuide/);assert.doesNotMatch(testerPage,/TesterPaused/);assert.match(testerGuide,/APP_VERSION/)
