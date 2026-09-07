@@ -1,7 +1,7 @@
+import { reconcileSumupCheckout, SUMUP_PAYMENT_COLUMNS } from '../../../modules/payments/sumupFulfillment.js'
 import {
   authenticatePaymentRequest,
   createSupabaseServiceClient,
-  deactivateSumupCheckout,
   getPaymentServerConfig,
   noStoreJson,
   paymentOriginAllowed
@@ -25,24 +25,18 @@ export async function POST(request){
   const requestId=typeof body?.requestId==='string'?body.requestId:''
   if(!/^[0-9a-f-]{36}$/i.test(requestId))return noStoreJson({ok:false,code:'invalid_request'},{status:400})
 
-  const {data:upgrade,error}=await auth.supabase
+  const {data:record,error}=await auth.supabase
     .from('upgrade_requests')
-    .select('id,status,payment_provider,sumup_checkout_id')
+    .select(SUMUP_PAYMENT_COLUMNS)
     .eq('id',requestId)
     .maybeSingle()
-  if(error||!upgrade||upgrade.payment_provider!=='sumup')return noStoreJson({ok:false,code:'checkout_not_found'},{status:404})
-  if(upgrade.status==='applied')return noStoreJson({ok:false,code:'checkout_already_applied'},{status:409})
-
-  if(upgrade.sumup_checkout_id){
-    await deactivateSumupCheckout(upgrade.sumup_checkout_id,config).catch(()=>null)
-  }
+  if(error||!record)return noStoreJson({ok:false,code:'checkout_not_found'},{status:404})
 
   const service=createSupabaseServiceClient(config)
-  const cancelled=await service.rpc('gold_cancel_sumup_checkout_service',{
-    p_request_id:upgrade.id,
-    p_checkout_id:upgrade.sumup_checkout_id||null,
-    p_event_type:null
-  })
-  if(cancelled.error)return noStoreJson({ok:false,code:'cancellation_failed'},{status:500})
-  return noStoreJson({ok:true,cancelled:true})
+  try{
+    const result=await reconcileSumupCheckout({record,config,service})
+    return noStoreJson(result,{status:result.code==='checkout_cancelled'?409:200})
+  }catch{
+    return noStoreJson({ok:false,code:'verification_failed'},{status:500})
+  }
 }

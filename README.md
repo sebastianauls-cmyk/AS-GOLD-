@@ -1,10 +1,11 @@
-# AS Workspace Gold Workspace – V124
+# AS Workspace Gold Workspace – V125
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Arbeitsstand: **V124** unter `https://app-gold-workspace.vercel.app`.
-- V124 ergänzt den serverseitig abgesicherten Stripe-Checkout zunächst ausschließlich im Testmodus: feste Laufzeiten, keine automatische Verlängerung, signaturgeprüfte Webhook-Freischaltung und optionaler Promo-Code.
+- Gesamt- und Arbeitsstand: **V125** unter `https://app-gold-workspace.vercel.app`.
+- V125 ersetzt den Stripe-Testpfad durch SumUp Hosted Checkout. Der Server akzeptiert ausschließlich einen als Sandbox bestätigten SumUp-Händler, prüft jede Rückmeldung erneut über die SumUp-API und hält Live-Zahlungen technisch gesperrt.
+- V124 ergänzte den ersten serverseitig abgesicherten Test-Checkout mit festen Laufzeiten, ohne automatische Verlängerung und mit optionalem Promo-Code.
 - Ein gültiger 100-%-Promo-Code gewährt den vorgesehenen Tester-Zugang direkt ohne Checkout; Teilrabatte reduzieren den serverseitig berechneten Zahlbetrag.
 - Live-Zahlungen bleiben bis zur gesonderten rechtlichen und betrieblichen Freigabe technisch gesperrt.
 - V123 ermöglicht bei zweisprachigen Anschreiben jede unterstützte Kombination aus Ausgangs- und Zielsprache.
@@ -32,7 +33,7 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 - 0/5/10/15 % Mehrmonatsvorteil
 - anteilige Upgrade-Differenz bis zum Ende der laufenden Periode
 - keine automatische Verlängerung
-- Bezahlfunktion bewusst deaktiviert
+- echte Bezahlfunktion bewusst deaktiviert; SumUp-Testzahlung nur nach vollständiger Sandbox-Konfiguration
 - keine echten Kundendaten im kontrollierten Testbetrieb
 
 ## Sicherungsregel

@@ -107,7 +107,12 @@ export function createPricingWorkflowActions({
         checkout_already_pending:paymentCopy.alreadyPending,
         promo_invalid:promoCopy.invalid,
         payment_not_configured:paymentCopy.unavailable,
-        live_payments_locked:paymentCopy.unavailable
+        live_payments_locked:paymentCopy.unavailable,
+        sumup_key_invalid:paymentCopy.unavailable,
+        sumup_checkout_not_allowed:paymentCopy.unavailable,
+        sumup_merchant_mismatch:paymentCopy.unavailable,
+        sumup_currency_mismatch:paymentCopy.unavailable,
+        sumup_sandbox_required:paymentCopy.unavailable
       }
       setMessage(errorCopy[error.code]||paymentCopy.failed)
       return false
@@ -116,7 +121,7 @@ export function createPricingWorkflowActions({
     return true
   }
 
-  async function handleCheckoutReturn({sessionId,requestId,cancelled=false,cleanUrl=()=>{}}={}){
+  async function handleCheckoutReturn({requestId,cancelled=false,cleanUrl=()=>{}}={}){
     cleanUrl()
     if(cancelled){
       if(requestId)await cancelCheckoutRecord(supabase,{requestId})
@@ -124,10 +129,10 @@ export function createPricingWorkflowActions({
       setMessage(paymentCopy.cancelled)
       return false
     }
-    if(!sessionId)return false
+    if(!requestId)return false
 
     setMessage(paymentCopy.successPending)
-    const result=await awaitCheckoutApplied(supabase,{sessionId})
+    const result=await awaitCheckoutApplied(supabase,{requestId})
     if(result.error){
       setMessage(result.error.code==='checkout_status_timeout'?paymentCopy.statusTimeout:paymentCopy.failed)
       return false

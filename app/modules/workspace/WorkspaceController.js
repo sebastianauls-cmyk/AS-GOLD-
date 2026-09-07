@@ -102,7 +102,7 @@ export default function WorkspaceController(){
   const [promoCode,setPromoCode]=useState('')
   const [appliedPromoCode,setAppliedPromoCode]=useState('')
   const [promoRevision,setPromoRevision]=useState(0)
-  const [paymentConfig,setPaymentConfig]=useState({enabled:false,mode:'disabled',liveLocked:false})
+  const [paymentConfig,setPaymentConfig]=useState({enabled:false,provider:'sumup',mode:'disabled',liveLocked:false})
   const [checkoutPlan,setCheckoutPlan]=useState('')
   const [newClient,setNewClient]=useState({name:'',email:'',phone:'',notes:''})
   const [showClientForm,setShowClientForm]=useState(false)
@@ -243,12 +243,10 @@ export default function WorkspaceController(){
     if(screen!=='app'||checkoutReturnHandled.current||typeof window==='undefined')return
     const url=new URL(window.location.href)
     const paymentState=url.searchParams.get('payment')
-    if(paymentState!=='success'&&paymentState!=='cancelled')return
+    if(paymentState!=='return'&&paymentState!=='cancelled')return
     checkoutReturnHandled.current=true
-    const sessionId=url.searchParams.get('session_id')||''
     const requestId=url.searchParams.get('request_id')||''
     handleCheckoutReturn({
-      sessionId,
       requestId,
       cancelled:paymentState==='cancelled',
       cleanUrl:()=>cleanPaymentReturnUrl(url)

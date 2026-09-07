@@ -21,10 +21,10 @@ export function redeemTestAccessRecord(supabase,{promoCode}){
 export async function getPaymentConfig(){
   try{
     const response=await fetch('/api/payments/config',{cache:'no-store'})
-    if(!response.ok)return {enabled:false,mode:'disabled',liveLocked:false}
+    if(!response.ok)return {enabled:false,provider:'sumup',mode:'disabled',liveLocked:false}
     return await response.json()
   }catch{
-    return {enabled:false,mode:'disabled',liveLocked:false}
+    return {enabled:false,provider:'sumup',mode:'disabled',liveLocked:false}
   }
 }
 
@@ -47,16 +47,26 @@ export async function startCheckoutRecord(supabase,{planKey,termMonths,promoCode
   }
 }
 
-export async function awaitCheckoutApplied(supabase,{sessionId,attempts=12,intervalMs=750}){
+export async function awaitCheckoutApplied(supabase,{requestId,attempts=12,intervalMs=1000}){
+  const {data:{session},error:sessionError}=await supabase.auth.getSession()
+  const token=session?.access_token
+  if(sessionError||!token)return {data:null,error:{code:'authentication_required'}}
   for(let attempt=0;attempt<attempts;attempt+=1){
-    const {data,error}=await supabase
-      .from('upgrade_requests')
-      .select('status,fulfilled_at,period_ends_at,granted_access_period_id')
-      .eq('stripe_checkout_session_id',sessionId)
-      .maybeSingle()
-    if(error)return {data:null,error}
-    if(data?.status==='applied')return {data,error:null}
-    if(data?.status==='cancelled')return {data,error:{code:'checkout_cancelled'}}
+    let response
+    try{
+      response=await fetch('/api/payments/status',{
+        method:'POST',
+        cache:'no-store',
+        headers:{'content-type':'application/json',authorization:`Bearer ${token}`},
+        body:JSON.stringify({requestId})
+      })
+    }catch{
+      return {data:null,error:{code:'checkout_status_failed'}}
+    }
+    const result=await response.json().catch(()=>({ok:false,code:'checkout_status_failed'}))
+    if(result?.applied)return {data:result,error:null}
+    if(result?.code==='checkout_cancelled')return {data:result,error:{code:'checkout_cancelled'}}
+    if(!response.ok)return {data:null,error:{code:result?.code||'checkout_status_failed'}}
     if(attempt<attempts-1)await new Promise(resolve=>setTimeout(resolve,intervalMs))
   }
   return {data:null,error:{code:'checkout_status_timeout'}}
