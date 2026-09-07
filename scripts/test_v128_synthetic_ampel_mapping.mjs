@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import fs from 'node:fs'
 import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
 import { SYNTHETIC_TESTERS } from '../app/modules/testing/syntheticTesterRegistry.mjs'
 import { buildSyntheticCaseDraft, trafficLightForExpectedAmpel } from '../app/modules/testing/syntheticCaseDraft.mjs'
@@ -25,6 +26,9 @@ assert.equal(normalizeTrafficLight('WHITE'),'white')
 assert.equal(normalizeTrafficLight('nicht erlaubt'),'yellow')
 assert.equal(emptyCase.traffic_light,'yellow')
 
+const caseWorkspace=fs.readFileSync(new URL('../app/modules/cases/CaseWorkspace.js',import.meta.url),'utf8')
+assert.match(caseWorkspace,/traffic_light:item\.traffic_light\|\|'yellow'/,'case editing must preserve the stored traffic light')
+
 for(const tester of SYNTHETIC_TESTERS){
   const draft=buildSyntheticCaseDraft(tester)
   const payload=normalizeCasePayload(draft)
@@ -37,6 +41,13 @@ for(const testerId of ['ST09','ST11','ST12']){
   assert.equal(buildSyntheticCaseDraft(tester).traffic_light,'white',`${testerId} must remain open instead of being forced to yellow`)
 }
 assert.equal(buildSyntheticCaseDraft(SYNTHETIC_TESTERS.find(item=>item.id==='ST06')).traffic_light,'red')
+
+const editedMaximumPayload=normalizeCasePayload({
+  ...buildSyntheticCaseDraft(SYNTHETIC_TESTERS.find(item=>item.id==='ST12')),
+  deadline_at:'2026-09-09T10:00'
+})
+assert.equal(editedMaximumPayload.traffic_light,'white','editing a maximum case must retain its open status')
+assert.ok(editedMaximumPayload.deadline_at?.startsWith('2026-09-09T'),'a valid edited deadline must be normalized for storage')
 
 const regularPayload=normalizeCasePayload({
   title:'Normaler Fall',
