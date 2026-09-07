@@ -1,4 +1,5 @@
 import { persistLegalSettings } from './complianceRepository.js'
+import { normalizeTrafficLight } from '../cases/casePayload.mjs'
 
 function jwtIssuedInFuture(error){
   return /jwt issued at future/i.test(String(error?.message||''))
@@ -82,7 +83,7 @@ export function updateClientRecord(supabase,{ownerId,clientId,draft}){
 }
 
 export function createCaseRecord(supabase,{ownerId,payload}){
-  return supabase.from('cases').insert({...payload,owner_id:ownerId,traffic_light:'yellow'}).select().single()
+  return supabase.from('cases').insert({...payload,owner_id:ownerId,traffic_light:normalizeTrafficLight(payload.traffic_light)}).select().single()
 }
 
 export function updateCaseRecord(supabase,{ownerId,caseId,payload}){
