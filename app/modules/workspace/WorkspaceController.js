@@ -13,7 +13,7 @@ import { ProtectedWorkspaceShell } from './ProtectedWorkspaceShell'
 import { LoadingSurface } from './LoadingSurface'
 import { AuthSurface } from '../auth/AuthSurface'
 import { PublicLanding } from '../public/PublicLanding'
-import { CasesSurface, ClientDetailSurface, ClientsSurface } from '../cases/WorkspaceCaseSurfaces'
+import { CasesSurface, ClientDetailSurface, ClientsSurface, DeadlinesSurface } from '../cases/WorkspaceCaseSurfaces'
 import { DocumentsSurface } from '../documents/DocumentsSurface'
 import { ApprovalsSurface } from '../cases/ApprovalsSurface'
 import { DashboardSurface } from './DashboardSurface'
@@ -45,6 +45,7 @@ import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
 import { buildSyntheticCaseDraft } from '../testing/syntheticCaseDraft.mjs'
+import { orderDeadlineCases } from '../cases/deadlineCases.mjs'
 
 const guestTestCopy={
   de:{starting:'Sicherer Testarbeitsbereich wird geöffnet …',unavailable:'Der passwortlose Testzugang ist momentan nicht verfügbar. Bitte verwenden Sie die normale Anmeldung.',displayName:'Synthetischer Testzugang',active:'Passwortloser Testzugang aktiv',scope:'Nur synthetische oder wirksam anonymisierte Daten · höchstens 2 Dokumente · 2 Stunden'},
@@ -160,7 +161,7 @@ export default function WorkspaceController(){
   const recommendedTier=goalTier[selectedGoal]||'free'
   const recommendedPlan=localizedPlans.find(plan=>plan.key===recommendedTier)||localizedPlans[0]
   const currentSufficient=(tierRank[currentTier]||1)>=(tierRank[recommendedTier]||1)
-  const deadlineCases=useMemo(()=>data.cases.filter(item=>item.deadline_at).sort((left,right)=>new Date(left.deadline_at)-new Date(right.deadline_at)),[data.cases])
+  const deadlineCases=useMemo(()=>orderDeadlineCases(data.cases),[data.cases])
   const promoQuotes=Object.values(quotes).filter(Boolean)
   const promoAnyValid=!!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='valid')
   const promoAllInvalid=!!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
@@ -292,7 +293,7 @@ export default function WorkspaceController(){
     if(action==='case'){setSection('cases');setShowCaseForm(true);return}
     if(action==='scan'||action==='upload'){setDocumentMode(action);setUploadCaseId('');setSection('documents');return}
     if(action==='clients'){setSection('clients');return}
-    if(action==='deadlines'){setSection('cases');return}
+    if(action==='deadlines'){setSection('deadlines');return}
     if(action==='approvals'){setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''});setSection('approvals')}
   }
 
@@ -332,6 +333,8 @@ export default function WorkspaceController(){
   }
 
   if(screen==='app'&&!selectedClient&&section==='cases') return protectedWorkspace(<CasesSurface a={a} core={core} clients={data.clients} cases={data.cases} newCase={newCase} setNewCase={setNewCase} showCaseForm={showCaseForm} setShowCaseForm={setShowCaseForm} createCase={createCase} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
+
+  if(screen==='app'&&!selectedClient&&section==='deadlines') return protectedWorkspace(<DeadlinesSurface a={a} core={core} deadlineCases={deadlineCases} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
 
   if(screen==='app'&&!selectedClient&&section==='documents') return protectedWorkspace(<DocumentsSurface a={a} access={access} documents={data.documents} core={core} v28={v28} cases={data.cases} documentMode={documentMode} setDocumentMode={setDocumentMode} uploadCaseId={uploadCaseId} uploadDocument={uploadDocument} uploading={uploading} allowedUploadAccept={allowedUploadAccept} setSelectedDocument={setSelectedDocument} onBack={()=>setSection('dashboard')} language={language}/>)
 

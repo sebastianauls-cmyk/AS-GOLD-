@@ -7,6 +7,13 @@ export function CasesSurface({a,core,clients,cases,newCase,setNewCase,showCaseFo
   return <><div className="sectionHead"><button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backOverview}</button><h2>{a.sections.cases}</h2></div><CaseSection copy={core} clients={clients} cases={cases} newCase={newCase} setNewCase={setNewCase} showForm={showCaseForm} setShowForm={setShowCaseForm} onSubmit={createCase} onSelect={setSelectedCase}/></>
 }
 
+export function DeadlinesSurface({a,core,deadlineCases,setSelectedCase,onBack}){
+  return <>
+    <div className="sectionHead"><button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backOverview}</button><h2>{core.deadlines}</h2></div>
+    {deadlineCases.length?<div className="itemList">{deadlineCases.map(item=><button className="itemRow buttonRow" type="button" onClick={()=>setSelectedCase(item)} key={item.id}><div><b>{item.title}</b><div className="pills"><span className={`pill ${item.traffic_light||'yellow'}`}>{trafficLightLabel(core,item.traffic_light)}</span><span className="pill">◷ {new Date(item.deadline_at).toLocaleString()}</span></div>{item.next_action&&<p><b>{core.nextAction}:</b> {item.next_action}</p>}</div><span className="chev">›</span></button>)}</div>:<div className="emptyState"><b>{core.noDeadline}</b><p>{a.appearsHere}</p></div>}
+  </>
+}
+
 export function ClientDetailSurface({a,core,selectedClient,cases,documents,onSave,onOpenCase,onOpenDocument,onBack}){
   const [editing,setEditing]=useState(false)
   const [draft,setDraft]=useState({name:selectedClient.name||'',email:selectedClient.email||'',phone:selectedClient.phone||'',notes:selectedClient.notes||''})
