@@ -246,3 +246,47 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 
 /* V114 resilient recovery surfaces */
 .recoveryCard{width:min(560px,100%)}.recoveryCard h1{font-size:clamp(1.65rem,5vw,2.25rem);line-height:1.2;margin:18px 0 10px}.recoveryCard .muted{line-height:1.65}.errorReference{font-size:.8rem;color:#737d8a;overflow-wrap:anywhere}
+
+/* V126: return controls stay reachable while long public and protected pages scroll. */
+.publicBackButton,
+.authBackBtn,
+.appMain .backBtn{
+  position:fixed;
+  z-index:180;
+  inset-inline-start:max(12px,env(safe-area-inset-left));
+  bottom:max(12px,env(safe-area-inset-bottom));
+  width:auto;
+  max-width:calc(100vw - 24px);
+  min-height:48px;
+  padding:11px 16px;
+  border:1px solid #8f6e25;
+  border-radius:999px;
+  background:rgba(255,253,247,.97);
+  color:#4d3b14;
+  box-shadow:0 12px 32px rgba(45,35,14,.24);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  white-space:normal;
+  text-align:center;
+}
+.publicBackButton:hover,
+.authBackBtn:hover,
+.appMain .backBtn:hover{background:#fff4cb;border-color:#765a1d}
+body:has(.publicBackButton) .legalFooter,
+body:has(.authBackBtn) .legalFooter,
+body:has(.appMain .backBtn) .legalFooter{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+@media(max-width:560px){
+  .publicBackButton,
+  .authBackBtn,
+  .appMain .backBtn{
+    inset-inline-start:12px;
+    inset-inline-end:12px;
+    width:auto;
+    max-width:none;
+  }
+}
+@media print{
+  .publicBackButton,
+  .authBackBtn,
+  .appMain .backBtn{display:none!important}
+}
