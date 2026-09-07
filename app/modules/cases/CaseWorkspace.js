@@ -93,7 +93,7 @@ export function CaseSection({copy:on, clients, cases, newCase, setNewCase, showF
 
 export function CaseDetail({copy:on, analysis, language='de', item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument}){
   const [editing,setEditing]=useState(false)
-  const [draft,setDraft]=useState({title:item.title||'',client_id:item.client_id||'',reference_no:item.reference_no||'',goal:item.goal||'',summary:item.summary||'',deadline_at:localDateTime(item.deadline_at),next_action:item.next_action||'',status:item.status||'open',home_country:item.home_country||'DE',target_country:item.target_country||'DE',test_case_id:item.test_case_id||null,test_case_expected_ampel:item.test_case_expected_ampel||null,test_case_language:item.test_case_language||null})
+  const [draft,setDraft]=useState({title:item.title||'',client_id:item.client_id||'',reference_no:item.reference_no||'',goal:item.goal||'',summary:item.summary||'',deadline_at:localDateTime(item.deadline_at),next_action:item.next_action||'',traffic_light:item.traffic_light||'yellow',status:item.status||'open',home_country:item.home_country||'DE',target_country:item.target_country||'DE',test_case_id:item.test_case_id||null,test_case_expected_ampel:item.test_case_expected_ampel||null,test_case_language:item.test_case_language||null})
   const [assessment,setAssessment]=useState({title:'',traffic_light:'yellow',reasoning:'',next_step:''})
   const client=clients.find(entry=>entry.id===item.client_id)
   const readiness=!documents.length?on.notAssessable:!assessments.length?on.reviewRequired:on.reviewed
