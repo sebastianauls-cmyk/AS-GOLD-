@@ -1,9 +1,10 @@
-# AS Workspace Gold Workspace – V126
+# AS Workspace Gold Workspace – V127
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Arbeitsstand: **V126** unter `https://app-gold-workspace.vercel.app`.
+- Gesamt- und Arbeitsstand: **V127** unter `https://app-gold-workspace.vercel.app`.
+- V127 vereinheitlicht die mitlaufende Zurück-Navigation in der gesamten Anwendung: Startseite, angemeldete Hauptübersicht, Fälle, Kunden, Dokumente, Freigaben, Tarife, Konto, Anmeldung, Rechts- und Testseiten, Integrationen, Passwortwege sowie Fehlerseiten. Auf Mobilgeräten bleibt der Button bewusst kompakt und verdeckt nicht mehr die gesamte Seitenbreite.
 - V126 hält den vorhandenen Zurück-Button beim Scrollen auf der öffentlichen Startseite, in Anmeldung/Registrierung und in den angemeldeten Detailbereichen dauerhaft sichtbar. Auf Mobilgeräten bleibt er innerhalb der sicheren Bildschirmränder und verdeckt am Seitenende keine Fußzeilen-Inhalte.
 - V125 ersetzt den Stripe-Testpfad durch SumUp Hosted Checkout. Der Server akzeptiert ausschließlich einen als Sandbox bestätigten SumUp-Händler, prüft jede Rückmeldung erneut über die SumUp-API und hält Live-Zahlungen technisch gesperrt.
 - V124 ergänzte den ersten serverseitig abgesicherten Test-Checkout mit festen Laufzeiten, ohne automatische Verlängerung und mit optionalem Promo-Code.

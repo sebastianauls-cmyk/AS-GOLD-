@@ -98,7 +98,7 @@ export function CaseDetail({copy:on, analysis, language='de', item, clients, doc
   const client=clients.find(entry=>entry.id===item.client_id)
   const readiness=!documents.length?on.notAssessable:!assessments.length?on.reviewRequired:on.reviewed
   return <>
-    <button className="backBtn" type="button" onClick={onBack}>{on.back}</button>
+    <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
     <div className="caseTitleRow"><div><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2>{item.title}</h2><p>{client?.name||on.clientUnknown}{item.reference_no?` · ${item.reference_no}`:''}</p></div><button className="secondary" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button></div>
     {editing&&<form className="actionCard coreForm" onSubmit={event=>{event.preventDefault();onSave(item.id,draft).then(saved=>{if(saved)setEditing(false)})}}>
       <label htmlFor={fieldId(item.id,'title')}>{on.title}<input id={fieldId(item.id,'title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
@@ -155,7 +155,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
     }
   }
   return <>
-    <button className="backBtn" type="button" onClick={onBack}>{on.back}</button>
+    <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
     <section className="documentReviewHead"><div><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={()=>onOpen(item)}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
     <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document"/>
     <DocumentAutoAssessment language={language} text={draft.extracted_text}/>

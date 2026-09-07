@@ -10,7 +10,6 @@ export default function ErrorPage({error,retry}){
     <h1>Diese Ansicht konnte nicht geladen werden.</h1>
     <p className="muted">Ihre gespeicherten Daten bleiben erhalten. Versuchen Sie es erneut oder kehren Sie zur Startseite zurück.</p>
     {error?.digest&&<p className="errorReference">Referenz: {error.digest}</p>}
-    <div className="actions"><button className="primary" type="button" onClick={()=>retry()}>Erneut versuchen</button><Link className="secondary btn" href="/">Zur Startseite</Link></div>
+    <div className="actions"><button className="primary" type="button" onClick={()=>retry()}>Erneut versuchen</button><Link className="secondary btn" data-persistent-back href="/">← Zur Startseite</Link></div>
   </section></main>
 }
-

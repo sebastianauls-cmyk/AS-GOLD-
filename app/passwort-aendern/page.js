@@ -63,7 +63,7 @@ export default function ChangePasswordPage(){
       {!checking&&!user&&<>
         <p className="note" role="alert">Ihre Anmeldung ist in diesem Browser nicht mehr aktiv.</p>
         <a className="primary full btn" href={`/?start=reset&release=${APP_VERSION}`}>Neuen Passwort-Link anfordern</a>
-        <a className="backBtn full btn" href={`/?release=${APP_VERSION}`}>← Zurück zur App</a>
+        <a className="backBtn full btn" data-persistent-back href={`/?release=${APP_VERSION}`}>← Zurück zur App</a>
       </>}
 
       {!checking&&user&&<>
@@ -75,7 +75,7 @@ export default function ChangePasswordPage(){
           <button className="primary full" disabled={!ready}>{busy?'Passwort wird gespeichert …':'Passwort speichern'}</button>
         </form>
         {message&&<p className="note" role="status">{message}</p>}
-        <a className="backBtn full btn" href={`/?release=${APP_VERSION}`}>← Zurück zum Arbeitsbereich</a>
+        <a className="backBtn full btn" data-persistent-back href={`/?release=${APP_VERSION}`}>← Zurück zum Arbeitsbereich</a>
       </>}
     </section>
   </main>

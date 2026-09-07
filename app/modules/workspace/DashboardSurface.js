@@ -3,10 +3,11 @@ import { EvidenceActionPanel } from '../intelligence/EvidenceActionPanel'
 import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
 import { appText } from './workspaceText'
 
-export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
+export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,onBack,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
   const guestAccess=access?.permissions?.guest_access===true
   return <>
+    <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backExplanation}</button>
     <QuickActions copy={core} onAction={handleQuickAction} deadlineCases={deadlineCases}/>
     <h2>{a.overview}</h2>
     <p className="muted">{a.signedInAs} {user?.email||guestCopy.displayName}</p>

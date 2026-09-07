@@ -9,8 +9,8 @@ const authSurface=read('app/modules/auth/AuthSurface.js')
 const controller=read('app/modules/workspace/WorkspaceController.js')
 const v126Styles=css.slice(css.indexOf('/* V126:'))
 
-assert.equal(APP_RELEASE.number,126)
-assert.equal(APP_VERSION,'V126')
+assert.ok(APP_RELEASE.number>=126)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 assert.match(publicLanguages,/className="publicBackButton"/,'the public start page must retain its return-to-German control')
 assert.match(authSurface,/className="backBtn full authBackBtn"/,'authentication pages must retain their return control')
 

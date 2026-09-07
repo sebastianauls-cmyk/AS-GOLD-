@@ -74,8 +74,10 @@ export default function ResetRepairPage(){
       </form>
 
       {message&&<p className="note" role="status">{message}</p>}
-      <a className="backBtn full btn" href={`/?start=reset&release=${APP_VERSION}`}>← Neuen Reset-Link anfordern</a>
-      <a className="backBtn full btn" href={`/?release=${APP_VERSION}`}>← Zurück zur App</a>
+      <nav className="persistentBackGroup" data-persistent-back-group aria-label="Zurück-Navigation">
+        <a className="backBtn full btn" href={`/?start=reset&release=${APP_VERSION}`}>← Neuen Reset-Link anfordern</a>
+        <a className="backBtn full btn" href={`/?release=${APP_VERSION}`}>← Zurück zur App</a>
+      </nav>
     </section>
   </main>
 }

@@ -290,3 +290,87 @@ body:has(.appMain .backBtn) .legalFooter{padding-bottom:calc(100px + env(safe-ar
   .authBackBtn,
   .appMain .backBtn{display:none!important}
 }
+
+/* V127: one compact, persistent return pattern across every scrollable surface. */
+[data-persistent-back]{
+  position:fixed;
+  z-index:180;
+  inset-inline-start:max(12px,env(safe-area-inset-left));
+  inset-inline-end:auto;
+  bottom:max(12px,env(safe-area-inset-bottom));
+  width:auto;
+  max-width:calc(100vw - 24px);
+  min-height:48px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:11px 16px;
+  border:1px solid #8f6e25;
+  border-radius:999px;
+  background:rgba(255,253,247,.97);
+  color:#4d3b14;
+  box-shadow:0 12px 32px rgba(45,35,14,.24);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  font-weight:800;
+  line-height:1.25;
+  text-align:center;
+  text-decoration:none;
+  white-space:normal;
+}
+[data-persistent-back]:hover{background:#fff4cb;border-color:#765a1d}
+[data-persistent-back]:focus-visible{outline:3px solid #c7a74f;outline-offset:3px}
+
+[data-persistent-back-group]{
+  position:fixed;
+  z-index:180;
+  inset-inline-start:max(12px,env(safe-area-inset-left));
+  bottom:max(12px,env(safe-area-inset-bottom));
+  width:min(360px,calc(100vw - 24px));
+  display:grid;
+  gap:7px;
+  padding:8px;
+  border:1px solid #d9c792;
+  border-radius:18px;
+  background:rgba(255,253,247,.97);
+  box-shadow:0 12px 32px rgba(45,35,14,.24);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+[data-persistent-back-group] .backBtn{min-height:44px;display:flex;align-items:center;justify-content:center;padding:9px 12px;border:1px solid #d9c792;border-radius:12px;background:#fff;color:#4d3b14;text-align:center}
+[data-persistent-back-group] .backBtn:last-child{border-color:#8f6e25;background:#8f6e25;color:#fff}
+
+body:has([data-persistent-back]) .legalFooter,
+body:has([data-persistent-back-group]) .legalFooter{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+body:has([data-persistent-back]) .appMain,
+body:has([data-persistent-back]) .legalMain,
+body:has([data-persistent-back]) .center{padding-bottom:calc(96px + env(safe-area-inset-bottom))}
+body:has([data-persistent-back-group]) .center{padding-bottom:calc(176px + env(safe-area-inset-bottom))}
+
+@media(max-width:560px){
+  [data-persistent-back]{
+    inset-inline-start:max(10px,env(safe-area-inset-left));
+    inset-inline-end:auto;
+    bottom:max(10px,env(safe-area-inset-bottom));
+    width:auto;
+    max-width:calc(100vw - 20px);
+    min-height:46px;
+    padding:10px 14px;
+    font-size:.92rem;
+  }
+  [data-persistent-back].backBtn{
+    inset-inline-start:max(10px,env(safe-area-inset-left));
+    inset-inline-end:auto;
+    width:auto;
+    max-width:calc(100vw - 20px);
+  }
+  [data-persistent-back-group]{
+    inset-inline-start:10px;
+    inset-inline-end:10px;
+    width:auto;
+  }
+}
+@media print{
+  [data-persistent-back],
+  [data-persistent-back-group]{display:none!important}
+}

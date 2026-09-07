@@ -7,7 +7,6 @@ export default function NotFound(){
     <span className="modeBadge">404</span>
     <h1>Diese Seite wurde nicht gefunden.</h1>
     <p className="muted">Der Link ist möglicherweise veraltet. Von der Startseite aus erreichen Sie Anmeldung, Testzugang und Produktinformationen.</p>
-    <Link className="primary btn" href="/">Zur Startseite</Link>
+    <Link className="primary btn" data-persistent-back href="/">← Zur Startseite</Link>
   </section></main>
 }
-

@@ -36,7 +36,7 @@ export default function IntegrationHub(){
   const connected=status?.connected||{}
   const configured=status?.configured||{}
 
-  return <><header style={{background:'#fff',borderBottom:'1px solid #e3e5e9'}}><div className="wrap" style={{minHeight:72,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><a href="/" style={{fontWeight:900,color:'#252b33',textDecoration:'none'}}>AS Workspace Gold</a><a href="/" style={button}>← Zurück</a></div></header>
+  return <><header style={{background:'#fff',borderBottom:'1px solid #e3e5e9'}}><div className="wrap" style={{minHeight:72,display:'flex',alignItems:'center',justifyContent:'space-between',gap:12}}><a href="/" style={{fontWeight:900,color:'#252b33',textDecoration:'none'}}>AS Workspace Gold</a><a className="integrationBackBtn" data-persistent-back href="/" style={button}>← Zurück</a></div></header>
   <main className="wrap" style={{padding:'42px 0 70px'}}><div className="eyebrow">Verbindungen & Ablage</div><h1 style={{fontSize:'clamp(2rem,6vw,3.7rem)',margin:'12px 0'}}>E-Mail, Cloud und eigener Speicher</h1><p className="lead">AS Workspace Gold soll sich in die vorhandene Arbeitsweise des Kunden einfügen: E-Mails können angebunden, Cloud-Speicher genutzt und Dateien auf Wunsch in einem selbst gewählten Ordner auf dem PC oder Gerät abgelegt werden. Verbindungen werden nur nach ausdrücklicher Freigabe hergestellt.</p>
 
   <section style={{marginTop:24,padding:20,background:'#fffaf0',border:'1px solid #e5d7b5',borderRadius:16}}>

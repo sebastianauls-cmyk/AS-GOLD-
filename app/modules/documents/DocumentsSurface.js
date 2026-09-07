@@ -26,7 +26,7 @@ export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode
     if(uploaded)setIntakeRevision(current=>current+1)
   }
   return <>
-    <div className="sectionHead"><button className="backBtn" onClick={onBack}>{a.backOverview}</button><h2>{a.sections.documents}</h2></div>
+    <div className="sectionHead"><button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backOverview}</button><h2>{a.sections.documents}</h2></div>
     {access?.app_role!=='owner'&&Number(access?.permissions?.document_limit||0)>0&&<p className="muted">{a.used.replace('{used}',documents.length).replace('{limit}',access.permissions.document_limit)}</p>}
     <form className="actionCard coreForm" onSubmit={submitDocument}>
       <div className="formIntro"><span className="modeBadge">{APP_VERSION} · Dokument-Eingang</span><h3>{core.documentUpload}</h3><div className="modeSwitch"><button type="button" className={documentMode==='upload'?'active':''} onClick={()=>setDocumentMode('upload')}>{core.uploadMode}</button><button type="button" className={documentMode==='scan'?'active':''} onClick={()=>setDocumentMode('scan')}>{core.scanMode}</button></div><p>{documentMode==='scan'?core.scanHelp:core.uploadHelp}</p></div>

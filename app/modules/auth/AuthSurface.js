@@ -73,7 +73,7 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
         {authForm}
         {message&&<div className="note" role="status">{message}</div>}
         <button className="linkBtn full" onClick={()=>{resetSensitiveFields();setScreen(returnToLogin?'login':'register')}}>{returnToLogin?recoveryCopy.back:a.newHere}</button>
-        <button className="backBtn full authBackBtn" onClick={()=>{resetSensitiveFields();setScreen('public')}}>{a.backExplanation}</button>
+        <button className="backBtn full authBackBtn" data-persistent-back type="button" onClick={()=>{resetSensitiveFields();setScreen('public')}}>{a.backExplanation}</button>
       </section>
     </main>
     <LegalFooter language={language}/>

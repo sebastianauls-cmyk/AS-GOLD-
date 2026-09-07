@@ -102,7 +102,7 @@ export function ApprovalDetail({copy:on,item,cases,documents,onBack,onSave,onApp
   }
 
   return <>
-    <button className="backBtn" type="button" onClick={onBack}>{on.back}</button>
+    <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
     <section className="approvalDetailHead"><div><h2>{item.subject||on.preview}</h2><p>{linkedCase?.title||on.case} · {typeText(on,item.approval_type)}</p></div><span className={`approvalState approval-${item.status}`}>{statusText(on,item.status)}</span></section>
     {item.invalidated_at&&<div className="note approvalWarning">{on.invalidated}</div>}
     <section className="approvalPreview">

@@ -8,8 +8,7 @@ export default function GlobalError({error,retry}){
       <h1>Die Anwendung konnte nicht vollständig geladen werden.</h1>
       <p style={{color:'#67717f',lineHeight:1.6}}>Bitte versuchen Sie es erneut. Falls der Fehler bestehen bleibt, öffnen Sie die Startseite neu.</p>
       {error?.digest&&<p style={{fontSize:13,color:'#737d8a'}}>Referenz: {error.digest}</p>}
-      <div style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:24}}><button type="button" onClick={()=>retry()} style={{border:0,borderRadius:12,padding:'11px 16px',background:'#8f6e25',color:'#fff',fontWeight:700,cursor:'pointer'}}>Erneut versuchen</button><a href="/" style={{border:'1px solid #d7d9df',borderRadius:12,padding:'11px 16px',background:'#fff',color:'#374151',fontWeight:700,textDecoration:'none'}}>Zur Startseite</a></div>
+      <div style={{display:'flex',gap:12,flexWrap:'wrap',marginTop:24}}><button type="button" onClick={()=>retry()} style={{border:0,borderRadius:12,padding:'11px 16px',background:'#8f6e25',color:'#fff',fontWeight:700,cursor:'pointer'}}>Erneut versuchen</button><a data-persistent-back href="/" style={{position:'fixed',zIndex:180,left:12,bottom:'max(12px, env(safe-area-inset-bottom))',maxWidth:'calc(100vw - 24px)',minHeight:48,display:'inline-flex',alignItems:'center',justifyContent:'center',border:'1px solid #8f6e25',borderRadius:999,padding:'11px 16px',background:'rgba(255,253,247,.97)',color:'#4d3b14',fontWeight:800,textDecoration:'none',boxShadow:'0 12px 32px rgba(45,35,14,.24)'}}>← Zur Startseite</a></div>
     </section></main>
   </body></html>
 }
-
