@@ -6,8 +6,8 @@ const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
 const css=read('app/globals.css')
 const v127Styles=css.slice(css.indexOf('/* V127:'))
 
-assert.equal(APP_RELEASE.number,127)
-assert.equal(APP_VERSION,'V127')
+assert.ok(APP_RELEASE.number>=127)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 for(const path of [
   'app/modules/public/PublicLanguageModules.js',
