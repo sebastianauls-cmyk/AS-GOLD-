@@ -1,3 +1,14 @@
+const EXPECTED_AMPEL_TO_TRAFFIC_LIGHT=Object.freeze({
+  '🟢':'green',
+  '🟡':'yellow',
+  '🔴':'red',
+  '⚪':'white'
+})
+
+export function trafficLightForExpectedAmpel(expectedAmpel){
+  return EXPECTED_AMPEL_TO_TRAFFIC_LIGHT[String(expectedAmpel||'')]||'yellow'
+}
+
 export function buildSyntheticCaseDraft(tester){
   if(!tester)return null
   return {
@@ -6,6 +17,7 @@ export function buildSyntheticCaseDraft(tester){
     goal:tester.problem,
     summary:`${tester.profile}\n${tester.home_country} → ${tester.target_country}\n${tester.documents.join(' · ')}`,
     next_action:tester.expected_actions?.[0]||'',
+    traffic_light:trafficLightForExpectedAmpel(tester.expected_ampel),
     home_country:String(tester.home_country||'DE').toUpperCase(),
     target_country:String(tester.target_country||'DE').toUpperCase(),
     test_case_id:tester.id,
