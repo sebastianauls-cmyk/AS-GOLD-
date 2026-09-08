@@ -1,3 +1,4 @@
+import './test_v131_extreme_end_to_end.mjs'
 import assert from 'node:assert/strict'
 import { analyzeDeadlines } from '../app/modules/lib/deadlineIntelligence.mjs'
 import { prioritizeNextStep } from '../app/modules/lib/nextStepEngine.mjs'
