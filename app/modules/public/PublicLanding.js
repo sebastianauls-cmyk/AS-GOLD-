@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { LegalFooter } from '../compliance/LegalFooter'
 import { supportedLanguages } from '../language/v36Languages.mjs'
-import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
 import { orderCasesByResearch } from './casePriorityV56.mjs'
 import { ProblemNavigator } from './ProblemNavigator'
@@ -71,8 +70,13 @@ const v131Copy={
   }
 }
 
+const uxStyles=`
+.heroV131{padding:72px 0 58px}.heroV131 .heroLayout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:46px;align-items:center}.heroV131 h1{max-width:860px;font-size:clamp(38px,6vw,68px);letter-spacing:-.035em}.heroPrimaryActions{margin-top:24px}.heroMainCta{min-width:180px;padding:13px 20px}.heroStatusCard{background:#fff;border:1px solid #e3e5e9;border-radius:20px;padding:24px;box-shadow:0 18px 45px #11182712}.heroStatusCard ol{margin:18px 0 0;padding-left:22px;display:grid;gap:12px;line-height:1.5}.heroMore{margin-top:18px;max-width:760px;border-top:1px solid #e7e0d1;padding-top:14px}.heroMore summary{cursor:pointer;font-weight:750;color:#6b5420}.heroMore[open] summary{margin-bottom:14px}.v131Journey{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:-22px;position:relative;z-index:2}.journeyCard{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:20px;display:grid;grid-template-columns:38px 1fr;gap:12px;box-shadow:0 10px 30px #1118270d}.journeyNumber{width:34px;height:34px;border-radius:999px;background:#8f6e25;color:#fff;display:grid;place-items:center;font-weight:850}.journeyCard h2{font-size:18px;margin:2px 0 7px}.journeyCard p{margin:0;color:#65707d;line-height:1.48}.v131FeatureSection{padding:64px 0 52px}.v131FeatureSection>h2{font-size:clamp(28px,4vw,42px);max-width:760px;margin:10px 0 26px}.featureGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.featureCard{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:20px;min-height:180px}.featureCard h3{margin:12px 0 8px;font-size:18px}.featureCard p{margin:0;color:#65707d;line-height:1.5}.featureIcon{font-size:26px}.freeHint{margin-top:12px}.testerSafeLink{display:inline-block;margin-top:14px}
+@media(max-width:900px){.heroV131 .heroLayout{grid-template-columns:1fr}.heroStatusCard{max-width:620px}.v131Journey,.featureGrid{grid-template-columns:1fr 1fr}}
+@media(max-width:620px){.heroV131{padding-top:48px}.heroV131 h1{font-size:40px}.heroPrimaryActions{display:grid}.heroPrimaryActions .btn{width:100%;text-align:center}.v131Journey,.featureGrid{grid-template-columns:1fr}.v131Journey{margin-top:-10px}.journeyCard,.featureCard{min-height:0}.v131FeatureSection{padding-top:48px}}
+`
+
 export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
-  const hero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
   const outputLanguageLabel=supportedLanguages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
@@ -88,6 +92,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
   }
 
   return <>
+    <style>{uxStyles}</style>
     <PublicHeader t={t} caseNavLabel={cd.nav} language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onScreenChange={setScreen} onPlayExplainer={()=>setExplainerSignal(value=>value+1)}/>
     <button className="publicPageBackButton" data-persistent-back type="button" onClick={returnToPublicStart} aria-label={backCopy.aria}>{backCopy.label}</button>
     <main>
