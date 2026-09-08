@@ -8,6 +8,7 @@ import { isTesterAccessQuote } from '../app/modules/pricing/testerAccess.js'
 const read=path=>fs.readFileSync(path,'utf8')
 const languageKeys=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 const readyEnv={
+  AS_OPTIONAL_PAYMENT_ENABLED:'true',
   SUMUP_PAYMENT_MODE:'sandbox',
   SUMUP_API_KEY:'sup_sk_sandbox_example_123456789',
   SUMUP_MERCHANT_CODE:'MC123456',
@@ -15,12 +16,14 @@ const readyEnv={
   APP_BASE_URL:'https://app-gold-workspace.vercel.app'
 }
 
+assert.equal(paymentRuntimeConfig({...readyEnv,AS_OPTIONAL_PAYMENT_ENABLED:'false'}).enabled,false)
 assert.equal(paymentRuntimeConfig(readyEnv).enabled,true)
 assert.deepEqual(publicPaymentConfig(readyEnv),{
   enabled:true,
+  optionalEnabled:true,
   provider:'sumup',
   mode:'sandbox',
-  liveLocked:false,
+  liveLocked:true,
   fixedTerms:true,
   autoRenew:false,
   currency:'EUR'
@@ -73,9 +76,13 @@ const server=read('app/modules/payments/sumupServer.js')
 const checkoutRoute=read('app/api/payments/checkout/route.js')
 const statusRoute=read('app/api/payments/status/route.js')
 const webhookRoute=read('app/api/payments/webhook/route.js')
+const optional=read('app/modules/optional/OptionalExtensions.js')
 const migration=read('supabase/migrations/20260907023914_v125_sumup_sandbox_checkout.sql')
+assert.match(config,/AS_OPTIONAL_PAYMENT_ENABLED/)
+assert.match(config,/optionalEnabled&&/)
 assert.match(config,/requestedMode===SUMUP_PAYMENT_MODE_SANDBOX/)
-assert.match(config,/liveLocked:requestedMode===SUMUP_PAYMENT_MODE_LIVE/)
+assert.match(config,/liveLocked:true/)
+assert.match(optional,/Bezahl-Baustein anfragen/)
 assert.match(server,/merchant\.sandbox!==true/)
 assert.match(server,/SUMUP_CHECKOUT_ORIGIN='https:\/\/checkout\.sumup\.com'/)
 assert.match(server,/authorization:`Bearer \$\{config\.apiKey\}`/)
@@ -95,4 +102,4 @@ assert.match(migration,/grant execute on function public\.gold_fulfill_sumup_che
 assert.match(migration,/make_interval\(days=>coalesce\(v_request\.term_months,1\)\*30\)/)
 assert.match(migration,/'auto_renew',false/)
 
-console.log('V125 SumUp sandbox checkout guard passed: hosted checkout, merchant sandbox validation, API re-verification, idempotent fixed-term fulfilment, promo bypass and live-payment lock are wired in eleven languages.')
+console.log('V125 optional SumUp guard passed: payment remains off by default and sandbox checkout can only be enabled after explicit optional-module opt-in.')
