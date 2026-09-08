@@ -3,6 +3,20 @@ import { AUTH_REDIRECT_URL, getAuthSession, registerTestAccount, sendPasswordRes
 import { clearGuestTestRequest } from './guestTestRequest.mjs'
 import { getAuthErrorMessage } from './authMessages.mjs'
 
+const resetFeedback={
+  de:{emailRequired:'Bitte zuerst Ihre E-Mail-Adresse eingeben.',sent:'Wenn die Adresse registriert ist, wurde ein Link zum Zurücksetzen gesendet.'},
+  en:{emailRequired:'Please enter your email address first.',sent:'If the address is registered, a password reset link has been sent.'},
+  fr:{emailRequired:'Veuillez d’abord saisir votre adresse e-mail.',sent:'Si cette adresse est enregistrée, un lien de réinitialisation a été envoyé.'},
+  tr:{emailRequired:'Lütfen önce e-posta adresinizi girin.',sent:'Adres kayıtlıysa parola sıfırlama bağlantısı gönderildi.'},
+  pl:{emailRequired:'Najpierw wpisz swój adres e-mail.',sent:'Jeśli adres jest zarejestrowany, wysłano link do zresetowania hasła.'},
+  ru:{emailRequired:'Сначала введите адрес электронной почты.',sent:'Если адрес зарегистрирован, ссылка для сброса пароля была отправлена.'},
+  ar:{emailRequired:'يرجى إدخال عنوان بريدك الإلكتروني أولاً.',sent:'إذا كان العنوان مسجلاً، فقد تم إرسال رابط لإعادة تعيين كلمة المرور.'},
+  fa:{emailRequired:'لطفاً ابتدا نشانی ایمیل خود را وارد کنید.',sent:'اگر این نشانی ثبت شده باشد، پیوند بازنشانی گذرواژه ارسال شده است.'},
+  ro:{emailRequired:'Introduceți mai întâi adresa de e-mail.',sent:'Dacă adresa este înregistrată, a fost trimis un link pentru resetarea parolei.'},
+  bg:{emailRequired:'Първо въведете имейл адреса си.',sent:'Ако адресът е регистриран, е изпратена връзка за нулиране на паролата.'},
+  vi:{emailRequired:'Vui lòng nhập địa chỉ email trước.',sent:'Nếu địa chỉ đã được đăng ký, liên kết đặt lại mật khẩu đã được gửi.'}
+}
+
 export function createWorkspaceAuthActions({
   supabase,
   language,
@@ -97,13 +111,14 @@ export function createWorkspaceAuthActions({
 
   async function resetPassword(){
     setMessage('')
+    const resetCopy=resetFeedback[language]||resetFeedback.de
     if(!email.trim()){
-      setMessage(language==='de'?'Bitte zuerst Ihre E-Mail-Adresse eingeben.':'Please enter your email address first.')
+      setMessage(resetCopy.emailRequired)
       return false
     }
     const {error}=await sendPasswordReset(supabase,{email:email.trim(),redirectTo:AUTH_REDIRECT_URL})
     if(error){setMessage(getAuthErrorMessage(error,language));return false}
-    setMessage(trustCopy.passwordSent)
+    setMessage(resetCopy.sent)
     return true
   }
 
