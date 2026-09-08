@@ -1,4 +1,4 @@
-import { createPptxBlob, createXlsxBlob } from './officeExports.js'
+import { OFFICE_EXPORT_RENDER_VERSION, createPptxBlob, createXlsxBlob } from './officeExports.js'
 import { normalizeOutputLanguage, outputLanguageLabels } from '../language/outputLanguage.js'
 import { composeBilingualLetter } from '../language/bilingualLetter.mjs'
 
@@ -17,6 +17,13 @@ function trafficLightDot(value){
 
 const PDF_COLORS={gold:'#9a7414',ink:'#1f2937',muted:'#5f6874',line:'#d9dde3',green:'#2f855a',yellow:'#d69e2e',red:'#c53030',white:'#ffffff'}
 const DOCX_TRAFFIC_COLORS={'🟢':'2F855A','🟡':'D69E2E','🔴':'C53030','⚪':'94A3B8'}
+const REQUIRED_OFFICE_EXPORT_RENDER_VERSION='v131-traffic-rich-runs'
+
+function assertOfficeExportRenderer(){
+  if(OFFICE_EXPORT_RENDER_VERSION!==REQUIRED_OFFICE_EXPORT_RENDER_VERSION){
+    throw new Error(`Office export renderer mismatch: expected ${REQUIRED_OFFICE_EXPORT_RENDER_VERSION}, got ${OFFICE_EXPORT_RENDER_VERSION||'unknown'}`)
+  }
+}
 
 function canvasLines(context,value,maxWidth){
   const lines=[]
@@ -161,8 +168,14 @@ export async function createWorkspaceExportArtifact({ref,type,data,copy,outputLa
     const {jsPDF}=await import('jspdf')
     return {blob:await createUnicodePdfBlob({jsPDF,rows,outputLanguage:normalizeOutputLanguage(outputLanguage)}),filename:base+'.pdf'}
   }
-  if(type==='xlsx')return {blob:await createXlsxBlob(rows),filename:base+'.xlsx'}
-  if(type==='pptx')return {blob:await createPptxBlob(rows),filename:base+'.pptx'}
+  if(type==='xlsx'){
+    assertOfficeExportRenderer()
+    return {blob:await createXlsxBlob(rows),filename:base+'.xlsx'}
+  }
+  if(type==='pptx'){
+    assertOfficeExportRenderer()
+    return {blob:await createPptxBlob(rows),filename:base+'.pptx'}
+  }
   if(type==='csv'){const quote=value=>'"'+String(value??'').replace(/"/g,'""')+'"';return {blob:new Blob(['\uFEFF'+rows.map(row=>row.map(quote).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}),filename:base+'.csv'}}
   if(type==='txt')return {blob:new Blob([rows.map((row,index)=>index===0?row[0]:row[0]+': '+(row[1]||'')).join('\r\n\r\n')],{type:'text/plain;charset=utf-8'}),filename:base+'.txt'}
   throw new Error('Unsupported export format: '+type)
