@@ -1,5 +1,5 @@
-import { createPptxBlob, createXlsxBlob } from './officeExports'
-import { normalizeOutputLanguage, outputLanguageLabels } from '../language/outputLanguage'
+import { createPptxBlob, createXlsxBlob } from './officeExports.js'
+import { normalizeOutputLanguage, outputLanguageLabels } from '../language/outputLanguage.js'
 import { composeBilingualLetter } from '../language/bilingualLetter.mjs'
 
 function safeBase(value,fallback){
