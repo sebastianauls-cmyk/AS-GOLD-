@@ -88,6 +88,16 @@ body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
   text-align:center;
 }
 
+/* v131 auth language switcher: keep the full language control usable on narrow screens and RTL pages. */
+.authCard .languageSwitch{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;min-width:0}
+.authCard .languageSwitch>span{flex:0 0 auto}
+.authCard .languageSwitch .flagLanguage{min-width:0;max-width:100%}
+.authCard .languageSwitch .flagLanguageTrigger{max-width:100%;min-width:0}
+.authCard .languageSwitch .flagLanguageTrigger strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.authCard .languageSwitch .flagLanguageMenu{max-width:min(340px,calc(100vw - 24px));max-height:min(70vh,520px);overflow:auto}
+html[dir="rtl"] .authCard .languageSwitch{direction:rtl}
+html[dir="rtl"] .authCard .languageSwitch .flagLanguage{direction:rtl}
+
 @media(max-width:760px){
   .caseTitleRow,.documentReviewHead{padding:16px;border-radius:16px}
   .caseTitleRow>button,.documentReviewActions,.documentReviewActions button{width:100%}.documentReviewActions{display:grid;grid-template-columns:1fr}
@@ -104,4 +114,8 @@ body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
   .pilotTaskCard,.pilotFeedbackCard{padding:15px}
   .authCard{padding:20px 16px}
   .authCard:has(.registerTransparency){width:min(460px,100%)}
+  .authCard .languageSwitch{display:grid;grid-template-columns:1fr;align-items:stretch;gap:6px}
+  .authCard .languageSwitch>span{font-size:.8rem;color:#737d8a}
+  .authCard .languageSwitch .flagLanguage,.authCard .languageSwitch .flagLanguageTrigger{width:100%}
+  .authCard .languageSwitch .flagLanguageMenu{width:calc(100vw - 32px);max-width:100%;inset-inline-start:0;inset-inline-end:auto}
 }
