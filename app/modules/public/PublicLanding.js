@@ -28,6 +28,37 @@ const publicBackCopy={
   vi:{label:'← Quay lại',aria:'Quay lại đầu trang'}
 }
 
+const v131Copy={
+  de:{
+    eyebrow:'AS Workspace · Stand v131',
+    title:'Ein Fall. Ein Arbeitsbereich. Vom ersten Dokument bis zum nächsten Schritt.',
+    lead:'AS Workspace verbindet Fallaufnahme, Dokumentenanalyse, Mehrsprachigkeit, Ampelbewertung, Fristen, Ausgaben und jetzt auch fallbezogene Rechtsraumvergleiche in einem durchgängigen Ablauf.',
+    cta:'v131 kostenlos ansehen',
+    features:[
+      ['📄','Dokumente & Fotos','Unterlagen hochladen, erkennen, strukturieren und dem richtigen Fall zuordnen.'],
+      ['🌍','Sprachen & Länder','Oberfläche und Ausgabe getrennt steuern; zweisprachige Ergebnisse und Schreiben erzeugen.'],
+      ['⚖️','Rechtsraumvergleich','Für den konkreten Einzelfall relevante Rechtsräume und Zielländer gegenüberstellen und verständlich erklären.'],
+      ['🚦','Ampelanalyse','Risiken, fehlende Unterlagen, Beweislage und nächste Schritte sofort sichtbar machen.'],
+      ['⏱️','Fristen & Verlauf','Offene Fristen, Statusänderungen und notwendige Reaktionen fallbezogen im Blick behalten.'],
+      ['📤','Ausgabe & Freigabe','PDF- und Word-Ausgaben vorbereiten, Vorschau prüfen und erst nach Freigabe weitergeben.']
+    ]
+  },
+  en:{
+    eyebrow:'AS Workspace · Version 131',
+    title:'One case. One workspace. From the first document to the next action.',
+    lead:'AS Workspace combines intake, document analysis, multilingual workflows, traffic-light assessment, deadlines, exports and now case-specific legal-jurisdiction comparisons in one continuous process.',
+    cta:'Explore v131 free',
+    features:[
+      ['📄','Documents & photos','Upload, recognise, structure and assign files to the correct case.'],
+      ['🌍','Languages & countries','Control interface and output languages independently and create bilingual results.'],
+      ['⚖️','Legal comparison','Compare relevant jurisdictions and target countries for the individual case and explain the differences clearly.'],
+      ['🚦','Traffic-light analysis','Make risks, missing information, evidence and next steps immediately visible.'],
+      ['⏱️','Deadlines & progress','Keep unresolved deadlines, status changes and required reactions visible by case.'],
+      ['📤','Export & approval','Prepare PDF and Word outputs, review the preview and only continue after approval.']
+    ]
+  }
+}
+
 // Ownership map for legacy regression guards: PublicHeader owns className="publicTop" and PublicLanguageModules;
 // PublicCaseDiscoverySection owns id="asgold-user-audience" and invokes jumpToPublicCaseResult().
 // PublicPricingSection owns id="preise"; PublicLanding only composes the domain-owned public sections.
@@ -38,6 +69,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
   const backCopy=publicBackCopy[language]||publicBackCopy.de
+  const v131=v131Copy[language]||v131Copy.en
 
   function returnToPublicStart(){
     const cleanUrl=`${window.location.pathname}${window.location.search}`
@@ -86,6 +118,25 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
             <span className="modeBadge">{cd.result}</span>
             <ol>{cd.results.slice(0,3).map(item=><li key={item}>{item}</li>)}</ol>
           </aside>
+        </div>
+      </section>
+
+      <section className="wrap" id="v131-funktionen" aria-labelledby="v131-title">
+        <div className="card" style={{marginTop:'1.25rem',marginBottom:'1.5rem'}}>
+          <div className="eyebrow">{v131.eyebrow}</div>
+          <h2 id="v131-title">{v131.title}</h2>
+          <p className="lead">{v131.lead}</p>
+          <div className="featureGrid">
+            {v131.features.map(([icon,title,body])=><article className="featureCard" key={title}>
+              <div className="featureIcon" aria-hidden="true">{icon}</div>
+              <h3>{title}</h3>
+              <p>{body}</p>
+            </article>)}
+          </div>
+          <div className="actions">
+            <button className="primary btn" onClick={()=>setScreen('register')}>{v131.cta}</button>
+            <button className="secondary btn" onClick={()=>setExplainerSignal(value=>value+1)}>{language==='de'?'▶ Erklärung ansehen':'▶ View explanation'}</button>
+          </div>
         </div>
       </section>
 
