@@ -17,6 +17,16 @@ const dashboardUxCopy={
   vi:{priority:'Điều quan trọng lúc này',status:'Trạng thái không gian làm việc',more:'Tùy chọn khác',moreHelp:'Hiển thị ca thử nghiệm, đề xuất gói và thông tin tài khoản'}
 }
 
+const dashboardUxStyles=`
+.dashboardPriority{margin:0 0 18px;padding:24px;border:1px solid #cdb779;border-radius:22px;background:linear-gradient(135deg,#fff8df,#fff);box-shadow:0 14px 38px rgba(74,56,18,.08)}
+.dashboardPriorityHead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:start}
+.dashboardPriority h2{margin:8px 0 7px;font-size:clamp(26px,4vw,38px);line-height:1.15}.dashboardPriority p{margin:0;color:#606a76;line-height:1.5;max-width:720px}
+.dashboardPrioritySignals{display:grid;grid-template-columns:repeat(3,minmax(78px,1fr));gap:8px}.prioritySignal{min-width:78px;padding:11px;border:1px solid #e2e4e8;border-radius:13px;background:#fff;text-align:center}.prioritySignal b{display:block;font-size:24px;color:#4e3b13}.prioritySignal small{display:block;margin-top:3px;color:#6d7580;line-height:1.2}.prioritySignal.attention{border-color:#d7b449;background:#fff7d8}.prioritySignal.attention b{color:#855f00}
+.dashboardPrimaryAction{margin-top:18px;min-height:48px;padding:12px 20px}.dashboardGuideSecondary{box-shadow:none}.dashboardCoreStats{margin-top:14px}.dashboardAccountTitle{margin-top:30px;margin-bottom:5px;font-size:1.2rem;color:#59636f}.dashboardMore{margin:22px 0 8px;border:1px solid #dfe2e6;border-radius:16px;background:#fff}.dashboardMore>summary{cursor:pointer;display:grid;gap:3px;padding:17px 18px;font-weight:850;color:#4d3b14}.dashboardMore>summary small{font-weight:500;color:#737d88}.dashboardMoreBody{padding:0 18px 18px}.dashboardSecondaryStats{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media(max-width:760px){.dashboardPriority{padding:18px}.dashboardPriorityHead{grid-template-columns:1fr;gap:14px}.dashboardPrioritySignals{grid-template-columns:repeat(3,1fr)}.dashboardPrimaryAction{width:100%}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardMoreBody{padding:0 12px 12px}}
+@media(max-width:430px){.dashboardPrioritySignals{grid-template-columns:1fr 1fr 1fr}.prioritySignal{min-width:0;padding:9px 6px}.prioritySignal b{font-size:21px}.prioritySignal small{font-size:.72rem}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardCoreStats .stat{padding:15px}.dashboardSecondaryStats{grid-template-columns:1fr}.dashboardMore>summary{padding:15px}}
+`
+
 export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,onBack,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
   const guestAccess=access?.permissions?.guest_access===true
@@ -24,6 +34,7 @@ export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,on
   const openDeadlines=deadlineCases?.length||0
   const totalItems=(data.cases?.length||0)+(data.documents?.length||0)+(data.approvals?.length||0)
   return <>
+    <style>{dashboardUxStyles}</style>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backExplanation}</button>
 
     <section className="dashboardPriority" aria-labelledby="dashboard-priority-title">
