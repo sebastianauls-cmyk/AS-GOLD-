@@ -1,9 +1,10 @@
-# AS Workspace Gold Workspace – V130
+# AS Workspace Gold Workspace – V131
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Arbeitsstand dieses Kandidaten: **V130**. Der öffentliche Produktionsstand wird nach erfolgreichem Freigabebuild unter `https://app-gold-workspace.vercel.app` auf V130 angehoben.
+- Gesamt- und Produktionsstand: **V131**. Der öffentliche Stand wird unter https://app-gold-workspace.vercel.app bereitgestellt.
+- V131 ergänzt in jeder Fallakte einen fallbezogenen Rechtsraumvergleich zwischen Heimat- und Zielland. Der Nutzer wählt das konkrete Rechtsgebiet und formuliert die Einzelfrage des Kunden; die quellengebundene Recherche trennt zuerst das anwendbare Recht von der bloßen Länderauswahl und zeigt anschließend belegte Regeln beider Seiten, praktische Unterschiede, offene Angaben, nächste Schritte und klickbare amtliche Primärquellen. Fehlende Quellen bleiben weiß/ungeklärt, sämtliche Ergebnisse sind unveränderliche Rechercheentwürfe und müssen vor verbindlicher Nutzung fachlich geprüft werden.
 - V130 ergänzt auf der gesamten öffentlichen Startseite einen eigenständigen, mitlaufenden Zurück-Button. Er liegt außerhalb der gefilterten Kopfzeile, bleibt deshalb auch auf Smartphones beim Scrollen sichtbar und führt zuverlässig an den Seitenanfang zurück. Die getrennte Rückstellung auf Deutsch bleibt innerhalb der Sprachauswahl erhalten und erscheint nur, wenn App- oder Ausgabesprache nicht Deutsch ist.
 - V129 führt den Schnellzugriff „Fristen“ in ein eigenes Modul „Fristen & ungeklärte Termine“. Fest datierte Fristen werden chronologisch gezeigt; Fälle ohne oder mit unklarem Datum bleiben ausdrücklich als „Frist ungeklärt“ sichtbar. Ein mitlaufender Fristen-Button mit beiden Zählern ist in jedem angemeldeten Bereich erreichbar.
 - V128 übernimmt bei synthetischen Testfällen die erwartete Ampel vollständig in den gespeicherten Fall (`🟢`, `🟡`, `🔴`, `⚪`). Normale neue Fälle behalten den sicheren gelben Ausgangsstatus; unzulässige Werte werden ebenfalls auf Gelb zurückgesetzt.
@@ -27,6 +28,7 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 - Kostenloser Einstieg bis Gold Business
 - Registrierung / Anmeldung über Supabase
 - Dashboard, Fälle, Kunden, Dokumente, Freigaben
+- fallbezogener Rechtsraumvergleich mit amtlichen Quellen, Erklärtext und eigener Vergleichsampel
 - mobiler Kernablauf von Fallanlage über Dokumentprüfung bis zur ausdrücklichen Freigabe
 - Dokument-Upload in privaten Supabase Storage
 - bewusst gestartete Analyse für PDF- und Bild-Testdateien; Vorschläge bleiben bis zur Prüfung und Speicherung vorläufig
