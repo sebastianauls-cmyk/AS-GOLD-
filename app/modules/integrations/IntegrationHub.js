@@ -14,7 +14,7 @@ const infoBox={background:'#f8f9fb',border:'1px solid #e6e8ec',borderRadius:12,p
 const statusBox={background:'#fff8e8',border:'1px solid #ead59b',borderRadius:12,padding:'10px 12px',display:'grid',gap:4,fontSize:'.92rem',lineHeight:1.4}
 
 function ProviderAction({configured,href,children}){
-  if(!configured) return <span role="status" aria-live="polite" style={disabledButton}>Im aktuellen Test noch nicht freigeschaltet</span>
+  if(!configured) return <span role="link" aria-disabled="true" aria-live="polite" style={disabledButton}>Im aktuellen Test noch nicht freigeschaltet</span>
   return <a style={button} href={href}>{children}</a>
 }
 
