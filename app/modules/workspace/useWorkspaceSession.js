@@ -96,8 +96,8 @@ export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecove
         enforceGuestExpiry(session)
       }
       if(event==='SIGNED_OUT'){
-        clearGuestExpiryGuards()
         if(isGuestTestRequest())return
+        clearGuestExpiryGuards()
         signedOutRef.current?.()
       }
     })
