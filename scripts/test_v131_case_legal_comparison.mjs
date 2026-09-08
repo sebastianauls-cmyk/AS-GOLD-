@@ -1,3 +1,4 @@
+import './test_v131_pilot_stress.mjs'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
