@@ -1,10 +1,9 @@
-import { TesterGuide } from '../modules/tester/TesterGuide'
-import { APP_VERSION } from '../modules/release/appRelease.mjs'
+import { TesterPaused } from '../modules/tester/TesterPaused'
 
 export const metadata={
-  title:`${APP_VERSION} testen und weiterleiten`,
-  description:'AS Workspace Gold sicher testen und den Tester-Link direkt über WhatsApp oder andere Apps weiterleiten.',
+  title:'Testerzugang pausiert',
+  description:'Der externe Testerzugang von AS Workspace Gold ist derzeit pausiert. Die interne Qualitätsprüfung läuft ausschließlich mit synthetischen Testfällen weiter.',
   robots:{index:false,follow:false}
 }
 
-export default function TestingGuide(){return <TesterGuide/>}
+export default function TestingPausedPage(){return <TesterPaused/>}
