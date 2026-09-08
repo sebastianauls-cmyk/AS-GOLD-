@@ -32,6 +32,13 @@ const warmWelcome={
   vi:'Chào mừng bạn đến với AS Workspace Gold – đây là nơi phù hợp để bạn bình tĩnh tìm ra bước tiếp theo.'
 }
 
+const persistentLanguageBackStyles=`
+.publicLanguageModules .publicBackButton{bottom:calc(76px + env(safe-area-inset-bottom));}
+@media(max-width:560px){
+  .publicLanguageModules .publicBackButton{bottom:calc(76px + env(safe-area-inset-bottom));}
+}
+`
+
 export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer}){
   const [presenter,setPresenter]=useState('female')
   const text=copy[language]||copy.de
@@ -58,6 +65,7 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
   }
 
   return <section className="publicLanguageModules" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
+    <style>{persistentLanguageBackStyles}</style>
     <p className="publicWelcome"><span aria-hidden="true">👋</span> {warmWelcome[language]||warmWelcome.de}</p>
     {(language!=='de'||outputLanguage!=='de')&&<button type="button" className="publicBackButton" dir="ltr" onClick={returnToGerman} aria-label="Back to German – Oberfläche und Kundensprache auf Deutsch zurückstellen">← 🇩🇪 Back to German / Zurück zu Deutsch</button>}
     <div className="publicLanguageModule interfaceModule">
