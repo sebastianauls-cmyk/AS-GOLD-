@@ -16,6 +16,7 @@ function trafficLightDot(value){
 }
 
 const PDF_COLORS={gold:'#9a7414',ink:'#1f2937',muted:'#5f6874',line:'#d9dde3',green:'#2f855a',yellow:'#d69e2e',red:'#c53030',white:'#ffffff'}
+const DOCX_TRAFFIC_COLORS={'🟢':'2F855A','🟡':'D69E2E','🔴':'C53030','⚪':'94A3B8'}
 
 function canvasLines(context,value,maxWidth){
   const lines=[]
@@ -37,7 +38,23 @@ function trafficMarker(line){
   const match=String(line).match(/(🟢|🟡|🔴|⚪)/)
   if(!match) return null
   const colors={'🟢':PDF_COLORS.green,'🟡':PDF_COLORS.yellow,'🔴':PDF_COLORS.red,'⚪':PDF_COLORS.white}
-  return {color:colors[match[1]],text:String(line).replace(match[1],'').trim()}
+  return {symbol:match[1],color:colors[match[1]],text:String(line).replace(match[1],'').trim()}
+}
+
+function createDocxValueRuns(TextRun,value){
+  const lines=String(value||'').split(/\r?\n/)
+  const runs=[]
+  lines.forEach((line,index)=>{
+    const marker=trafficMarker(line)
+    const breakCount=index?1:undefined
+    if(marker){
+      runs.push(new TextRun({text:'● ',color:DOCX_TRAFFIC_COLORS[marker.symbol],bold:true,break:breakCount}))
+      runs.push(new TextRun({text:marker.text||'—'}))
+    }else{
+      runs.push(new TextRun({text:line||'—',break:breakCount}))
+    }
+  })
+  return runs
 }
 
 async function createUnicodePdfBlob({jsPDF,rows,outputLanguage}){
@@ -137,7 +154,7 @@ export async function createWorkspaceExportArtifact({ref,type,data,copy,outputLa
   const base=safeBase(ref.item.title,ref.kind==='case'?'Fall':'Dokument')
   if(type==='docx'){
     const {Document,Packer,Paragraph,TextRun}=await import('docx')
-    const children=rows.flatMap((row,index)=>index===0?[new Paragraph({children:[new TextRun({text:row[0],bold:true,size:32})]})]:[new Paragraph({children:[new TextRun({text:row[0]+': ',bold:true}),new TextRun(String(row[1]||''))]})])
+    const children=rows.flatMap((row,index)=>index===0?[new Paragraph({children:[new TextRun({text:row[0],bold:true,size:32})]})]:[new Paragraph({children:[new TextRun({text:row[0]+': ',bold:true}),...createDocxValueRuns(TextRun,row[1]) ]})])
     return {blob:await Packer.toBlob(new Document({sections:[{children}]})),filename:base+'.docx'}
   }
   if(type==='pdf'){
