@@ -12,11 +12,16 @@ export function PromoTesterGate(){
       <li>Name und die spätere Login-E-Mail mitteilen.</li>
       <li>Ausdrückliche Freigabe des Anbieters abwarten.</li>
       <li>Persönlichen Promo-Code erhalten.</li>
-      <li>Mit genau dieser E-Mail anmelden und den Code im Promo-Bereich einlösen.</li>
+      <li>Mit genau dieser E-Mail anmelden und den Code unter „Tester-Code einlösen“ aktivieren.</li>
     </ol>
+    <div className="legalNotice" style={{marginTop:14}}>
+      <b>Zugang bis auf Widerruf.</b>
+      <p>Für den Testerzugang wird derzeit kein festes Enddatum angezeigt. Es besteht jedoch kein Anspruch auf dauerhafte oder unbefristete Nutzung. Der Anbieter kann den Zugang jederzeit beenden, sperren oder ändern.</p>
+    </div>
     <p><b>Wichtig:</b> Die Bezahlfunktion bleibt deaktiviert. Ein Tester-Code löst keine Zahlung und keine automatische Verlängerung aus.</p>
     <div style={{display:'grid',gap:10}}>
       <a className="primary btn" href="/kontakt">Kontakt zum Anbieter öffnen</a>
+      <a className="secondary btn" href="/tester-freischalten">Persönlichen Tester-Code einlösen</a>
       <a className="secondary btn" data-persistent-back href="/">← Zur Startseite</a>
     </div>
   </section></main>
