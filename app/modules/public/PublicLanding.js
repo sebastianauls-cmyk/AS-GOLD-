@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { LegalFooter } from '../compliance/LegalFooter'
 import { supportedLanguages } from '../language/v36Languages.mjs'
+import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
 import { orderCasesByResearch } from './casePriorityV56.mjs'
 import { ProblemNavigator } from './ProblemNavigator'
@@ -77,12 +78,14 @@ const uxStyles=`
 `
 
 export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
+  const stableHero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
   const outputLanguageLabel=supportedLanguages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
   const backCopy=publicBackCopy[language]||publicBackCopy.de
   const v131=v131Copy[language]||v131Copy.en
+  const heroTitle=v131.title||stableHero.title
 
   function returnToPublicStart(){
     const cleanUrl=`${window.location.pathname}${window.location.search}`
@@ -102,7 +105,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
         <div className="wrap heroLayout">
           <div>
             <div className="eyebrow">{v131.eyebrow}</div>
-            <h1>{v131.title}</h1>
+            <h1>{heroTitle}</h1>
             <p className="lead">{v131.lead}</p>
             <div className="actions heroPrimaryActions">
               <button className="primary btn heroMainCta" onClick={()=>setScreen('register')}>{v131.cta}</button>
