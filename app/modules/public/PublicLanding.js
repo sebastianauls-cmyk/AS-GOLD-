@@ -30,9 +30,20 @@ const publicBackCopy={
 
 const v131Copy={
   de:{
-    eyebrow:'AS Workspace · Stand v131',
+    eyebrow:'AS Workspace Gold · v131 Pilot & Abnahme',
     cta:'Fall starten',
+    pilotCta:'V131 sicher testen',
     explainer:'▶ Kurz erklären lassen',
+    releaseTitle:'V131 ist im kontrollierten Pilotbetrieb',
+    releaseLead:'Die Kernstrecke ist stabilisiert, der Rechtsraumvergleich ist fallbezogen integriert und der Produktionsstand hat den erweiterten Stress-Test bestanden.',
+    proof:[
+      ['🟢','Produktionsstand','READY'],
+      ['🌍','Sprachen','11'],
+      ['🧪','Stress-Test','1.100 Fälle'],
+      ['📄','Dokumente im Test','8.800'],
+      ['⏱️','Fristfälle','220'],
+      ['⚖️','Rechtsraum','fallbezogen']
+    ],
     journey:[
       ['1','Jetzt tun','Fall schildern oder Unterlagen hochladen. AS Workspace ordnet den Vorgang automatisch ein.'],
       ['2','Status sehen','Ampel, fehlende Unterlagen, Fristen und Risiken werden auf einen Blick sichtbar.'],
@@ -48,9 +59,20 @@ const v131Copy={
     ]
   },
   en:{
-    eyebrow:'AS Workspace · Version 131',
+    eyebrow:'AS Workspace Gold · v131 Pilot & Acceptance',
     cta:'Start a case',
+    pilotCta:'Test v131 safely',
     explainer:'▶ View short explanation',
+    releaseTitle:'V131 is in controlled pilot operation',
+    releaseLead:'The core workflow has been stabilised, case-specific legal comparison is integrated, and the production build passed the extended stress test.',
+    proof:[
+      ['🟢','Production','READY'],
+      ['🌍','Languages','11'],
+      ['🧪','Stress test','1,100 cases'],
+      ['📄','Test documents','8,800'],
+      ['⏱️','Dated cases','220'],
+      ['⚖️','Jurisdiction','case-specific']
+    ],
     journey:[
       ['1','Do now','Describe the case or upload documents. AS Workspace organises the matter automatically.'],
       ['2','See status','Traffic lights, missing information, deadlines and risks are visible at a glance.'],
@@ -68,9 +90,10 @@ const v131Copy={
 }
 
 const uxStyles=`
-.heroV131{padding:72px 0 58px}.heroV131 .heroLayout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:46px;align-items:center}.heroV131 h1{max-width:860px;font-size:clamp(38px,6vw,68px);letter-spacing:-.035em}.heroPrimaryActions{margin-top:24px}.heroMainCta{min-width:180px;padding:13px 20px}.heroStatusCard{background:#fff;border:1px solid #e3e5e9;border-radius:20px;padding:24px;box-shadow:0 18px 45px #11182712}.heroStatusCard ol{margin:18px 0 0;padding-left:22px;display:grid;gap:12px;line-height:1.5}.heroMore{margin-top:18px;max-width:760px;border-top:1px solid #e7e0d1;padding-top:14px}.heroMore summary{cursor:pointer;font-weight:750;color:#6b5420}.heroMore[open] summary{margin-bottom:14px}.v131Journey{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:-22px;position:relative;z-index:2}.journeyCard{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:20px;display:grid;grid-template-columns:38px 1fr;gap:12px;box-shadow:0 10px 30px #1118270d}.journeyNumber{width:34px;height:34px;border-radius:999px;background:#8f6e25;color:#fff;display:grid;place-items:center;font-weight:850}.journeyCard h2{font-size:18px;margin:2px 0 7px}.journeyCard p{margin:0;color:#65707d;line-height:1.48}.v131FeatureSection{padding:64px 0 52px}.v131FeatureSection>h2{font-size:clamp(28px,4vw,42px);max-width:760px;margin:10px 0 26px}.featureGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.featureCard{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:20px;min-height:180px}.featureCard h3{margin:12px 0 8px;font-size:18px}.featureCard p{margin:0;color:#65707d;line-height:1.5}.featureIcon{font-size:26px}.freeHint{margin-top:12px}.testerSafeLink{display:inline-block;margin-top:14px}
-@media(max-width:900px){.heroV131 .heroLayout{grid-template-columns:1fr}.heroStatusCard{max-width:620px}.v131Journey,.featureGrid{grid-template-columns:1fr 1fr}}
-@media(max-width:620px){.heroV131{padding-top:48px}.heroV131 h1{font-size:40px}.heroPrimaryActions{display:grid}.heroPrimaryActions .btn{width:100%;text-align:center}.v131Journey,.featureGrid{grid-template-columns:1fr}.v131Journey{margin-top:-10px}.journeyCard,.featureCard{min-height:0}.v131FeatureSection{padding-top:48px}}
+.heroV131{padding:72px 0 58px}.heroV131 .heroLayout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:46px;align-items:center}.heroV131 h1{max-width:860px;font-size:clamp(38px,6vw,68px);letter-spacing:-.035em}.heroPrimaryActions{margin-top:24px}.heroMainCta{min-width:180px;padding:13px 20px}.heroStatusCard{background:#fff;border:1px solid #e3e5e9;border-radius:20px;padding:24px;box-shadow:0 18px 45px #11182712}.heroStatusCard ol{margin:18px 0 0;padding-left:22px;display:grid;gap:12px;line-height:1.5}.heroMore{margin-top:18px;max-width:760px;border-top:1px solid #e7e0d1;padding-top:14px}.heroMore summary{cursor:pointer;font-weight:750;color:#6b5420}.heroMore[open] summary{margin-bottom:14px}.v131ReleaseBand{margin-top:-18px;position:relative;z-index:3}.v131ReleaseInner{background:linear-gradient(135deg,#2b2519 0%,#5f4a1d 58%,#8f6e25 100%);color:#fff;border-radius:24px;padding:24px;box-shadow:0 18px 48px #33270f2b}.v131ReleaseHead{display:flex;justify-content:space-between;gap:22px;align-items:flex-start}.v131ReleaseHead h2{margin:5px 0 7px;font-size:clamp(23px,3vw,32px)}.v131ReleaseHead p{margin:0;color:#f5ecd4;max-width:780px;line-height:1.5}.v131ReleaseActions{display:flex;gap:10px;flex-wrap:wrap}.v131ReleaseActions .primary{background:#fff;color:#4e3c16}.v131ReleaseActions .secondary{background:#ffffff14;color:#fff;border-color:#ffffff55}.v131ProofGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:20px}.v131Proof{padding:12px;border:1px solid #ffffff26;border-radius:14px;background:#ffffff0d;display:grid;gap:3px;min-width:0}.v131Proof span{font-size:18px}.v131Proof b{font-size:12px;color:#f4e6bf}.v131Proof strong{font-size:14px;overflow-wrap:anywhere}.v131Journey{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:28px;position:relative;z-index:2}.journeyCard{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:20px;display:grid;grid-template-columns:38px 1fr;gap:12px;box-shadow:0 10px 30px #1118270d}.journeyNumber{width:34px;height:34px;border-radius:999px;background:#8f6e25;color:#fff;display:grid;place-items:center;font-weight:850}.journeyCard h2{font-size:18px;margin:2px 0 7px}.journeyCard p{margin:0;color:#65707d;line-height:1.48}.v131FeatureSection{padding:64px 0 52px}.v131FeatureSection>h2{font-size:clamp(28px,4vw,42px);max-width:760px;margin:10px 0 26px}.featureGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.featureCard{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:20px;min-height:180px}.featureCard h3{margin:12px 0 8px;font-size:18px}.featureCard p{margin:0;color:#65707d;line-height:1.5}.featureIcon{font-size:26px}.freeHint{margin-top:12px}.testerSafeLink{display:inline-block;margin-top:14px}
+@media(max-width:1000px){.v131ProofGrid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.heroV131 .heroLayout{grid-template-columns:1fr}.heroStatusCard{max-width:620px}.v131Journey,.featureGrid{grid-template-columns:1fr 1fr}.v131ReleaseHead{display:grid}.v131ReleaseActions{width:100%}.v131ReleaseActions .btn{flex:1;text-align:center}}
+@media(max-width:620px){.heroV131{padding-top:48px}.heroV131 h1{font-size:40px}.heroPrimaryActions{display:grid}.heroPrimaryActions .btn{width:100%;text-align:center}.v131ReleaseBand{margin-top:-8px}.v131ReleaseInner{border-radius:18px;padding:18px}.v131ProofGrid{grid-template-columns:1fr 1fr}.v131ReleaseActions{display:grid}.v131Journey,.featureGrid{grid-template-columns:1fr}.v131Journey{margin-top:18px}.journeyCard,.featureCard{min-height:0}.v131FeatureSection{padding-top:48px}}
 `
 
 export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
@@ -104,6 +127,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
             <p className="lead">{hero.lead}</p>
             <div className="actions heroPrimaryActions">
               <button className="primary btn heroMainCta" onClick={()=>setScreen('register')}>{v131.cta}</button>
+              <a className="secondary btn" href={language==='de'?'/testen':`/testen?lang=${language}`}>{v131.pilotCta}</a>
               <button className="secondary btn" onClick={()=>setExplainerSignal(value=>value+1)}>{v131.explainer}</button>
             </div>
             <p className="freeHint">✓ {cd.freeHint}</p>
@@ -114,6 +138,16 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
             <span className="modeBadge">{language==='de'?'Ihr Ergebnis':'Your result'}</span>
             <ol>{cd.results.slice(0,3).map(item=><li key={item}>{item}</li>)}</ol>
           </aside>
+        </div>
+      </section>
+
+      <section className="wrap v131ReleaseBand" aria-labelledby="v131-release-title">
+        <div className="v131ReleaseInner">
+          <div className="v131ReleaseHead">
+            <div><span className="eyebrow">V131 · Pilot & Abnahme</span><h2 id="v131-release-title">{v131.releaseTitle}</h2><p>{v131.releaseLead}</p></div>
+            <div className="v131ReleaseActions"><a className="primary btn" href={language==='de'?'/testen':`/testen?lang=${language}`}>{v131.pilotCta}</a><button className="secondary btn" type="button" onClick={()=>setScreen('register')}>{v131.cta}</button></div>
+          </div>
+          <div className="v131ProofGrid">{v131.proof.map(([icon,label,value])=><div className="v131Proof" key={label}><span aria-hidden="true">{icon}</span><b>{label}</b><strong>{value}</strong></div>)}</div>
         </div>
       </section>
 
