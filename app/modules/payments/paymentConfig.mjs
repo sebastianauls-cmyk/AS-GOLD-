@@ -10,12 +10,14 @@ export function isSumupMerchantCode(value=''){
 }
 
 export function paymentRuntimeConfig(env={}){
+  const optionalEnabled=String(env.AS_OPTIONAL_PAYMENT_ENABLED||'false').toLowerCase()==='true'
   const requestedMode=String(env.SUMUP_PAYMENT_MODE||'disabled').toLowerCase()
   const apiKey=String(env.SUMUP_API_KEY||'')
   const merchantCode=String(env.SUMUP_MERCHANT_CODE||'').toUpperCase()
   const supabaseSecret=String(env.SUPABASE_SECRET_KEY||env.SUPABASE_SERVICE_ROLE_KEY||'')
   const appBaseUrl=String(env.APP_BASE_URL||'')
   const sandboxReady=
+    optionalEnabled&&
     requestedMode===SUMUP_PAYMENT_MODE_SANDBOX&&
     isSumupSecretKey(apiKey)&&
     isSumupMerchantCode(merchantCode)&&
@@ -24,10 +26,11 @@ export function paymentRuntimeConfig(env={}){
 
   return {
     enabled:sandboxReady,
+    optionalEnabled,
     provider:'sumup',
     mode:sandboxReady?SUMUP_PAYMENT_MODE_SANDBOX:'disabled',
     requestedMode,
-    liveLocked:requestedMode===SUMUP_PAYMENT_MODE_LIVE,
+    liveLocked:true,
     apiKey,
     merchantCode,
     supabaseSecret,
@@ -39,6 +42,7 @@ export function publicPaymentConfig(env={}){
   const config=paymentRuntimeConfig(env)
   return {
     enabled:config.enabled,
+    optionalEnabled:config.optionalEnabled,
     provider:config.provider,
     mode:config.mode,
     liveLocked:config.liveLocked,
