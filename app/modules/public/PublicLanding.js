@@ -31,8 +31,6 @@ const publicBackCopy={
 const v131Copy={
   de:{
     eyebrow:'AS Workspace · Stand v131',
-    title:'Sie schildern den Fall. AS Workspace zeigt, was jetzt wichtig ist.',
-    lead:'Vom ersten Dokument bis zum nächsten Schritt: ein klarer Arbeitsablauf statt vieler einzelner Werkzeuge.',
     cta:'Fall starten',
     explainer:'▶ Kurz erklären lassen',
     journey:[
@@ -51,8 +49,6 @@ const v131Copy={
   },
   en:{
     eyebrow:'AS Workspace · Version 131',
-    title:'Describe the case. AS Workspace shows what matters next.',
-    lead:'From the first document to the next action: one clear workflow instead of many separate tools.',
     cta:'Start a case',
     explainer:'▶ View short explanation',
     journey:[
@@ -78,14 +74,13 @@ const uxStyles=`
 `
 
 export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,testerLinkText,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
-  const stableHero=heroTitleCopy[language]||heroTitleCopy.de
+  const hero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
   const outputLanguageLabel=supportedLanguages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
   const backCopy=publicBackCopy[language]||publicBackCopy.de
   const v131=v131Copy[language]||v131Copy.en
-  const heroTitle=v131.title||stableHero.title
 
   function returnToPublicStart(){
     const cleanUrl=`${window.location.pathname}${window.location.search}`
@@ -105,8 +100,8 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
         <div className="wrap heroLayout">
           <div>
             <div className="eyebrow">{v131.eyebrow}</div>
-            <h1>{heroTitle}</h1>
-            <p className="lead">{v131.lead}</p>
+            <h1>{hero.title}</h1>
+            <p className="lead">{hero.lead}</p>
             <div className="actions heroPrimaryActions">
               <button className="primary btn heroMainCta" onClick={()=>setScreen('register')}>{v131.cta}</button>
               <button className="secondary btn" onClick={()=>setExplainerSignal(value=>value+1)}>{v131.explainer}</button>
