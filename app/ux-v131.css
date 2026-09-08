@@ -57,6 +57,10 @@ body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
 .pilotFeedbackCard b{display:block;margin-bottom:8px;font-size:1.02rem}.pilotFeedbackCard p{margin:0;line-height:1.5}
 .pilotRed{border-color:#e2aaaa;background:#fff7f7}.pilotYellow{border-color:#e3ca73;background:#fffaf0}.pilotGreen{border-color:#a7cdb0;background:#f2faf4}
 
+/* v131 auth mobile flow: registration should open directly on the form instead of repeating the full feature grid. */
+.authCard:has(.registerTransparency) .languageSwitch + div{display:none}
+.authCard:has(.registerTransparency) .languageSwitch{margin-bottom:10px}
+
 @media(max-width:760px){
   .caseTitleRow,.documentReviewHead{padding:16px;border-radius:16px}
   .caseTitleRow>button,.documentReviewActions,.documentReviewActions button{width:100%}.documentReviewActions{display:grid;grid-template-columns:1fr}
@@ -71,4 +75,6 @@ body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
 @media(max-width:520px){
   .caseTitleRow h2,.documentReviewHead h2{margin-top:8px}.caseTitleRow p,.documentReviewHead p{line-height:1.45}.documentReviewForm,.documentLanguagePair{padding:16px}.assessment{padding:13px}.sectionHead{align-items:flex-start}
   .pilotTaskCard,.pilotFeedbackCard{padding:15px}
+  .authCard{padding:20px 16px}
+  .authCard:has(.registerTransparency){width:min(460px,100%)}
 }
