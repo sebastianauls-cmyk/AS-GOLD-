@@ -1,20 +1,19 @@
 import { QuickActions } from '../cases/V24Workspace'
 import { EvidenceActionPanel } from '../intelligence/EvidenceActionPanel'
-import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
 import { appText } from './workspaceText'
 
 const dashboardUxCopy={
-  de:{priority:'Was jetzt wichtig ist',status:'Ihr Arbeitsstand',more:'Weitere Möglichkeiten',moreHelp:'Testfälle, Tarifempfehlung und Kontoinformationen anzeigen'},
-  en:{priority:'What matters now',status:'Your workspace status',more:'More options',moreHelp:'Show test cases, plan recommendation and account information'},
-  fr:{priority:'Ce qui compte maintenant',status:'État de votre espace',more:'Autres possibilités',moreHelp:'Afficher les cas de test, les recommandations et le compte'},
-  tr:{priority:'Şimdi önemli olan',status:'Çalışma alanı durumu',more:'Diğer seçenekler',moreHelp:'Test dosyalarını, paket önerisini ve hesap bilgilerini göster'},
-  pl:{priority:'Co jest teraz najważniejsze',status:'Stan obszaru roboczego',more:'Więcej możliwości',moreHelp:'Pokaż sprawy testowe, rekomendację planu i informacje o koncie'},
-  ru:{priority:'Что важно сейчас',status:'Состояние рабочего пространства',more:'Дополнительные возможности',moreHelp:'Показать тестовые дела, рекомендацию тарифа и данные аккаунта'},
-  ar:{priority:'ما هو مهم الآن',status:'حالة مساحة العمل',more:'خيارات إضافية',moreHelp:'عرض الحالات التجريبية وتوصية الخطة ومعلومات الحساب'},
-  fa:{priority:'آنچه اکنون مهم است',status:'وضعیت فضای کاری',more:'گزینه‌های بیشتر',moreHelp:'نمایش پرونده‌های آزمایشی، پیشنهاد طرح و اطلاعات حساب'},
-  ro:{priority:'Ce este important acum',status:'Starea spațiului de lucru',more:'Mai multe opțiuni',moreHelp:'Afișează cazurile de test, recomandarea planului și contul'},
-  bg:{priority:'Какво е важно сега',status:'Състояние на работното пространство',more:'Още възможности',moreHelp:'Покажи тестови случаи, препоръка за план и информация за акаунта'},
-  vi:{priority:'Điều quan trọng lúc này',status:'Trạng thái không gian làm việc',more:'Tùy chọn khác',moreHelp:'Hiển thị ca thử nghiệm, đề xuất gói và thông tin tài khoản'}
+  de:{priority:'Was jetzt wichtig ist',status:'Ihr Arbeitsstand',more:'Weitere Möglichkeiten',moreHelp:'Tarifempfehlung und Kontoinformationen anzeigen'},
+  en:{priority:'What matters now',status:'Your workspace status',more:'More options',moreHelp:'Show plan recommendation and account information'},
+  fr:{priority:'Ce qui compte maintenant',status:'État de votre espace',more:'Autres possibilités',moreHelp:'Afficher les recommandations et le compte'},
+  tr:{priority:'Şimdi önemli olan',status:'Çalışma alanı durumu',more:'Diğer seçenekler',moreHelp:'Paket önerisini ve hesap bilgilerini göster'},
+  pl:{priority:'Co jest teraz najważniejsze',status:'Stan obszaru roboczego',more:'Więcej możliwości',moreHelp:'Pokaż rekomendację planu i informacje o koncie'},
+  ru:{priority:'Что важно сейчас',status:'Состояние рабочего пространства',more:'Дополнительные возможности',moreHelp:'Показать рекомендацию тарифа и данные аккаунта'},
+  ar:{priority:'ما هو مهم الآن',status:'حالة مساحة العمل',more:'خيارات إضافية',moreHelp:'عرض توصية الخطة ومعلومات الحساب'},
+  fa:{priority:'آنچه اکنون مهم است',status:'وضعیت فضای کاری',more:'گزینه‌های بیشتر',moreHelp:'نمایش پیشنهاد طرح و اطلاعات حساب'},
+  ro:{priority:'Ce este important acum',status:'Starea spațiului de lucru',more:'Mai multe opțiuni',moreHelp:'Afișează recomandarea planului și contul'},
+  bg:{priority:'Какво е важно сега',status:'Състояние на работното пространство',more:'Още възможности',moreHelp:'Покажи препоръка за план и информация за акаунта'},
+  vi:{priority:'Điều quan trọng lúc này',status:'Trạng thái không gian làm việc',more:'Tùy chọn khác',moreHelp:'Hiển thị đề xuất gói và thông tin tài khoản'}
 }
 
 const dashboardUxStyles=`
@@ -27,7 +26,7 @@ const dashboardUxStyles=`
 @media(max-width:430px){.dashboardPrioritySignals{grid-template-columns:1fr 1fr 1fr}.prioritySignal{min-width:0;padding:9px 6px}.prioritySignal b{font-size:21px}.prioritySignal small{font-size:.72rem}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardCoreStats .stat{padding:15px}.dashboardSecondaryStats{grid-template-columns:1fr}.dashboardMore>summary{padding:15px}}
 `
 
-export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,onBack,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
+export function DashboardSurface({core,handleQuickAction,onBack,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
   const guestAccess=access?.permissions?.guest_access===true
   const ux=dashboardUxCopy[language]||dashboardUxCopy.en
@@ -66,7 +65,6 @@ export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,on
     <details className="dashboardMore">
       <summary><span>{ux.more}</span><small>{ux.moreHelp}</small></summary>
       <div className="dashboardMoreBody">
-        <SyntheticTesterPanel language={language} onOpenCase={onStartSyntheticCase}/>
         <section className="recommendationBox">
           <div><span className="modeBadge">{rt.recommended}</span><h3>{rt.title}</h3><p>{rt.lead}</p></div>
           <select className="goalSelect" value={selectedGoal} onChange={e=>{setSelectedGoal(e.target.value);setShowRecommendation(true)}} aria-label={rt.chooseGoal}>{rt.goals.map(([k,label])=><option key={k} value={k}>{label}</option>)}</select>
