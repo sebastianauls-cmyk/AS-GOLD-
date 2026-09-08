@@ -61,6 +61,33 @@ body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
 .authCard:has(.registerTransparency) .languageSwitch + div{display:none}
 .authCard:has(.registerTransparency) .languageSwitch{margin-bottom:10px}
 
+/* v131 auth navigation: use one persistent, context-aware back action. */
+.authCard:has(.registerTransparency) > .authBackBtn,
+.authCard:has(#recovery-password) > .authBackBtn,
+.authCard:has(form input[type="email"][autofocus]) > .authBackBtn{display:none!important}
+.authCard:has(.registerTransparency) > .linkBtn.full,
+.authCard:has(#recovery-password) > .linkBtn.full,
+.authCard:has(form input[type="email"][autofocus]) > .linkBtn.full{
+  position:fixed;
+  z-index:180;
+  inset-inline-start:max(12px,env(safe-area-inset-left));
+  inset-inline-end:auto;
+  bottom:max(12px,env(safe-area-inset-bottom));
+  width:auto;
+  max-width:calc(100vw - 24px);
+  min-height:46px;
+  padding:10px 14px;
+  border:1px solid #d9c792;
+  border-radius:12px;
+  background:rgba(255,253,247,.97);
+  color:#4d3b14;
+  box-shadow:0 12px 32px rgba(45,35,14,.24);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  font-weight:850;
+  text-align:center;
+}
+
 @media(max-width:760px){
   .caseTitleRow,.documentReviewHead{padding:16px;border-radius:16px}
   .caseTitleRow>button,.documentReviewActions,.documentReviewActions button{width:100%}.documentReviewActions{display:grid;grid-template-columns:1fr}
