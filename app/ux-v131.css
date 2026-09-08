@@ -6,178 +6,61 @@
   background:linear-gradient(135deg,#fffaf0 0%,#fff 72%);
   box-shadow:0 12px 34px rgba(74,57,19,.07);
 }
-
 .caseTitleRow{padding:20px 22px}
 .caseTitleRow h2{font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.12}
 .caseTitleRow>button{align-self:flex-start}
-
-/* Put the decision-critical case facts first without changing data or behavior. */
-.caseCoreGrid article:nth-child(5),
-.caseCoreGrid article:nth-child(6){
-  order:-2;
-  border-color:#c9ad66;
-  background:#fffaf0;
-  box-shadow:0 8px 22px rgba(91,68,16,.07);
-}
-.caseCoreGrid article:nth-child(5) b,
-.caseCoreGrid article:nth-child(6) b{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
-.caseCoreGrid article:nth-child(5) p,
-.caseCoreGrid article:nth-child(6) p{font-size:1.04rem;font-weight:750;color:#3e3522}
-.caseCoreGrid article:nth-child(1),
-.caseCoreGrid article:nth-child(2){order:-1}
-
-/* Make status and recommended action visually dominant. */
-.v38DeadlineWarningCard,
-.v38PrimaryNextStep{
-  border-width:2px;
-  box-shadow:0 12px 30px rgba(36,42,51,.08);
-}
+.caseCoreGrid article:nth-child(5),.caseCoreGrid article:nth-child(6){order:-2;border-color:#c9ad66;background:#fffaf0;box-shadow:0 8px 22px rgba(91,68,16,.07)}
+.caseCoreGrid article:nth-child(5) b,.caseCoreGrid article:nth-child(6) b{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
+.caseCoreGrid article:nth-child(5) p,.caseCoreGrid article:nth-child(6) p{font-size:1.04rem;font-weight:750;color:#3e3522}
+.caseCoreGrid article:nth-child(1),.caseCoreGrid article:nth-child(2){order:-1}
+.v38DeadlineWarningCard,.v38PrimaryNextStep{border-width:2px;box-shadow:0 12px 30px rgba(36,42,51,.08)}
 .v38PrimaryNextStep{background:linear-gradient(135deg,#fff8df,#fff)}
 .v38PrimaryNextStep p{font-size:1.04rem;line-height:1.55}
-
-/* Sources and assessments remain important, but read as the second layer. */
-.sourceList button,
-.assessment{
-  box-shadow:none;
-}
-.detailCard>h3,
-.detailCardHead h3{font-size:1.2rem}
-
-/* Document screen: status first, editing second. */
+.sourceList button,.assessment{box-shadow:none}
+.detailCard>h3,.detailCardHead h3{font-size:1.2rem}
 .documentReviewHead{padding:20px 22px}
 .documentReviewHead h2{font-size:clamp(1.7rem,4vw,2.25rem)}
-.documentReviewActions{gap:8px}
-.documentReviewActions .primary{box-shadow:0 7px 18px rgba(98,72,18,.13)}
-
-.documentReviewHead + .v38DeadlineWarningCard,
-.documentReviewHead ~ .readinessCard{
-  margin-top:12px;
-}
-.documentReviewForm,
-.documentLanguagePair{
-  border-color:#e5e7eb;
-  box-shadow:0 6px 18px rgba(17,24,39,.035);
-}
+.documentReviewActions{gap:8px}.documentReviewActions .primary{box-shadow:0 7px 18px rgba(98,72,18,.13)}
+.documentReviewHead + .v38DeadlineWarningCard,.documentReviewHead ~ .readinessCard{margin-top:12px}
+.documentReviewForm,.documentLanguagePair{border-color:#e5e7eb;box-shadow:0 6px 18px rgba(17,24,39,.035)}
 .documentReviewForm textarea{line-height:1.5}
-
-/* Reduce cognitive load on long edit surfaces without hiding anything. */
-.documentReviewForm label,
-.coreForm label{min-width:0}
-.documentReviewForm .wideField,
-.coreForm .full{scroll-margin-top:110px}
-
-/* Approval: draft -> preview -> decision -> delivery must read as distinct stages. */
-.approvalDetailHead{
-  padding:18px 20px;
-  border:1px solid #ddd6c4;
-  border-radius:18px;
-  background:#fff;
-}
-.approvalState{
-  min-width:110px;
-  justify-content:center;
-  border:1px solid transparent;
-}
+.documentReviewForm label,.coreForm label{min-width:0}
+.documentReviewForm .wideField,.coreForm .full{scroll-margin-top:110px}
+.approvalDetailHead{padding:18px 20px;border:1px solid #ddd6c4;border-radius:18px;background:#fff}
+.approvalState{min-width:110px;justify-content:center;border:1px solid transparent}
 .approvalState.approval-pending{background:#fff4cd;border-color:#e0c35a;color:#6c5200}
 .approvalState.approval-approved{background:#e8f5eb;border-color:#9fc8a8;color:#245f32}
 .approvalState.approval-rejected{background:#feecec;border-color:#e3a6a6;color:#8a2929}
-.approvalPreview{
-  border-width:2px;
-  box-shadow:0 14px 38px rgba(85,64,17,.08);
-}
-.approvalPreviewHead{
-  gap:18px;
-  align-items:flex-start;
-}
-.approvalPreviewHead>b{
-  padding:7px 10px;
-  border-radius:999px;
-  background:#f4efe3;
-  color:#6a521b;
-  white-space:nowrap;
-}
-.approvalDecision{
-  margin:18px 0;
-  border-width:2px;
-  box-shadow:0 8px 24px rgba(36,42,51,.05);
-}
+.approvalPreview{border-width:2px;box-shadow:0 14px 38px rgba(85,64,17,.08)}
+.approvalPreviewHead{gap:18px;align-items:flex-start}.approvalPreviewHead>b{padding:7px 10px;border-radius:999px;background:#f4efe3;color:#6a521b;white-space:nowrap}
+.approvalDecision{margin:18px 0;border-width:2px;box-shadow:0 8px 24px rgba(36,42,51,.05)}
 .approvalDecision.approvedDecision{background:#eef9f0;border-color:#9bc5a4}
 .approvalConfirm{background:#fffaf0;border:1px solid #d9c68f;border-radius:13px;padding:13px}
+.exportBar,.miniExport{border-color:#c9ad66}.exportBar{margin-top:20px;padding:16px;border-width:2px;background:linear-gradient(135deg,#fffaf0,#fff);box-shadow:0 10px 28px rgba(91,68,16,.06)}
+.exportBar .primary,.miniExport .primary{box-shadow:0 7px 18px rgba(98,72,18,.12)}
+.sectionHead{min-height:52px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #e7e8eb}.sectionHead h2{margin:0;font-size:clamp(1.65rem,3.5vw,2.25rem)}
+.appMain>.backBtn,.appMain [data-persistent-back]{font-weight:850}
+body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
 
-/* Exports and hand-off visually read as the final step, not as another edit card. */
-.exportBar,
-.miniExport{
-  border-color:#c9ad66;
-}
-.exportBar{
-  margin-top:20px;
-  padding:16px;
-  border-width:2px;
-  background:linear-gradient(135deg,#fffaf0,#fff);
-  box-shadow:0 10px 28px rgba(91,68,16,.06);
-}
-.exportBar .primary,
-.miniExport .primary{box-shadow:0 7px 18px rgba(98,72,18,.12)}
-
-/* One navigation language across protected screens. */
-.sectionHead{
-  min-height:52px;
-  margin-bottom:14px;
-  padding-bottom:10px;
-  border-bottom:1px solid #e7e8eb;
-}
-.sectionHead h2{margin:0;font-size:clamp(1.65rem,3.5vw,2.25rem)}
-.appMain>.backBtn,
-.appMain [data-persistent-back]{font-weight:850}
-
-/* Keep the persistent deadline control and persistent return control from colliding. */
-body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{
-  z-index:179;
-}
+/* v131 Pilot & Abnahme */
+.pilotTaskGrid,.pilotFeedbackGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:18px}
+.pilotTaskCard,.pilotFeedbackCard{padding:18px;border:1px solid #e0e2e6;border-radius:16px;background:#fff;box-shadow:0 8px 24px rgba(27,31,37,.04)}
+.pilotTaskCard h3{margin:12px 0 8px;font-size:1.05rem}.pilotTaskCard ol{margin:0;padding-inline-start:22px;display:grid;gap:7px}.pilotTaskCard p{margin:14px 0 0;line-height:1.5}
+.pilotFeedbackCard b{display:block;margin-bottom:8px;font-size:1.02rem}.pilotFeedbackCard p{margin:0;line-height:1.5}
+.pilotRed{border-color:#e2aaaa;background:#fff7f7}.pilotYellow{border-color:#e3ca73;background:#fffaf0}.pilotGreen{border-color:#a7cdb0;background:#f2faf4}
 
 @media(max-width:760px){
-  .caseTitleRow,
-  .documentReviewHead{padding:16px;border-radius:16px}
-  .caseTitleRow>button,
-  .documentReviewActions,
-  .documentReviewActions button{width:100%}
-  .documentReviewActions{display:grid;grid-template-columns:1fr}
-  .caseCoreGrid{grid-template-columns:1fr}
-  .caseCoreGrid article:nth-child(5),
-  .caseCoreGrid article:nth-child(6){padding:16px}
-  .caseCoreGrid article:nth-child(5) p,
-  .caseCoreGrid article:nth-child(6) p{font-size:1rem}
-  .v38DeadlineWarningCard,
-  .v38PrimaryNextStep{border-radius:15px}
-  .sourceList button{min-height:58px}
-  .approvalDetailHead{display:grid;gap:12px;padding:15px}
-  .approvalState{width:100%;min-height:42px}
-  .approvalPreview{padding:16px}
-  .approvalPreviewHead{display:grid}
-  .approvalPreviewHead>b{width:max-content;max-width:100%}
-  .approvalDecision>div{display:grid;grid-template-columns:1fr;gap:8px}
-  .approvalDecision button{width:100%;min-height:46px}
-  .exportBar,.miniExport{width:100%;align-items:stretch}
-  .exportBar select,.exportBar button,.miniExport select,.miniExport button{width:100%;max-width:none}
-  body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{
-    inset-inline-start:12px;
-    inset-inline-end:12px;
-    bottom:calc(76px + env(safe-area-inset-bottom));
-    width:auto;
-    max-width:none;
-  }
-  body:has(.persistentDeadlineButton) .appMain{
-    padding-bottom:150px;
-  }
+  .caseTitleRow,.documentReviewHead{padding:16px;border-radius:16px}
+  .caseTitleRow>button,.documentReviewActions,.documentReviewActions button{width:100%}.documentReviewActions{display:grid;grid-template-columns:1fr}
+  .caseCoreGrid{grid-template-columns:1fr}.caseCoreGrid article:nth-child(5),.caseCoreGrid article:nth-child(6){padding:16px}.caseCoreGrid article:nth-child(5) p,.caseCoreGrid article:nth-child(6) p{font-size:1rem}
+  .v38DeadlineWarningCard,.v38PrimaryNextStep{border-radius:15px}.sourceList button{min-height:58px}
+  .approvalDetailHead{display:grid;gap:12px;padding:15px}.approvalState{width:100%;min-height:42px}.approvalPreview{padding:16px}.approvalPreviewHead{display:grid}.approvalPreviewHead>b{width:max-content;max-width:100%}.approvalDecision>div{display:grid;grid-template-columns:1fr;gap:8px}.approvalDecision button{width:100%;min-height:46px}
+  .exportBar,.miniExport{width:100%;align-items:stretch}.exportBar select,.exportBar button,.miniExport select,.miniExport button{width:100%;max-width:none}
+  body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{inset-inline-start:12px;inset-inline-end:12px;bottom:calc(76px + env(safe-area-inset-bottom));width:auto;max-width:none}
+  body:has(.persistentDeadlineButton) .appMain{padding-bottom:150px}
+  .pilotTaskGrid,.pilotFeedbackGrid{grid-template-columns:1fr}
 }
-
 @media(max-width:520px){
-  .caseTitleRow h2,
-  .documentReviewHead h2{margin-top:8px}
-  .caseTitleRow p,
-  .documentReviewHead p{line-height:1.45}
-  .documentReviewForm,
-  .documentLanguagePair{padding:16px}
-  .assessment{padding:13px}
-  .sectionHead{align-items:flex-start}
+  .caseTitleRow h2,.documentReviewHead h2{margin-top:8px}.caseTitleRow p,.documentReviewHead p{line-height:1.45}.documentReviewForm,.documentLanguagePair{padding:16px}.assessment{padding:13px}.sectionHead{align-items:flex-start}
+  .pilotTaskCard,.pilotFeedbackCard{padding:15px}
 }
