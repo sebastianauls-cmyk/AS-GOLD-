@@ -10,7 +10,7 @@ assert.ok(APP_RELEASE.number>=127)
 assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 
 for(const path of [
-  'app/modules/public/PublicLanguageModules.js',
+  'app/modules/public/PublicLanding.js',
   'app/modules/auth/AuthSurface.js',
   'app/modules/workspace/DashboardSurface.js',
   'app/modules/cases/WorkspaceCaseSurfaces.js',

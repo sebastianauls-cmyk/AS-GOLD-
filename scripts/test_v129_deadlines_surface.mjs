@@ -4,8 +4,8 @@ import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
 import { deadlineTimestamp, buildDeadlineOverview, orderDeadlineCases } from '../app/modules/cases/deadlineCases.mjs'
 import { deadlineUi, getDeadlineUi } from '../app/modules/cases/deadlineUi.mjs'
 
-assert.equal(APP_RELEASE.number,129)
-assert.equal(APP_VERSION,'V129')
+assert.ok(APP_RELEASE.number>=129)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 assert.equal(deadlineTimestamp('not-a-date'),null)
 
 const cases=[

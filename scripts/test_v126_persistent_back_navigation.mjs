@@ -5,6 +5,7 @@ import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
 const css=read('app/globals.css')
 const publicLanguages=read('app/modules/public/PublicLanguageModules.js')
+const publicLanding=read('app/modules/public/PublicLanding.js')
 const authSurface=read('app/modules/auth/AuthSurface.js')
 const controller=read('app/modules/workspace/WorkspaceController.js')
 const v126Styles=css.slice(css.indexOf('/* V126:'))
@@ -12,6 +13,7 @@ const v126Styles=css.slice(css.indexOf('/* V126:'))
 assert.ok(APP_RELEASE.number>=126)
 assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 assert.match(publicLanguages,/className="publicBackButton"/,'the public start page must retain its return-to-German control')
+assert.match(publicLanding,/className="publicPageBackButton" data-persistent-back/,'the public start page must retain its independent viewport return control')
 assert.match(authSurface,/className="backBtn full authBackBtn"/,'authentication pages must retain their return control')
 
 for(const surface of ['ApprovalDetail','DocumentDetail','CaseDetail','CasesSurface','DocumentsSurface','ApprovalsSurface','PricingSurface','AccountSurface','ClientDetailSurface','ClientsSurface']){

@@ -1,9 +1,10 @@
-# AS Workspace Gold Workspace – V129
+# AS Workspace Gold Workspace – V130
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden AS-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Arbeitsstand dieses Kandidaten: **V129**. Der öffentliche Produktionsstand bleibt bis zur gesonderten Freigabe **V128** unter `https://app-gold-workspace.vercel.app`.
+- Gesamt- und Arbeitsstand dieses Kandidaten: **V130**. Der öffentliche Produktionsstand wird nach erfolgreichem Freigabebuild unter `https://app-gold-workspace.vercel.app` auf V130 angehoben.
+- V130 ergänzt auf der gesamten öffentlichen Startseite einen eigenständigen, mitlaufenden Zurück-Button. Er liegt außerhalb der gefilterten Kopfzeile, bleibt deshalb auch auf Smartphones beim Scrollen sichtbar und führt zuverlässig an den Seitenanfang zurück. Die getrennte Rückstellung auf Deutsch bleibt innerhalb der Sprachauswahl erhalten und erscheint nur, wenn App- oder Ausgabesprache nicht Deutsch ist.
 - V129 führt den Schnellzugriff „Fristen“ in ein eigenes Modul „Fristen & ungeklärte Termine“. Fest datierte Fristen werden chronologisch gezeigt; Fälle ohne oder mit unklarem Datum bleiben ausdrücklich als „Frist ungeklärt“ sichtbar. Ein mitlaufender Fristen-Button mit beiden Zählern ist in jedem angemeldeten Bereich erreichbar.
 - V128 übernimmt bei synthetischen Testfällen die erwartete Ampel vollständig in den gespeicherten Fall (`🟢`, `🟡`, `🔴`, `⚪`). Normale neue Fälle behalten den sicheren gelben Ausgangsstatus; unzulässige Werte werden ebenfalls auf Gelb zurückgesetzt.
 - V127 vereinheitlicht die mitlaufende Zurück-Navigation in der gesamten Anwendung: Startseite, angemeldete Hauptübersicht, Fälle, Kunden, Dokumente, Freigaben, Tarife, Konto, Anmeldung, Rechts- und Testseiten, Integrationen, Passwortwege sowie Fehlerseiten. Auf Mobilgeräten bleibt der Button bewusst kompakt und verdeckt nicht mehr die gesamte Seitenbreite.
