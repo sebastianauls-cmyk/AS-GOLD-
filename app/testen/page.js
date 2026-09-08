@@ -1,9 +1,9 @@
-import { TesterPaused } from '../modules/tester/TesterPaused'
+import { PromoTesterGate } from '../modules/tester/PromoTesterGate'
 
 export const metadata={
-  title:'Testerzugang pausiert',
-  description:'Der externe Testerzugang von AS Workspace Gold ist derzeit pausiert. Die interne Qualitätsprüfung läuft ausschließlich mit synthetischen Testfällen weiter.',
+  title:'Testerzugang mit Promo-Code',
+  description:'Geschützter Testerzugang für AS Workspace Gold. Der Testerbereich wird ausschließlich nach erfolgreicher Promo-Code-Prüfung freigeschaltet.',
   robots:{index:false,follow:false}
 }
 
-export default function TestingPausedPage(){return <TesterPaused/>}
+export default function TestingPromoPage(){return <PromoTesterGate/>}
