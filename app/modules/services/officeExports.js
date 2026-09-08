@@ -4,6 +4,12 @@ const XML_HEADER='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
 const RELATIONSHIP_NS='http://schemas.openxmlformats.org/package/2006/relationships'
 const OFFICE_REL_NS='http://schemas.openxmlformats.org/officeDocument/2006/relationships'
 const CORE_NS='http://schemas.openxmlformats.org/package/2006/metadata/core-properties'
+const TRAFFIC_COLORS={
+  '🟢':'2F855A',
+  '🟡':'D69E2E',
+  '🔴':'C53030',
+  '⚪':'94A3B8'
+}
 
 function cleanXmlText(value,maxLength=32767){
   return String(value??'')
@@ -61,10 +67,24 @@ function columnName(index){
   return name
 }
 
+function worksheetInlineString(value){
+  const text=cleanXmlText(value,32767)
+  const parts=text.split(/([🟢🟡🔴⚪])/)
+  const hasTraffic=parts.some(part=>TRAFFIC_COLORS[part])
+  if(!hasTraffic) return '<t xml:space="preserve">'+escapeXml(text,32767)+'</t>'
+  return parts.map(part=>{
+    const trafficColor=TRAFFIC_COLORS[part]
+    if(trafficColor){
+      return '<r><rPr><rFont val="Aptos"/><sz val="11"/><color rgb="FF'+trafficColor+'"/></rPr><t xml:space="preserve">● </t></r>'
+    }
+    if(!part) return ''
+    return '<r><rPr><rFont val="Aptos"/><sz val="11"/><color rgb="FF1F2937"/></rPr><t xml:space="preserve">'+escapeXml(part,32767)+'</t></r>'
+  }).join('')
+}
+
 function worksheetCell(value,rowIndex,columnIndex,styleId=0){
   const reference=columnName(columnIndex)+rowIndex
-  return '<c r="'+reference+'" t="inlineStr" s="'+styleId+'"><is><t xml:space="preserve">'+
-    escapeXml(value,32767)+'</t></is></c>'
+  return '<c r="'+reference+'" t="inlineStr" s="'+styleId+'"><is>'+worksheetInlineString(value)+'</is></c>'
 }
 
 export async function createXlsxBlob(rows){
@@ -130,11 +150,23 @@ function emu(inches){
   return Math.round(Number(inches)*914400)
 }
 
-function slideRuns(value,fontSize,bold,color){
-  const runProperties='<a:rPr lang="de-DE" sz="'+Math.round(fontSize*100)+'"'+(bold?' b="1"':'')+' dirty="0">'+
+function slideRunProperties(fontSize,bold,color){
+  return '<a:rPr lang="de-DE" sz="'+Math.round(fontSize*100)+'"'+(bold?' b="1"':'')+' dirty="0">'+
     '<a:solidFill><a:srgbClr val="'+color+'"/></a:solidFill><a:latin typeface="Aptos"/></a:rPr>'
-  return cleanXmlText(value,12000).split(/\r?\n/).map((part,index)=>{
-    return (index?'<a:br/>':'')+'<a:r>'+runProperties+'<a:t xml:space="preserve">'+escapeXml(part,12000)+'</a:t></a:r>'
+}
+
+function slideRuns(value,fontSize,bold,color){
+  return cleanXmlText(value,12000).split(/\r?\n/).map((line,lineIndex)=>{
+    const parts=line.split(/([🟢🟡🔴⚪])/)
+    const runs=parts.map(part=>{
+      const trafficColor=TRAFFIC_COLORS[part]
+      if(trafficColor){
+        return '<a:r>'+slideRunProperties(fontSize,bold,trafficColor)+'<a:t xml:space="preserve">● </a:t></a:r>'
+      }
+      if(!part) return ''
+      return '<a:r>'+slideRunProperties(fontSize,bold,color)+'<a:t xml:space="preserve">'+escapeXml(part,12000)+'</a:t></a:r>'
+    }).join('')
+    return (lineIndex?'<a:br/>':'')+runs
   }).join('')
 }
 
