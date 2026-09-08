@@ -14,6 +14,20 @@ import { PublicCaseDiscoverySection } from './PublicCaseDiscoverySection'
 import { PublicTrustSections } from './PublicTrustSections'
 import { PublicPricingSection } from './PublicPricingSection'
 
+const publicBackCopy={
+  de:{label:'← Zurück',aria:'Zurück zum Anfang der Seite'},
+  en:{label:'← Back',aria:'Back to the top of the page'},
+  fr:{label:'← Retour',aria:'Retour en haut de la page'},
+  tr:{label:'← Geri',aria:'Sayfanın başına dön'},
+  pl:{label:'← Wstecz',aria:'Wróć na początek strony'},
+  ru:{label:'← Назад',aria:'Вернуться в начало страницы'},
+  ar:{label:'رجوع →',aria:'العودة إلى أعلى الصفحة'},
+  fa:{label:'بازگشت →',aria:'بازگشت به بالای صفحه'},
+  ro:{label:'← Înapoi',aria:'Înapoi la începutul paginii'},
+  bg:{label:'← Назад',aria:'Обратно в началото на страницата'},
+  vi:{label:'← Quay lại',aria:'Quay lại đầu trang'}
+}
+
 // Ownership map for legacy regression guards: PublicHeader owns className="publicTop" and PublicLanguageModules;
 // PublicCaseDiscoverySection owns id="asgold-user-audience" and invokes jumpToPublicCaseResult().
 // PublicPricingSection owns id="preise"; PublicLanding only composes the domain-owned public sections.
@@ -23,6 +37,14 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
   const outputLanguageLabel=supportedLanguages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
+  const backCopy=publicBackCopy[language]||publicBackCopy.de
+
+  function returnToPublicStart(){
+    const cleanUrl=`${window.location.pathname}${window.location.search}`
+    if(window.location.hash)window.history.replaceState(window.history.state,'',cleanUrl)
+    const reducedMotion=window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+    window.scrollTo({top:0,left:0,behavior:reducedMotion?'auto':'smooth'})
+  }
 
   return <>
     <PublicHeader
@@ -35,6 +57,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
       onScreenChange={setScreen}
       onPlayExplainer={()=>setExplainerSignal(value=>value+1)}
     />
+    <button className="publicPageBackButton" data-persistent-back type="button" onClick={returnToPublicStart} aria-label={backCopy.aria}>{backCopy.label}</button>
     <main>
       <div className="legalMarketBar">
         <div className="wrap">
