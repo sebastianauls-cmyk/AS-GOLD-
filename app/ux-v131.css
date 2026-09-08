@@ -1,4 +1,4 @@
-/* v131 UX hierarchy polish: case and document workspaces */
+/* v131 UX hierarchy polish: case, document and approval workspaces */
 .caseTitleRow,
 .documentReviewHead{
   border:1px solid #ded3b6;
@@ -11,14 +11,8 @@
 .caseTitleRow h2{font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.12}
 .caseTitleRow>button{align-self:flex-start}
 
-/* Put the decision-critical case facts first without changing data or behavior. */
 .caseCoreGrid article:nth-child(5),
-.caseCoreGrid article:nth-child(6){
-  order:-2;
-  border-color:#c9ad66;
-  background:#fffaf0;
-  box-shadow:0 8px 22px rgba(91,68,16,.07);
-}
+.caseCoreGrid article:nth-child(6){order:-2;border-color:#c9ad66;background:#fffaf0;box-shadow:0 8px 22px rgba(91,68,16,.07)}
 .caseCoreGrid article:nth-child(5) b,
 .caseCoreGrid article:nth-child(6) b{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em}
 .caseCoreGrid article:nth-child(5) p,
@@ -26,45 +20,86 @@
 .caseCoreGrid article:nth-child(1),
 .caseCoreGrid article:nth-child(2){order:-1}
 
-/* Make status and recommended action visually dominant. */
 .v38DeadlineWarningCard,
-.v38PrimaryNextStep{
-  border-width:2px;
-  box-shadow:0 12px 30px rgba(36,42,51,.08);
-}
+.v38PrimaryNextStep{border-width:2px;box-shadow:0 12px 30px rgba(36,42,51,.08)}
 .v38PrimaryNextStep{background:linear-gradient(135deg,#fff8df,#fff)}
 .v38PrimaryNextStep p{font-size:1.04rem;line-height:1.55}
 
-/* Sources and assessments remain important, but read as the second layer. */
 .sourceList button,
-.assessment{
-  box-shadow:none;
-}
+.assessment{box-shadow:none}
 .detailCard>h3,
 .detailCardHead h3{font-size:1.2rem}
 
-/* Document screen: status first, editing second. */
 .documentReviewHead{padding:20px 22px}
 .documentReviewHead h2{font-size:clamp(1.7rem,4vw,2.25rem)}
 .documentReviewActions{gap:8px}
 .documentReviewActions .primary{box-shadow:0 7px 18px rgba(98,72,18,.13)}
-
 .documentReviewHead + .v38DeadlineWarningCard,
-.documentReviewHead ~ .readinessCard{
-  margin-top:12px;
-}
+.documentReviewHead ~ .readinessCard{margin-top:12px}
 .documentReviewForm,
-.documentLanguagePair{
-  border-color:#e5e7eb;
-  box-shadow:0 6px 18px rgba(17,24,39,.035);
-}
+.documentLanguagePair{border-color:#e5e7eb;box-shadow:0 6px 18px rgba(17,24,39,.035)}
 .documentReviewForm textarea{line-height:1.5}
-
-/* Reduce cognitive load on long edit surfaces without hiding anything. */
 .documentReviewForm label,
 .coreForm label{min-width:0}
 .documentReviewForm .wideField,
 .coreForm .full{scroll-margin-top:110px}
+
+/* Approval / preview hierarchy: draft -> review -> approved -> delivery. */
+.approvalDetailHead{
+  padding:18px 20px;
+  border:1px solid #ded3b6;
+  border-radius:18px;
+  background:linear-gradient(135deg,#fffaf0 0%,#fff 72%);
+}
+.approvalDetailHead h2{font-size:clamp(1.65rem,4vw,2.2rem);line-height:1.15}
+.approvalState{min-height:34px;align-items:center;justify-content:center;padding:8px 12px;border:1px solid transparent;font-weight:900}
+.approvalState.approval-pending{background:#fff4cd;color:#6c5200;border-color:#e7cb64}
+.approvalState.approval-approved{background:#e6f5ea;color:#245f32;border-color:#a9d1b2}
+.approvalState.approval-rejected{background:#feecec;color:#8a2929;border-color:#e6b2b2}
+
+.approvalPreview{
+  margin-top:16px;
+  border:2px solid #b8933f;
+  box-shadow:0 16px 38px rgba(85,64,17,.09);
+}
+.approvalPreviewHead{gap:18px}
+.approvalPreviewHead h3{font-size:1.35rem}
+.approvalPreviewHead>b{padding:7px 10px;border-radius:999px;background:#f5edd5;color:#6d5318;white-space:nowrap}
+.approvalPreview dl{display:grid;gap:0;margin:16px 0 0}
+.approvalPreview dl>div{padding:13px 0;border-bottom:1px solid #eee7d4}
+.approvalPreview dl>div:last-child{border-bottom:0}
+.approvalPreview dt{font-size:.78rem;text-transform:uppercase;letter-spacing:.06em;color:#766433;font-weight:850}
+.approvalPreview dd{margin:5px 0 0;line-height:1.55;color:#303640}
+.approvalPreview .approvalBody dd{white-space:pre-wrap}
+
+.approvalDecision{
+  margin-top:16px;
+  padding:18px;
+  border:1px solid #dfcf9f;
+  border-radius:16px;
+  background:#fffaf0;
+  box-shadow:0 8px 24px rgba(70,53,14,.05);
+}
+.approvalDecision .approvalConfirm{padding:14px;border:1px solid #dec988;border-radius:12px;background:#fff;line-height:1.45}
+.approvalDecision>div{display:flex;gap:9px;flex-wrap:wrap;margin-top:12px}
+.approvalDecision>div .primary{min-height:48px}
+.approvedDecision{border-color:#a9d1b2;background:#eef9f0;color:#2d5f38}
+.approvedDecision b{font-size:1.08rem}
+.approvalEditButton{margin-top:14px}
+
+.approvalList .itemRow{border-inline-start:5px solid #d6dbe2}
+.approvalList .itemRow:has(.approval-pending){border-inline-start-color:#d2a825}
+.approvalList .itemRow:has(.approval-approved){border-inline-start-color:#4a9b5b}
+.approvalList .itemRow:has(.approval-rejected){border-inline-start-color:#cb5555}
+
+/* Export controls should read as the final step, not as an editing action. */
+.exportBar,
+.miniExport{
+  border-color:#d7c596;
+  background:#fffdf7;
+}
+.exportBar .primary,
+.miniExport .primary{box-shadow:0 7px 18px rgba(98,72,18,.12)}
 
 @media(max-width:760px){
   .caseTitleRow,
@@ -81,6 +116,15 @@
   .v38DeadlineWarningCard,
   .v38PrimaryNextStep{border-radius:15px}
   .sourceList button{min-height:58px}
+
+  .approvalDetailHead{display:grid;gap:12px;padding:16px}
+  .approvalState{justify-self:start}
+  .approvalPreview{padding:16px;border-radius:16px}
+  .approvalPreviewHead{display:grid;gap:10px}
+  .approvalPreviewHead>b{justify-self:start}
+  .approvalDecision>div{display:grid;grid-template-columns:1fr}
+  .approvalDecision>div button{width:100%}
+  .approvalEditButton{width:100%}
 }
 
 @media(max-width:520px){
@@ -91,4 +135,5 @@
   .documentReviewForm,
   .documentLanguagePair{padding:16px}
   .assessment{padding:13px}
+  .approvalPreview dd{font-size:.96rem}
 }
