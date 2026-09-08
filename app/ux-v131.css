@@ -49,6 +49,11 @@ body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
 .pilotFeedbackCard b{display:block;margin-bottom:8px;font-size:1.02rem}.pilotFeedbackCard p{margin:0;line-height:1.5}
 .pilotRed{border-color:#e2aaaa;background:#fff7f7}.pilotYellow{border-color:#e3ca73;background:#fffaf0}.pilotGreen{border-color:#a7cdb0;background:#f2faf4}
 
+/* v131 visible authenticated release marker */
+.dashboardPriority{position:relative;overflow:hidden;border:2px solid #b7933f!important;background:linear-gradient(135deg,#fff2bb 0%,#fffaf0 38%,#fff 100%)!important;box-shadow:0 18px 48px rgba(74,56,18,.13)!important}
+.dashboardPriority::before{content:"V131 · PILOT & ABNAHME";display:block;width:max-content;max-width:100%;margin:-24px -24px 20px;padding:9px 24px;background:#4d3b14;color:#fff8df;font-size:.76rem;font-weight:900;letter-spacing:.12em;text-transform:uppercase;border-bottom-right-radius:14px}
+.dashboardPriority .eyebrow{color:#6a5013;font-weight:900;letter-spacing:.07em}.dashboardPriority h2{color:#2f2818}.dashboardPrimaryAction{box-shadow:0 9px 20px rgba(78,59,19,.18)!important}
+
 @media(max-width:760px){
   .caseTitleRow,.documentReviewHead{padding:16px;border-radius:16px}
   .caseTitleRow>button,.documentReviewActions,.documentReviewActions button{width:100%}.documentReviewActions{display:grid;grid-template-columns:1fr}
@@ -59,6 +64,7 @@ body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
   body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{inset-inline-start:12px;inset-inline-end:12px;bottom:calc(76px + env(safe-area-inset-bottom));width:auto;max-width:none}
   body:has(.persistentDeadlineButton) .appMain{padding-bottom:150px}
   .pilotTaskGrid,.pilotFeedbackGrid{grid-template-columns:1fr}
+  .dashboardPriority::before{margin:-18px -18px 16px;padding:8px 18px;font-size:.7rem;letter-spacing:.09em}
 }
 @media(max-width:520px){
   .caseTitleRow h2,.documentReviewHead h2{margin-top:8px}.caseTitleRow p,.documentReviewHead p{line-height:1.45}.documentReviewForm,.documentLanguagePair{padding:16px}.assessment{padding:13px}.sectionHead{align-items:flex-start}
