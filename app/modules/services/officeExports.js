@@ -1,5 +1,7 @@
 import JSZip from 'jszip'
 
+export const OFFICE_EXPORT_RENDER_VERSION='v131-traffic-rich-runs'
+
 const XML_HEADER='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
 const RELATIONSHIP_NS='http://schemas.openxmlformats.org/package/2006/relationships'
 const OFFICE_REL_NS='http://schemas.openxmlformats.org/officeDocument/2006/relationships'
@@ -158,15 +160,13 @@ function slideRunProperties(fontSize,bold,color){
 function slideRuns(value,fontSize,bold,color){
   return cleanXmlText(value,12000).split(/\r?\n/).map((line,lineIndex)=>{
     const parts=line.split(/([🟢🟡🔴⚪])/)
-    const runs=parts.map(part=>{
+    const lineRuns=parts.map(part=>{
       const trafficColor=TRAFFIC_COLORS[part]
-      if(trafficColor){
-        return '<a:r>'+slideRunProperties(fontSize,bold,trafficColor)+'<a:t xml:space="preserve">● </a:t></a:r>'
-      }
+      if(trafficColor) return '<a:r>'+slideRunProperties(fontSize,true,trafficColor)+'<a:t xml:space="preserve">● </a:t></a:r>'
       if(!part) return ''
       return '<a:r>'+slideRunProperties(fontSize,bold,color)+'<a:t xml:space="preserve">'+escapeXml(part,12000)+'</a:t></a:r>'
     }).join('')
-    return (lineIndex?'<a:br/>':'')+runs
+    return (lineIndex?'<a:br/>':'')+lineRuns
   }).join('')
 }
 
