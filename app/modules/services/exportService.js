@@ -1,4 +1,4 @@
-import { OFFICE_EXPORT_RENDER_VERSION, createPptxBlob, createXlsxBlob } from './officeExports.js'
+import { OFFICE_EXPORT_RENDER_VERSION, createPptxBlob, createXlsxBlob } from './officeExportsUnicode.js'
 import { normalizeOutputLanguage, outputLanguageLabels } from '../language/outputLanguage.js'
 import { composeBilingualLetter } from '../language/bilingualLetter.mjs'
 
