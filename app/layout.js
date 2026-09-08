@@ -1,4 +1,5 @@
 import './globals.css'
+import './ux-v131.css'
 import { AccessibilityHardening } from './modules/navigation/AccessibilityHardening'
 import { MobileResilience } from './modules/navigation/MobileResilience'
 import { PRODUCT_DESCRIPTOR, PRODUCT_NAME, PRODUCT_PROMISE } from './modules/brand/productBrand.mjs'
