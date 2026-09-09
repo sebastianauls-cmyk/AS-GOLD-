@@ -1,9 +1,5 @@
-import { TesterAdminPanel } from '../modules/tester/TesterAdminPanel'
+import { redirect } from 'next/navigation'
 
-export const metadata={
-  title:'Tester verwalten',
-  description:'Eigentümer-Steuerung für persönlich freigegebene Testerzugänge.',
-  robots:{index:false,follow:false}
-}
+export const metadata={robots:{index:false,follow:false}}
 
-export default function TesterManagementPage(){return <TesterAdminPanel/>}
+export default function LegacyTesterManagementRoute(){redirect('/')}
