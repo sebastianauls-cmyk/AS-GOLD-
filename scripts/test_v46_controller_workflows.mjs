@@ -24,5 +24,14 @@ for(const token of ['getWorkspaceAccess','loadWorkspaceBundle','ensureRegistrati
 for(const token of ['getUpgradeQuotes','startCheckoutRecord','awaitCheckoutApplied']) assert.match(workflows.pricing,new RegExp(token))
 for(const token of ['acknowledgeLegalSettings','requestDeletionRecord','cancelDeletionRecord','listDeletionRequests']) assert.match(workflows.account,new RegExp(token))
 for(const source of [controller,...Object.values(workflows)]) assert.doesNotMatch(source,/MutationObserver|setInterval\(|history\.(back|pushState|replaceState)|window\.fetch\s*=/,'workflow/controller must not reintroduce post-render or global interception hacks')
-const testerPage=read('app/testen/page.js');const promoGate=read('app/modules/tester/PromoTesterGate.js');assert.match(testerPage,/PromoTesterGate/);assert.doesNotMatch(testerPage,/TesterGuide|TesterPaused/);assert.match(promoGate,/Vollständig kostenlosen Testzugang persönlich anfordern/);assert.match(promoGate,/Login-E-Mail/);assert.match(promoGate,/ausdrücklich zustimmt/);assert.doesNotMatch(promoGate,/TesterGuide|\/api\/tester\/promo|sessionStorage/)
-console.log('V131 controller workflow guard passed: WorkspaceController stays modular and tester access starts only after personal provider approval.')
+for(const route of ['app/testen/page.js','app/tester-freischalten/page.js','app/tester-verwaltung/page.js','app/einladungen/page.js']){
+  const source=read(route)
+  assert.match(source,/redirect\('\/'\)/,`${route} must retire legacy tester/invitation UI and return to the app`)
+  assert.doesNotMatch(source,/PromoTesterGate|PersonalTesterRedeem|TesterAdminPanel|InvitationWorkflowPanel|PersonalInvitationStudio|TesterGuide|TesterPaused/)
+}
+const pricing=read('app/modules/pricing/UpgradePanel.js')
+const promo=read('app/modules/pricing/promoTranslations.mjs')
+assert.match(pricing,/PromoCodeControl/)
+assert.doesNotMatch(pricing,/tester-freischalten|Tester/)
+assert.doesNotMatch(promo,/Tester-Vollzugang|tester access|testeur complet|test erişim|testowy dostęp|тестов.*доступ|مختبر|آزمایشی|testeri|тестер|thử nghiệm/i)
+console.log('V131 controller workflow guard passed: WorkspaceController stays modular and legacy tester UI is retired in favor of promo-code-only access.')
