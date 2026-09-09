@@ -19,6 +19,14 @@ const v131AuthCopy={
   bg:{badge:'Версия v131',headline:'Повече от вход – вашето дигитално работно пространство',lead:'Разбирайте случаи, анализирайте документи, сравнявайте държави и получавайте ясни резултати.',features:[['📄','Документи и снимки','Качване, разпознаване, структуриране и анализ в контекста на случая.'],['🌍','Езици и държави','Многоезично въвеждане/извеждане и сравнение на правната среда според целевата държава.'],['🚦','Светофарен анализ','Вижте веднага резултатите, рисковете, липсите и следващите стъпки.'],['✉️','Двуезични писма','Създаване на писма за клиенти и получатели на два езика при нужда.'],['🎙️','Гласово въвеждане','Опишете случая чрез микрофон и продължете обработката.'],['📤','Изход и одобрение','PDF/Word процеси, преглед и одобрение преди изпращане.']],hint:'Още нямате достъп? Регистрирайте се безплатно или първо разгледайте обяснението и тестовата зона.',explain:'Обяснение и тестова зона'}
 }
 
+const v131CurrentHighlights=[
+  ['🌐','11 Sprachen / 11 languages'],
+  ['⏱️','Fristen & Verlauf / deadlines & timeline'],
+  ['📊','PDF · Word · Excel · PowerPoint'],
+  ['🧭','Rechtsraumvergleich / legal-space comparison'],
+  ['🎟️','Persönlicher Testzugang / personal tester access']
+]
+
 export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setDisplayName,email,setEmail,password,setPassword,password2,setPassword2,showPassword,setShowPassword,showPassword2,setShowPassword2,pui,recoveryCopy,v28,acceptedLegal,setAcceptedLegal,confirmedTestData,setConfirmedTestData,registerReady,recoveryReady,register,signIn,resetPassword,completePasswordRecovery,message,lt,setScreen}){
   const resetSensitiveFields=()=>{
     setShowPassword(false)
@@ -90,8 +98,15 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))',gap:'8px'}}>
             {c.features.map(([icon,label,text])=><div key={label} style={{padding:'9px 10px',borderRadius:'10px',background:'var(--card, #fff)',border:'1px solid var(--line, #e3e7ee)'}}><div style={{fontWeight:700}}>{icon} {label}</div><small className="muted">{text}</small></div>)}
           </div>
+          <div aria-label="V131 current capabilities" style={{display:'flex',gap:'7px',flexWrap:'wrap',marginTop:'12px'}}>
+            {v131CurrentHighlights.map(([icon,label])=><span key={label} style={{fontSize:'12px',padding:'5px 8px',borderRadius:'999px',background:'var(--card, #fff)',border:'1px solid var(--line, #e3e7ee)'}}>{icon} {label}</span>)}
+          </div>
           <p className="muted" style={{marginBottom:'8px',fontSize:'13px'}}>{c.hint}</p>
-          <button type="button" className="linkBtn full" onClick={()=>{resetSensitiveFields();setScreen('public')}}>{c.explain}</button>
+          <div style={{display:'grid',gap:'8px'}}>
+            <button type="button" className="linkBtn full" onClick={()=>{resetSensitiveFields();setScreen('public')}}>{c.explain}</button>
+            <a className="secondary btn full" href="/testen">🎟️ Persönlichen Testzugang anfragen / Request tester access</a>
+            <a className="secondary btn full" href="/tester-freischalten">🔑 Tester-Code einlösen / Redeem tester code</a>
+          </div>
         </div>}
         <p className="muted">{title}</p>
         {screen==='register'&&<div className="registerTransparency"><b>{tt.registerTitle}</b><p>{tt.registerNote}</p><span>✓ {a.noSubscription}</span></div>}
