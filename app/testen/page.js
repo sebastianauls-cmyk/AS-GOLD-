@@ -1,9 +1,5 @@
-import { PromoTesterGate } from '../modules/tester/PromoTesterGate'
+import { redirect } from 'next/navigation'
 
-export const metadata={
-  title:'Testerzugang mit Promo-Code',
-  description:'Geschützter Testerzugang für AS Workspace Gold. Der Testerbereich wird ausschließlich nach erfolgreicher Promo-Code-Prüfung freigeschaltet.',
-  robots:{index:false,follow:false}
-}
+export const metadata={robots:{index:false,follow:false}}
 
-export default function TestingPromoPage(){return <PromoTesterGate/>}
+export default function LegacyTesterRoute(){redirect('/')}
