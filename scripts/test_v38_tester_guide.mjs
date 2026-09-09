@@ -1,11 +1,21 @@
 import fs from 'node:fs'
 import { APP_VERSION } from '../app/modules/release/appRelease.mjs'
-const route=fs.readFileSync('app/testen/page.js','utf8')
-const gate=fs.readFileSync('app/modules/tester/PromoTesterGate.js','utf8')
-const page=route+'\n'+gate
-if(!route.includes("../modules/tester/PromoTesterGate")) throw new Error('Tester route must explicitly use the personal promo request gate')
-if(route.includes('TesterPaused')||route.includes('TesterGuide')) throw new Error('Tester route must not expose paused or live tester content directly')
-for(const text of ['robots:{index:false,follow:false}','Vollständig kostenlosen Testzugang persönlich anfordern','E-Mail mit Ihrem Namen und der E-Mail-Adresse','ausdrücklich zustimmt','an die angegebene Login-E-Mail gebunden','Persönlichen Promo-Code erhalten','Keine Kosten','Bezahlfunktion bleibt deaktiviert']){if(!page.includes(text)) throw new Error('Personal tester request flow missing: '+text)}
+
+const testerRoute=fs.readFileSync('app/testen/page.js','utf8')
+const redeemRoute=fs.readFileSync('app/tester-freischalten/page.js','utf8')
+const manageRoute=fs.readFileSync('app/tester-verwaltung/page.js','utf8')
+const invitationRoute=fs.readFileSync('app/einladungen/page.js','utf8')
+const auth=fs.readFileSync('app/modules/auth/AuthSurface.js','utf8')
+const promo=fs.readFileSync('app/modules/pricing/promoTranslations.mjs','utf8')
+const combined=[testerRoute,redeemRoute,manageRoute,invitationRoute].join('\n')
+
+for(const route of [testerRoute,redeemRoute,manageRoute,invitationRoute]){
+  if(!route.includes("redirect('/')")) throw new Error('Legacy tester route must redirect to the app')
+}
+if(!auth.includes("['🎟️','Promo-Code / promo code']")) throw new Error('Auth surface must advertise promo codes, not tester access')
+if(auth.includes('Persönlichen Testzugang')||auth.includes('Tester-Code einlösen')) throw new Error('Auth surface must not expose tester actions')
+if(!promo.includes("title:'Promo-Code'")) throw new Error('Promo-code translations must remain active')
+if(promo.includes('Tester-Vollzugang')||promo.includes('tester access')) throw new Error('Promo translations must not present tester access')
 if(!/^V\d+$/.test(APP_VERSION)) throw new Error('Invalid central app version: '+APP_VERSION)
-if(page.includes('/api/tester/promo')||page.includes('sessionStorage')||page.includes('GuestTestStartButton')||page.includes('TesterShareButton')) throw new Error('Personal request surface must not auto-validate or expose tester controls')
-console.log(`${APP_VERSION} personal tester-request guard passed: promo access requires explicit provider approval and a personally assigned login email.`)
+if(combined.includes('PromoTesterGate')||combined.includes('PersonalTesterRedeem')||combined.includes('TesterAdminPanel')||combined.includes('PersonalInvitationStudio')) throw new Error('Legacy tester routes must not mount tester modules')
+console.log(`${APP_VERSION} promo-only guard passed: tester routes are retired and promo-code access remains available.`)
