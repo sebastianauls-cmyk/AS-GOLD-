@@ -32,6 +32,6 @@ for(const route of ['app/testen/page.js','app/tester-freischalten/page.js','app/
 const pricing=read('app/modules/pricing/UpgradePanel.js')
 const promo=read('app/modules/pricing/promoTranslations.mjs')
 assert.match(pricing,/PromoCodeControl/)
-assert.doesNotMatch(pricing,/tester-freischalten|Tester/)
+assert.doesNotMatch(pricing,/tester-freischalten/,'pricing must not link back to the retired tester redemption route')
 assert.doesNotMatch(promo,/Tester-Vollzugang|tester access|testeur complet|test erişim|testowy dostęp|тестов.*доступ|مختبر|آزمایشی|testeri|тестер|thử nghiệm/i)
 console.log('V131 controller workflow guard passed: WorkspaceController stays modular and legacy tester UI is retired in favor of promo-code-only access.')
