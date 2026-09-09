@@ -1,9 +1,5 @@
-import { PersonalTesterRedeem } from '../modules/tester/PersonalTesterRedeem'
+import { redirect } from 'next/navigation'
 
-export const metadata={
-  title:'Persönlichen Testerzugang freischalten',
-  description:'Einlösen eines persönlich freigegebenen Tester-Codes.',
-  robots:{index:false,follow:false}
-}
+export const metadata={robots:{index:false,follow:false}}
 
-export default function TesterRedeemPage(){return <PersonalTesterRedeem/>}
+export default function LegacyTesterRedeemRoute(){redirect('/')}
