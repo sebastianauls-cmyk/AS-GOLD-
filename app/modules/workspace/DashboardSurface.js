@@ -4,17 +4,17 @@ import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
 import { appText } from './workspaceText'
 
 const dashboardUxCopy={
-  de:{priority:'Was jetzt wichtig ist',status:'Ihr Arbeitsstand',more:'Weitere Möglichkeiten',moreHelp:'Tarifempfehlung und Kontoinformationen anzeigen',ownerTitle:'Eigentümer-Werkzeuge',ownerLead:'Persönliche Einladungen erstellen, Tester freischalten und Zugänge verwalten.',invite:'Einladungen',redeem:'Tester freischalten',manage:'Tester verwalten'},
-  en:{priority:'What matters now',status:'Your workspace status',more:'More options',moreHelp:'Show plan recommendation and account information',ownerTitle:'Owner tools',ownerLead:'Create personal invitations, approve testers and manage access.',invite:'Invitations',redeem:'Approve tester',manage:'Manage testers'},
-  fr:{priority:'Ce qui compte maintenant',status:'État de votre espace',more:'Autres possibilités',moreHelp:'Afficher les recommandations et le compte',ownerTitle:'Outils propriétaire',ownerLead:'Créer des invitations personnelles, autoriser les testeurs et gérer les accès.',invite:'Invitations',redeem:'Autoriser un testeur',manage:'Gérer les testeurs'},
-  tr:{priority:'Şimdi önemli olan',status:'Çalışma alanı durumu',more:'Diğer seçenekler',moreHelp:'Paket önerisini ve hesap bilgilerini göster',ownerTitle:'Sahip araçları',ownerLead:'Kişisel davetler oluşturun, test kullanıcılarını onaylayın ve erişimleri yönetin.',invite:'Davetler',redeem:'Test kullanıcıyı onayla',manage:'Test kullanıcılarını yönet'},
-  pl:{priority:'Co jest teraz najważniejsze',status:'Stan obszaru roboczego',more:'Więcej możliwości',moreHelp:'Pokaż rekomendację planu i informacje o koncie',ownerTitle:'Narzędzia właściciela',ownerLead:'Twórz osobiste zaproszenia, zatwierdzaj testerów i zarządzaj dostępami.',invite:'Zaproszenia',redeem:'Zatwierdź testera',manage:'Zarządzaj testerami'},
-  ru:{priority:'Что важно сейчас',status:'Состояние рабочего пространства',more:'Дополнительные возможности',moreHelp:'Показать рекомендацию тарифа и данные аккаунта',ownerTitle:'Инструменты владельца',ownerLead:'Создавайте личные приглашения, одобряйте тестеров и управляйте доступом.',invite:'Приглашения',redeem:'Одобрить тестера',manage:'Управление тестерами'},
-  ar:{priority:'ما هو مهم الآن',status:'حالة مساحة العمل',more:'خيارات إضافية',moreHelp:'عرض توصية الخطة ومعلومات الحساب',ownerTitle:'أدوات المالك',ownerLead:'أنشئ دعوات شخصية ووافق على المختبرين وأدر الوصول.',invite:'الدعوات',redeem:'الموافقة على مختبر',manage:'إدارة المختبرين'},
-  fa:{priority:'آنچه اکنون مهم است',status:'وضعیت فضای کاری',more:'گزینه‌های بیشتر',moreHelp:'نمایش پیشنهاد طرح و اطلاعات حساب',ownerTitle:'ابزارهای مالک',ownerLead:'دعوت‌نامه شخصی بسازید، آزمایش‌کنندگان را تأیید و دسترسی‌ها را مدیریت کنید.',invite:'دعوت‌نامه‌ها',redeem:'تأیید آزمایش‌کننده',manage:'مدیریت آزمایش‌کنندگان'},
-  ro:{priority:'Ce este important acum',status:'Starea spațiului de lucru',more:'Mai multe opțiuni',moreHelp:'Afișează recomandarea planului și contul',ownerTitle:'Instrumente proprietar',ownerLead:'Creează invitații personale, aprobă testeri și gestionează accesul.',invite:'Invitații',redeem:'Aprobă tester',manage:'Gestionează testerii'},
-  bg:{priority:'Какво е важно сега',status:'Състояние на работното пространство',more:'Още възможности',moreHelp:'Покажи препоръка за план и информация за акаунта',ownerTitle:'Инструменти за собственика',ownerLead:'Създавайте лични покани, одобрявайте тестери и управлявайте достъпа.',invite:'Покани',redeem:'Одобри тестер',manage:'Управление на тестери'},
-  vi:{priority:'Điều quan trọng lúc này',status:'Trạng thái không gian làm việc',more:'Tùy chọn khác',moreHelp:'Hiển thị đề xuất gói và thông tin tài khoản',ownerTitle:'Công cụ chủ sở hữu',ownerLead:'Tạo lời mời cá nhân, phê duyệt người thử và quản lý quyền truy cập.',invite:'Lời mời',redeem:'Phê duyệt người thử',manage:'Quản lý người thử'}
+  de:{priority:'Was jetzt wichtig ist',status:'Ihr Arbeitsstand',more:'Weitere Möglichkeiten',moreHelp:'Tarifempfehlung und Kontoinformationen anzeigen'},
+  en:{priority:'What matters now',status:'Your workspace status',more:'More options',moreHelp:'Show plan recommendation and account information'},
+  fr:{priority:'Ce qui compte maintenant',status:'État de votre espace',more:'Autres possibilités',moreHelp:'Afficher les recommandations et le compte'},
+  tr:{priority:'Şimdi önemli olan',status:'Çalışma alanı durumu',more:'Diğer seçenekler',moreHelp:'Paket önerisini ve hesap bilgilerini göster'},
+  pl:{priority:'Co jest teraz najważniejsze',status:'Stan obszaru roboczego',more:'Więcej możliwości',moreHelp:'Pokaż rekomendację planu i informacje o koncie'},
+  ru:{priority:'Что важно сейчас',status:'Состояние рабочего пространства',more:'Дополнительные возможности',moreHelp:'Показать рекомендацию тарифа и данные аккаунта'},
+  ar:{priority:'ما هو مهم الآن',status:'حالة مساحة العمل',more:'خيارات إضافية',moreHelp:'عرض توصية الخطة ومعلومات الحساب'},
+  fa:{priority:'آنچه اکنون مهم است',status:'وضعیت فضای کاری',more:'گزینه‌های بیشتر',moreHelp:'نمایش پیشنهاد طرح و اطلاعات حساب'},
+  ro:{priority:'Ce este important acum',status:'Starea spațiului de lucru',more:'Mai multe opțiuni',moreHelp:'Afișează recomandarea planului și contul'},
+  bg:{priority:'Какво е важно сега',status:'Състояние на работното пространство',more:'Още възможности',moreHelp:'Покажи препоръка за план и информация за акаунта'},
+  vi:{priority:'Điều quan trọng lúc này',status:'Trạng thái không gian làm việc',more:'Tùy chọn khác',moreHelp:'Hiển thị đề xuất gói và thông tin tài khoản'}
 }
 
 const dashboardUxStyles=`
@@ -22,15 +22,14 @@ const dashboardUxStyles=`
 .dashboardPriorityHead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:start}
 .dashboardPriority h2{margin:8px 0 7px;font-size:clamp(26px,4vw,38px);line-height:1.15}.dashboardPriority p{margin:0;color:#606a76;line-height:1.5;max-width:720px}
 .dashboardPrioritySignals{display:grid;grid-template-columns:repeat(3,minmax(78px,1fr));gap:8px}.prioritySignal{min-width:78px;padding:11px;border:1px solid #e2e4e8;border-radius:13px;background:#fff;text-align:center}.prioritySignal b{display:block;font-size:24px;color:#4e3b13}.prioritySignal small{display:block;margin-top:3px;color:#6d7580;line-height:1.2}.prioritySignal.attention{border-color:#d7b449;background:#fff7d8}.prioritySignal.attention b{color:#855f00}
-.dashboardPrimaryAction{margin-top:18px;min-height:48px;padding:12px 20px}.dashboardGuideSecondary{box-shadow:none}.dashboardCoreStats{margin-top:14px}.dashboardAccountTitle{margin-top:30px;margin-bottom:5px;font-size:1.2rem;color:#59636f}.dashboardMore{margin:22px 0 8px;border:1px solid #dfe2e6;border-radius:16px;background:#fff}.dashboardMore>summary{cursor:pointer;display:grid;gap:3px;padding:17px 18px;font-weight:850;color:#4d3b14}.dashboardMore>summary small{font-weight:500;color:#737d88}.dashboardMoreBody{padding:0 18px 18px}.dashboardSecondaryStats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboardRegressionOnly{display:none!important}.dashboardOwnerTools{margin:20px 0 8px;padding:18px;border:1px solid #d9c27e;border-radius:18px;background:linear-gradient(135deg,#fffaf0,#fff)}.dashboardOwnerTools h3{margin:5px 0}.dashboardOwnerTools p{margin:0 0 12px;color:#66707c}.dashboardOwnerActions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.dashboardOwnerActions a{text-align:center;text-decoration:none}
-@media(max-width:760px){.dashboardPriority{padding:18px}.dashboardPriorityHead{grid-template-columns:1fr;gap:14px}.dashboardPrioritySignals{grid-template-columns:repeat(3,1fr)}.dashboardPrimaryAction{width:100%}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardMoreBody{padding:0 12px 12px}.dashboardOwnerActions{grid-template-columns:1fr}}
+.dashboardPrimaryAction{margin-top:18px;min-height:48px;padding:12px 20px}.dashboardGuideSecondary{box-shadow:none}.dashboardCoreStats{margin-top:14px}.dashboardAccountTitle{margin-top:30px;margin-bottom:5px;font-size:1.2rem;color:#59636f}.dashboardMore{margin:22px 0 8px;border:1px solid #dfe2e6;border-radius:16px;background:#fff}.dashboardMore>summary{cursor:pointer;display:grid;gap:3px;padding:17px 18px;font-weight:850;color:#4d3b14}.dashboardMore>summary small{font-weight:500;color:#737d88}.dashboardMoreBody{padding:0 18px 18px}.dashboardSecondaryStats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboardRegressionOnly{display:none!important}
+@media(max-width:760px){.dashboardPriority{padding:18px}.dashboardPriorityHead{grid-template-columns:1fr;gap:14px}.dashboardPrioritySignals{grid-template-columns:repeat(3,1fr)}.dashboardPrimaryAction{width:100%}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardMoreBody{padding:0 12px 12px}}
 @media(max-width:430px){.dashboardPrioritySignals{grid-template-columns:1fr 1fr 1fr}.prioritySignal{min-width:0;padding:9px 6px}.prioritySignal b{font-size:21px}.prioritySignal small{font-size:.72rem}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardCoreStats .stat{padding:15px}.dashboardSecondaryStats{grid-template-columns:1fr}.dashboardMore>summary{padding:15px}}
 `
 
 export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,onBack,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
   const guestAccess=access?.permissions?.guest_access===true
-  const ownerAccess=access?.app_role==='owner'||access?.role==='owner'||access?.permissions?.owner===true
   const ux=dashboardUxCopy[language]||dashboardUxCopy.en
   const openDeadlines=deadlineCases?.length||0
   const totalItems=(data.cases?.length||0)+(data.documents?.length||0)+(data.approvals?.length||0)
@@ -52,17 +51,6 @@ export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,on
 
     <QuickActions copy={core} onAction={handleQuickAction} deadlineCases={deadlineCases}/>
     <EvidenceActionPanel a={a} data={data}/>
-
-    {ownerAccess&&<section className="dashboardOwnerTools" aria-label={ux.ownerTitle}>
-      <span className="modeBadge">V131 · Owner</span>
-      <h3>{ux.ownerTitle}</h3>
-      <p>{ux.ownerLead}</p>
-      <div className="dashboardOwnerActions">
-        <a className="secondary btn" href="/einladungen">✉️ {ux.invite}</a>
-        <a className="secondary btn" href="/tester-freischalten">🔑 {ux.redeem}</a>
-        <a className="secondary btn" href="/tester-verwaltung">👥 {ux.manage}</a>
-      </div>
-    </section>}
 
     <section className={`dashboardGuide dashboardGuideSecondary dash-${currentTier}`}>
       <div className="dashboardGuideMain"><span className="modeBadge">{dg.mode}</span><h3>{ux.status}</h3><p>{totalItems?dg.lead:a.firstClient}</p></div>
