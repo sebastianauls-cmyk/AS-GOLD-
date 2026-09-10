@@ -47,6 +47,7 @@ import { useWorkspaceSession } from './useWorkspaceSession'
 import { buildSyntheticCaseDraft } from '../testing/syntheticCaseDraft.mjs'
 import { buildDeadlineOverview } from '../cases/deadlineCases.mjs'
 import { getDeadlineUi } from '../cases/deadlineUi.mjs'
+import { InternalChangeControlSurface } from '../team-account/InternalChangeControlSurface'
 
 const guestTestCopy={
   de:{starting:'Sicherer Testarbeitsbereich wird geöffnet …',unavailable:'Der passwortlose Testzugang ist momentan nicht verfügbar. Bitte verwenden Sie die normale Anmeldung.',displayName:'Synthetischer Testzugang',active:'Passwortloser Testzugang aktiv',scope:'Nur synthetische oder wirksam anonymisierte Daten · höchstens 2 Dokumente · 2 Stunden'},
@@ -222,7 +223,7 @@ export default function WorkspaceController(){
     supabase,ownerId:user?.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,deletionRequests,deletionBusy,privacyBusy,privacyCopy:v28,serverCopy:sct,setDeletionBusy,setPrivacyBusy,setDeletionRequests,setPrivacySettings,setMessage,recordServerAudit
   })
 
-  const {loadApp,signIn,startGuestTest,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
+  const {loadApp,signIn,signInTeam,startGuestTest,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
     supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,guestCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage,sessionLoadRef
   })
 
@@ -329,7 +330,7 @@ export default function WorkspaceController(){
 
   if(screen==='guest-test') return <LoadingSurface language={language} checking={guestCopy.starting}/>
 
-  if(screen==='login'||screen==='register'||screen==='recovery'||screen==='request-reset') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signIn={signIn} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={navigateToScreen}/>
+  if(screen==='team-login'||screen==='login'||screen==='register'||screen==='recovery'||screen==='request-reset') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signIn={signIn} signInTeam={signInTeam} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={navigateToScreen}/>
 
   if(screen==='app'&&!privacyCurrent) return protectedWorkspace(<LegalAcceptance copy={v28} onAccept={acknowledgeCurrentLegal} busy={privacyBusy}/>)
 
@@ -353,7 +354,9 @@ export default function WorkspaceController(){
 
   if(screen==='app'&&!selectedClient&&section==='pricing') return protectedWorkspace(<PricingSurface a={a} promo={promo} payment={payment} paymentConfig={paymentConfig} checkoutPlan={checkoutPlan} upgrades={upgrades} promoCode={promoCode} setPromoCode={setPromoCode} appliedPromoCode={appliedPromoCode} applyPromo={applyPromo} clearPromo={clearPromo} quoteLoading={quoteLoading} quotes={quotes} promoAnyValid={promoAnyValid} promoAllInvalid={promoAllInvalid} promoSomeInvalid={promoSomeInvalid} eur={eur} terms={terms} termMonths={termMonths} setTermMonths={setTermMonths} monthsLabel={monthsLabel} period={period} requestUpgrade={requestUpgrade} onBack={()=>setSection('dashboard')}/>)
 
-  if(screen==='app'&&!selectedClient&&section==='account') return protectedWorkspace(<AccountSurface a={a} currentPlan={currentPlan} currentTier={currentTier} lt={lt} payment={payment} paymentConfig={paymentConfig} exportMyData={exportMyData} activityLog={activityLog} localeForLanguage={localeForLanguage} language={language} sct={sct} serverAudit={serverAudit} deletionRequests={deletionRequests} deletionBusy={deletionBusy} cancelAccountDeletion={cancelAccountDeletion} requestAccountDeletion={requestAccountDeletion} onBack={()=>setSection('dashboard')}/>)
+  if(screen==='app'&&!selectedClient&&section==='change-control'&&(access?.app_role==='owner'||access?.permissions?.shared_team_access===true)) return protectedWorkspace(<InternalChangeControlSurface supabase={supabase} ownerId={user?.id} language={language} onBack={()=>setSection('dashboard')}/>)
+
+  if(screen==='app'&&!selectedClient&&section==='account') return protectedWorkspace(<AccountSurface a={a} currentPlan={currentPlan} currentTier={currentTier} lt={lt} payment={payment} paymentConfig={paymentConfig} exportMyData={exportMyData} activityLog={activityLog} localeForLanguage={localeForLanguage} language={language} sct={sct} serverAudit={serverAudit} deletionRequests={deletionRequests} deletionBusy={deletionBusy} cancelAccountDeletion={cancelAccountDeletion} requestAccountDeletion={requestAccountDeletion} onOpenChangeControl={()=>setSection('change-control')} onBack={()=>setSection('dashboard')}/>)
 
   if(screen==='app'){
     if(selectedClient){

@@ -5,6 +5,8 @@ import { RegistrationLegalFields } from '../compliance/PrivacyControls'
 import { PasswordPolicyChecklist } from './PasswordPolicy'
 import { PasswordField } from './PasswordField'
 import { InstallAppButton } from '../public/InstallAppButton'
+import { TeamAccountLoginNotice } from '../team-account/TeamAccountLoginNotice'
+import { getTeamAccountCopy, isTeamLoginScreen } from '../team-account/teamAccountConfig.mjs'
 
 const v131AuthCopy={
   de:{badge:'Stand v131',headline:'Mehr als nur anmelden – Ihr digitaler Arbeitsbereich',lead:'Fälle verstehen, Dokumente auswerten, Länder vergleichen und Ergebnisse verständlich ausgeben.',features:[['📄','Dokumente & Fotos','Hochladen, erkennen, strukturieren und fallbezogen auswerten.'],['🌍','Sprachen & Länder','Mehrsprachige Eingabe und Ausgabe sowie Rechtsraumvergleich nach Zielland.'],['🚦','Analyse mit Ampel','Ergebnisse, Risiken, fehlende Unterlagen und nächste Schritte sofort erkennen.'],['✉️','Zweisprachige Schreiben','Kunden- und Empfängerschreiben auf Wunsch in zwei Sprachen ausgeben.'],['🎙️','Eingabe per Sprache','Sachverhalte auch per Mikrofon erfassen und weiterverarbeiten.'],['📤','Ausgabe & Freigabe','PDF/Word-Workflows, Vorschau und Freigabe vor der Weitergabe.']],hint:'Noch keinen Zugang? Kostenlos registrieren oder zuerst die Erklärung ansehen.',explain:'Erklärung ansehen'},
@@ -28,7 +30,9 @@ const v131CurrentHighlights=[
   ['🎟️','Promo-Code / promo code']
 ]
 
-export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setDisplayName,email,setEmail,password,setPassword,password2,setPassword2,showPassword,setShowPassword,showPassword2,setShowPassword2,pui,recoveryCopy,v28,acceptedLegal,setAcceptedLegal,confirmedTestData,setConfirmedTestData,registerReady,recoveryReady,register,signIn,resetPassword,completePasswordRecovery,message,lt,setScreen}){
+export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setDisplayName,email,setEmail,password,setPassword,password2,setPassword2,showPassword,setShowPassword,showPassword2,setShowPassword2,pui,recoveryCopy,v28,acceptedLegal,setAcceptedLegal,confirmedTestData,setConfirmedTestData,registerReady,recoveryReady,register,signIn,signInTeam,resetPassword,completePasswordRecovery,message,lt,setScreen}){
+  const isTeamLogin=isTeamLoginScreen(screen)
+  const team=getTeamAccountCopy(language)
   const resetSensitiveFields=()=>{
     setShowPassword(false)
     setShowPassword2(false)
@@ -67,6 +71,12 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
       <PasswordPolicyChecklist language={language} password={password} passwordRepeat={password2} email={email} displayName={displayName}/>
       <button className="primary full" disabled={!recoveryReady}>{recoveryCopy.submit}</button>
     </form>
+  }else if(isTeamLogin){
+    authForm=<form onSubmit={signInTeam}>
+      <PasswordField id="team-access-password" label={team.sharedPasswordLabel} value={password} onChange={event=>setPassword(event.target.value)} visible={showPassword} onToggle={()=>setShowPassword(value=>!value)} labels={pui} autoComplete="current-password"/>
+      <button className="primary full">{team.login}</button>
+      <small className="authHelp">Passwort 2 wird hier niemals eingegeben. Es wird nur abgefragt, wenn eine vollständig vorbereitete Änderung als neue Live-Version freigegeben wird.</small>
+    </form>
   }else if(screen==='request-reset'){
     authForm=<form onSubmit={submitResetRequest}>
       <label>{a.email}<input type="email" value={email} onChange={event=>setEmail(event.target.value)} autoComplete="email" required autoFocus/></label>
@@ -77,13 +87,13 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
     authForm=<form onSubmit={signIn}>
       <label>{a.email}<input type="email" value={email} onChange={event=>setEmail(event.target.value)} autoComplete="username" required/></label>
       <PasswordField id="login-password" label={a.password} value={password} onChange={event=>setPassword(event.target.value)} visible={showPassword} onToggle={()=>setShowPassword(value=>!value)} labels={pui} autoComplete="current-password"/>
-      <button className="primary full">{t.login}</button>
+      <button className="primary full">{isTeamLogin?team.login:t.login}</button>
       <button type="button" className="linkBtn full" onClick={openResetRequest}>{lt.passwordReset}</button>
       <small className="authHelp">{lt.passwordResetHelp}</small>
     </form>
   }
 
-  const title=screen==='register'?a.registerTitle:screen==='recovery'?recoveryCopy.title:screen==='request-reset'?lt.passwordReset:a.protected
+  const title=isTeamLogin?team.title:screen==='register'?a.registerTitle:screen==='recovery'?recoveryCopy.title:screen==='request-reset'?lt.passwordReset:a.protected
   const returnToLogin=screen==='register'||screen==='recovery'||screen==='request-reset'
   const c=v131AuthCopy[language]||v131AuthCopy.de
   const showOverview=screen==='login'||screen==='register'
@@ -106,11 +116,12 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
           <p className="muted" style={{marginBottom:'8px',fontSize:'13px'}}>{c.hint}</p>
           <button type="button" className="linkBtn full" onClick={()=>{resetSensitiveFields();setScreen('public')}}>{c.explain}</button>
         </div>}
+        {isTeamLogin?<TeamAccountLoginNotice language={language}/>:null}
         <p className="muted">{title}</p>
         {screen==='register'&&<div className="registerTransparency"><b>{tt.registerTitle}</b><p>{tt.registerNote}</p><span>✓ {a.noSubscription}</span></div>}
         {authForm}
         {message&&<div className="note" role="status">{message}</div>}
-        <button className="linkBtn full" onClick={()=>{resetSensitiveFields();setScreen(returnToLogin?'login':'register')}}>{returnToLogin?recoveryCopy.back:a.newHere}</button>
+        {isTeamLogin?<a className="linkBtn full btn" href="/insider">{team.back}</a>:<button className="linkBtn full" onClick={()=>{resetSensitiveFields();setScreen(returnToLogin?'login':'register')}}>{returnToLogin?recoveryCopy.back:a.newHere}</button>}
         <button className="backBtn full authBackBtn" data-persistent-back type="button" onClick={()=>{resetSensitiveFields();setScreen('public')}}>{a.backExplanation}</button>
       </section>
     </main>

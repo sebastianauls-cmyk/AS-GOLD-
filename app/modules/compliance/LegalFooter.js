@@ -16,14 +16,19 @@ const footerCopy={
   vi:{nav:'Thông tin pháp lý',withdrawal:'Rút khỏi hợp đồng',integrations:'Email và lưu trữ',hub:'Pháp lý',imprint:'Thông tin nhà cung cấp',privacy:'Quyền riêng tư',controls:'Kiểm soát quyền riêng tư',terms:'Điều khoản sử dụng',cookies:'Cookie và lưu trữ',ai:'Minh bạch AI',contact:'Liên hệ',binding:'Văn bản tiếng Đức có giá trị pháp lý ràng buộc.',updated:'Cập nhật'}
 }
 
+const internalAccessCopy={
+  de:'Interner Bereich',en:'Internal area',fr:'Espace interne',tr:'İç alan',pl:'Strefa wewnętrzna',ru:'Внутренний раздел',ar:'المنطقة الداخلية',fa:'بخش داخلی',ro:'Zonă internă',bg:'Вътрешна зона',vi:'Khu vực nội bộ'
+}
+
 function href(path,language){ return language==='de'?path:`${path}?lang=${language}` }
 
 export function LegalFooter({language='de'}){
   const on=footerCopy[language]||footerCopy.de
+  const internalAccess=internalAccessCopy[language]||internalAccessCopy.de
   return <footer className="legalFooter"><div className="wrap legalFooterInner">
     <div className="legalFooterBrand"><b>{PRODUCT_NAME}</b><span>© 2026 Sebastian Auls – Unternehmens- und Konzeptberatung</span></div>
     <nav aria-label={on.nav}>
-      <a className="withdrawalAction" href={href('/widerruf',language)}>{on.withdrawal}</a><a href={href('/integrationen',language)}>{on.integrations}</a><a href={href('/rechtliches',language)}>{on.hub}</a><a href={href('/impressum',language)}>{on.imprint}</a><a href={href('/datenschutz',language)}>{on.privacy}</a><a href={href('/datenschutzsteuerung',language)}>{on.controls}</a><a href={href('/nutzungsbedingungen',language)}>{on.terms}</a><a href={href('/cookies',language)}>{on.cookies}</a><a href={href('/ki-transparenz',language)}>{on.ai}</a><a href={href('/kontakt',language)}>{on.contact}</a>
+      <a className="withdrawalAction" href={href('/widerruf',language)}>{on.withdrawal}</a><a href={href('/integrationen',language)}>{on.integrations}</a><a href={href('/rechtliches',language)}>{on.hub}</a><a href={href('/impressum',language)}>{on.imprint}</a><a className="internalAccessAction" href="/insider" rel="nofollow">{internalAccess}</a><a href={href('/datenschutz',language)}>{on.privacy}</a><a href={href('/datenschutzsteuerung',language)}>{on.controls}</a><a href={href('/nutzungsbedingungen',language)}>{on.terms}</a><a href={href('/cookies',language)}>{on.cookies}</a><a href={href('/ki-transparenz',language)}>{on.ai}</a><a href={href('/kontakt',language)}>{on.contact}</a>
     </nav>
     <small>{on.binding} · {on.updated} 31.08.2026</small>
   </div></footer>

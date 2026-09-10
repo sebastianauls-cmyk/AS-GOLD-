@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useState } from 'react'
 import { ProductBrand } from '../brand/ProductBrand'
 import { InstallAppButton } from '../public/InstallAppButton'
+import { TeamAccountEntry } from '../team-account/TeamAccountEntry'
 
 const publicInstallPath='/installieren?neu=1'
 
@@ -24,16 +25,17 @@ export function InsiderLanding(){
     <section className="insiderShell" aria-labelledby="insider-title">
       <ProductBrand showDescriptor language="de" className="insiderBrand"/>
       <span className="insiderLabel">GETRENNTER INTERNER ZUGANG</span>
-      <h1 id="insider-title">Chef- & Insiderbereich</h1>
-      <p className="insiderLead">Diese Fläche ist ausschließlich für Sie, freigeschaltete Tester und bestehende interne Zugänge gedacht. Auf der öffentlichen Nutzerseite ist davon nichts zu sehen.</p>
+      <h1 id="insider-title">Gemeinsamer interner Arbeitsbereich</h1>
+      <p className="insiderLead">Passwort 1 gibt allen autorisierten internen Personen Vollzugriff auf das gesamte AS Workspace: öffentliche und interne Bereiche, Inhalte, Funktionen, Module, Einstellungen und Programmierungsänderungen. Alle dürfen Änderungen vorbereiten. Passwort 2 bleibt ausschließlich bei Ihnen und gibt einen fertigen Entwurf als neue Live-Version frei. Öffentlich sichtbar ist nur der Zugangsbutton neben dem Impressum; Inhalte und Funktionen bleiben bis zur Prüfung von Passwort 1 geschützt.</p>
+
+      <section className="insiderSetupCallout" aria-labelledby="insider-setup-title">
+        <span className="insiderActionIcon" aria-hidden="true">🔑</span>
+        <div><strong>ERSTER SCHRITT</strong><h2 id="insider-setup-title">Passwort 1 und Passwort 2 festlegen</h2><p>Die private Ersteinrichtung ist nur nach Ihrer persönlichen Anmeldung möglich.</p></div>
+        <Link className="primary insiderSetupAction" href="/insider/einrichten">Passwörter jetzt einrichten</Link>
+      </section>
 
       <div className="insiderActionGrid">
-        <article className="insiderActionCard">
-          <span className="insiderActionIcon" aria-hidden="true">🔐</span>
-          <h2>Eigene Arbeitsfläche</h2>
-          <p>Anmelden und den persönlichen, geschützten Workspace öffnen.</p>
-          <Link className="primary insiderPrimaryAction" href="/?start=login">Geschützten Bereich öffnen</Link>
-        </article>
+        <TeamAccountEntry/>
 
         <article className="insiderActionCard">
           <span className="insiderActionIcon" aria-hidden="true">🔗</span>

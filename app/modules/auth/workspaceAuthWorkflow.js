@@ -2,6 +2,7 @@ import { ensureRegistrationPrivacy, getWorkspaceAccess, loadWorkspaceBundle } fr
 import { AUTH_REDIRECT_URL, getAuthSession, registerTestAccount, sendPasswordReset, signInSession, startAnonymousTestSession, updatePassword } from '../services/authRepository'
 import { clearGuestTestRequest } from './guestTestRequest.mjs'
 import { getAuthErrorMessage } from './authMessages.mjs'
+import { signInTeamAccount } from '../team-account/teamAccountRepository.js'
 
 const resetFeedback={
   de:{emailRequired:'Bitte zuerst Ihre E-Mail-Adresse eingeben.',sent:'Wenn die Adresse registriert ist, wurde ein Link zum Zurücksetzen gesendet.'},
@@ -15,6 +16,11 @@ const resetFeedback={
   ro:{emailRequired:'Introduceți mai întâi adresa de e-mail.',sent:'Dacă adresa este înregistrată, a fost trimis un link pentru resetarea parolei.'},
   bg:{emailRequired:'Първо въведете имейл адреса си.',sent:'Ако адресът е регистриран, е изпратена връзка за нулиране на паролата.'},
   vi:{emailRequired:'Vui lòng nhập địa chỉ email trước.',sent:'Nếu địa chỉ đã được đăng ký, liên kết đặt lại mật khẩu đã được gửi.'}
+}
+
+const teamLoginFeedback={
+  de:{invalid:'Das gemeinsame Zugangspasswort ist nicht richtig.',unavailable:'Der gemeinsame Teamzugang ist noch nicht vollständig eingerichtet oder momentan nicht erreichbar.',limited:'Zu viele Anmeldeversuche. Bitte warten Sie kurz und versuchen Sie es erneut.'},
+  en:{invalid:'The shared access password is incorrect.',unavailable:'The shared team access is not fully configured or is temporarily unavailable.',limited:'Too many sign-in attempts. Please wait and try again.'}
 }
 
 export function createWorkspaceAuthActions({
@@ -97,6 +103,18 @@ export function createWorkspaceAuthActions({
     return loadApp(authData.session)
   }
 
+  async function signInTeam(event){
+    event.preventDefault()
+    setMessage('')
+    const feedback=teamLoginFeedback[language]||teamLoginFeedback.de
+    const {data:authData,error}=await signInTeamAccount(supabase,{password})
+    if(error){
+      setMessage(error.code==='too_many_requests'?feedback.limited:error.code==='team_credentials_invalid'?feedback.invalid:feedback.unavailable)
+      return false
+    }
+    return loadApp(authData.session)
+  }
+
   async function startGuestTest(){
     setMessage('')
     const {data:authData,error}=await startAnonymousTestSession(supabase,{displayName:guestCopy.displayName,privacyNoticeVersion,termsVersion})
@@ -155,5 +173,5 @@ export function createWorkspaceAuthActions({
     return true
   }
 
-  return {loadApp,signIn,startGuestTest,resetPassword,completePasswordRecovery,register}
+  return {loadApp,signIn,signInTeam,startGuestTest,resetPassword,completePasswordRecovery,register}
 }

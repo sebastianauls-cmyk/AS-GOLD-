@@ -58,6 +58,7 @@ body:has(.appMain [data-persistent-back]) .persistentDeadlineButton{z-index:179}
 .pilotRed{border-color:#e2aaaa;background:#fff7f7}.pilotYellow{border-color:#e3ca73;background:#fffaf0}.pilotGreen{border-color:#a7cdb0;background:#f2faf4}
 
 /* v131 auth mobile flow: registration should open directly on the form instead of repeating the full feature grid. */
+.teamLoginNotice{display:grid;gap:10px;margin:14px 0 18px;padding:16px;border:2px solid #c8a13a;border-radius:16px;background:linear-gradient(135deg,#fff8df,#fff)}.teamLoginNotice>span{justify-self:start;padding:5px 9px;border-radius:999px;background:#172131;color:#ffd765;font-size:.78rem;font-weight:900;letter-spacing:.05em}.teamLoginNotice p{margin:0;color:#485463;line-height:1.55}.teamLoginNotice strong{color:#4e3b13;line-height:1.45}
 .authCard:has(.registerTransparency) .languageSwitch + div{display:none}
 .authCard:has(.registerTransparency) .languageSwitch{margin-bottom:10px}
 
