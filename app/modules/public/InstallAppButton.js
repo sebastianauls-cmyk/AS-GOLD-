@@ -16,6 +16,20 @@ const copy={
   vi:{install:'Cài đặt AS Workspace',title:'Mở AS Workspace trực tiếp',lead:'Chỉ cần cài đặt một lần, sau đó mở như ứng dụng từ màn hình chính.',continue:'Tiếp tục mà không cài đặt',guideTitle:'Cài đặt trên thiết bị này',ios:'Nhấn “Chia sẻ” trong trình duyệt, sau đó chọn “Thêm vào Màn hình chính”.',android:'Mở trình đơn trình duyệt (⋮) và chọn “Cài đặt ứng dụng” hoặc “Thêm vào màn hình chính”.',inApp:'Trang đang mở trong bản xem trước của ứng dụng. Chọn “Mở bằng Chrome” hoặc “Mở bằng Safari”, sau đó nhấn “Cài đặt AS Workspace”.',desktop:'Dùng biểu tượng cài đặt trên thanh địa chỉ hoặc chọn “Cài đặt ứng dụng” trong trình đơn trình duyệt.',cancelled:'Đã hủy cài đặt. Bạn có thể bắt đầu lại bất cứ lúc nào.',close:'Đã hiểu'}
 }
 
+const installedCopy={
+  de:{title:'AS Workspace ist bereits installiert',lead:'Öffnen Sie die App über das AS-Workspace-Symbol auf Ihrem Startbildschirm.'},
+  en:{title:'AS Workspace is already installed',lead:'Open the app from the AS Workspace icon on your home screen.'},
+  fr:{title:'AS Workspace est déjà installé',lead:'Ouvrez l’application avec l’icône AS Workspace sur votre écran d’accueil.'},
+  tr:{title:'AS Workspace zaten yüklü',lead:'Uygulamayı ana ekranınızdaki AS Workspace simgesinden açın.'},
+  pl:{title:'AS Workspace jest już zainstalowany',lead:'Otwórz aplikację ikoną AS Workspace na ekranie głównym.'},
+  ru:{title:'AS Workspace уже установлен',lead:'Откройте приложение с помощью значка AS Workspace на главном экране.'},
+  ar:{title:'تم تثبيت AS Workspace بالفعل',lead:'افتح التطبيق من رمز AS Workspace على شاشتك الرئيسية.'},
+  fa:{title:'AS Workspace از قبل نصب شده است',lead:'برنامه را از نماد AS Workspace در صفحه اصلی باز کنید.'},
+  ro:{title:'AS Workspace este deja instalat',lead:'Deschideți aplicația din pictograma AS Workspace de pe ecranul principal.'},
+  bg:{title:'AS Workspace вече е инсталиран',lead:'Отворете приложението от иконата AS Workspace на началния екран.'},
+  vi:{title:'AS Workspace đã được cài đặt',lead:'Mở ứng dụng từ biểu tượng AS Workspace trên màn hình chính.'}
+}
+
 let rememberedInstallPrompt=null
 let installationAccepted=false
 
@@ -38,10 +52,12 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
   const closeButtonRef=useRef(null)
   const introInstallButtonRef=useRef(null)
   const c=copy[language]||copy.de
+  const installedText=installedCopy[language]||installedCopy.de
 
   useEffect(()=>{
     const displayMode=window.matchMedia?.('(display-mode: standalone)')
-    const isInstalled=()=>installationAccepted||displayMode?.matches||window.navigator.standalone===true
+    const detectedEnvironment=installEnvironment()
+    const isInstalled=()=>installationAccepted||(detectedEnvironment!=='inApp'&&(displayMode?.matches||window.navigator.standalone===true))
     const syncInstalled=()=>{
       const value=isInstalled()
       setInstalled(value)
@@ -60,7 +76,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       setInstallPrompt(null)
       setMessage('')
     }
-    setEnvironment(installEnvironment())
+    setEnvironment(detectedEnvironment)
     syncInstalled()
     const introTimer=!isInstalled()&&(forceIntro||sessionStorage.getItem('asworkspace-install-intro-seen')!=='1')
       ?window.setTimeout(()=>setShowInstallIntro(true),350)
@@ -128,7 +144,12 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
     }
   }
 
-  if(installed)return null
+  if(installed)return <section className={`installAppControl installAppControl--${surface}`} aria-label={installedText.title}>
+    <div className="installAppPanel installAppInstalledPanel">
+      <span className="installAppIcon installAppInstalledIcon" aria-hidden="true">✓</span>
+      <span className="installAppText"><strong>{installedText.title}</strong><small>{installedText.lead}</small></span>
+    </div>
+  </section>
   return <section className={`installAppControl installAppControl--${surface}`} aria-label={c.title}>
     <div className="installAppPanel">
       <span className="installAppIcon" aria-hidden="true">📲</span>
