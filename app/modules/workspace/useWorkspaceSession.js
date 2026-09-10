@@ -16,6 +16,7 @@ function isPasswordRecoveryUrl(){
 
 function requestedPublicScreen(){
   const start=new URLSearchParams(window.location.search).get('start')
+  if(start==='login')return 'login'
   if(start==='register')return 'register'
   if(start==='reset')return 'request-reset'
   if(start==='guest-test')return 'guest-test'

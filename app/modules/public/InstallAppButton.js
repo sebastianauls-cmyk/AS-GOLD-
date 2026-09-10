@@ -43,7 +43,7 @@ function installEnvironment(){
   return 'desktop'
 }
 
-export function InstallAppButton({language='de',surface='public',forceIntro=false}){
+export function InstallAppButton({language='de',surface='public',forceIntro=false,previewOnly=false}){
   const [installPrompt,setInstallPrompt]=useState(rememberedInstallPrompt)
   const [installed,setInstalled]=useState(installationAccepted)
   const [message,setMessage]=useState('')
@@ -57,7 +57,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
   useEffect(()=>{
     const displayMode=window.matchMedia?.('(display-mode: standalone)')
     const detectedEnvironment=installEnvironment()
-    const isInstalled=()=>installationAccepted||(detectedEnvironment!=='inApp'&&(displayMode?.matches||window.navigator.standalone===true))
+    const isInstalled=()=>!previewOnly&&(installationAccepted||(detectedEnvironment!=='inApp'&&(displayMode?.matches||window.navigator.standalone===true)))
     const syncInstalled=()=>{
       const value=isInstalled()
       setInstalled(value)
@@ -78,7 +78,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
     }
     setEnvironment(detectedEnvironment)
     syncInstalled()
-    const introTimer=!isInstalled()&&(forceIntro||sessionStorage.getItem('asworkspace-install-intro-seen')!=='1')
+    const introTimer=!previewOnly&&!isInstalled()&&(forceIntro||sessionStorage.getItem('asworkspace-install-intro-seen')!=='1')
       ?window.setTimeout(()=>setShowInstallIntro(true),350)
       :null
     window.addEventListener('beforeinstallprompt',rememberPrompt)
@@ -92,7 +92,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       document.removeEventListener('visibilitychange',syncInstalled)
       if(introTimer)window.clearTimeout(introTimer)
     }
-  },[])
+  },[forceIntro,previewOnly])
 
   useEffect(()=>{
     if(!showInstallIntro)return
@@ -125,6 +125,10 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
 
   async function install(){
     dismissInstallIntro()
+    if(previewOnly){
+      setMessage('Dies ist die geschützte Vorschau für Sie als Chef. Bei einem neuen Nutzer startet dieser gelbe Button die Installation auf dessen Gerät.')
+      return
+    }
     const prompt=installPrompt||rememberedInstallPrompt
     if(!prompt){setMessage(c[environment]||c.desktop);return}
     try{
@@ -144,7 +148,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
     }
   }
 
-  if(installed)return <section className={`installAppControl installAppControl--${surface}`} aria-label={installedText.title}>
+  if(installed&&!previewOnly)return <section className={`installAppControl installAppControl--${surface}`} aria-label={installedText.title}>
     <div className="installAppPanel installAppInstalledPanel">
       <span className="installAppIcon installAppInstalledIcon" aria-hidden="true">✓</span>
       <span className="installAppText"><strong>{installedText.title}</strong><small>{installedText.lead}</small></span>
@@ -156,7 +160,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       <span className="installAppText"><strong>{c.title}</strong><small>{c.lead}</small></span>
       <button type="button" className="primary installAppButton" onClick={install}>{c.install}</button>
     </div>
-    <button type="button" className="installAppFloatingButton" onClick={install}>📲 {c.install}</button>
+    {!previewOnly&&<button type="button" className="installAppFloatingButton" onClick={install}>📲 {c.install}</button>}
     {showInstallIntro&&<div className="installIntroBackdrop" role="presentation">
       <section className="installIntroDialog" role="dialog" aria-modal="true" aria-labelledby="install-intro-title">
         <span className="installIntroBadge">AS WORKSPACE APP</span>
