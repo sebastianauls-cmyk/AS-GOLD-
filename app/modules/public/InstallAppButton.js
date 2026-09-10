@@ -29,7 +29,7 @@ function installEnvironment(){
   return 'desktop'
 }
 
-export function InstallAppButton({language='de',surface='public'}){
+export function InstallAppButton({language='de',surface='public',forceIntro=false}){
   const [installPrompt,setInstallPrompt]=useState(rememberedInstallPrompt)
   const [installed,setInstalled]=useState(installationAccepted)
   const [message,setMessage]=useState('')
@@ -62,7 +62,7 @@ export function InstallAppButton({language='de',surface='public'}){
     }
     setEnvironment(installEnvironment())
     syncInstalled()
-    const introTimer=!isInstalled()&&sessionStorage.getItem('asworkspace-install-intro-seen')!=='1'
+    const introTimer=!isInstalled()&&(forceIntro||sessionStorage.getItem('asworkspace-install-intro-seen')!=='1')
       ?window.setTimeout(()=>setShowInstallIntro(true),350)
       :null
     window.addEventListener('beforeinstallprompt',rememberPrompt)
