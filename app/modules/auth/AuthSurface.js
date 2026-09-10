@@ -4,6 +4,7 @@ import { LegalFooter } from '../compliance/LegalFooter'
 import { RegistrationLegalFields } from '../compliance/PrivacyControls'
 import { PasswordPolicyChecklist } from './PasswordPolicy'
 import { PasswordField } from './PasswordField'
+import { InstallAppButton } from '../public/InstallAppButton'
 
 const v131AuthCopy={
   de:{badge:'Stand v131',headline:'Mehr als nur anmelden – Ihr digitaler Arbeitsbereich',lead:'Fälle verstehen, Dokumente auswerten, Länder vergleichen und Ergebnisse verständlich ausgeben.',features:[['📄','Dokumente & Fotos','Hochladen, erkennen, strukturieren und fallbezogen auswerten.'],['🌍','Sprachen & Länder','Mehrsprachige Eingabe und Ausgabe sowie Rechtsraumvergleich nach Zielland.'],['🚦','Analyse mit Ampel','Ergebnisse, Risiken, fehlende Unterlagen und nächste Schritte sofort erkennen.'],['✉️','Zweisprachige Schreiben','Kunden- und Empfängerschreiben auf Wunsch in zwei Sprachen ausgeben.'],['🎙️','Eingabe per Sprache','Sachverhalte auch per Mikrofon erfassen und weiterverarbeiten.'],['📤','Ausgabe & Freigabe','PDF/Word-Workflows, Vorschau und Freigabe vor der Weitergabe.']],hint:'Noch keinen Zugang? Kostenlos registrieren oder zuerst die Erklärung ansehen.',explain:'Erklärung ansehen'},
@@ -91,6 +92,7 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
     <main className="center">
       <section className="card authCard">
         <ProductBrand showDescriptor language={language}/>
+        {(screen==='login'||screen==='register')&&<InstallAppButton language={language} surface="auth"/>}
         <div className="languageSwitch"><span>{t.language}</span><LanguageSwitcher value={language} onChange={setLanguage} label={t.language}/></div>
         {showOverview&&<div style={{margin:'12px 0 18px',padding:'14px',border:'1px solid var(--line, #d9dee8)',borderRadius:'14px',background:'var(--soft, #f7f9fc)'}}>
           <div style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap',marginBottom:'6px'}}><strong>{c.headline}</strong><span style={{fontSize:'12px',padding:'3px 8px',borderRadius:'999px',border:'1px solid currentColor'}}>{c.badge}</span></div>

@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { LanguageSwitcher } from '../language/LanguageSwitcher'
 import { outputLanguageNames } from '../language/v36Languages.mjs'
+import { InstallAppButton } from './InstallAppButton'
 
 const copy={
   de:{interfaceTitle:'1. Sprache der Oberfläche',interfaceLabel:'Oberfläche',outputTitle:'2. Sprache für Ausgabe & Kunden',outputLabel:'Ausgabesprache',outputHelp:'Dokumente, Ergebnisse und Schreiben erscheinen für Kunden oder andere Personen in {language}. Die Oberfläche bleibt davon unabhängig.',presenter:'Wer soll AS Workspace Gold erklären?',female:'Frau erklärt',male:'Mann erklärt',play:'Erklärvideo abspielen',back:'Zurück'},
@@ -67,6 +68,7 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
   return <section className="publicLanguageModules" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
     <style>{persistentLanguageBackStyles}</style>
     <p className="publicWelcome"><span aria-hidden="true">👋</span> {warmWelcome[language]||warmWelcome.de}</p>
+    <InstallAppButton language={language} surface="public"/>
     {(language!=='de'||outputLanguage!=='de')&&<button type="button" className="publicBackButton" dir="ltr" onClick={returnToGerman} aria-label="Back to German – Oberfläche und Kundensprache auf Deutsch zurückstellen">← 🇩🇪 Back to German / Zurück zu Deutsch</button>}
     <div className="publicLanguageModule interfaceModule">
       <strong className="publicLanguageTitle">{text.interfaceTitle}</strong>

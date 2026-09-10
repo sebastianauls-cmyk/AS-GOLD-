@@ -2,7 +2,6 @@
 
 import { ProductBrand } from '../brand/ProductBrand'
 import { PublicLanguageModules } from './PublicLanguageModules'
-import { InstallAppButton } from './InstallAppButton'
 
 export function PublicHeader({
   t,
@@ -20,7 +19,6 @@ export function PublicHeader({
       <nav className="publicActions publicNavActions">
         <a href="#fallarten">{caseNavLabel}</a>
         <a href="#preise">{t.prices}</a>
-        <InstallAppButton language={language}/>
         <button className="secondary" onClick={()=>onScreenChange('register')}>{t.register}</button>
         <button className="primary" onClick={()=>onScreenChange('login')}>{t.login}</button>
       </nav>
