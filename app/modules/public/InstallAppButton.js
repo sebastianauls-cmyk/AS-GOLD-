@@ -32,7 +32,6 @@ const installedCopy={
 }
 
 let rememberedInstallPrompt=null
-let installationAccepted=false
 
 function installEnvironment(){
   const ua=window.navigator.userAgent||''
@@ -44,14 +43,13 @@ function installEnvironment(){
   return 'desktop'
 }
 
-export function InstallAppButton({language='de',surface='public',forceIntro=false,previewOnly=false}){
+export function InstallAppButton({language='de',surface='public',previewOnly=false}){
   const [installPrompt,setInstallPrompt]=useState(rememberedInstallPrompt)
-  const [installed,setInstalled]=useState(installationAccepted)
+  const [installed,setInstalled]=useState(false)
   const [message,setMessage]=useState('')
   const [environment,setEnvironment]=useState('desktop')
-  const [showInstallIntro,setShowInstallIntro]=useState(false)
+  const installedFromEventRef=useRef(false)
   const closeButtonRef=useRef(null)
-  const introInstallButtonRef=useRef(null)
   const c=copy[language]||copy.de
   const installedText=installedCopy[language]||installedCopy.de
   const showShareAction=surface==='install'||surface==='public'
@@ -59,11 +57,9 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
   useEffect(()=>{
     const displayMode=window.matchMedia?.('(display-mode: standalone)')
     const detectedEnvironment=installEnvironment()
-    const isInstalled=()=>!previewOnly&&(installationAccepted||(detectedEnvironment!=='inApp'&&(displayMode?.matches||window.navigator.standalone===true)))
+    const isInstalled=()=>!previewOnly&&(installedFromEventRef.current||(detectedEnvironment!=='inApp'&&(displayMode?.matches||window.navigator.standalone===true)))
     const syncInstalled=()=>{
-      const value=isInstalled()
-      setInstalled(value)
-      if(value)setShowInstallIntro(false)
+      setInstalled(isInstalled())
     }
     const rememberPrompt=event=>{
       event.preventDefault()
@@ -72,7 +68,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       setMessage('')
     }
     const markInstalled=()=>{
-      installationAccepted=true
+      installedFromEventRef.current=true
       rememberedInstallPrompt=null
       setInstalled(true)
       setInstallPrompt(null)
@@ -80,9 +76,6 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
     }
     setEnvironment(detectedEnvironment)
     syncInstalled()
-    const introTimer=!previewOnly&&!isInstalled()&&(forceIntro||sessionStorage.getItem('asworkspace-install-intro-seen')!=='1')
-      ?window.setTimeout(()=>setShowInstallIntro(true),350)
-      :null
     window.addEventListener('beforeinstallprompt',rememberPrompt)
     window.addEventListener('appinstalled',markInstalled)
     displayMode?.addEventListener?.('change',syncInstalled)
@@ -92,21 +85,8 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       window.removeEventListener('appinstalled',markInstalled)
       displayMode?.removeEventListener?.('change',syncInstalled)
       document.removeEventListener('visibilitychange',syncInstalled)
-      if(introTimer)window.clearTimeout(introTimer)
     }
-  },[forceIntro,previewOnly])
-
-  useEffect(()=>{
-    if(!showInstallIntro)return
-    const previouslyFocused=document.activeElement
-    const closeOnEscape=event=>{if(event.key==='Escape')dismissInstallIntro()}
-    document.addEventListener('keydown',closeOnEscape)
-    introInstallButtonRef.current?.focus()
-    return()=>{
-      document.removeEventListener('keydown',closeOnEscape)
-      previouslyFocused?.focus?.()
-    }
-  },[showInstallIntro])
+  },[previewOnly])
 
   useEffect(()=>{
     if(!message)return
@@ -120,13 +100,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
     }
   },[message])
 
-  function dismissInstallIntro(){
-    setShowInstallIntro(false)
-    sessionStorage.setItem('asworkspace-install-intro-seen','1')
-  }
-
   async function install(){
-    dismissInstallIntro()
     if(previewOnly){
       setMessage('Dies ist die geschützte Vorschau für Sie als Chef. Bei einem neuen Nutzer startet dieser gelbe Button die Installation auf dessen Gerät.')
       return
@@ -136,10 +110,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
     try{
       await prompt.prompt()
       const choice=await prompt.userChoice
-      if(choice?.outcome==='accepted'){
-        installationAccepted=true
-        setInstalled(true)
-      }else{
+      if(choice?.outcome!=='accepted'){
         setMessage(c.cancelled)
       }
     }catch{
@@ -150,32 +121,17 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
     }
   }
 
-  if(installed&&!previewOnly)return <section className={`installAppControl installAppControl--${surface}`} aria-label={installedText.title}>
-    <div className="installAppPanel installAppInstalledPanel">
-      <span className="installAppIcon installAppInstalledIcon" aria-hidden="true">✓</span>
-      <span className="installAppText"><strong>{installedText.title}</strong><small>{installedText.lead}</small></span>
+  const installationIsConfirmed=installed&&!previewOnly
+
+  return <section className={`installAppControl installAppControl--${surface}${installationIsConfirmed?' installAppControl--installed':''}`} aria-label={installationIsConfirmed?installedText.title:c.title}>
+    <div className={`installAppPanel${installationIsConfirmed?' installAppInstalledPanel':''}`}>
+      <span className={`installAppIcon${installationIsConfirmed?' installAppInstalledIcon':''}`} aria-hidden="true">{installationIsConfirmed?'✓':'↧'}</span>
+      <span className="installAppText"><strong>{installationIsConfirmed?installedText.title:c.title}</strong><small>{installationIsConfirmed?installedText.lead:c.lead}</small></span>
+      <div className="installAppActions">
+        {!installationIsConfirmed&&<button type="button" className="primary installAppButton" onClick={install}>{c.install}</button>}
+        {showShareAction&&<InstallShareButton compact/>}
+      </div>
     </div>
-    {showShareAction&&<InstallShareButton/>}
-  </section>
-  return <section className={`installAppControl installAppControl--${surface}`} aria-label={c.title}>
-    <div className="installAppPanel">
-      <span className="installAppIcon" aria-hidden="true">📲</span>
-      <span className="installAppText"><strong>{c.title}</strong><small>{c.lead}</small></span>
-      <button type="button" className="primary installAppButton" onClick={install}>{c.install}</button>
-    </div>
-    {showShareAction&&!showInstallIntro&&<InstallShareButton/>}
-    {!previewOnly&&<button type="button" className="installAppFloatingButton" onClick={install}>📲 {c.install}</button>}
-    {showInstallIntro&&<div className="installIntroBackdrop" role="presentation">
-      <section className="installIntroDialog" role="dialog" aria-modal="true" aria-labelledby="install-intro-title">
-        <span className="installIntroBadge">AS WORKSPACE APP</span>
-        <span className="installIntroIcon" aria-hidden="true">📲</span>
-        <h2 id="install-intro-title">{c.title}</h2>
-        <p>{c.lead}</p>
-        <button ref={introInstallButtonRef} type="button" className="installIntroPrimary" onClick={install}>{c.install}</button>
-        {showShareAction&&<InstallShareButton/>}
-        <button type="button" className="installIntroLater" onClick={dismissInstallIntro}>{c.continue}</button>
-      </section>
-    </div>}
     {message&&<div className="installGuideBackdrop" role="presentation" onClick={()=>setMessage('')}>
       <section className="installGuideDialog" role="dialog" aria-modal="true" aria-labelledby="install-guide-title" onClick={event=>event.stopPropagation()}>
         <span className="installGuideIcon" aria-hidden="true">📲</span>

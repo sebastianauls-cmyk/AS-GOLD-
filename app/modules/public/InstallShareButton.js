@@ -5,7 +5,7 @@ import { useState } from 'react'
 const installPath='/installieren?neu=1'
 const shareText='Hallo, hier können Sie AS Workspace direkt installieren:'
 
-export function InstallShareButton(){
+export function InstallShareButton({compact=false}){
   const [status,setStatus]=useState('')
 
   async function shareInstallLink(){
@@ -44,8 +44,8 @@ export function InstallShareButton(){
     )
   }
 
-  return <div className="installShareBox">
-    <button type="button" className="installShareButton" onClick={shareInstallLink}>📤 AS Workspace weiterleiten</button>
+  return <div className={`installShareBox${compact?' installShareBox--compact':''}`}>
+    <button type="button" className={`installShareButton${compact?' installShareButton--compact':''}`} aria-label="AS Workspace weiterleiten" onClick={shareInstallLink}>{compact?<><span className="installShareButtonIcon" aria-hidden="true">↗</span><span className="installShareButtonLabel">Weiterleiten</span></>:'📤 AS Workspace weiterleiten'}</button>
     {status&&<p className="installShareStatus" role="status" aria-live="polite">✓ {status}</p>}
   </div>
 }

@@ -9,6 +9,7 @@ export const metadata = {
   title: { default:`${PRODUCT_NAME} – ${PRODUCT_DESCRIPTOR}`, template:`%s | ${PRODUCT_NAME}` },
   description: `${PRODUCT_DESCRIPTOR}. ${PRODUCT_PROMISE}.`,
   applicationName: PRODUCT_NAME,
+  icons: { icon:'/as-gold-icon.svg', apple:'/as-workspace-icon-180.png' },
   appleWebApp: { capable:true, title:PRODUCT_NAME, statusBarStyle:'default' },
   robots: { index:true, follow:true }
 }
