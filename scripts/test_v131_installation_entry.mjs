@@ -42,7 +42,7 @@ assert.doesNotMatch(install,/installIntroBackdrop|showInstallIntro|installAppFlo
 assert.equal((install.match(/className="primary installAppButton"/g)||[]).length,1,'the component must render only one installation action')
 assert.match(install,/<InstallShareButton compact\/>/,'installation and forwarding must share one compact control')
 assert.match(install,/showShareAction=surface==='install'\|\|surface==='public'/,'the forwarding action must also remain visible on the normal public start page')
-assert.match(installShare,/AS Workspace weiterleiten/,'forwarding action must be named clearly')
+assert.match(installShare,/Installationslink weiterleiten/,'forwarding action must name the installation link clearly')
 assert.match(installShare,/installShareButton--compact/,'forwarding must support the compact installation control')
 assert.match(installShare,/navigator\.share/,'mobile forwarding must open the native sharing menu')
 assert.match(installShare,/navigator\.clipboard\.writeText/,'forwarding must copy the installation link when native sharing is unavailable')
@@ -112,6 +112,9 @@ assert.match(css,/\.installAppPanel\{[^}]*padding:11px 13px/,'installation statu
 assert.match(css,/\.installAppButton\{[^}]*min-height:44px/,'the single installation action must remain touch friendly')
 assert.match(css,/\.installShareButton--compact\{[^}]*min-height:44px/,'compact forwarding must remain touch friendly')
 assert.match(css,/\.installAppControl--installed \.installAppPanel\{grid-template-columns:auto minmax\(0,1fr\) auto\}/,'installed mobile state must stay on one compact row')
+assert.match(css,/\.installAppControl--installed \.installAppActions\{grid-column:1\/-1;display:grid;width:100%\}/,'small installed screens must give forwarding a clear full-width row')
+assert.match(css,/\.installAppControl--installed \.installShareBox--compact,\.installAppControl--installed \.installShareButton--compact\{width:100%\}/,'the forwarding label must remain fully visible on narrow screens')
+assert.doesNotMatch(css,/\.installAppControl--installed \.installShareButtonLabel\{[^}]*clip:/,'the forwarding label must never be hidden on small installed devices')
 assert.match(insiderCss,/\.insiderLanding\{min-height:100svh/,'insider landing must be a visibly separate full-height surface')
 assert.match(insiderCss,/\.insiderGate\{min-height:100svh/,'the internal surface must present a full-height access gate before its content')
 
