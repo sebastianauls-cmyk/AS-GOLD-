@@ -39,6 +39,7 @@ assert.match(install,/asworkspace-install-intro-seen/,'dismissed installation di
 assert.match(install,/Ohne Installation weiter/,'installation dialog must offer a clear non-install continuation')
 assert.match(install,/forceIntro\|\|sessionStorage/,'direct installation links must reopen the installation decision reliably')
 assert.match(install,/<InstallShareButton\/>/,'direct installation flow must expose its forwarding action before and after installation')
+assert.match(install,/showShareAction=surface==='install'\|\|surface==='public'/,'the forwarding action must also remain visible on the normal public start page')
 assert.match(installShare,/AS Workspace weiterleiten/,'forwarding action must be named clearly')
 assert.match(installShare,/navigator\.share/,'mobile forwarding must open the native sharing menu')
 assert.match(installShare,/navigator\.clipboard\.writeText/,'forwarding must copy the installation link when native sharing is unavailable')
