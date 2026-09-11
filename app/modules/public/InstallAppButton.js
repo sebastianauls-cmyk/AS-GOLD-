@@ -54,6 +54,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
   const introInstallButtonRef=useRef(null)
   const c=copy[language]||copy.de
   const installedText=installedCopy[language]||installedCopy.de
+  const showShareAction=surface==='install'||surface==='public'
 
   useEffect(()=>{
     const displayMode=window.matchMedia?.('(display-mode: standalone)')
@@ -154,7 +155,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       <span className="installAppIcon installAppInstalledIcon" aria-hidden="true">✓</span>
       <span className="installAppText"><strong>{installedText.title}</strong><small>{installedText.lead}</small></span>
     </div>
-    {surface==='install'&&<InstallShareButton/>}
+    {showShareAction&&<InstallShareButton/>}
   </section>
   return <section className={`installAppControl installAppControl--${surface}`} aria-label={c.title}>
     <div className="installAppPanel">
@@ -162,7 +163,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       <span className="installAppText"><strong>{c.title}</strong><small>{c.lead}</small></span>
       <button type="button" className="primary installAppButton" onClick={install}>{c.install}</button>
     </div>
-    {surface==='install'&&!showInstallIntro&&<InstallShareButton/>}
+    {showShareAction&&!showInstallIntro&&<InstallShareButton/>}
     {!previewOnly&&<button type="button" className="installAppFloatingButton" onClick={install}>📲 {c.install}</button>}
     {showInstallIntro&&<div className="installIntroBackdrop" role="presentation">
       <section className="installIntroDialog" role="dialog" aria-modal="true" aria-labelledby="install-intro-title">
@@ -171,7 +172,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
         <h2 id="install-intro-title">{c.title}</h2>
         <p>{c.lead}</p>
         <button ref={introInstallButtonRef} type="button" className="installIntroPrimary" onClick={install}>{c.install}</button>
-        {surface==='install'&&<InstallShareButton/>}
+        {showShareAction&&<InstallShareButton/>}
         <button type="button" className="installIntroLater" onClick={dismissInstallIntro}>{c.continue}</button>
       </section>
     </div>}
