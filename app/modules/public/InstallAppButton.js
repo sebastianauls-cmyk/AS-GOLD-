@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { InstallShareButton } from './InstallShareButton'
 
 const copy={
   de:{install:'AS Workspace installieren',title:'AS Workspace direkt öffnen',lead:'Einmal installieren und danach wie eine App vom Startbildschirm öffnen.',continue:'Ohne Installation weiter',guideTitle:'Installation auf diesem Gerät',ios:'Tippen Sie unten im Browser auf „Teilen“ und danach auf „Zum Home-Bildschirm“.',android:'Öffnen Sie das Browser-Menü (⋮) und wählen Sie „App installieren“ oder „Zum Startbildschirm hinzufügen“.',inApp:'Diese Seite ist in einer Vorschau geöffnet. Wählen Sie im Menü „In Chrome öffnen“ oder „In Safari öffnen“ und tippen Sie dort auf „AS Workspace installieren“.',desktop:'Nutzen Sie das Installationssymbol in der Adresszeile oder öffnen Sie das Browser-Menü und wählen Sie „App installieren“.',cancelled:'Die Installation wurde abgebrochen. Sie können sie jederzeit erneut starten.',close:'Verstanden'},
@@ -153,6 +154,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       <span className="installAppIcon installAppInstalledIcon" aria-hidden="true">✓</span>
       <span className="installAppText"><strong>{installedText.title}</strong><small>{installedText.lead}</small></span>
     </div>
+    {surface==='install'&&<InstallShareButton/>}
   </section>
   return <section className={`installAppControl installAppControl--${surface}`} aria-label={c.title}>
     <div className="installAppPanel">
@@ -160,6 +162,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
       <span className="installAppText"><strong>{c.title}</strong><small>{c.lead}</small></span>
       <button type="button" className="primary installAppButton" onClick={install}>{c.install}</button>
     </div>
+    {surface==='install'&&!showInstallIntro&&<InstallShareButton/>}
     {!previewOnly&&<button type="button" className="installAppFloatingButton" onClick={install}>📲 {c.install}</button>}
     {showInstallIntro&&<div className="installIntroBackdrop" role="presentation">
       <section className="installIntroDialog" role="dialog" aria-modal="true" aria-labelledby="install-intro-title">
@@ -168,6 +171,7 @@ export function InstallAppButton({language='de',surface='public',forceIntro=fals
         <h2 id="install-intro-title">{c.title}</h2>
         <p>{c.lead}</p>
         <button ref={introInstallButtonRef} type="button" className="installIntroPrimary" onClick={install}>{c.install}</button>
+        {surface==='install'&&<InstallShareButton/>}
         <button type="button" className="installIntroLater" onClick={dismissInstallIntro}>{c.continue}</button>
       </section>
     </div>}
