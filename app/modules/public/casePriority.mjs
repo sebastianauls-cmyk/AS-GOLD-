@@ -3,7 +3,7 @@
 // Contract combines purchase, passenger-rights, travel, credit/leasing and
 // regulated-fee claims. Property combines residential/other rent and WEG.
 // Insurance combines insurance-contract and traffic-accident matters because
-// AS Workspace Gold's insurance category explicitly includes motor claims.
+// ASH Workspace Gold's insurance category explicitly includes motor claims.
 export const researchedCaseVolumes=Object.freeze({
   work:327119,
   contract:271155,

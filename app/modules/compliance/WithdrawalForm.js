@@ -34,14 +34,14 @@ export default function WithdrawalForm(){
       const payload=await response.json().catch(()=>({}))
       if(!response.ok) throw new Error(on.error)
       setConfirmation(payload);setStep('done')
-      saveText(payload.confirmation_text,`AS_Gold_Widerruf_${payload.withdrawal_id}.txt`)
+      saveText(payload.confirmation_text,`ASH_Workspace_Gold_Widerruf_${payload.withdrawal_id}.txt`)
     }catch{setError(on.error)}
     finally{setBusy(false)}
   }
 
   if(step==='start') return <div className="withdrawalStart"><p>{on.startText}</p><button type="button" className="primary withdrawalPrimary" onClick={begin}>{on.start}</button></div>
 
-  if(step==='done') return <div className="withdrawalDone" aria-live="polite"><h3>{on.done}</h3><p>{on.received} <b>{new Date(confirmation.received_at).toLocaleString(localeForLanguage[language]||localeForLanguage.de)}</b>.</p><p>{on.reference}: <code>{confirmation.withdrawal_id}</code></p><button type="button" className="secondary" onClick={()=>saveText(confirmation.confirmation_text,`AS_Gold_Widerruf_${confirmation.withdrawal_id}.txt`)}>{on.again}</button><small>{on.keep}</small></div>
+  if(step==='done') return <div className="withdrawalDone" aria-live="polite"><h3>{on.done}</h3><p>{on.received} <b>{new Date(confirmation.received_at).toLocaleString(localeForLanguage[language]||localeForLanguage.de)}</b>.</p><p>{on.reference}: <code>{confirmation.withdrawal_id}</code></p><button type="button" className="secondary" onClick={()=>saveText(confirmation.confirmation_text,`ASH_Workspace_Gold_Widerruf_${confirmation.withdrawal_id}.txt`)}>{on.again}</button><small>{on.keep}</small></div>
 
   return <form className="withdrawalForm" onSubmit={submit}>
     <h3>{on.prepare}</h3>

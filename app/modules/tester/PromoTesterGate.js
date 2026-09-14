@@ -1,8 +1,10 @@
+import { APP_VERSION } from '../release/appRelease.mjs'
+
 export function PromoTesterGate(){
   return <main className="center"><section className="card recoveryCard" style={{maxWidth:700}}>
-    <span className="modeBadge">V131 · Persönlicher Testerzugang</span>
+    <span className="modeBadge">{APP_VERSION} · Persönlicher Testerzugang</span>
     <h1>Vollständig kostenlosen Testzugang persönlich anfordern</h1>
-    <p className="muted">Der persönliche Testzugang ist vollständig kostenlos. Um ihn zu erhalten, senden Sie dem Anbieter zunächst eine E-Mail mit Ihrem Namen und der E-Mail-Adresse, mit der Sie AS Workspace Gold nutzen möchten.</p>
+    <p className="muted">Der persönliche Testzugang ist vollständig kostenlos. Um ihn zu erhalten, senden Sie dem Anbieter zunächst eine E-Mail mit Ihrem Namen und der E-Mail-Adresse, mit der Sie ASH Workspace Gold nutzen möchten.</p>
 
     <div className="legalNotice legalNotice-warning">
       <b>Freigabe nur nach persönlicher Bestätigung.</b>
@@ -13,7 +15,7 @@ export function PromoTesterGate(){
       <div className="detailCard" style={{padding:14}}><b>1 · Anfrage senden</b><p className="muted">Persönlich per WhatsApp oder E-Mail anfragen und Name sowie spätere Login-E-Mail mitteilen.</p></div>
       <div className="detailCard" style={{padding:14}}><b>2 · Freigabe erhalten</b><p className="muted">Nach ausdrücklicher Zustimmung erhalten Sie Ihren persönlichen, E-Mail-gebundenen Code.</p></div>
       <div className="detailCard" style={{padding:14}}><b>3 · Anmelden</b><p className="muted">Mit genau der freigegebenen E-Mail registrieren oder anmelden.</p></div>
-      <div className="detailCard" style={{padding:14}}><b>4 · Code einlösen</b><p className="muted">Den persönlichen Code auf der Einlöse-Seite aktivieren und AS Workspace Gold öffnen.</p></div>
+      <div className="detailCard" style={{padding:14}}><b>4 · Code einlösen</b><p className="muted">Den persönlichen Code auf der Einlöse-Seite aktivieren und ASH Workspace Gold öffnen.</p></div>
     </section>
 
     <ol style={{display:'grid',gap:10,paddingInlineStart:22}}>

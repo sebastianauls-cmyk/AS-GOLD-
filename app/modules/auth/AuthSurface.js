@@ -7,6 +7,7 @@ import { PasswordField } from './PasswordField'
 import { InstallAppButton } from '../public/InstallAppButton'
 import { TeamAccountLoginNotice } from '../team-account/TeamAccountLoginNotice'
 import { getTeamAccountCopy, isTeamLoginScreen } from '../team-account/teamAccountConfig.mjs'
+import { APP_VERSION } from '../release/appRelease.mjs'
 
 const v131AuthCopy={
   de:{badge:'Stand v131',headline:'Mehr als nur anmelden – Ihr digitaler Arbeitsbereich',lead:'Fälle verstehen, Dokumente auswerten, Länder vergleichen und Ergebnisse verständlich ausgeben.',features:[['📄','Dokumente & Fotos','Hochladen, erkennen, strukturieren und fallbezogen auswerten.'],['🌍','Sprachen & Länder','Mehrsprachige Eingabe und Ausgabe sowie Rechtsraumvergleich nach Zielland.'],['🚦','Analyse mit Ampel','Ergebnisse, Risiken, fehlende Unterlagen und nächste Schritte sofort erkennen.'],['✉️','Zweisprachige Schreiben','Kunden- und Empfängerschreiben auf Wunsch in zwei Sprachen ausgeben.'],['🎙️','Eingabe per Sprache','Sachverhalte auch per Mikrofon erfassen und weiterverarbeiten.'],['📤','Ausgabe & Freigabe','PDF/Word-Workflows, Vorschau und Freigabe vor der Weitergabe.']],hint:'Noch keinen Zugang? Kostenlos registrieren oder zuerst die Erklärung ansehen.',explain:'Erklärung ansehen'},
@@ -95,7 +96,8 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
 
   const title=isTeamLogin?team.title:screen==='register'?a.registerTitle:screen==='recovery'?recoveryCopy.title:screen==='request-reset'?lt.passwordReset:a.protected
   const returnToLogin=screen==='register'||screen==='recovery'||screen==='request-reset'
-  const c=v131AuthCopy[language]||v131AuthCopy.de
+  const selectedCopy=v131AuthCopy[language]||v131AuthCopy.de
+  const c={...selectedCopy,badge:selectedCopy.badge.replace('v131',APP_VERSION.toLowerCase())}
   const showOverview=screen==='login'||screen==='register'
 
   return <>
@@ -110,7 +112,7 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
           <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))',gap:'8px'}}>
             {c.features.map(([icon,label,text])=><div key={label} style={{padding:'9px 10px',borderRadius:'10px',background:'var(--card, #fff)',border:'1px solid var(--line, #e3e7ee)'}}><div style={{fontWeight:700}}>{icon} {label}</div><small className="muted">{text}</small></div>)}
           </div>
-          <div aria-label="V131 current capabilities" style={{display:'flex',gap:'7px',flexWrap:'wrap',marginTop:'12px'}}>
+          <div aria-label={`${APP_VERSION} current capabilities`} style={{display:'flex',gap:'7px',flexWrap:'wrap',marginTop:'12px'}}>
             {v131CurrentHighlights.map(([icon,label])=><span key={label} style={{fontSize:'12px',padding:'5px 8px',borderRadius:'999px',background:'var(--card, #fff)',border:'1px solid var(--line, #e3e7ee)'}}>{icon} {label}</span>)}
           </div>
           <p className="muted" style={{marginBottom:'8px',fontSize:'13px'}}>{c.hint}</p>

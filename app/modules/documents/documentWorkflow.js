@@ -108,9 +108,9 @@ export function createDocumentWorkflowActions({
     let file=form.elements.file.files[0]
     if(!file&&form.elements.sample_document?.value==='synthetic-v29'){
       try{
-        const response=await fetch('/testdaten/AS_Gold_Synthetischer_Testfall_V29.pdf',{cache:'no-store'})
+        const response=await fetch('/testdaten/ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf',{cache:'no-store'})
         if(!response.ok)throw new Error('Sample document unavailable')
-        file=new File([await response.blob()],'AS_Gold_Synthetischer_Testfall_V29.pdf',{type:'application/pdf'})
+        file=new File([await response.blob()],'ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf',{type:'application/pdf'})
       }catch{
         setMessage(documentUploadReadinessMessage(language,'upload_failed'))
         return false

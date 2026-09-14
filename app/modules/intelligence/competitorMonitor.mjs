@@ -32,7 +32,7 @@ export function competitorMonitorCheckPlan(){
   return {
     monitor_kind:MONITOR_KINDS.competitor,
     dimensions:[...COMPETITOR_MONITOR_DIMENSIONS],
-    comparison_rule:'Only propose improvements that are useful for AS Workspace Gold; do not copy protected expression, source code, branding or proprietary assets.',
+    comparison_rule:'Only propose improvements that are useful for ASH Workspace Gold; do not copy protected expression, source code, branding or proprietary assets.',
     result:'proposal_only',
     implementation:'requires_explicit_approval'
   }

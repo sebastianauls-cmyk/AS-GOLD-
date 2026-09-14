@@ -6,7 +6,7 @@ export function sumupCheckoutReference(requestId){
 
 export function sumupCheckoutPayload({reservation,merchantCode,baseUrl,now=new Date()}){
   const requestId=String(reservation?.request_id||'')
-  const planName=String(reservation?.to_plan_name||reservation?.to_plan||'AS Workspace Gold')
+  const planName=String(reservation?.to_plan_name||reservation?.to_plan||'ASH Workspace Gold')
   const termMonths=Number(reservation?.term_months||1)
   const amount=Number(reservation?.payment_amount)
   if(!/^[0-9a-f-]{36}$/i.test(requestId))throw new Error('Invalid checkout request')
@@ -21,7 +21,7 @@ export function sumupCheckoutPayload({reservation,merchantCode,baseUrl,now=new D
     amount:Math.round((amount+Number.EPSILON)*100)/100,
     currency:'EUR',
     merchant_code:merchantCode,
-    description:`AS Workspace Gold – ${planName} – ${termMonths} Monat${termMonths===1?'':'e'}`,
+    description:`ASH Workspace Gold – ${planName} – ${termMonths} Monat${termMonths===1?'':'e'}`,
     return_url:`${baseUrl}/api/payments/webhook`,
     redirect_url:`${baseUrl}/?payment=return&request_id=${requestId}`,
     valid_until:validUntil,

@@ -1,4 +1,4 @@
-// Central registry for AS Workspace Gold product modules.
+// Central registry for ASH Workspace Gold product modules.
 // Every new product module must be registered here so country/legal checks,
 // comparison guards and continuous-improvement monitoring inherit it automatically.
 export const PRODUCT_MODULE_REGISTRY_VERSION='v93'

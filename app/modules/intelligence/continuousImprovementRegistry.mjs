@@ -9,7 +9,7 @@ export const MONITORS=Object.freeze({
   legal_monitor:Object.freeze({
     key:'legal_monitor',
     title:'Rechtsprechungs- und Rechtsänderungs-Monitor',
-    purpose:'Neue Rechtsprechung, Gesetzesänderungen und relevante Behörden-/Verwaltungsänderungen je Land oder Rechtsraum erkennen und auf Auswirkungen für AS Workspace Gold prüfen.',
+    purpose:'Neue Rechtsprechung, Gesetzesänderungen und relevante Behörden-/Verwaltungsänderungen je Land oder Rechtsraum erkennen und auf Auswirkungen für ASH Workspace Gold prüfen.',
     requiresCountryContext:true,
     mayAutoImplement:false,
     requiredProposalFields:Object.freeze(['title','finding','impact','recommendation','source_urls','priority','implementation_scope'])

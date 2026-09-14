@@ -2,7 +2,7 @@ import { InsiderAccessController } from '../modules/insider/InsiderAccessControl
 import './insider.css'
 
 export const metadata={
-  title:'AS Workspace · Gemeinsamer interner Arbeitsbereich',
+  title:'ASH Workspace · Gemeinsamer interner Arbeitsbereich',
   description:'Getrennter interner Zugang zum gemeinsamen Teamkonto mit vollständigen Bearbeitungsrechten.',
   robots:{index:false,follow:false}
 }

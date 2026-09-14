@@ -1,4 +1,4 @@
-name: AS Workspace Gold Source Backup
+name: ASH Workspace Gold Source Backup
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
             --exclude '.next/' \
             --exclude 'public/videos/' \
             --exclude 'backup-source/' \
-            --exclude 'AS-Workspace-Gold-*.zip'
+            --exclude 'ASH-Workspace-Gold-*.zip'
           printf '%s\n' "${GITHUB_SHA}" > backup-source/BACKUP_COMMIT_SHA.txt
           printf '%s\n' "V80" > backup-source/APP_RELEASE.txt
           printf '%s\n' "Large explainer videos are intentionally excluded from this source archive; their references remain in the repository." > backup-source/VIDEO_BACKUP_NOTE.txt
@@ -37,7 +37,7 @@ jobs:
       - name: Upload Drive-ready V80 source backup
         uses: actions/upload-artifact@v4
         with:
-          name: AS-Workspace-Gold-V80-Quellcode-${{ github.sha }}
+          name: ASH-Workspace-Gold-V80-Quellcode-${{ github.sha }}
           path: backup-source/
           include-hidden-files: true
           if-no-files-found: error

@@ -16,7 +16,7 @@ export function TeamAccountEntry(){
     <article className="insiderActionCard">
       <span className="insiderActionIcon" aria-hidden="true">🔐</span>
       <h2>Gemeinsames Teamkonto</h2>
-      <p>Passwort 1 gibt allen autorisierten Teammitgliedern Vollzugriff auf das gesamte AS Workspace. Sie dürfen überall arbeiten und jede Änderung vorbereiten. Als neue Live-Version wirksam wird eine Änderung erst nach Ihrer Freigabe mit Passwort 2.</p>
+      <p>Passwort 1 gibt allen autorisierten Teammitgliedern Vollzugriff auf das gesamte ASH Workspace. Sie dürfen überall arbeiten und jede Änderung vorbereiten. Als neue Live-Version wirksam wird eine Änderung erst nach Ihrer Freigabe mit Passwort 2.</p>
       <Link className="primary insiderPrimaryAction" href={TEAM_LOGIN_PATH}>Mit Passwort 1 alles öffnen</Link>
     </article>
   </>

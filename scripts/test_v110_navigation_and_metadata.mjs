@@ -9,10 +9,10 @@ assert.ok(APP_RELEASE.number>=110,'navigation and metadata corrections require r
 const legalRoutes=['cookies','datenschutz','datenschutzsteuerung','impressum','ki-transparenz','kontakt','nutzungsbedingungen','rechtliches','widerruf']
 for(const route of legalRoutes){
   const page=read(`app/${route}/page.js`)
-  assert.doesNotMatch(page,/title:\s*['"`][^'"`]*\|\s*AS Workspace Gold/ ,`${route} must let the root title template append the product name exactly once`)
+  assert.doesNotMatch(page,/title:\s*['"`][^'"`]*\|\s*ASH Workspace Gold/ ,`${route} must let the root title template append the product name exactly once`)
 }
 const testerPage=read('app/testen/page.js')
-assert.doesNotMatch(testerPage,/title:\s*`AS Workspace Gold/,'the tester page must let the root title template append the product name exactly once')
+assert.doesNotMatch(testerPage,/title:\s*`ASH Workspace Gold/,'the tester page must let the root title template append the product name exactly once')
 const legalDocument=read('app/modules/compliance/LegalDocument.js')
 assert.match(legalDocument,/legalBackBtn[\s\S]*?shell\.back/,'all legal pages need the shared localized route back to the app')
 
@@ -29,7 +29,7 @@ assert.doesNotMatch(resetRepair,/release=V\d+/)
 for(const route of ['passwort-aendern','reset-reparatur']){
   const layout=read(`app/${route}/layout.js`)
   assert.match(layout,/export const metadata=/)
-  assert.doesNotMatch(layout,/title:\s*['"`][^'"`]*\|\s*AS Workspace Gold/)
+  assert.doesNotMatch(layout,/title:\s*['"`][^'"`]*\|\s*ASH Workspace Gold/)
 }
 
 const controller=read('app/modules/workspace/WorkspaceController.js')

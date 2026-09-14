@@ -18,7 +18,7 @@ from reportlab.platypus import (
 
 
 ROOT = Path(__file__).resolve().parents[1]
-OUTPUT = ROOT / "public" / "testdaten" / "AS_Gold_Synthetischer_Testfall_V29.pdf"
+OUTPUT = ROOT / "public" / "testdaten" / "ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf"
 FONT_REGULAR = "DejaVuSans"
 FONT_BOLD = "DejaVuSans-Bold"
 
@@ -35,8 +35,8 @@ def build_pdf() -> None:
         leftMargin=20 * mm,
         topMargin=17 * mm,
         bottomMargin=17 * mm,
-        title="AS Workspace Gold - Synthetischer Testfall V29",
-        author="AS Workspace Gold",
+        title="ASH Workspace Gold - Synthetischer Testfall V29",
+        author="ASH Workspace Gold",
         subject="Ausschliesslich synthetische Testdaten fuer den kontrollierten App-Test",
     )
 
@@ -120,7 +120,7 @@ def build_pdf() -> None:
     story.append(Paragraph("Muster-Schadenanzeige", styles["GoldTitle"]))
     story.append(
         Paragraph(
-            "Dieses Dokument wurde ausschliesslich fuer den kontrollierten Test von AS Workspace Gold erstellt. "
+            "Dieses Dokument wurde ausschliesslich fuer den kontrollierten Test von ASH Workspace Gold erstellt. "
             "Alle Namen, Nummern, Anschriften, Betraege und Ereignisse sind frei erfunden.",
             styles["Body"],
         )

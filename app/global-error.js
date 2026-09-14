@@ -3,8 +3,8 @@
 export default function GlobalError({error,retry}){
   return <html lang="de"><body style={{margin:0,background:'#f5f6f8',color:'#1f2937',fontFamily:'Inter,ui-sans-serif,system-ui,sans-serif'}}>
     <main style={{minHeight:'100vh',display:'grid',placeItems:'center',padding:20}}><section role="alert" style={{width:'min(520px,100%)',background:'#fff',border:'1px solid #e3e5e9',borderRadius:20,padding:28,boxShadow:'0 16px 50px #11182714'}}>
-      <title>Technischer Fehler | AS Workspace Gold</title>
-      <p style={{color:'#6e5519',fontWeight:800}}>AS Workspace Gold</p>
+      <title>Technischer Fehler | ASH Workspace Gold</title>
+      <p style={{color:'#6e5519',fontWeight:800}}>ASH Workspace Gold</p>
       <h1>Die Anwendung konnte nicht vollständig geladen werden.</h1>
       <p style={{color:'#67717f',lineHeight:1.6}}>Bitte versuchen Sie es erneut. Falls der Fehler bestehen bleibt, öffnen Sie die Startseite neu.</p>
       {error?.digest&&<p style={{fontSize:13,color:'#737d8a'}}>Referenz: {error.digest}</p>}

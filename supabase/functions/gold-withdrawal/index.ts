@@ -42,14 +42,14 @@ Deno.serve(async(req:Request)=>{
   const requestFingerprint=await fingerprint(req);
   const receivedAt=new Date();
   const retentionUntil=new Date(Date.UTC(receivedAt.getUTCFullYear()+4,0,1));
-  const declaration='Hiermit widerrufe ich den über die AS-Gold-Online-Benutzeroberfläche geschlossenen Vertrag beziehungsweise den durch die angegebene Referenz bezeichneten Vertragsteil.';
+  const declaration='Hiermit widerrufe ich den über die ASH-Workspace-Gold-Online-Benutzeroberfläche geschlossenen Vertrag beziehungsweise den durch die angegebene Referenz bezeichneten Vertragsteil.';
   const {data:rows,error}=await admin.rpc('gold_record_electronic_withdrawal',{p_consumer_name:name,p_contract_reference:contractReference,p_confirmation_channel:'download',p_declaration:declaration,p_request_fingerprint:requestFingerprint,p_retention_until:retentionUntil.toISOString()});
   if(error?.code==='P0001') return reply(req,{error:'Zu viele Anfragen. Bitte versuchen Sie es später erneut oder nutzen Sie die Kontakt-E-Mail.'},429);
   const data=rows?.[0];
   if(error||!data) return reply(req,{error:'Der Widerruf konnte nicht gespeichert werden.'},503);
 
   const confirmationText=[
-    'AS Workspace Gold – Eingangsbestätigung des Widerrufs',
+    'ASH Workspace Gold – Eingangsbestätigung des Widerrufs',
     '',`Widerrufs-ID: ${data.id}`,`Eingang (UTC): ${data.received_at}`,`Name: ${name}`,`Vertrags-/Kontoreferenz: ${contractReference}`,
     '',declaration,'','Empfänger: Sebastian Auls – Unternehmens- und Konzeptberatung, Chrysanderstraße 75, 21029 Hamburg','Kontakt: sebastian.auls@gmail.com'
   ].join('\n');

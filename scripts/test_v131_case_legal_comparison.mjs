@@ -15,8 +15,8 @@ import { buildWorkspaceExportRows, createWorkspaceExportArtifact } from '../app/
 
 const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
 
-assert.equal(APP_RELEASE.number,131)
-assert.equal(APP_VERSION,'V131')
+assert.ok(APP_RELEASE.number>=131)
+assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 assert.equal(CASE_LEGAL_COMPARISON_TOPICS.length,10)
 
 const contract=caseLegalComparisonContract()

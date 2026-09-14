@@ -67,7 +67,7 @@ export function InsiderAccessController(){
       <ProductBrand showDescriptor language="de" className="insiderGateBrand"/>
       <span className="insiderGateBadge">GESCHÜTZTER INTERNER BEREICH</span>
       <h1 id="insider-gate-title">Interner Zugang</h1>
-      <p>Diese Fläche ist nicht für Nutzer bestimmt. Passwort 1 gibt autorisierten Personen Vollzugriff auf das gesamte AS Workspace.</p>
+      <p>Diese Fläche ist nicht für Nutzer bestimmt. Passwort 1 gibt autorisierten Personen Vollzugriff auf das gesamte ASH Workspace.</p>
 
       {stage==='loading'&&<div className="insiderGateState">Zugang wird geprüft …</div>}
 

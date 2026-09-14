@@ -13,7 +13,7 @@ function walk(directory){return fs.readdirSync(directory,{withFileTypes:true}).f
 assert.match(APP_VERSION,/^V\d+$/,'release version must come from the central release module')
 assert.equal(APP_VERSION,APP_RELEASE.version)
 assert.equal(Number(APP_VERSION.slice(1)),APP_RELEASE.number)
-assert.equal(PRODUCT_NAME,'AS Workspace Gold')
+assert.equal(PRODUCT_NAME,'ASH Workspace Gold')
 assert.equal(PRODUCT_DESCRIPTOR,'Der digitale Fall- und Dokumentenmanager')
 assert.equal(PRODUCT_BRAND.workspace,'Workspace')
 assert.equal(PRODUCT_BRAND.edition,'Gold')
@@ -25,15 +25,15 @@ for(const language of languageKeys){
   const displayedTitle=withAppVersion(baseTitle)
   assert.match(displayedTitle,new RegExp(`(?:^|\\s|·)${APP_VERSION}(?:$|\\s)`),`${language}: tester heading must inherit ${APP_VERSION}`)
   assert.equal((displayedTitle.match(new RegExp(APP_VERSION,'g'))||[]).length,1,`${language}: version must appear exactly once in the heading`)
-  assert.match(baseTitle,/AS Workspace Gold/,`${language}: tester heading must use the central public brand`)
+  assert.match(baseTitle,/ASH Workspace Gold/,`${language}: tester heading must use the central public brand`)
   for(const pageId of legalPageIds.filter(pageId=>pageId!=='testen')) assert.equal(getLegalPage(pageId,language),null,`${language}/${pageId}: legal content must stay German`)
 }
 
 for(const file of ['app/testen/page.js','app/modules/tester/TesterGuide.js','app/modules/compliance/legalTranslations.mjs']){
-  const source=read(file).replaceAll('AS_Gold_Synthetischer_Testfall_V29.pdf','AS_Gold_Synthetischer_Testfall.pdf')
+  const source=read(file).replaceAll('ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf','ASH_Workspace_Gold_Synthetischer_Testfall.pdf')
   assert.doesNotMatch(source,/\bV\d+\b/,`${file}: user-facing release numbers must come from appRelease.mjs`)
 }
-for(const file of walk('app')) assert.doesNotMatch(read(file),/AS Gold|AS GOLD|AS%20Gold/,`${file}: obsolete public brand must not return`)
+for(const file of walk('app')) assert.doesNotMatch(read(file),/\bAS Workspace(?: Gold)?\b|\bAS Gold\b|\bAS GOLD\b|AS%20Workspace%20Gold|AS%20Gold/,`${file}: obsolete public brand must not return`)
 
 const publicHeader=read('app/modules/public/PublicHeader.js')
 const protectedShell=read('app/modules/workspace/ProtectedWorkspaceShell.js')
@@ -43,8 +43,8 @@ assert.match(publicHeader,/<ProductBrand showDescriptor/)
 assert.match(protectedShell,/<ProductBrand\/?>/)
 assert.match(layout,/PRODUCT_DESCRIPTOR/)
 assert.match(manifest,/PRODUCT_NAME/)
-assert.match(read('public/as-gold-icon.svg'),/aria-label="AS Workspace Gold"/)
-assert.match(read('supabase/functions/gold-withdrawal/index.ts'),/AS Workspace Gold – Eingangsbestätigung/)
+assert.match(read('public/ash-workspace-gold-icon.svg'),/aria-label="ASH Workspace Gold"/)
+assert.match(read('supabase/functions/gold-withdrawal/index.ts'),/ASH Workspace Gold – Eingangsbestätigung/)
 
 const legalDocument=read('app/modules/compliance/LegalDocument.js')
 assert.match(legalDocument,/localizable=false/)

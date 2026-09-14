@@ -1,4 +1,4 @@
-// Central country / jurisdiction context registry for AS Workspace Gold.
+// Central country / jurisdiction context registry for ASH Workspace Gold.
 // Country context is deliberately independent from interface/output language.
 // Add a new country here once; consuming workflows inherit it automatically.
 export const COUNTRY_CONTEXT_STORAGE_KEY='asgold-country-context'

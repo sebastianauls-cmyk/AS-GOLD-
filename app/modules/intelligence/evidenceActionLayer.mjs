@@ -98,6 +98,6 @@ export function evidenceActionContract(){
     version:EVIDENCE_ACTION_LAYER_VERSION,
     purpose:'Evidence-backed cross-country explanation with visible provenance, confidence, gaps and concrete next actions.',
     ampel:AMPEL,
-    differentiator:'AS Workspace Gold verbindet Quellenprüfung mit verständlicher Ländererklärung und direkt umsetzbarer Handlung.'
+    differentiator:'ASH Workspace Gold verbindet Quellenprüfung mit verständlicher Ländererklärung und direkt umsetzbarer Handlung.'
   }
 }

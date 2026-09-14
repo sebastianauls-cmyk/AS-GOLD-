@@ -26,7 +26,7 @@ export function InsiderLanding(){
       <ProductBrand showDescriptor language="de" className="insiderBrand"/>
       <span className="insiderLabel">GETRENNTER INTERNER ZUGANG</span>
       <h1 id="insider-title">Gemeinsamer interner Arbeitsbereich</h1>
-      <p className="insiderLead">Passwort 1 gibt allen autorisierten internen Personen Vollzugriff auf das gesamte AS Workspace: öffentliche und interne Bereiche, Inhalte, Funktionen, Module, Einstellungen und Programmierungsänderungen. Alle dürfen Änderungen vorbereiten. Passwort 2 bleibt ausschließlich bei Ihnen und gibt einen fertigen Entwurf als neue Live-Version frei. Öffentlich sichtbar ist nur der Zugangsbutton neben dem Impressum; Inhalte und Funktionen bleiben bis zur Prüfung von Passwort 1 geschützt.</p>
+      <p className="insiderLead">Passwort 1 gibt allen autorisierten internen Personen Vollzugriff auf das gesamte ASH Workspace: öffentliche und interne Bereiche, Inhalte, Funktionen, Module, Einstellungen und Programmierungsänderungen. Alle dürfen Änderungen vorbereiten. Passwort 2 bleibt ausschließlich bei Ihnen und gibt einen fertigen Entwurf als neue Live-Version frei. Öffentlich sichtbar ist nur der Zugangsbutton neben dem Impressum; Inhalte und Funktionen bleiben bis zur Prüfung von Passwort 1 geschützt.</p>
 
       <section className="insiderSetupCallout" aria-labelledby="insider-setup-title">
         <span className="insiderActionIcon" aria-hidden="true">🔑</span>
@@ -49,7 +49,7 @@ export function InsiderLanding(){
       <section className="insiderUserPreview" aria-labelledby="insider-preview-title">
         <span className="insiderPreviewLabel">CHEF-VORSCHAU</span>
         <h2 id="insider-preview-title">So sieht ein neuer Nutzer den Installationsbereich</h2>
-        <p>Diese Vorschau bleibt für Sie sichtbar, auch wenn AS Workspace auf Ihrem eigenen Handy bereits installiert ist.</p>
+        <p>Diese Vorschau bleibt für Sie sichtbar, auch wenn ASH Workspace auf Ihrem eigenen Handy bereits installiert ist.</p>
         <InstallAppButton language="de" surface="preview" previewOnly/>
       </section>
 

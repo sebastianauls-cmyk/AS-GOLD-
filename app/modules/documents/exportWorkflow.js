@@ -55,7 +55,7 @@ export function createExportWorkflowActions({
 
   async function exportMyData(){
     const packageData={
-      product:'AS Workspace Gold',
+      product:'ASH Workspace Gold',
       exported_at:new Date().toISOString(),
       output_language:outputLanguage,
       account:{email:user?.email||null,user_id:user?.id||null},

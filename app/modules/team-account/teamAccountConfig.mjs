@@ -20,8 +20,8 @@ export const teamAccountCopy={
 }
 
 const teamGovernanceCopy={
-  de:{approvalRule:'Passwort 2 bleibt bei Sebastian. Es gibt einen vollständig vorbereiteten Entwurf als neue Live-Version frei.',sharedPasswordLabel:'Passwort 1 · gemeinsames Zugangspasswort',settingsLead:'Mit Passwort 1 darf auf alles zugegriffen und jede Änderung an AS Workspace vorbereitet werden. Passwort 2 gibt die neue Live-Version frei.',settingsAction:'Änderung an AS Workspace vorbereiten'},
-  en:{approvalRule:'Password 2 remains with Sebastian. It releases one fully prepared draft as the new live version.',sharedPasswordLabel:'Password 1 · shared access password',settingsLead:'Password 1 grants access to everything and allows any AS Workspace change to be prepared. Password 2 releases the new live version.',settingsAction:'Prepare an AS Workspace change'}
+  de:{approvalRule:'Passwort 2 bleibt bei Sebastian. Es gibt einen vollständig vorbereiteten Entwurf als neue Live-Version frei.',sharedPasswordLabel:'Passwort 1 · gemeinsames Zugangspasswort',settingsLead:'Mit Passwort 1 darf auf alles zugegriffen und jede Änderung an ASH Workspace vorbereitet werden. Passwort 2 gibt die neue Live-Version frei.',settingsAction:'Änderung an ASH Workspace vorbereiten'},
+  en:{approvalRule:'Password 2 remains with Sebastian. It releases one fully prepared draft as the new live version.',sharedPasswordLabel:'Password 1 · shared access password',settingsLead:'Password 1 grants access to everything and allows any ASH Workspace change to be prepared. Password 2 releases the new live version.',settingsAction:'Prepare an ASH Workspace change'}
 }
 
 export function getTeamAccountCopy(language){

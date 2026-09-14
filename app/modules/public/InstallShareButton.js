@@ -3,7 +3,7 @@
 import { useState } from 'react'
 
 const installPath='/installieren?neu=1'
-const shareText='Hallo, hier können Sie AS Workspace direkt installieren:'
+const shareText='Hallo, hier können Sie ASH Workspace direkt installieren:'
 const shareButtonLabel='Installationslink weiterleiten'
 
 export function InstallShareButton({compact=false}){
@@ -11,7 +11,7 @@ export function InstallShareButton({compact=false}){
 
   async function shareInstallLink(){
     const url=new URL(installPath,window.location.origin).toString()
-    const shareData={title:'AS Workspace installieren',text:shareText,url}
+    const shareData={title:'ASH Workspace installieren',text:shareText,url}
 
     try{
       if(navigator.share&&(!navigator.canShare||navigator.canShare(shareData))){
@@ -46,7 +46,7 @@ export function InstallShareButton({compact=false}){
   }
 
   return <div className={`installShareBox${compact?' installShareBox--compact':''}`}>
-    <button type="button" className={`installShareButton${compact?' installShareButton--compact':''}`} aria-label="AS Workspace-Installationslink weiterleiten" onClick={shareInstallLink}>{compact?<><span className="installShareButtonIcon" aria-hidden="true">📤</span><span className="installShareButtonLabel">{shareButtonLabel}</span></>:`📤 ${shareButtonLabel}`}</button>
+    <button type="button" className={`installShareButton${compact?' installShareButton--compact':''}`} aria-label="ASH Workspace-Installationslink weiterleiten" onClick={shareInstallLink}>{compact?<><span className="installShareButtonIcon" aria-hidden="true">📤</span><span className="installShareButtonLabel">{shareButtonLabel}</span></>:`📤 ${shareButtonLabel}`}</button>
     {status&&<p className="installShareStatus" role="status" aria-live="polite">✓ {status}</p>}
   </div>
 }

@@ -1,5 +1,7 @@
 export const PRODUCT_BRAND=Object.freeze({
-  name:'AS Workspace Gold',
+  name:'ASH Workspace Gold',
+  shortName:'ASH Workspace',
+  monogram:'ASH',
   workspace:'Workspace',
   edition:'Gold',
   descriptor:'Der digitale Fall- und Dokumentenmanager',

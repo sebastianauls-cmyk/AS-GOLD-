@@ -1,4 +1,4 @@
-name: AS Workspace Gold Current CI
+name: ASH Workspace Gold Current CI
 
 on:
   push:

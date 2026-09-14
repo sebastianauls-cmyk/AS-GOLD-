@@ -76,7 +76,7 @@ async function createUnicodePdfBlob({jsPDF,rows,outputLanguage}){
     context=canvas.getContext('2d')
     context.fillStyle='#ffffff';context.fillRect(0,0,width,height)
     context.fillStyle='#fff6d8';context.fillRect(margin,55,contentWidth,56)
-    context.fillStyle=PDF_COLORS.gold;context.font='700 23px Arial, "Noto Sans", "Segoe UI", sans-serif';context.textAlign='center';context.direction='ltr';context.fillText('AS WORKSPACE GOLD',width/2,91)
+    context.fillStyle=PDF_COLORS.gold;context.font='700 23px Arial, "Noto Sans", "Segoe UI", sans-serif';context.textAlign='center';context.direction='ltr';context.fillText('ASH WORKSPACE GOLD',width/2,91)
     y=155
     pages.push({canvas,context})
   }
@@ -84,7 +84,7 @@ async function createUnicodePdfBlob({jsPDF,rows,outputLanguage}){
   function finishPage(page,index){
     const ctx=page.context
     ctx.strokeStyle=PDF_COLORS.line;ctx.beginPath();ctx.moveTo(margin,height-72);ctx.lineTo(width-margin,height-72);ctx.stroke()
-    ctx.fillStyle=PDF_COLORS.muted;ctx.font='18px Arial, "Noto Sans", "Segoe UI", sans-serif';ctx.textAlign='left';ctx.direction='ltr';ctx.fillText('AS Workspace Gold · geprüfter Export',margin,height-42)
+    ctx.fillStyle=PDF_COLORS.muted;ctx.font='18px Arial, "Noto Sans", "Segoe UI", sans-serif';ctx.textAlign='left';ctx.direction='ltr';ctx.fillText('ASH Workspace Gold · geprüfter Export',margin,height-42)
     ctx.textAlign='right';ctx.fillText(`${index+1} / ${pages.length}`,width-margin,height-42)
   }
 
@@ -132,7 +132,7 @@ async function createUnicodePdfBlob({jsPDF,rows,outputLanguage}){
     if(index) pdf.addPage()
     pdf.addImage(page.canvas.toDataURL('image/jpeg',0.94),'JPEG',0,0,595.28,841.89,undefined,'FAST')
   })
-  pdf.setProperties({title:String(rows[0]?.[0]||'AS Workspace Gold Export'),subject:'AS Workspace Gold Export',creator:'AS Workspace Gold'})
+  pdf.setProperties({title:String(rows[0]?.[0]||'ASH Workspace Gold Export'),subject:'ASH Workspace Gold Export',creator:'ASH Workspace Gold'})
   return pdf.output('blob')
 }
 
@@ -182,7 +182,7 @@ export async function createWorkspaceExportArtifact({ref,type,data,copy,outputLa
 }
 
 export function createAccountDataArtifact(payload){
-  return {blob:new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),filename:'AS_Gold_Datenexport_'+new Date().toISOString().slice(0,10)+'.json'}
+  return {blob:new Blob([JSON.stringify(payload,null,2)],{type:'application/json;charset=utf-8'}),filename:'ASH_Workspace_Gold_Datenexport_'+new Date().toISOString().slice(0,10)+'.json'}
 }
 
 export function downloadExportArtifact({blob,filename}){

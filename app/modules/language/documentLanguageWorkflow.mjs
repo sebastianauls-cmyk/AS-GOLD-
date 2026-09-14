@@ -1,6 +1,6 @@
 import { LANGUAGE_CATALOG } from './languageRegistry.mjs'
 
-// Central language/document contract for AS Workspace Gold.
+// Central language/document contract for ASH Workspace Gold.
 // New languages inherit this workflow automatically through LANGUAGE_CATALOG.
 // New workflow outputs are defined here once and guarded against backend drift.
 export const DOCUMENT_LANGUAGE_WORKFLOW_VERSION='v2'

@@ -18,8 +18,8 @@ const dashboardUxCopy={
 }
 
 const insiderEntryCopy={
-  de:{label:'PASSWORT 1 · VOLLZUGRIFF AUF ALLES',title:'Gemeinsamer Team-Arbeitsbereich',lead:'Auf das gesamte AS Workspace zugreifen und jede Änderung vorbereiten. Passwort 2 gibt die neue Live-Version frei.',action:'Änderungszentrale öffnen',landing:'Interne Startfläche'},
-  en:{label:'PASSWORD 1 · FULL ACCESS TO EVERYTHING',title:'Shared team workspace',lead:'Access all of AS Workspace and prepare any change. Password 2 releases the new live version.',action:'Open change control',landing:'Internal start page'},
+  de:{label:'PASSWORT 1 · VOLLZUGRIFF AUF ALLES',title:'Gemeinsamer Team-Arbeitsbereich',lead:'Auf das gesamte ASH Workspace zugreifen und jede Änderung vorbereiten. Passwort 2 gibt die neue Live-Version frei.',action:'Änderungszentrale öffnen',landing:'Interne Startfläche'},
+  en:{label:'PASSWORD 1 · FULL ACCESS TO EVERYTHING',title:'Shared team workspace',lead:'Access all of ASH Workspace and prepare any change. Password 2 releases the new live version.',action:'Open change control',landing:'Internal start page'},
   fr:{label:'ACCÈS INTERNE',title:'Espace de travail partagé',lead:'Ouvrir le compte d’équipe, vérifier la vue utilisateur ou copier le lien d’installation.',action:'Ouvrir l’accès équipe'},
   tr:{label:'İÇ ERİŞİM',title:'Ortak ekip çalışma alanı',lead:'Ekip hesabını açın, kullanıcı görünümünü kontrol edin veya yükleme bağlantısını kopyalayın.',action:'Ekip erişimini aç'},
   pl:{label:'DOSTĘP WEWNĘTRZNY',title:'Wspólny obszar zespołu',lead:'Otwórz konto zespołu, sprawdź widok użytkownika lub skopiuj link instalacyjny.',action:'Otwórz dostęp zespołu'},

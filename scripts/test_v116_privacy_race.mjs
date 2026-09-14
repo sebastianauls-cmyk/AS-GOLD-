@@ -58,7 +58,7 @@ assert.doesNotMatch(complianceSource,/\.upsert\([^\n]*account_privacy_settings|a
 assert.match(workspaceSource,/persistLegalSettings/,'registration and manual acknowledgement must share the idempotent persistence path')
 assert.match(documentIntakeSource,/name="sample_document"/,'the document intake must expose the built-in synthetic sample without a local file picker')
 assert.match(documentIntakeSource,/required=\{!sampleSelected\}/,'a selected sample must satisfy native form validation')
-assert.match(documentWorkflowSource,/fetch\('\/testdaten\/AS_Gold_Synthetischer_Testfall_V29\.pdf'/,'the upload workflow must load the real same-origin sample bytes')
+assert.match(documentWorkflowSource,/fetch\('\/testdaten\/ASH_Workspace_Gold_Synthetischer_Testfall_V29\.pdf'/,'the upload workflow must load the real same-origin sample bytes')
 assert.ok(APP_RELEASE.number>=116)
 assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 

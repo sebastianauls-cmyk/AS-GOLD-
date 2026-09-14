@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '../services/supabaseClient'
+import { APP_VERSION } from '../release/appRelease.mjs'
 
 export function PersonalTesterRedeem(){
   const [code,setCode]=useState('')
@@ -30,13 +31,13 @@ export function PersonalTesterRedeem(){
       setMessage('Der Code konnte nicht aktiviert werden. Prüfen Sie bitte den Code und ob die aktuell angemeldete E-Mail exakt der persönlich freigegebenen Login-E-Mail entspricht.')
     }else{
       setOk(true)
-      setMessage('🟢 Testerzugang aktiviert. Sie können AS Workspace Gold jetzt mit diesem Konto nutzen. Der persönliche Testzugang gilt bis auf Widerruf; es entstehen keine Kosten, kein Abonnement und keine automatische Verlängerung.')
+      setMessage('🟢 Testerzugang aktiviert. Sie können ASH Workspace Gold jetzt mit diesem Konto nutzen. Der persönliche Testzugang gilt bis auf Widerruf; es entstehen keine Kosten, kein Abonnement und keine automatische Verlängerung.')
     }
     setWorking(false)
   }
 
   return <main className="center"><section className="card recoveryCard" style={{maxWidth:620}}>
-    <span className="modeBadge">V131 · Persönlicher Testerzugang</span>
+    <span className="modeBadge">{APP_VERSION} · Persönlicher Testerzugang</span>
     <h1>Tester-Code einlösen</h1>
     <p className="muted">Der persönliche Code funktioniert nur mit genau der Login-E-Mail, für die er freigegeben wurde.</p>
 
@@ -59,7 +60,7 @@ export function PersonalTesterRedeem(){
     {message&&<div className={ok?'legalNotice legalNotice-success':'legalNotice legalNotice-warning'} style={{marginTop:14}}><p>{message}</p></div>}
 
     {ok&&<div style={{display:'grid',gap:10,marginTop:14}}>
-      <a className="primary btn" href="/">AS Workspace Gold öffnen</a>
+      <a className="primary btn" href="/">ASH Workspace Gold öffnen</a>
       <p className="muted" style={{margin:0}}>3. Fertig: Ihr Konto ist freigeschaltet. Sie können jetzt Fälle, Dokumente, Ampelanalysen, Fristen, Rechtsraumvergleich und die freigegebenen Ausgaben nutzen.</p>
     </div>}
 

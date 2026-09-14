@@ -23,7 +23,7 @@ const microsoftStart=fs.readFileSync(new URL('../app/api/integrations/microsoft/
 const microsoftCallback=fs.readFileSync(new URL('../app/api/integrations/microsoft/callback/route.js',import.meta.url),'utf8')
 
 assert.match(pageEntry,/modules\/workspace\/WorkspaceAppCurrent/)
-const rows=[['AS Workspace Gold synthetischer Testfall',''],['Fall','V80-Simulation'],['Status','Offen'],['Ampel','Gelb'],['Frist','05.09.2026'],['Sachstand','Vollständig erfundener Testinhalt ohne echte personenbezogene Daten.'],['Nächster Schritt','Fristgrundlage prüfen und Antwort vorbereiten.']]
+const rows=[['ASH Workspace Gold synthetischer Testfall',''],['Fall','V80-Simulation'],['Status','Offen'],['Ampel','Gelb'],['Frist','05.09.2026'],['Sachstand','Vollständig erfundener Testinhalt ohne echte personenbezogene Daten.'],['Nächster Schritt','Fristgrundlage prüfen und Antwort vorbereiten.']]
 for(const token of ['supabase.auth.signUp','supabase.auth.signInWithPassword']) assert.match(authRepository,new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')))
 assert.match(passwordResetRoute,/authClient\.auth\.resetPasswordForEmail/)
 for(const token of ['acceptedLegal','validateV29Password']) assert.match(page,new RegExp(token))

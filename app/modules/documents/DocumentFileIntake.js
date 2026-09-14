@@ -8,7 +8,7 @@ import { isImageDocument } from './documentUploadReadiness.mjs'
 
 function formatBytes(value){if(value<1024*1024)return `${Math.max(1,Math.round(value/1024))} KB`;return `${(value/1024/1024).toFixed(1)} MB`}
 
-const sampleFileName='AS_Gold_Synthetischer_Testfall_V29.pdf'
+const sampleFileName='ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf'
 const sampleLabels={
   de:'Synthetische Musterdatei auswählen',en:'Select synthetic sample file',pl:'Wybierz syntetyczny plik przykładowy',tr:'Sentetik örnek dosyayı seç',ru:'Выбрать синтетический пример',ar:'اختيار ملف نموذجي اصطناعي',fa:'انتخاب فایل نمونه ساختگی',fr:'Choisir le fichier exemple synthétique',ro:'Selectați fișierul exemplu sintetic',bg:'Изберете синтетичния примерен файл',vi:'Chọn tệp mẫu tổng hợp'
 }

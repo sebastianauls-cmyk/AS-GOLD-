@@ -1,6 +1,6 @@
 export const metadata={
   title:'Passwort ändern',
-  description:'Passwort für den geschützten AS Workspace Gold Arbeitsbereich ändern.',
+  description:'Passwort für den geschützten ASH Workspace Gold Arbeitsbereich ändern.',
   robots:{index:false,follow:false}
 }
 

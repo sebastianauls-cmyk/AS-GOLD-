@@ -130,10 +130,10 @@ export function TeamPasswordSetup(){
       <ProductBrand showDescriptor language="de" className="teamSetupBrand"/>
       <div className="teamSetupBadge">PRIVATE ERSTEINRICHTUNG</div>
       <h1 id="team-setup-title">Passwort 1 und Passwort 2 sicher festlegen</h1>
-      <p className="teamSetupLead">Nur du richtest den Vollzugriff auf das gesamte AS Workspace und deine persönliche Freigabe für neue Live-Versionen ein.</p>
+      <p className="teamSetupLead">Nur du richtest den Vollzugriff auf das gesamte ASH Workspace und deine persönliche Freigabe für neue Live-Versionen ein.</p>
 
       <div className="teamSetupSeparation" aria-label="Aufgaben der beiden Passwörter">
-        <article><span>1</span><div><strong>Passwort 1 · Vollzugriff auf alles</strong><p>Damit öffnet das autorisierte Team das gesamte AS Workspace und darf in allen Bereichen arbeiten und Änderungen vorbereiten.</p></div></article>
+        <article><span>1</span><div><strong>Passwort 1 · Vollzugriff auf alles</strong><p>Damit öffnet das autorisierte Team das gesamte ASH Workspace und darf in allen Bereichen arbeiten und Änderungen vorbereiten.</p></div></article>
         <article className="master"><span>2</span><div><strong>Passwort 2 · Persönliches Masterpasswort</strong><p>Damit gibst ausschließlich du eine fertig vorbereitete Änderung als neue Live-Version frei.</p></div></article>
       </div>
 
@@ -172,13 +172,13 @@ export function TeamPasswordSetup(){
         <div className={different?'teamSetupDifference isMet':'teamSetupDifference isMissing'}><span aria-hidden="true">{different?'✓':'○'}</span>Die beiden Passwörter sind unterschiedlich</div>
         <label className="teamSetupConfirm"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>Ich verwahre Passwort 2 sicher und gebe es nicht an das Team weiter.</span></label>
         <button className="primary teamSetupSubmit" disabled={!ready||busy}>{busy?'Passwörter werden sicher gespeichert …':'Beide Passwörter verbindlich festlegen'}</button>
-        <small className="teamSetupPrivacy">Die Passwörter werden weder angezeigt noch im Klartext in AS Workspace gespeichert.</small>
+        <small className="teamSetupPrivacy">Die Passwörter werden weder angezeigt noch im Klartext in ASH Workspace gespeichert.</small>
       </form>}
 
       {stage==='complete'&&<section className="teamSetupPanel teamSetupSuccess" role="status">
         <div className="teamSetupSuccessIcon" aria-hidden="true">✓</div>
         <h2>Beide Passwörter sind eingerichtet</h2>
-        <p>Passwort 1 öffnet jetzt das gesamte AS Workspace. Passwort 2 wird nur abgefragt, wenn du eine fertige Änderung als neue Live-Version freigibst.</p>
+        <p>Passwort 1 öffnet jetzt das gesamte ASH Workspace. Passwort 2 wird nur abgefragt, wenn du eine fertige Änderung als neue Live-Version freigibst.</p>
         <button type="button" className="primary" onClick={openTeamLogin}>Gemeinsamen Zugang jetzt testen</button>
       </section>}
 
