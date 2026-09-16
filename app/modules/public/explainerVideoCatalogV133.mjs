@@ -4,11 +4,11 @@ export const VIDEO_PRESENTER_STORAGE_KEY='ash-workspace-gold-video-presenter'
 export const LEGACY_VIDEO_PRESENTER_STORAGE_KEY='asgold-video-presenter'
 
 const translatedVideo=(id)=>`https://resource2.heygen.ai/video_translate/${id}/original.mp4`
-const localCaption=(presenter,language)=>`/captions/ash-workspace-gold-v133-${presenter}-${language}.vtt`
+const localCaption=(presenter,language,version=133)=>`/captions/ash-workspace-gold-v${version}-${presenter}-${language}.vtt`
 
 export const explainerVideoCatalog=Object.freeze({
   female:Object.freeze({
-    de:Object.freeze({src:'/videos/ash-workspace-gold-v133-female-de.mp4',captions:localCaption('female','de'),heygenId:'f79be62031965cc23f65bb1afae9f518'}),
+    de:Object.freeze({src:'/videos/ash-workspace-gold-v134-female-de.mp4',captions:localCaption('female','de',134),heygenId:'60c1b4548c3a0492d8e8dae34e199b9d'}),
     en:Object.freeze({src:translatedVideo('bc61f15e31ce9cd7c80e9c26b42733a5-en'),captions:localCaption('female','en'),heygenId:'bc61f15e31ce9cd7c80e9c26b42733a5-en'}),
     fr:Object.freeze({src:translatedVideo('d382b83f024bca61d9c6f01b8a2b205e-fr'),captions:localCaption('female','fr'),heygenId:'d382b83f024bca61d9c6f01b8a2b205e-fr'}),
     tr:Object.freeze({src:translatedVideo('798d3b066700329dcc9af65f108f0f25-tr'),captions:localCaption('female','tr'),heygenId:'798d3b066700329dcc9af65f108f0f25-tr'}),
@@ -21,7 +21,7 @@ export const explainerVideoCatalog=Object.freeze({
     vi:Object.freeze({src:translatedVideo('9441354cb6f8be54b4a28406589ce204-vi_vi-VN'),captions:localCaption('female','vi'),heygenId:'9441354cb6f8be54b4a28406589ce204-vi_vi-VN'})
   }),
   male:Object.freeze({
-    de:Object.freeze({src:'/videos/ash-workspace-gold-v133-male-de.mp4',captions:localCaption('male','de'),heygenId:'8bc2f105c36f714d296f2966d1a64a12'}),
+    de:Object.freeze({src:'/videos/ash-workspace-gold-v134-male-de.mp4',captions:localCaption('male','de',134),heygenId:'9ec65c961112b2551e29fabfb0b6b347'}),
     en:Object.freeze({src:translatedVideo('175aad0bceae97fff367eb6835a7edd2-en'),captions:localCaption('male','en'),heygenId:'175aad0bceae97fff367eb6835a7edd2-en'}),
     fr:Object.freeze({src:translatedVideo('8159dbfba0c1e473503fc37ed6072b88-fr'),captions:localCaption('male','fr'),heygenId:'8159dbfba0c1e473503fc37ed6072b88-fr'}),
     tr:Object.freeze({src:translatedVideo('f1dc21effef1f3cfebd22cf310879b74-tr'),captions:localCaption('male','tr'),heygenId:'f1dc21effef1f3cfebd22cf310879b74-tr'}),

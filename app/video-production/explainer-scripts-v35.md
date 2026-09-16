@@ -1,18 +1,21 @@
 # ASH WORKSPACE GOLD – Explainer Video Production History
 
-> V35 is superseded by the active V133 catalog in
+> V35 is superseded by the active V134 catalog in
 > `app/modules/public/explainerVideoCatalogV133.mjs`.
 > The obsolete AS Gold MP4 files were removed from the active application.
 
-## Active V133 standard
+## Active V134 standard
 
-Each of the eleven languages has a distinct female and male V133.1 video:
+Each of the eleven languages has a distinct female and male video. The German
+masters were regenerated for V134 with the spoken brand pronunciation
+`A S H Workspace Gold`; the completed translations remain on their immutable
+V133.1 HeyGen sources.
 
 - German, English, French, Turkish, Polish, Russian, Arabic, Persian/Farsi,
   Romanian, Bulgarian and Vietnamese
 - German masters are stored locally as
-  `ash-workspace-gold-v133-female-de.mp4` and
-  `ash-workspace-gold-v133-male-de.mp4`.
+  `ash-workspace-gold-v134-female-de.mp4` and
+  `ash-workspace-gold-v134-male-de.mp4`.
 - Translations use their completed, immutable HeyGen translation IDs.
 - Every presenter/language combination has a local WebVTT subtitle file.
 - All spoken and subtitle branding reads `ASH Workspace Gold`.
