@@ -1,17 +1,23 @@
-# ASH WORKSPACE GOLD – Explainer Video Production Master V35
+# ASH WORKSPACE GOLD – Explainer Video Production History
 
-## Permanent target files
+> V35 is superseded by the active V133 catalog in
+> `app/modules/public/explainerVideoCatalogV133.mjs`.
+> The obsolete AS Gold MP4 files were removed from the active application.
 
-Each language has a male and female master in `public/videos/`:
+## Active V133 standard
 
-- German: `as-gold-explainer-de-male.mp4`, `as-gold-explainer-de-female.mp4` — LIVE
-- English: `as-gold-explainer-en-male.mp4`, `as-gold-explainer-en-female.mp4`
-- French: `as-gold-explainer-fr-male.mp4`, `as-gold-explainer-fr-female.mp4`
-- Turkish: `as-gold-explainer-tr-male.mp4`, `as-gold-explainer-tr-female.mp4`
-- Polish: `as-gold-explainer-pl-male.mp4`, `as-gold-explainer-pl-female.mp4`
-- Russian: `as-gold-explainer-ru-male.mp4`, `as-gold-explainer-ru-female.mp4`
-- Arabic: `as-gold-explainer-ar-male.mp4`, `as-gold-explainer-ar-female.mp4`
-- Persian/Farsi: `as-gold-explainer-fa-male.mp4`, `as-gold-explainer-fa-female.mp4`
+Each of the eleven languages has a distinct female and male V133.1 video:
+
+- German, English, French, Turkish, Polish, Russian, Arabic, Persian/Farsi,
+  Romanian, Bulgarian and Vietnamese
+- German masters are stored locally as
+  `ash-workspace-gold-v133-female-de.mp4` and
+  `ash-workspace-gold-v133-male-de.mp4`.
+- Translations use their completed, immutable HeyGen translation IDs.
+- Every presenter/language combination has a local WebVTT subtitle file.
+- All spoken and subtitle branding reads `ASH Workspace Gold`.
+
+## Historical V35 scripts
 
 ## Production standard
 

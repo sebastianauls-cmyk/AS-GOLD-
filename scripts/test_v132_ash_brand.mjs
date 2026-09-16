@@ -11,7 +11,7 @@ const walk=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(ent
   return /\.(?:js|mjs|ts|tsx)$/.test(entry.name)?[target]:[]
 })
 
-assert.equal(APP_VERSION,'V132')
+assert.equal(APP_VERSION,'V133')
 assert.equal(PRODUCT_NAME,'ASH Workspace Gold')
 assert.equal(PRODUCT_BRAND.shortName,'ASH Workspace')
 assert.equal(PRODUCT_BRAND.monogram,'ASH')
@@ -47,4 +47,4 @@ for(const [size,file] of [[180,'public/ash-workspace-icon-180.png'],[192,'public
 assert.ok(fs.existsSync('public/testdaten/ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf'))
 assert.equal(fs.existsSync('public/testdaten/AS_Gold_Synthetischer_Testfall_V29.pdf'),false)
 
-console.log('V132 ASH Workspace Gold brand guard passed: name, logo, PWA assets, metadata and downloads are consistent.')
+console.log('V133 ASH Workspace Gold brand guard passed: name, logo, PWA assets, metadata and downloads are consistent.')

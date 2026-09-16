@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { LanguageSwitcher } from '../language/LanguageSwitcher'
 import { outputLanguageNames } from '../language/v36Languages.mjs'
 import { InstallAppButton } from './InstallAppButton'
+import { LEGACY_VIDEO_PRESENTER_STORAGE_KEY, VIDEO_PRESENTER_STORAGE_KEY } from './explainerVideoCatalogV133.mjs'
 
 const copy={
   de:{interfaceTitle:'1. Sprache der Oberfläche',interfaceLabel:'Oberfläche',outputTitle:'2. Sprache für Ausgabe & Kunden',outputLabel:'Ausgabesprache',outputHelp:'Dokumente, Ergebnisse und Schreiben erscheinen für Kunden oder andere Personen in {language}. Die Oberfläche bleibt davon unabhängig.',presenter:'Wer soll ASH Workspace Gold erklären?',female:'Frau erklärt',male:'Mann erklärt',play:'Erklärvideo abspielen',back:'Zurück'},
@@ -46,13 +47,13 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
   const outputName=(outputLanguageNames[language]||outputLanguageNames.de)?.[outputLanguage]||outputLanguage
 
   useEffect(()=>{
-    const saved=localStorage.getItem('asgold-video-presenter')
+    const saved=localStorage.getItem(VIDEO_PRESENTER_STORAGE_KEY)||localStorage.getItem(LEGACY_VIDEO_PRESENTER_STORAGE_KEY)
     if(saved==='female'||saved==='male')setPresenter(saved)
   },[])
 
   function choosePresenter(value){
     setPresenter(value)
-    localStorage.setItem('asgold-video-presenter',value)
+    localStorage.setItem(VIDEO_PRESENTER_STORAGE_KEY,value)
   }
 
   function playVideo(){onPlayExplainer?.({language,presenter})}

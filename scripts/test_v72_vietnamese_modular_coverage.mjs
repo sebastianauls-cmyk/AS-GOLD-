@@ -8,6 +8,7 @@ import {privacyDashboardCopy,withdrawalCopy} from '../app/modules/compliance/pri
 import {multilingualKeywords,problemLanguageProfiles} from '../app/modules/public/problemLanguageCatalog.mjs'
 import {promoTranslations} from '../app/modules/pricing/promoTranslations.mjs'
 import {howAsGoldWorksCopy} from '../app/modules/public/asGoldIntroCopy.mjs'
+import {explainerVideoCatalog} from '../app/modules/public/explainerVideoCatalogV133.mjs'
 
 const expected=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 assert.deepEqual(supportedLanguages.map(item=>item.key),expected)
@@ -33,6 +34,8 @@ const languageModules=fs.readFileSync('app/modules/public/PublicLanguageModules.
 const heroCopy=fs.readFileSync('app/modules/public/HeroCopyEnhancer.js','utf8');assert.match(heroCopy,/vi:\{title:'ASH Workspace Gold – sự rõ ràng/);assert.match(heroCopy,/ASH Workspace Gold đặc biệt hữu ích cho ai/)
 const problem=fs.readFileSync('app/modules/public/ProblemNavigator.js','utf8');const recommendation=fs.readFileSync('app/modules/public/problemRecommendation.mjs','utf8');for(const token of ['Thử miễn phí với 3 tài liệu','Cách nhập vấn đề:','Vấn đề là gì?','rủi ro','thời hạn'])assert.ok((problem+recommendation).includes(token),`missing Vietnamese public navigator text: ${token}`)
 const footer=fs.readFileSync('app/modules/compliance/LegalFooter.js','utf8');for(const language of ['ro','bg','vi'])assert.match(footer,new RegExp(`\\b${language}:\\{`),`missing ${language} footer copy`)
-const explainer=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8');assert.match(explainer,/c853c1c7508249c9933e9ecf2fa664c1-vi_vi-VN/);assert.match(explainer,/d61639497f924841be3bdf8058881470-vi_vi-VN/)
-const dialog=fs.readFileSync('app/modules/language/ExplainerVideoDialog.js','utf8');assert.match(dialog,/Tiếng Việt/);assert.match(dialog,/c853c1c7508249c9933e9ecf2fa664c1-vi_vi-VN/)
-console.log('V131 Vietnamese coverage passed through capability-first public surface, language, legal, pricing and product modules.')
+const explainer=fs.readFileSync('app/modules/public/ExplainerVideo.js','utf8');assert.match(explainer,/getExplainerVideo/)
+assert.equal(explainerVideoCatalog.female.vi.heygenId,'9441354cb6f8be54b4a28406589ce204-vi_vi-VN')
+assert.equal(explainerVideoCatalog.male.vi.heygenId,'76187b3c9695463c8d22d3dde55e073e-vi_vi-VN')
+const dialog=fs.readFileSync('app/modules/language/ExplainerVideoDialog.js','utf8');assert.match(dialog,/Tiếng Việt/);assert.match(dialog,/getExplainerVideo/)
+console.log('V133 Vietnamese coverage passed through capability-first public surface, language, legal, pricing, product and current ASH video modules.')

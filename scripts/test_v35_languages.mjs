@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict'
-import { readFile, stat } from 'node:fs/promises'
+import { readFile } from 'node:fs/promises'
 import { componentTranslations } from '../app/lib/v30ComponentTranslations.mjs'
 import { localeForLanguage, outputLanguageNames, pageTranslations, rtlLanguages, supportedLanguages } from '../app/lib/v30Languages.mjs'
 import { problemLanguageProfiles } from '../app/lib/problemNavigatorLanguagesV36.mjs'
 import { promoTranslations } from '../app/lib/v31PromoTranslations.mjs'
+import { explainerVideoCatalog } from '../app/modules/public/explainerVideoCatalogV133.mjs'
 
 const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
-const legacyLocalLanguages=expectedLanguages.filter(language=>language!=='vi')
 const requiredPageCatalogs=['passwordUi','uploadUi','ui','exportUi','appText','planJourney','planText','notices','journeyLabels','dashboardGuide','recommendationText','transparencyText','caseDiscoveryText','publicAudienceText','testerLinkText','periodText','launchTrustText','serverControlText']
 const requiredComponentCatalogs=['workspaceCopy','approvalCopy','analysisCopy','privacyCopy','aiControlCopy','passwordCopy']
 
@@ -34,6 +34,7 @@ for(const pair of [['ro','Videoclip explicativ'],['bg','Обяснително �
 assert.match(switcherSource,/className="flagLanguagePublicText"/);assert.match(switcherSource,/<strong>\{active\.label\}<\/strong>/);assert.equal((switcherSource.match(/className="flagLanguageMenuBack"/g)||[]).length,2);assert.doesNotMatch(switcherSource,/flagLanguageClose/)
 assert.match(heroSource,/whatIsAsGoldCopy/);for(const language of ['ro','bg','vi'])assert.ok(introCopySource.includes(language+':{title:'));assert.match(introSource,/howAsGoldWorksCopy/)
 for(const language of ['ro','bg','vi'])assert.ok(explainerSource.includes("['"+language+"',"))
-for(const language of legacyLocalLanguages){const file=new URL('../public/videos/as-gold-v35-'+language+'.mp4',import.meta.url);const info=await stat(file);assert.ok(info.isFile()&&info.size>1_000_000,'missing local explainer video for '+language);assert.ok(videoDialogSource.includes('/videos/as-gold-v35-'+language+'.mp4'))}
-assert.match(videoDialogSource,/c853c1c7508249c9933e9ecf2fa664c1-vi_vi-VN/)
-console.log('V35/V72 language guard: eleven app languages, RO/BG/VI catalogs, SVG flags, direct modular components and controlled video sources verified.')
+for(const presenter of ['female','male'])for(const language of expectedLanguages)assert.ok(explainerVideoCatalog[presenter]?.[language]?.src,`missing ${presenter} explainer video for ${language}`)
+assert.match(videoDialogSource,/getExplainerVideo/)
+assert.doesNotMatch(videoDialogSource,/as-gold-v35-|c853c1c7508249c9933e9ecf2fa664c1/)
+console.log('V35/V133 language guard: eleven app languages, RO/BG/VI catalogs, SVG flags, direct modular components and complete ASH video selection verified.')
