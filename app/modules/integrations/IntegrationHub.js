@@ -12,6 +12,38 @@ const badge={display:'inline-flex',alignItems:'center',gap:7,padding:'6px 10px',
 export default function IntegrationHub(){
   const [connections,setConnections]=useState([])
   const [loading,setLoading]=useState(true)
+  const [connecting,setConnecting]=useState('')
+  const [connectMessage,setConnectMessage]=useState('')
+
+  async function connectMailbox(provider){
+    setConnectMessage('')
+    setConnecting(provider)
+    try{
+      const {data:{session}}=await supabase.auth.getSession()
+      const token=session?.access_token
+      if(!token) throw new Error('Bitte zuerst anmelden.')
+      const response=await fetch('/api/integrations/'+provider+'/start',{method:'POST',headers:{authorization:'Bearer '+token}})
+      const payload=await response.json().catch(()=>({}))
+      if(!response.ok||!payload.url){
+        if(payload.error==='google_not_configured') throw new Error('Google-Verbindung ist technisch vorbereitet, aber die Google-OAuth-Zugangsdaten fehlen noch.')
+        if(payload.error==='microsoft_not_configured') throw new Error('Microsoft-Verbindung ist technisch vorbereitet, aber die Microsoft-OAuth-Zugangsdaten fehlen noch.')
+        throw new Error('E-Mail-Verbindung konnte nicht gestartet werden.')
+      }
+      window.location.assign(payload.url)
+    }catch(error){
+      setConnectMessage(error.message||'Verbindung fehlgeschlagen.')
+      setConnecting('')
+    }
+  }
+
+  useEffect(()=>{
+    const params=new URLSearchParams(window.location.search)
+    const connected=params.get('connected')
+    const account=params.get('account')
+    const error=params.get('error')
+    if(connected) setConnectMessage((account?account+' · ':'')+'E-Mail-Konto wurde verbunden.')
+    else if(error) setConnectMessage('Verbindung noch nicht abgeschlossen: '+error)
+  },[])
 
   useEffect(()=>{
     let cancelled=false
@@ -33,6 +65,11 @@ export default function IntegrationHub(){
       <span style={badge}>E-MAIL · MEHRERE KONTEN</span>
       <h1 style={{margin:'10px 0 8px'}}>Mehrere E-Mail-Adressen je Arbeitsbereich</h1>
       <p style={{margin:'0 0 14px',color:'#606872',lineHeight:1.5}}>ASH Workspace Gold behandelt jedes eingebundene Postfach als eigene Quelle. Zu jeder fallbezogenen Nachricht sollen Absenderkonto, Empfänger, Zeitpunkt, Antwortbezug und Zustellstatus nachvollziehbar bleiben. Ein Fall darf deshalb nicht auf eine einzige E-Mail-Adresse festgelegt sein.</p>
+      <div style={{display:'flex',gap:10,flexWrap:'wrap',margin:'0 0 14px'}}>
+        <button type="button" onClick={()=>connectMailbox('google')} disabled={!!connecting} style={button}>{connecting==='google'?'Google wird geöffnet …':'Google-Konto hinzufügen'}</button>
+        <button type="button" onClick={()=>connectMailbox('microsoft')} disabled={!!connecting} style={button}>{connecting==='microsoft'?'Microsoft wird geöffnet …':'Microsoft-Konto hinzufügen'}</button>
+      </div>
+      {connectMessage&&<div style={{marginBottom:14,padding:12,borderRadius:10,background:'#f4f1e8',color:'#5e5a50'}}>{connectMessage}</div>}
       <div style={{display:'grid',gap:10}}>
         {loading&&<div style={{color:'#737b85'}}>E-Mail-Konten werden geprüft …</div>}
         {!loading&&connections.length===0&&<div style={{padding:14,border:'1px dashed #cabd9c',borderRadius:12,color:'#6d7279'}}>Noch kein E-Mail-Konto direkt in ASH Workspace verbunden. Die Datenstruktur unterstützt jetzt mehrere Google- und Microsoft-Konten pro Nutzer.</div>}
