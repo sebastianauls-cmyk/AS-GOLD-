@@ -39,9 +39,9 @@ function formatDeadline(primary,language,t){
   return new Intl.DateTimeFormat(deadlineLocales[language]||deadlineLocales.de,{timeZone:'UTC'}).format(date)
 }
 
-export function DeadlineWarningCard({language='de',caseDeadline='',text='',mode='case'}){
+export function DeadlineWarningCard({language='de',caseDeadline='',text='',mode='case',result:providedResult}){
   const t=deadlineWarningLabels[language]||deadlineWarningLabels.de
-  const result=analyzeDeadlines({caseDeadline,text})
+  const result=providedResult||analyzeDeadlines({caseDeadline,text})
   const primary=result.primary
   const status=t[result.status]||t.uncertain
   return <section className="detailCard v38DeadlineWarningCard" data-v38-deadline-card="true" data-v38-deadline-mode={mode} style={{borderWidth:'2px',marginTop:'14px'}}>

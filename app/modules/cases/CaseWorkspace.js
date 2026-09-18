@@ -17,6 +17,7 @@ import { LegalComparisonPanel } from '../country/LegalComparisonPanel'
 import { AssessmentEvidenceFields } from './AssessmentEvidenceFields'
 import { caseEvidenceStatus } from './lib/caseEvidence.mjs'
 import { caseGuidanceCopy } from './lib/caseGuidanceCopy.mjs'
+import { analyzeCaseDeadlines } from './lib/caseDeadlineEvidence.mjs'
 
 const emptyAssessment=()=>({title:'',traffic_light:'yellow',reasoning:'',next_step:'',source_document_id:'',source_locator:'',source_excerpt:'',statement_kind:'inference',source_reviewed:false,supersedes_assessment_id:null})
 const documentDraftFingerprint=draft=>JSON.stringify(Object.fromEntries(Object.entries(draft).filter(([key])=>!['analysis_generated','test_data_confirmed'].includes(key))))
@@ -148,7 +149,7 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
     </form>}
     <section className="caseCoreGrid"><article><b>{on.homeCountry}</b><p>{COUNTRY_CATALOG.find(country=>country.key===(item.home_country||'DE'))?.label||item.home_country||'DE'}</p></article><article><b>{on.targetCountry}</b><p>{COUNTRY_CATALOG.find(country=>country.key===(item.target_country||'DE'))?.jurisdictionLabel||item.target_country||'DE'}</p></article><article><b>{on.goal}</b><p>{item.goal||'—'}</p></article><article><b>{on.summary}</b><p>{item.summary||'—'}</p></article><article><b>{on.deadline}</b><p>{item.deadline_at?new Date(item.deadline_at).toLocaleString():'—'}</p></article><article><b>{on.nextAction}</b><p>{item.next_action||'—'}</p></article></section>
     {supabase&&ownerId&&<LegalComparisonPanel supabase={supabase} ownerId={ownerId} language={language} outputLanguage={outputLanguage} item={item} workspaceCopy={on} onPrivacyUpdate={onPrivacyUpdate}/>}
-    <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case"/>
+    <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>
     <CaseTimeline language={language} caseDeadline={item.deadline_at||''} documents={documents}/>
     <CaseCompletionPanels language={language} item={item} documents={documents} assessments={assessments} onEdit={()=>setEditing(true)} onAddDocument={()=>onAddDocument(item.id)} onOpenDocument={onOpenDocument} onAssess={()=>reviewAssessment()}/>
     <section className={`readinessCard ${!documents.length?'attentionBox':''}`}><b>{on.assessmentState}</b><p>{readiness}</p><small>{evidenceCopy.boundary}</small></section>
