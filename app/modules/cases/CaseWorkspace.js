@@ -18,6 +18,8 @@ import { AssessmentEvidenceFields } from './AssessmentEvidenceFields'
 import { caseEvidenceStatus } from './lib/caseEvidence.mjs'
 import { caseGuidanceCopy } from './lib/caseGuidanceCopy.mjs'
 import { analyzeCaseDeadlines } from './lib/caseDeadlineEvidence.mjs'
+import { CustomerRoadmapPanel } from './CustomerRoadmapPanel'
+import { ResultContinuation } from './ResultContinuation'
 
 const emptyAssessment=()=>({title:'',traffic_light:'yellow',reasoning:'',next_step:'',source_document_id:'',source_locator:'',source_excerpt:'',statement_kind:'inference',source_reviewed:false,supersedes_assessment_id:null})
 const documentDraftFingerprint=draft=>JSON.stringify(Object.fromEntries(Object.entries(draft).filter(([key])=>!['analysis_generated','test_data_confirmed'].includes(key))))
@@ -100,7 +102,7 @@ export function CaseSection({copy:on, clients, cases, newCase, setNewCase, showF
   </>
 }
 
-export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate}){
+export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate, continuation}){
   const [editing,setEditing]=useState(false)
   const [draft,setDraft]=useState({title:item.title||'',client_id:item.client_id||'',reference_no:item.reference_no||'',goal:item.goal||'',summary:item.summary||'',deadline_at:localDateTime(item.deadline_at),next_action:item.next_action||'',traffic_light:item.traffic_light||'yellow',status:item.status||'open',home_country:item.home_country||'DE',target_country:item.target_country||'DE',test_case_id:item.test_case_id||null,test_case_expected_ampel:item.test_case_expected_ampel||null,test_case_language:item.test_case_language||null})
   const [assessment,setAssessment]=useState(emptyAssessment)
@@ -148,6 +150,7 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
       <button className="primary full">{on.saveChanges}</button>
     </form>}
     <section className="caseCoreGrid"><article><b>{on.homeCountry}</b><p>{COUNTRY_CATALOG.find(country=>country.key===(item.home_country||'DE'))?.label||item.home_country||'DE'}</p></article><article><b>{on.targetCountry}</b><p>{COUNTRY_CATALOG.find(country=>country.key===(item.target_country||'DE'))?.jurisdictionLabel||item.target_country||'DE'}</p></article><article><b>{on.goal}</b><p>{item.goal||'—'}</p></article><article><b>{on.summary}</b><p>{item.summary||'—'}</p></article><article><b>{on.deadline}</b><p>{item.deadline_at?new Date(item.deadline_at).toLocaleString():'—'}</p></article><article><b>{on.nextAction}</b><p>{item.next_action||'—'}</p></article></section>
+    {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} continuation={continuation}/>}
     {supabase&&ownerId&&<LegalComparisonPanel supabase={supabase} ownerId={ownerId} language={language} outputLanguage={outputLanguage} item={item} workspaceCopy={on} onPrivacyUpdate={onPrivacyUpdate}/>}
     <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>
     <CaseTimeline language={language} caseDeadline={item.deadline_at||''} documents={documents}/>
@@ -176,7 +179,7 @@ export function DocumentSection({copy:on, privacy, cases, documents, mode, setMo
   </>
 }
 
-export function DocumentDetail({copy:on, analysis, privacy, language='de', outputLanguage='de', item, cases, onBack, onSave, onAnalyze, onOpen, onPrepareApproval, approvalLabel}){
+export function DocumentDetail({copy:on, analysis, privacy, language='de', outputLanguage='de', item, cases, onBack, onSave, onAnalyze, onOpen, onPrepareApproval, approvalLabel, continuation}){
   const allowedClassifications=['synthetic','anonymized']
   const letterUi=bilingualLetterUi(language)
   const [draft,setDraft]=useState({title:item.title||'',case_id:item.case_id||'',document_type:item.document_type||'',document_date:item.document_date||'',extracted_text:item.extracted_text||'',analysis_summary:item.analysis_summary||'',analysis_next_step:item.analysis_next_step||'',reference_copy:item.reference_copy||item.response_letter_de||'',reference_copy_language:item.reference_copy_language||'de',customer_copy:item.customer_copy||'',customer_copy_language:item.customer_copy_language||outputLanguage,response_recipient:item.response_recipient||'',response_subject:item.response_subject||'',analysis_traffic_light:item.analysis_traffic_light||'yellow',analysis_reasoning:item.analysis_reasoning||'',analysis_confidence:item.analysis_confidence||'',data_classification:allowedClassifications.includes(item.data_classification)?item.data_classification:'',test_data_confirmed:false})
@@ -226,6 +229,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
       <p className="wideField analysisManualNote">{letterUi.sameLanguage}</p>
     </section>
     {analysis&&onAnalyze&&<ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} phase={analysisPhase} onPhase={setAnalysisPhase} analysisAllowed={allowedClassifications.includes(item.data_classification)} classificationMessage={privacy?.uploadRequired}/>}
+    {continuation&&item.analysis_summary&&!dirty&&<ResultContinuation {...continuation} language={language}/>}
     <form className="actionCard coreForm documentReviewForm" onSubmit={save}>
       <label htmlFor={fieldId(item.id,'document-title')}>{on.documentTitle}<input id={fieldId(item.id,'document-title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
       <label htmlFor={fieldId(item.id,'document-case')}>{on.selectCase}<select id={fieldId(item.id,'document-case')} value={draft.case_id} onChange={event=>setDraft({...draft,case_id:event.target.value})}><option value="">{on.withoutCase}</option>{cases.map(entry=><option value={entry.id} key={entry.id}>{entry.title}</option>)}</select></label>
