@@ -28,7 +28,7 @@ export function PrimaryNextStepCard({language='de',item,documents=[],assessments
   const guidance=caseGuidance({item,documents,assessments,deadlineStatus:deadline.status})
   const result=prioritizeNextStep({
     language,
-    missing:!documents.length,
+    missing:!documents.length&&deadline.status!=='high',
     deadlineStatus:deadline.status,
     deadlineAction:deadline.primary?deadlineCopy.verify:'',
     assessments:guidance.state.current.map(entry=>({traffic:entry.traffic_light||'yellow',next:entry.next_step||''})),
@@ -38,7 +38,7 @@ export function PrimaryNextStepCard({language='de',item,documents=[],assessments
     <div className="detailCardHead"><div><h3 style={{margin:'.55rem 0 .2rem'}}>{t.title}</h3></div><strong>1</strong></div>
     <p style={{fontSize:'1.16rem',fontWeight:900,lineHeight:1.45,margin:'.8rem 0'}}>{guidance.kind==='deadline'?result.action:guidance.action||copy[guidance.kind]}</p>
     {guidance.document&&<p>{guidance.document.title}</p>}
-    <p><b>{copy.when}:</b> {guidance.kind==='deadline'?`${result.when} · ${new Date(item.deadline_at).toLocaleString(language)}`:copy.now} · <b>{copy.owner}:</b> {copy.you}</p>
+    <p><b>{copy.when}:</b> {guidance.kind==='deadline'?`${result.when} · ${new Date(item.deadline_at).toLocaleString(language)}`:guidance.kind==='next'?result.when:copy.now} · <b>{copy.owner}:</b> {copy.you}</p>
     <p><b>{copy.progress}:</b> {guidance.state.complete?copy.reviewed:copy.pending}</p>
     <p className="analysisManualNote">{copy.boundary}</p>
     {onAction&&<button type="button" className="primary full" onClick={()=>onAction(guidance)}>{guidance.target==='upload'?copy.upload:guidance.target==='document'?copy.open:guidance.target==='edit'?copy.edit:copy.review}</button>}
