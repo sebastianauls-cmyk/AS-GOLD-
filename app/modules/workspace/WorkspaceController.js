@@ -95,6 +95,7 @@ export default function WorkspaceController(){
   const [selectedCase,setSelectedCase]=useState(null)
   const [selectedClient,setSelectedClient]=useState(null)
   const [selectedDocument,setSelectedDocument]=useState(null)
+  const uploadInFlight=useRef(false)
   const [selectedApproval,setSelectedApproval]=useState(null)
   const [approvalDefaults,setApprovalDefaults]=useState({caseId:'',documentId:'',recipient:'',subject:'',body:''})
   const [access,setAccess]=useState(null)
@@ -171,7 +172,7 @@ export default function WorkspaceController(){
   const promoAllInvalid=!!appliedPromoCode&&promoQuotes.length===upgrades.length&&promoQuotes.every(quote=>quote.promo_code_state==='invalid')
   const promoSomeInvalid=!!appliedPromoCode&&promoQuotes.some(quote=>quote.promo_code_state==='invalid')
   const activeCaseContext=useMemo(()=>{
-    if(selectedCase) return selectedCase
+    if(selectedCase) return data.cases.find(item=>item.id===selectedCase.id)||selectedCase
     const linkedCaseId=selectedDocument?.case_id||selectedApproval?.case_id
     return linkedCaseId?data.cases.find(item=>item.id===linkedCaseId)||null:null
   },[selectedCase,selectedDocument,selectedApproval,data.cases])
@@ -204,7 +205,7 @@ export default function WorkspaceController(){
   const navigateToScreen=nextScreen=>{setMessage('');setScreen(nextScreen)}
 
   const {createClient,updateClient,createCase,updateCase,createAssessment}=createCaseWorkflowActions({
-    supabase,ownerId:user?.id,data,newClient,newCase,setData,setMessage,setNewClient,setShowClientForm,setSection,setNewCase,setShowCaseForm,setSelectedCase,recordLocalAction,recordServerAudit
+    supabase,ownerId:user?.id,data,newClient,newCase,setData,setMessage,setNewClient,setShowClientForm,setSection,setNewCase,setShowCaseForm,setSelectedCase,setSelectedClient,recordLocalAction,recordServerAudit
   })
 
   const {createApproval,updateApproval,approveApproval,rejectApproval,prepareDocumentApproval}=createApprovalWorkflowActions({
@@ -212,7 +213,7 @@ export default function WorkspaceController(){
   })
 
   const {analyzeDocument,updateDocument,uploadDocument,openDocument}=createDocumentWorkflowActions({
-    supabase,ownerId:user?.id,data,access,language,privacyCurrent,outputLanguage,privacyCopy:v28,notices:n,uploadCopy:uui,analysisCopy:analysisUi,caseCopy:core,serverCopy:sct,setData,setMessage,setPrivacySettings,setUploading,setSection,setSelectedDocument,recordLocalAction,recordServerAudit
+    supabase,ownerId:user?.id,data,access,language,privacyCurrent,outputLanguage,privacyCopy:v28,notices:n,uploadCopy:uui,analysisCopy:analysisUi,caseCopy:core,serverCopy:sct,setData,setMessage,setPrivacySettings,setUploading,setSection,setSelectedDocument,uploadInFlight,recordLocalAction,recordServerAudit
   })
 
   const {doExport,exportMyData}=createExportWorkflowActions({
@@ -336,12 +337,12 @@ export default function WorkspaceController(){
 
   if(screen==='app'&&selectedApproval) return protectedWorkspace(<ApprovalDetail key={`${selectedApproval.id}-${selectedApproval.preview_revision}-${selectedApproval.status}`} copy={approvalUi} item={selectedApproval} cases={data.cases} documents={data.documents} onBack={()=>setSelectedApproval(null)} onSave={updateApproval} onApprove={approveApproval} onReject={rejectApproval}/>)
 
-  if(screen==='app'&&selectedDocument) return protectedWorkspace(<DocumentDetail key={selectedDocument.id} copy={core} analysis={analysisUi} privacy={v28} language={language} outputLanguage={outputLanguage} item={selectedDocument} cases={data.cases} onBack={()=>setSelectedDocument(null)} onSave={updateDocument} onAnalyze={analyzeDocument} onOpen={openDocument} onPrepareApproval={prepareDocumentApproval} approvalLabel={approvalUi.prepareFromDocument}/>)
+  if(screen==='app'&&selectedDocument) return protectedWorkspace(<DocumentDetail key={selectedDocument.id} copy={core} analysis={analysisUi} privacy={v28} language={language} outputLanguage={outputLanguage} item={selectedDocument} cases={data.cases} onBack={()=>{const linked=data.cases.find(item=>item.id===selectedDocument.case_id);setSelectedDocument(null);if(linked)setSelectedCase(linked)}} onSave={updateDocument} onAnalyze={analyzeDocument} onOpen={openDocument} onPrepareApproval={prepareDocumentApproval} approvalLabel={approvalUi.prepareFromDocument}/>)
 
   if(screen==='app'&&selectedCase){
     const caseDocs=data.documents.filter(document=>document.case_id===selectedCase.id)
     const caseAssessments=data.assessments.filter(assessment=>assessment.case_id===selectedCase.id)
-    return protectedWorkspace(<><CaseDetail key={selectedCase.id} copy={core} analysis={analysisUi} language={language} outputLanguage={outputLanguage} supabase={supabase} ownerId={user?.id} item={selectedCase} clients={data.clients} documents={caseDocs} assessments={caseAssessments} onBack={()=>setSelectedCase(null)} onSave={updateCase} onAddAssessment={createAssessment} onAddDocument={caseId=>{setUploadCaseId(caseId);setDocumentMode('upload');setSelectedCase(null);setSection('documents')}} onOpenDocument={setSelectedDocument} onPrivacyUpdate={setPrivacySettings}/><div className="exportBar"><b>{a.exportResult}</b><select value={exportType} onChange={event=>setExportType(event.target.value)}><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="csv">CSV (.csv)</option><option value="txt">Text (.txt)</option></select><button className="primary" onClick={()=>doExport({kind:'case',item:selectedCase},exportType)}>{a.export}</button></div></>)
+    return protectedWorkspace(<><CaseDetail key={selectedCase.id} copy={core} analysis={analysisUi} language={language} outputLanguage={outputLanguage} supabase={supabase} ownerId={user?.id} item={data.cases.find(item=>item.id===selectedCase.id)||selectedCase} clients={data.clients} documents={caseDocs} assessments={caseAssessments} onBack={()=>setSelectedCase(null)} onSave={updateCase} onAddAssessment={createAssessment} onAddDocument={caseId=>{setUploadCaseId(caseId);setDocumentMode('upload');setSelectedCase(null);setSection('documents')}} onOpenDocument={setSelectedDocument} onPrivacyUpdate={setPrivacySettings}/><div className="exportBar"><b>{a.exportResult}</b><select value={exportType} onChange={event=>setExportType(event.target.value)}><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="csv">CSV (.csv)</option><option value="txt">Text (.txt)</option></select><button className="primary" onClick={()=>doExport({kind:'case',item:data.cases.find(item=>item.id===selectedCase.id)||selectedCase},exportType)}>{a.export}</button></div></>)
   }
 
   if(screen==='app'&&!selectedClient&&section==='cases') return protectedWorkspace(<CasesSurface a={a} core={core} clients={data.clients} cases={data.cases} newCase={newCase} setNewCase={setNewCase} showCaseForm={showCaseForm} setShowCaseForm={setShowCaseForm} createCase={createCase} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)

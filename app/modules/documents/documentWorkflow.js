@@ -1,3 +1,7 @@
+import { createAssessmentRecord } from '../services/workspaceRepository'
+import { openPrivateDocument } from './openPrivateDocument.mjs'
+import { currentAssessments } from '../cases/lib/caseEvidence.mjs'
+import { caseGuidanceCopy } from '../cases/lib/caseGuidanceCopy.mjs'
 import { authorizeDocumentAnalysis } from '../services/complianceRepository'
 import { createWorkspaceDocumentSignedUrl, updateDocumentRecord, uploadWorkspaceDocument } from '../services/documentRepository'
 import { invokeDocumentAnalysis } from '../services/documentAnalysis'
@@ -38,6 +42,7 @@ export function createDocumentWorkflowActions({
   setUploading,
   setSection,
   setSelectedDocument,
+  uploadInFlight={current:false},
   recordLocalAction,
   recordServerAudit
 }){
@@ -79,12 +84,15 @@ export function createDocumentWorkflowActions({
     let createdAssessment=null
     let createdSource=null
     let updatedCase=null
+    let assessmentFailed=false
     if(draft.analysis_generated&&updated.case_id){
       const trafficLight=['green','yellow','red','white'].includes(draft.analysis_traffic_light)?draft.analysis_traffic_light:'yellow'
-      const assessmentResult=await supabase.rpc('create_gold_assessment',{p_case_id:updated.case_id,p_title:updated.title||analysisCopy.badge,p_traffic_light:trafficLight,p_reasoning:String(draft.analysis_reasoning||updated.analysis_summary||'').trim()||null,p_next_step:updated.analysis_next_step||null})
+      const previous=currentAssessments(data.assessments.filter(entry=>entry.case_id===updated.case_id)).find(entry=>entry.source_document_id===updated.id)
+      const assessmentResult=await createAssessmentRecord(supabase,{caseId:updated.case_id,draft:{title:updated.title||analysisCopy.badge,traffic_light:trafficLight,reasoning:String(draft.analysis_reasoning||updated.analysis_summary||'').trim(),next_step:updated.analysis_next_step||'',source_document_id:updated.id,statement_kind:'inference',source_reviewed:false,supersedes_assessment_id:previous?.id||null}})
+      assessmentFailed=!!assessmentResult.error
       if(!assessmentResult.error){
-        createdAssessment=assessmentResult.data?.assessment||null
-        updatedCase=assessmentResult.data?.case||null
+        createdAssessment=assessmentResult.assessment||null
+        updatedCase=assessmentResult.updatedCase||null
       }
       const sourceResult=await supabase.from('source_status').insert({owner_id:ownerId,case_id:updated.case_id,source_kind:'uploaded_document',source_label:updated.title,status:'PASSENDER TREFFER – ZU BESTÄTIGEN',details:String(draft.analysis_reasoning||'KI-Dokumentanalyse gespeichert; fachliche Bestätigung erforderlich.').trim(),checked_at:new Date().toISOString()}).select().single()
       if(!sourceResult.error) createdSource=sourceResult.data
@@ -97,12 +105,15 @@ export function createDocumentWorkflowActions({
       cases:updatedCase?previous.cases.map(item=>item.id===updatedCase.id?updatedCase:item):previous.cases
     }))
     setSelectedDocument(updated)
-    setMessage(auditSaved?(draft.analysis_generated?analysisCopy.savedMessage:`${caseCopy.documentReview} ✓`):serverCopy.auditFailed)
+    setMessage(assessmentFailed?caseGuidanceCopy(language).partialSave:auditSaved?(draft.analysis_generated?analysisCopy.savedMessage:`${caseCopy.documentReview} ✓`):serverCopy.auditFailed)
     return true
   }
 
   async function uploadDocument(event){
     event.preventDefault()
+    if(uploadInFlight.current)return false
+    uploadInFlight.current=true
+    try{
     setMessage('')
     const form=event.currentTarget
     let file=form.elements.file.files[0]
@@ -149,15 +160,17 @@ export function createDocumentWorkflowActions({
     }finally{
       setUploading(false)
     }
+    }finally{uploadInFlight.current=false}
   }
 
   async function openDocument(document){
     if(!document.file_path) return
-    const {data:signed,error}=await createWorkspaceDocumentSignedUrl(supabase,document.file_path,300)
-    if(error) return setMessage(error.message)
-    recordLocalAction('document_opened')
-    await recordServerAudit('document_opened',{},'document',document.id)
-    window.open(signed.signedUrl,'_blank','noopener')
+    try{
+      const result=await openPrivateDocument({browser:window,getSignedUrl:()=>createWorkspaceDocumentSignedUrl(supabase,document.file_path,300)})
+      recordLocalAction('document_opened')
+      await recordServerAudit('document_opened',{},'document',document.id)
+      return result
+    }catch(error){setMessage(error.message);return false}
   }
 
   return {analyzeDocument,updateDocument,uploadDocument,openDocument}
