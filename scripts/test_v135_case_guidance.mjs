@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import nextConfig from '../next.config.mjs'
+import { prioritizeNextStep } from '../app/modules/cases/lib/nextStepEngine.mjs'
 import { assessmentEvidence, caseEvidenceStatus, caseGuidance, currentAssessments } from '../app/modules/cases/lib/caseEvidence.mjs'
 import { caseGuidanceCopies } from '../app/modules/cases/lib/caseGuidanceCopy.mjs'
 import { buildWorkspaceExportRows } from '../app/modules/services/exportService.js'
@@ -77,3 +78,5 @@ try{
   assert.ok(previewRules[1].headers.some(header=>header.key==='X-Frame-Options'&&header.value==='SAMEORIGIN'))
 }finally{if(deploymentEnvironment===undefined)delete process.env.VERCEL_ENV;else process.env.VERCEL_ENV=deploymentEnvironment}
 console.log('V135: same-origin framing is limited to the synthetic preview; production keeps its frame protection.')
+
+assert.equal(prioritizeNextStep({language:'vi',deadlineStatus:'immediate'}).when,'Ngay bây giờ / hôm nay')
