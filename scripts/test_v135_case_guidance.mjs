@@ -7,10 +7,38 @@ import { caseGuidanceCopies } from '../app/modules/cases/lib/caseGuidanceCopy.mj
 import { buildWorkspaceExportRows } from '../app/modules/services/exportService.js'
 import { assessmentEvidenceText } from '../app/modules/cases/lib/assessmentEvidenceText.mjs'
 import { openPrivateDocument } from '../app/modules/documents/openPrivateDocument.mjs'
+import { mapDocumentLanguageWorkflowResult } from '../app/modules/language/documentLanguageWorkflow.mjs'
+import { analyzeCaseDeadlines } from '../app/modules/cases/lib/caseDeadlineEvidence.mjs'
+
+const mappedDate=(result,document={})=>mapDocumentLanguageWorkflowResult(result,document).fields.document_date
+assert.equal(mappedDate({document_date:'30.08.2026'}),'2026-08-30','localized AI dates must reach the date input')
+assert.equal(mappedDate({document_date:'2026-08-30'}),'2026-08-30')
+assert.equal(mappedDate({document_date:null,extracted_text:'Schaden am 15.08.2026. Dokumentdatum: 30.08.2026 Antwortfrist: 15.09.2026'}),'2026-08-30','recover the explicitly labelled date observed in the live PDF test')
+assert.equal(mappedDate({extracted_text:'Document date: 2026-08-30. Deadline: 2026-09-15'}),'2026-08-30')
+assert.equal(mappedDate({extracted_text:'Dokumentdatum\n\n30.08.2026\nAntwortfrist\n15.09.2026'}),'2026-08-30','labelled PDF table cells may be separated by line breaks')
+assert.equal(mappedDate({extracted_text:'Antwortfrist: 15.09.2026; Schaden vom 15.08.2026'}),'','never substitute a deadline or event date')
+assert.equal(mappedDate({document_date:'08/09/2026'}),'','ambiguous slash dates need review')
+assert.equal(mappedDate({document_date:'2026-02-30'}),'','reject impossible calendar dates')
+assert.equal(mappedDate({document_date:'29.02.2024'}),'2024-02-29')
+assert.equal(mappedDate({extracted_text:'Dokumentdatum: 30.08.2026 Dokumentdatum: 31.08.2026'}),'','conflicting document dates need review')
+assert.equal(mappedDate({extracted_text:'Dokumentdatum: 30.08.2026'},{document_date:'2026-08-29'}),'2026-08-29','keep an existing date when AI has no usable date')
+console.log('V135 live-test regression: localized and labelled document dates survive mapping; ambiguous, conflicting and impossible dates stay open.')
 
 const item={id:'case-1'}
 const document={id:'doc-1',case_id:item.id,owner_id:'owner-1',title:'Musterbrief',updated_at:'2026-09-18T10:00:00Z',extracted_text:'Bitte reichen Sie die Unterlagen ein.'}
 const assessment={id:'a1',case_id:item.id,owner_id:'owner-1',source_document_id:document.id,source_document_updated_at:document.updated_at,source_locator:'Seite 1, Absatz 1',source_excerpt:'reichen Sie die Unterlagen ein.',source_reviewed_at:'2026-09-18T10:01:00Z',traffic_light:'green'}
+const deadlineDocument={...document,extracted_text:'Bitte bestätigen Sie den Eingang bis spätestens 15.09.2026.'}
+const clock=new Date('2026-09-18T12:00:00Z')
+const detectedDeadline=analyzeCaseDeadlines(item,[deadlineDocument],clock)
+assert.equal(detectedDeadline.status,'overdue','the case must retain the warning detected in its document')
+assert.equal(detectedDeadline.primary.date,'2026-09-15')
+assert.equal(caseGuidance({item,documents:[deadlineDocument],deadlineStatus:detectedDeadline.status,deadlineDocument:detectedDeadline.document}).target,'document','the urgent action opens the original evidence')
+assert.equal(analyzeCaseDeadlines({...item,deadline_at:'2026-09-30'},[deadlineDocument],clock).primary.date,'2026-09-15','an earlier document deadline outranks the stored later deadline')
+assert.equal(analyzeCaseDeadlines(item,[{...deadlineDocument,case_id:'another-case'}],clock).status,'uncertain')
+assert.equal(analyzeCaseDeadlines({...item,owner_id:'owner-1'},[{...deadlineDocument,owner_id:'owner-2'}],clock).status,'uncertain')
+assert.equal(analyzeCaseDeadlines(item,[{...document,extracted_text:'Bericht vom 15.09.2026',analysis_summary:'Zahlbar bis 15.09.2026'}],clock).status,'uncertain','AI summary alone is not an original deadline source')
+assert.equal(analyzeCaseDeadlines(item,[{...document,extracted_text:'Einreichen bis'},{...document,id:'doc-2',extracted_text:'15.09.2026'}],clock).status,'uncertain','keep separate document contexts separate')
+assert.equal(analyzeCaseDeadlines(item,[{...document,extracted_text:'Besprechung am 15.09.2026'}],clock).status,'uncertain')
 assert.equal(caseGuidance({item}).target,'upload')
 assert.equal(caseGuidance({item,deadlineStatus:'immediate'}).kind,'deadline','urgent deadlines outrank missing files')
 assert.equal(assessmentEvidence(assessment,[document]).status,'reviewed')

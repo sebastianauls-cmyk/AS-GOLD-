@@ -48,6 +48,31 @@ export function composeDocumentLanguageWorkflowSummary(result={},outputLanguage=
   return sections.join('\n\n────────────────────────\n\n')
 }
 
+function normalizeDocumentDate(value){
+  const text=typeof value==='string'?value.trim():''
+  const iso=text.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  const dotted=text.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
+  if(!iso&&!dotted)return ''
+  const [year,month,day]=iso?iso.slice(1).map(Number):[Number(dotted[3]),Number(dotted[2]),Number(dotted[1])]
+  if(year<1000||month<1||month>12||day<1||day>31)return ''
+  const date=new Date(Date.UTC(year,month-1,day))
+  if(date.getUTCFullYear()!==year||date.getUTCMonth()!==month-1||date.getUTCDate()!==day)return ''
+  return `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`
+}
+
+function resolveDocumentDate(result,document){
+  const supplied=normalizeDocumentDate(result.document_date)
+  if(supplied)return supplied
+  const existing=normalizeDocumentDate(document.document_date)
+  if(existing)return existing
+  // Recover only an explicitly labelled document date. Never substitute the
+  // first date in the text: it might be a deadline or the date of an event.
+  const labels=/\b(?:Dokumentdatum|Document\s+date|Date\s+of\s+(?:the\s+)?document)(?:\s*[:：]\s*|\s+)(\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{4})(?!\d)/giu
+  const dates=[...String(result.extracted_text||'').matchAll(labels)].map(match=>normalizeDocumentDate(match[1]))
+  if(!dates.length||dates.some(date=>!date)||new Set(dates).size!==1)return ''
+  return dates[0]
+}
+
 export function mapDocumentLanguageWorkflowResult(result={},document={},outputLanguage='de',referenceLanguage='de'){
   const customerCopyLanguage=documentLanguageWorkflowLanguage(outputLanguage).key
   const referenceCopyLanguage=documentLanguageWorkflowLanguage(result.reference_language||referenceLanguage).key
@@ -57,7 +82,7 @@ export function mapDocumentLanguageWorkflowResult(result={},document={},outputLa
       extracted_text:result.extracted_text||'',
       document_translation:result.document_translation||'',
       document_type:result.document_type||document.document_type||'',
-      document_date:/^\d{4}-\d{2}-\d{2}$/.test(result.document_date||'')?result.document_date:(document.document_date||''),
+      document_date:resolveDocumentDate(result,document),
       analysis_summary:composeDocumentLanguageWorkflowSummary(result,outputLanguage,referenceCopyLanguage)||result.summary||'',
       analysis_next_step:result.next_step||'',
       reference_copy:referenceCopy,

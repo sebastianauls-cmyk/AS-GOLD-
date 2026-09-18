@@ -27,9 +27,12 @@ export function caseEvidenceStatus(item, documents = [], assessments = []) {
 }
 
 // Source review is a workflow state, never a legal success probability.
-export function caseGuidance({item, documents = [], assessments = [], deadlineStatus = 'uncertain'}) {
+export function caseGuidance({item, documents = [], assessments = [], deadlineStatus = 'uncertain', deadlineDocument = null}) {
   const state = caseEvidenceStatus(item, documents, assessments)
-  if (['overdue', 'immediate', 'high'].includes(deadlineStatus)) return {kind: 'deadline', target: 'edit', state}
+  if (['overdue', 'immediate', 'high'].includes(deadlineStatus)) {
+    const document = documents.find(entry => entry.id === deadlineDocument?.id && entry.case_id === item?.id && (!item?.owner_id || entry.owner_id === item.owner_id))
+    return {kind: 'deadline', target: document ? 'document' : 'edit', document, state}
+  }
   const scoped = documents.filter(document => document.case_id === item?.id)
   if (!scoped.length) return {kind: 'upload', target: 'upload', state}
   const unread = scoped.find(document => !normalize(document.extracted_text))
