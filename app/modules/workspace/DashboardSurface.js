@@ -53,7 +53,7 @@ export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,on
   const hasInsiderAccess=access?.app_role==='owner'||access?.permissions?.shared_team_access===true
   const openDeadlines=deadlineCases?.length||0
   const totalItems=(data.cases?.length||0)+(data.documents?.length||0)+(data.approvals?.length||0)
-  const aliCase=(data.cases||[]).find(item=>/ali|truva/i.test(item.title||''))
+  const aliCase=(data.cases||[]).find(item=>/referenzfall a/i.test(item.title||''))
   const aliAssessments=aliCase?(data.assessments||[]).filter(item=>item.case_id===aliCase.id):[]
   return <>
     <style>{dashboardUxStyles}</style>
@@ -76,9 +76,9 @@ export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,on
       <button className="primary dashboardPrimaryAction" onClick={()=>setSection(dg.nextSection)}>{dg.next} →</button>
     </section>
 
-    {aliCase&&<section className="aliReferenceCase" aria-label="Ali / TRUVA Referenzfall">
+    {aliCase&&<section className="aliReferenceCase" aria-label="Anonymisierter Referenzfall">
       <div className="aliReferenceHead">
-        <div><span className="eyebrow">REFERENZFALL · GOLDSTANDARD</span><h2>{aliCase.title}</h2><p>{aliCase.summary||'Signal Iduna und Apleona/Patrizia werden als getrennte Sachkomplexe geführt.'}</p></div>
+        <div><span className="eyebrow">ANONYMISIERTER REFERENZFALL · GOLDSTANDARD</span><h2>{aliCase.title}</h2><p>{aliCase.summary||'Versicherung und Objektverwaltung werden als getrennte Sachkomplexe geführt.'}</p></div>
         <span className="aliReferenceStatus">Gelb · in Bearbeitung</span>
       </div>
       <div className="aliReferenceGrid">
