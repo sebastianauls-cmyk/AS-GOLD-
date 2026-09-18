@@ -38,9 +38,11 @@ const dashboardUxStyles=`
 .dashboardPrioritySignals{display:grid;grid-template-columns:repeat(3,minmax(78px,1fr));gap:8px}.prioritySignal{min-width:78px;padding:11px;border:1px solid #e2e4e8;border-radius:13px;background:#fff;text-align:center}.prioritySignal b{display:block;font-size:24px;color:#4e3b13}.prioritySignal small{display:block;margin-top:3px;color:#6d7580;line-height:1.2}.prioritySignal.attention{border-color:#d7b449;background:#fff7d8}.prioritySignal.attention b{color:#855f00}
 .dashboardPrimaryAction{margin-top:18px;min-height:48px;padding:12px 20px}.dashboardGuideSecondary{box-shadow:none}.dashboardCoreStats{margin-top:14px}.dashboardAccountTitle{margin-top:30px;margin-bottom:5px;font-size:1.2rem;color:#59636f}.dashboardMore{margin:22px 0 8px;border:1px solid #dfe2e6;border-radius:16px;background:#fff}.dashboardMore>summary{cursor:pointer;display:grid;gap:3px;padding:17px 18px;font-weight:850;color:#4d3b14}.dashboardMore>summary small{font-weight:500;color:#737d88}.dashboardMoreBody{padding:0 18px 18px}.dashboardSecondaryStats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboardRegressionOnly{display:none!important}
 .dashboardInsiderEntry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;margin:0 0 18px;padding:19px 21px;border:2px solid #d0ad4e;border-radius:18px;background:linear-gradient(135deg,#172131,#26364b);color:#fff;box-shadow:0 12px 32px rgba(20,30,44,.18)}.dashboardInsiderEntry h2{margin:6px 0 4px;color:#fff;font-size:1.35rem}.dashboardInsiderEntry p{margin:0;color:#e5ebf3;line-height:1.45}.dashboardInsiderEntry .modeBadge{background:#ffd765;color:#49360c}.dashboardInsiderActions{display:grid;gap:8px;min-width:220px}.dashboardInsiderActions .btn{min-height:48px;display:flex;align-items:center;justify-content:center;background:#ffd765;color:#172131;white-space:nowrap}.dashboardInsiderActions .linkBtn{color:#fff;text-align:center;font-size:.84rem}
+.aliReferenceCase{margin:0 0 18px;padding:22px;border:1px solid #d7b449;border-radius:20px;background:#fffdf6;box-shadow:0 12px 32px rgba(74,56,18,.07)}.aliReferenceHead{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.aliReferenceCase h2{margin:5px 0 5px;font-size:1.45rem}.aliReferenceCase p{margin:0;color:#67717d;line-height:1.45}.aliReferenceStatus{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border-radius:999px;background:#fff4c2;color:#6f5200;font-weight:800;white-space:nowrap}.aliReferenceStatus:before{content:'';width:10px;height:10px;border-radius:50%;background:#e3af15}.aliReferenceGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}.aliReferenceItem{padding:13px 14px;border:1px solid #e5dfd2;border-radius:14px;background:#fff}.aliReferenceItem b{display:flex;align-items:center;gap:8px}.aliDot{width:10px;height:10px;border-radius:50%;background:#e3af15;flex:0 0 auto}.aliReferenceItem small{display:block;margin-top:6px;color:#6f7781;line-height:1.4}.aliReferenceActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.aliReferenceActions button{min-height:44px}
+
 @media(max-width:760px){.dashboardPriority{padding:18px}.dashboardPriorityHead{grid-template-columns:1fr;gap:14px}.dashboardPrioritySignals{grid-template-columns:repeat(3,1fr)}.dashboardPrimaryAction{width:100%}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardMoreBody{padding:0 12px 12px}}
 @media(max-width:760px){.dashboardInsiderEntry{grid-template-columns:1fr;padding:17px}.dashboardInsiderEntry .btn{width:100%}}
-@media(max-width:430px){.dashboardPrioritySignals{grid-template-columns:1fr 1fr 1fr}.prioritySignal{min-width:0;padding:9px 6px}.prioritySignal b{font-size:21px}.prioritySignal small{font-size:.72rem}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardCoreStats .stat{padding:15px}.dashboardSecondaryStats{grid-template-columns:1fr}.dashboardMore>summary{padding:15px}}
+@media(max-width:430px){.dashboardPrioritySignals{grid-template-columns:1fr 1fr 1fr}.prioritySignal{min-width:0;padding:9px 6px}.prioritySignal b{font-size:21px}.prioritySignal small{font-size:.72rem}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardCoreStats .stat{padding:15px}.dashboardSecondaryStats{grid-template-columns:1fr}.dashboardMore>summary{padding:15px}.aliReferenceHead{display:grid;grid-template-columns:1fr}.aliReferenceGrid{grid-template-columns:1fr}.aliReferenceActions{display:grid}.aliReferenceActions button{width:100%}}
 `
 
 export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,onBack,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
@@ -51,6 +53,8 @@ export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,on
   const hasInsiderAccess=access?.app_role==='owner'||access?.permissions?.shared_team_access===true
   const openDeadlines=deadlineCases?.length||0
   const totalItems=(data.cases?.length||0)+(data.documents?.length||0)+(data.approvals?.length||0)
+  const aliCase=(data.cases||[]).find(item=>/ali|truva/i.test(item.title||''))
+  const aliAssessments=aliCase?(data.assessments||[]).filter(item=>item.case_id===aliCase.id):[]
   return <>
     <style>{dashboardUxStyles}</style>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backExplanation}</button>
@@ -71,6 +75,23 @@ export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,on
       </div>
       <button className="primary dashboardPrimaryAction" onClick={()=>setSection(dg.nextSection)}>{dg.next} →</button>
     </section>
+
+    {aliCase&&<section className="aliReferenceCase" aria-label="Ali / TRUVA Referenzfall">
+      <div className="aliReferenceHead">
+        <div><span className="eyebrow">REFERENZFALL · GOLDSTANDARD</span><h2>{aliCase.title}</h2><p>{aliCase.summary||'Signal Iduna und Apleona/Patrizia werden als getrennte Sachkomplexe geführt.'}</p></div>
+        <span className="aliReferenceStatus">Gelb · in Bearbeitung</span>
+      </div>
+      <div className="aliReferenceGrid">
+        {aliAssessments.slice(0,4).map(item=><div className="aliReferenceItem" key={item.id}>
+          <b><span className="aliDot"/>{item.title}</b>
+          <small>{item.next_step||item.reasoning||'Nächsten Schritt prüfen.'}</small>
+        </div>)}
+      </div>
+      <div className="aliReferenceActions">
+        <button className="primary" type="button" onClick={()=>handleQuickAction('open-case',aliCase)}>Fall vollständig öffnen</button>
+        <button className="secondary" type="button" onClick={()=>setSection('cases')}>Alle Fälle anzeigen</button>
+      </div>
+    </section>}
 
     <QuickActions copy={core} onAction={handleQuickAction} deadlineCases={deadlineCases}/>
     <EvidenceActionPanel a={a} data={data}/>
