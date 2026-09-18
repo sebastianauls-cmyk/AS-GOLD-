@@ -13,6 +13,7 @@ const videoCloseText={de:'Schließen',en:'Close',fr:'Fermer',tr:'Kapat',pl:'Zamk
 export function ExplainerVideoDialog({language='de',videoLanguage,setVideoLanguage,presenter='female',onClose}){
   const title=videoButtonText[language]||videoButtonText.de
   const closeLabel=videoCloseText[language]||videoCloseText.de
+  videoLanguage=videoLanguages.some(([key])=>key===videoLanguage)?videoLanguage:language
   const selectedVideo=getExplainerVideo(videoLanguage,presenter)
   return <div role="dialog" aria-modal="true" aria-label={title} onClick={onClose} style={{position:'fixed',inset:0,zIndex:500,background:'rgba(20,24,30,.72)',display:'flex',alignItems:'center',justifyContent:'center',padding:18}}>
     <div onClick={event=>event.stopPropagation()} style={{width:'min(960px,100%)',maxHeight:'92dvh',overflow:'auto',background:'#fff',borderRadius:18,padding:14,boxShadow:'0 24px 70px rgba(0,0,0,.34)'}}>
