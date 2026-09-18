@@ -199,7 +199,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
   }
   async function save(event){
     event.preventDefault()
-    if(saveBusy.current)return
+    if(saveBusy.current||!dirty)return
     saveBusy.current=true
     setSaving(true)
     try{
@@ -239,7 +239,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
       <label htmlFor={fieldId(item.id,'analysis-light')}>{on.trafficLight}<select id={fieldId(item.id,'analysis-light')} value={draft.analysis_traffic_light} onChange={event=>setDraft({...draft,analysis_traffic_light:event.target.value})}><option value="green">🟢 {on.green}</option><option value="yellow">🟡 {on.yellow}</option><option value="red">🔴 {on.red}</option><option value="white">⚪ {on.white}</option></select></label>
       <label className="wideField" htmlFor={fieldId(item.id,'analysis-reasoning')}>{on.reasoning}<textarea id={fieldId(item.id,'analysis-reasoning')} value={draft.analysis_reasoning} onChange={event=>setDraft({...draft,analysis_reasoning:event.target.value})} rows="4"/></label>
       <label className="wideField" htmlFor={fieldId(item.id,'analysis-next')}>{on.analysisNext}<textarea id={fieldId(item.id,'analysis-next')} value={draft.analysis_next_step} onChange={event=>setDraft({...draft,analysis_next_step:event.target.value})}/></label>
-      <button className="primary full wideField" disabled={saving}>{analysis?.save||on.saveDocument}</button>
+      <button className="primary full wideField" disabled={saving||!dirty}>{analysis?.save||on.saveDocument}</button>
     </form>
   </>
 }

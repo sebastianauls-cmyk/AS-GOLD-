@@ -32,7 +32,7 @@ export function GuidancePreview({framed}) {
   }
   const content=<main style={{maxWidth:960,margin:'0 auto',padding:16}} dir={['ar','fa'].includes(language)?'rtl':'ltr'}>
     <p className="modeBadge">V135 · SYNTHETISCHE FUNKTIONSVORSCHAU</p>
-    <p>Frei erfundene Daten. Änderungen gelten nur in dieser Vorschau und werden beim Neuladen zurückgesetzt. Dokumentanalyse, Upload, Export und Freigabe sind hier nicht mit Live-Diensten verbunden.</p>
+    <p>Frei erfundene Daten. Änderungen gelten nur in dieser Vorschau und werden beim Neuladen zurückgesetzt. Dokumentanalyse, Upload und Freigabe sind hier nicht mit Live-Diensten verbunden. Die Übergabe-Exporte enthalten nur diese Musterdaten.</p>
     <label>Sprache <select aria-label="Sprache" value={language} onChange={event=>setLanguage(event.target.value)}>{['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'].map(key=><option key={key}>{key}</option>)}</select></label>
     <div style={{display:'flex',gap:8,flexWrap:'wrap',margin:'16px 0'}}>{[['empty','1 · Leerer Fall'],['pending','2 · Beleg prüfen'],['changed','3 · Dokument geändert'],['urgent','Frist hat Vorrang']].map(([key,label])=><button className="secondary" type="button" key={key} onClick={()=>scenario(key)}>{label}</button>)}</div>
     {message&&<p role="status">{message}</p>}

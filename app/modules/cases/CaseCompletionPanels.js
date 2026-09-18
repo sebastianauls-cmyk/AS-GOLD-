@@ -1,6 +1,9 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { caseEvidenceStatus, currentAssessments } from './lib/caseEvidence.mjs'
+import { caseGuidanceCopy } from './lib/caseGuidanceCopy.mjs'
+import { assessmentEvidenceText } from './lib/assessmentEvidenceText.mjs'
 import { buildProfessionalHandoff, handoffPriority } from '../lib/v40ProfessionalHandoff.mjs'
 import { analyzeCaseConsistency } from '../lib/v41CaseConsistency.mjs'
 
@@ -24,11 +27,11 @@ function timelineFor(item,documents){
   if(item?.deadline_at) events.push({date:item.deadline_at,title:'Frist',detail:item.next_action||''})
   return events
 }
-function handoffData(item,documents,assessments){
+function handoffData(item,documents,assessments,language){
   return buildProfessionalHandoff({
     title:item?.title||'ASH Workspace Gold Fallakte',goal:item?.goal||'',summary:item?.summary||'',deadline:item?.deadline_at?displayDate(item.deadline_at):'',nextAction:item?.next_action||'',
     documents:(documents||[]).map(document=>({date:document.document_date||displayDate(document.created_at),title:document.title||'',status:document.extracted_text?'Text vorhanden':''})),
-    assessments:(assessments||[]).map(entry=>({trafficLight:entry.traffic_light||'yellow',title:entry.title||'',reasoning:entry.reasoning||'',nextStep:entry.next_step||''})),
+    assessments:(assessments||[]).map(entry=>({trafficLight:entry.traffic_light||'yellow',title:entry.title||'',reasoning:[entry.reasoning,assessmentEvidenceText(entry,documents,language,assessments)].filter(Boolean).join('\n'),nextStep:entry.next_step||''})),
     timeline:timelineFor(item,documents)
   })
 }
@@ -44,14 +47,16 @@ async function exportDocx(data,copy){
 }
 
 export function ProfessionalHandoffPanel({language='de',item,documents=[],assessments=[]}){
-  const copy=t(language);const data=useMemo(()=>handoffData(item,documents,assessments),[item,documents,assessments]);const [busy,setBusy]=useState(false);const priority=handoffPriority(data.assessments);const icon=priority==='red'?'🔴':priority==='green'?'🟢':'🟡';const fieldNames={goal:copy.goal,summary:copy.summary,documents:copy.documents,assessments:copy.assessments};const missing=data.missing.map(key=>fieldNames[key]||key).join(', ')
+  const copy=t(language);const data=useMemo(()=>handoffData(item,documents,assessments,language),[item,documents,assessments,language]);const [busy,setBusy]=useState(false);const priority=handoffPriority(data.assessments);const icon=priority==='red'?'🔴':priority==='green'?'🟢':'🟡';const fieldNames={goal:copy.goal,summary:copy.summary,documents:copy.documents,assessments:copy.assessments};const missing=data.missing.map(key=>fieldNames[key]||key).join(', ')
+  const sourceCopy=caseGuidanceCopy(language);const evidence=caseEvidenceStatus(item,documents,assessments)
   async function run(fn){if(busy)return;setBusy(true);try{await fn(data,copy)}finally{setBusy(false)}}
-  return <section className="detailCard v40ProfessionalHandoff" data-v40-handoff="direct"><div className="detailCardHead"><div><h3>{copy.handoffTitle}</h3></div><strong>{icon} {data.ready?copy.ready:copy.check}</strong></div><p>{copy.handoffLead}</p>{missing&&<p><b>{copy.missing}:</b> {missing}</p>}<div className="documentReviewActions"><button type="button" className="secondary" disabled={busy} onClick={()=>run(exportPdf)}>{copy.pdf}</button><button type="button" className="primary" disabled={busy} onClick={()=>run(exportDocx)}>{copy.docx}</button></div><small>{copy.privacy}</small></section>
+  return <section className="detailCard v40ProfessionalHandoff" data-v40-handoff="direct"><div className="detailCardHead"><div><h3>{copy.handoffTitle}</h3></div><strong>{evidence.complete?icon:'🟡'} {data.ready&&evidence.complete?copy.ready:copy.check}</strong></div><p>{copy.handoffLead}</p><p>{sourceCopy.progress}: {evidence.complete?sourceCopy.reviewed:sourceCopy.pending}</p>{missing&&<p><b>{copy.missing}:</b> {missing}</p>}<div className="documentReviewActions"><button type="button" className="secondary" disabled={busy} onClick={()=>run(exportPdf)}>{copy.pdf}</button><button type="button" className="primary" disabled={busy} onClick={()=>run(exportDocx)}>{copy.docx}</button></div><small>{copy.privacy}</small></section>
 }
 
 export function CaseConsistencyPanel({language='de',result}){
+  const sourceCopy=caseGuidanceCopy(language)
   const copy=t(language);const state=copy[result.status]||copy.review;const icon=result.status==='good'?'🟢':result.status==='review'?'🟡':'🔴'
-  return <section className="detailCard v41CaseConsistency" data-v41-consistency="direct"><div className="detailCardHead"><div><h3>{copy.consistencyTitle}</h3></div><strong>{icon} {result.score}% · {state}</strong></div><div className="v41Metrics" aria-label={copy.consistencyTitle}><span><b>{copy.documents}</b><strong>{result.readableCount}/{result.documentCount}</strong></span><span><b>{copy.assessments}</b><strong>{result.assessmentCount}</strong><small>🔴 {result.redCount} · 🟡 {result.yellowCount} · 🟢 {result.greenCount}</small></span><span><b>{copy.gapLabels.red_without_next}</b><strong>{result.redWithoutNextCount}</strong></span><span><b>{copy.deviations}</b><strong>{result.deviations.length}</strong></span></div><h4>{copy.gaps}</h4>{result.gaps.length?<ul>{result.gaps.map(gap=><li key={gap}>{copy.gapLabels[gap]||gap}{gap==='unread_documents'&&result.unreadCount?` (${result.unreadCount})`:gap==='red_without_next'&&result.redWithoutNextCount?` (${result.redWithoutNextCount})`:''}</li>)}</ul>:<p>✓ {copy.good}</p>}{result.assessmentComplexes.length?<div className="v41Complexes"><h4>{copy.assessments}</h4><ul>{result.assessmentComplexes.map(complex=><li key={complex.title}><b>{complex.title}</b><span>🔴 {complex.red} · 🟡 {complex.yellow} · 🟢 {complex.green}{complex.withoutNext?` · ${copy.gapLabels.red_without_next}: ${complex.withoutNext}`:''}</span></li>)}</ul></div>:null}<div id="case-consistency-deviations"><h4>{copy.deviations}</h4>{result.deviations.length?<><ul>{result.deviations.map((deviation,index)=><li key={`${deviation.type}-${deviation.concept}-${index}`}><b>{copy[deviation.type]||deviation.type} · {deviation.concept}</b>: {deviation.values.map(value=>value.value).join(' ↔ ')}</li>)}</ul><small>{copy.deviationNote}</small></>:<p>{copy.none}</p>}</div></section>
+  return <section className="detailCard v41CaseConsistency" data-v41-consistency="direct"><div className="detailCardHead"><div><h3>{copy.consistencyTitle}</h3></div><strong>{copy.score}: {result.score}% · {state}</strong></div><p className="analysisManualNote">{sourceCopy.boundary}</p><div className="v41Metrics" aria-label={copy.consistencyTitle}><span><b>{copy.documents}</b><strong>{result.readableCount}/{result.documentCount}</strong></span><span><b>{copy.assessments}</b><strong>{result.assessmentCount}</strong><small>🔴 {result.redCount} · 🟡 {result.yellowCount} · 🟢 {result.greenCount}</small></span><span><b>{copy.gapLabels.red_without_next}</b><strong>{result.redWithoutNextCount}</strong></span><span><b>{copy.deviations}</b><strong>{result.deviations.length}</strong></span></div><h4>{copy.gaps}</h4>{result.gaps.length?<ul>{result.gaps.map(gap=><li key={gap}>{copy.gapLabels[gap]||gap}{gap==='unread_documents'&&result.unreadCount?` (${result.unreadCount})`:gap==='red_without_next'&&result.redWithoutNextCount?` (${result.redWithoutNextCount})`:''}</li>)}</ul>:<p>✓ {copy.good}</p>}{result.assessmentComplexes.length?<div className="v41Complexes"><h4>{copy.assessments}</h4><ul>{result.assessmentComplexes.map(complex=><li key={complex.title}><b>{complex.title}</b><span>🔴 {complex.red} · 🟡 {complex.yellow} · 🟢 {complex.green}{complex.withoutNext?` · ${copy.gapLabels.red_without_next}: ${complex.withoutNext}`:''}</span></li>)}</ul></div>:null}<div id="case-consistency-deviations"><h4>{copy.deviations}</h4>{result.deviations.length?<><ul>{result.deviations.map((deviation,index)=><li key={`${deviation.type}-${deviation.concept}-${index}`}><b>{copy[deviation.type]||deviation.type} · {deviation.concept}</b>: {deviation.values.map(value=>value.value).join(' ↔ ')}</li>)}</ul><small>{copy.deviationNote}</small></>:<p>{copy.none}</p>}</div></section>
 }
 
 function gapAction(gap,copy){
@@ -70,7 +75,7 @@ export function ActionableGapsPanel({language='de',result,onEdit,onAddDocument,o
 }
 
 export function CaseCompletionPanels({language='de',item,documents=[],assessments=[],onEdit,onAddDocument,onOpenDocument,onAssess}){
-  const result=useMemo(()=>analyzeCaseConsistency({caseItem:item||{},documents,assessments}),[item,documents,assessments])
+  const result=useMemo(()=>analyzeCaseConsistency({caseItem:item||{},documents,assessments:currentAssessments(assessments)}),[item,documents,assessments])
   return <><ProfessionalHandoffPanel language={language} item={item} documents={documents} assessments={assessments}/><CaseConsistencyPanel language={language} result={result}/><ActionableGapsPanel language={language} result={result} documents={documents} onEdit={onEdit} onAddDocument={onAddDocument} onOpenDocument={onOpenDocument} onAssess={onAssess}/></>
 }
 

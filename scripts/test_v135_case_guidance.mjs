@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import nextConfig from '../next.config.mjs'
 import { assessmentEvidence, caseEvidenceStatus, caseGuidance, currentAssessments } from '../app/modules/cases/lib/caseEvidence.mjs'
 import { caseGuidanceCopies } from '../app/modules/cases/lib/caseGuidanceCopy.mjs'
+import { buildWorkspaceExportRows } from '../app/modules/services/exportService.js'
+import { assessmentEvidenceText } from '../app/modules/cases/lib/assessmentEvidenceText.mjs'
 import { openPrivateDocument } from '../app/modules/documents/openPrivateDocument.mjs'
 
 const item={id:'case-1'}
@@ -49,3 +52,28 @@ assert.equal(await actions.updateClient('client-1',{name:updatedClient.name}),tr
 assert.deepEqual(selectedClient,updatedClient)
 assert.deepEqual(workspace.clients,[updatedClient])
 console.log('V135: successful customer save updates both the list and the open detail view.')
+
+const exported=assessmentEvidenceText(assessment,[document],'de',[replacement,assessment])
+assert.match(exported,/Frühere Bewertung/)
+assert.match(exported,/Seite 1, Absatz 1/)
+assert.match(exported,/reichen Sie die Unterlagen ein/)
+const labels=new Proxy({},{get:(_,key)=>key})
+const rows=buildWorkspaceExportRows({ref:{kind:'case',item},data:{documents:[document],assessments:[replacement,assessment],sourceStatus:[],approvals:[]},copy:{ex:labels,core:labels,approvalUi:labels}})
+const assessmentRow=rows.find(([label])=>label==='currentAssessments')[1]
+assert.match(assessmentRow,/Seite 1, Absatz 1/)
+assert.match(assessmentRow,/Belegstelle geprüft/)
+assert.match(assessmentRow,/Frühere Bewertung/)
+console.log('V135: case exports preserve exact evidence, review state and superseded history.')
+
+const deploymentEnvironment=process.env.VERCEL_ENV
+try{
+  process.env.VERCEL_ENV='production'
+  const liveRules=await nextConfig.headers()
+  assert.equal(liveRules.length,1)
+  assert.ok(liveRules[0].headers.some(header=>header.key==='X-Frame-Options'&&header.value==='DENY'))
+  process.env.VERCEL_ENV='preview'
+  const previewRules=await nextConfig.headers()
+  assert.equal(previewRules[1].source,'/vorschau/v135')
+  assert.ok(previewRules[1].headers.some(header=>header.key==='X-Frame-Options'&&header.value==='SAMEORIGIN'))
+}finally{if(deploymentEnvironment===undefined)delete process.env.VERCEL_ENV;else process.env.VERCEL_ENV=deploymentEnvironment}
+console.log('V135: same-origin framing is limited to the synthetic preview; production keeps its frame protection.')
