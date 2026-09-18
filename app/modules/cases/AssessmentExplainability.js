@@ -1,7 +1,10 @@
 'use client'
 
+import { assessmentEvidence } from './lib/caseEvidence.mjs'
+import { caseGuidanceCopy } from './lib/caseGuidanceCopy.mjs'
 
 export const assessmentExplainabilityCopies={
+  vi:{why:'Vì sao?',basis:'Cơ sở',uncertainty:'Điểm chưa chắc chắn',missing:'Thông tin còn thiếu',uncertaintyText:'Kiểm tra tài liệu mới hoặc mâu thuẫn trước khi quyết định.',missingText:'Chưa ghi riêng thông tin còn thiếu. Hãy kiểm tra trước khi quyết định.'},
   de:{why:'Warum?',basis:'Grundlage',uncertainty:'Unsicherheit',missing:'Fehlende Informationen',uncertaintyText:'Unsicherheit wurde in dieser Bewertung noch nicht separat dokumentiert. Prüfen Sie, ob neue oder widersprüchliche Unterlagen vorliegen.',missingText:'Noch nicht separat erfasst. Vor einer endgültigen Entscheidung prüfen, ob Unterlagen oder Angaben fehlen.'},
   en:{why:'Why?',basis:'Basis',uncertainty:'Uncertainty',missing:'Missing information',uncertaintyText:'Uncertainty has not yet been recorded separately for this assessment. Check for new or conflicting documents.',missingText:'Not recorded separately yet. Before a final decision, check whether documents or information are missing.'},
   fr:{why:'Pourquoi ?',basis:'Fondement',uncertainty:'Incertitude',missing:'Informations manquantes',uncertaintyText:'L’incertitude n’est pas encore documentée séparément pour cette évaluation. Vérifiez les documents nouveaux ou contradictoires.',missingText:'Pas encore saisi séparément. Avant une décision finale, vérifiez si des documents ou informations manquent.'},
@@ -15,12 +18,21 @@ export const assessmentExplainabilityCopies={
 }
 
 
-export function AssessmentExplainability({language='de',reasoning='',next=''}){
+export function AssessmentExplainability({language='de',reasoning='',next='',assessment,documents=[],onOpenDocument,onReview}){
   const c=assessmentExplainabilityCopies[language]||assessmentExplainabilityCopies.de
+  const sourceCopy=caseGuidanceCopy(language)
+  const evidence=assessmentEvidence(assessment,documents)
   const basis=reasoning||'—'
   return <details className="v38AssessmentWhy" style={{marginTop:'12px',paddingTop:'10px',borderTop:'1px solid rgba(90,90,90,.18)'}}>
     <summary style={{cursor:'pointer',fontWeight:850,color:'#72591d',listStylePosition:'inside'}}>{c.why}</summary>
     <div style={{display:'grid',gap:'8px',marginTop:'10px',padding:'10px',borderRadius:'12px',background:'#faf8f1'}}>
+      <p><b>{sourceCopy[evidence.status]}</b></p>
+      <p>{sourceCopy.kind}: {sourceCopy[assessment?.statement_kind]||sourceCopy.unknown}</p>
+      {assessment?.source_title_snapshot&&<p>{sourceCopy.source}: {assessment.source_title_snapshot}</p>}
+      {assessment?.source_locator&&<p>{sourceCopy.locator}: {assessment.source_locator}</p>}
+      {assessment?.source_excerpt&&<blockquote style={{margin:0,whiteSpace:'pre-wrap'}}>{assessment.source_excerpt}</blockquote>}
+      {evidence.document&&onOpenDocument&&<button type="button" className="secondary" onClick={()=>onOpenDocument(evidence.document)}>{sourceCopy.open}</button>}
+      {onReview&&<button type="button" className="secondary" onClick={()=>onReview(assessment)}>{sourceCopy.review}</button>}
       <p style={{margin:0,lineHeight:1.45}}><b>{c.basis}: </b>{basis}</p>
       <p style={{margin:0,lineHeight:1.45}}><b>{c.uncertainty}: </b>{c.uncertaintyText}</p>
       <p style={{margin:0,lineHeight:1.45}}><b>{c.missing}: </b>{c.missingText}</p>

@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import './caseGuidance.css'
 import { ControlledDocumentAnalysis } from './V26DocumentAnalysis'
 import { DeadlineWarningCard } from './V38DeadlineCardEnhancer'
 import { AssessmentExplainability } from './V38AssessmentExplainability'
@@ -13,6 +14,12 @@ import { APP_VERSION } from '../release/appRelease.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage.js'
 import { bilingualLetterUi } from '../language/bilingualLetter.mjs'
 import { LegalComparisonPanel } from '../country/LegalComparisonPanel'
+import { AssessmentEvidenceFields } from './AssessmentEvidenceFields'
+import { caseEvidenceStatus } from './lib/caseEvidence.mjs'
+import { caseGuidanceCopy } from './lib/caseGuidanceCopy.mjs'
+
+const emptyAssessment=()=>({title:'',traffic_light:'yellow',reasoning:'',next_step:'',source_document_id:'',source_locator:'',source_excerpt:'',statement_kind:'inference',source_reviewed:false,supersedes_assessment_id:null})
+const documentDraftFingerprint=draft=>JSON.stringify(Object.fromEntries(Object.entries(draft).filter(([key])=>!['analysis_generated','test_data_confirmed'].includes(key))))
 
 const copy = {
   de:{quickTitle:'Direkt starten',quickLead:'Die wichtigsten Schritte sind auf dem Smartphone sofort erreichbar.',newCase:'Neuer Fall',scanDocument:'Dokument scannen',uploadFile:'Datei hochladen',clients:'Kunden',deadlines:'Fristen',approvals:'Freigaben',dueSoon:'Nächste Fristen',noDeadline:'Noch keine Fristen eingetragen.',caseSetup:'Fall anlegen',caseSetupHelp:'Erfassen Sie Ziel, Sachstand und nächste Frist. Eine Bewertung entsteht erst aus nachvollziehbaren Grundlagen.',title:'Fallbezeichnung',documentTitle:'Dokumenttitel',client:'Kunde',noClient:'Eigener Vorgang / noch kein Kunde',reference:'Aktenzeichen / Referenz',goal:'Was soll erreicht werden?',summary:'Bisheriger Sachstand',deadline:'Nächste Frist',nextAction:'Nächster geplanter Schritt',createCase:'Fall speichern',saveChanges:'Änderungen speichern',cancel:'Abbrechen',editCase:'Fall bearbeiten',sourceBasis:'Quellenbasis',assessmentState:'Prüfstatus',notAssessable:'Nicht sicher bewertbar – noch keine Dokumente zugeordnet.',reviewRequired:'Unterlagen vorhanden – Bewertung und Quellenprüfung stehen noch aus.',reviewed:'Eine Bewertung ist dokumentiert. Neue Informationen müssen erneut geprüft werden.',noDocuments:'Noch keine Dokumente zugeordnet.',currentAssessments:'Dokumentierte Bewertungen',noAssessment:'Noch keine Bewertung dokumentiert.',addAssessment:'Bewertung hinzufügen',assessmentTitle:'Bewertungspunkt',trafficLight:'Ampel',reasoning:'Begründung und Quelle',assessmentNext:'Nächster Schritt aus dieser Bewertung',saveAssessment:'Bewertung speichern',green:'Grün',yellow:'Gelb',red:'Rot',documentUpload:'Dokument hinzufügen',uploadMode:'Datei',scanMode:'Kamera',scanHelp:'Auf dem Smartphone öffnet sich die Kamera. Das Foto wird erst nach Ihrer Auswahl hochgeladen.',uploadHelp:'Unterstützte Testformate können dem Fall zugeordnet werden. Die 50-MB-Grenze ist vorläufig.',file:'Datei',documentType:'Dokumenttyp',documentDate:'Dokumentdatum',withoutCase:'Ohne Fallzuordnung',upload:'Hochladen',uploading:'Wird hochgeladen …',documentReview:'Dokument prüfen',documentReviewHelp:'Erkannte oder manuell ergänzte Angaben bleiben korrigierbar. Ohne ausgelesenen Inhalt wird keine sichere Analyse behauptet.',originalFile:'Originaldatei öffnen',extractedText:'Ausgelesener Inhalt',noExtraction:'Noch kein Inhalt ausgelesen. Für PDF, Office und Bilder folgt die geschützte Verarbeitungspipeline.',textAvailable:'Inhalt vorhanden – bitte fachlich prüfen.',analysisSummary:'Prüfergebnis / Zusammenfassung',analysisNext:'Nächster Schritt',saveDocument:'Dokumentdaten speichern',back:'← Zurück',created:'Erstellt',clientUnknown:'Kein Kunde zugeordnet',documents:'Dokumente',caseRecord:'Fallakte',selectCase:'Fall auswählen'},
@@ -95,12 +102,38 @@ export function CaseSection({copy:on, clients, cases, newCase, setNewCase, showF
 export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate}){
   const [editing,setEditing]=useState(false)
   const [draft,setDraft]=useState({title:item.title||'',client_id:item.client_id||'',reference_no:item.reference_no||'',goal:item.goal||'',summary:item.summary||'',deadline_at:localDateTime(item.deadline_at),next_action:item.next_action||'',traffic_light:item.traffic_light||'yellow',status:item.status||'open',home_country:item.home_country||'DE',target_country:item.target_country||'DE',test_case_id:item.test_case_id||null,test_case_expected_ampel:item.test_case_expected_ampel||null,test_case_language:item.test_case_language||null})
-  const [assessment,setAssessment]=useState({title:'',traffic_light:'yellow',reasoning:'',next_step:''})
+  const [assessment,setAssessment]=useState(emptyAssessment)
+  const assessmentTitleRef=useRef(null)
+  const assessmentBusy=useRef(false)
+  const [savingAssessment,setSavingAssessment]=useState(false)
+  const evidenceCopy=caseGuidanceCopy(language)
+  const evidenceState=caseEvidenceStatus(item,documents,assessments)
+  const currentIds=new Set(evidenceState.current.map(entry=>entry.id))
+  function reviewAssessment(entry,document){
+    setAssessment({...emptyAssessment(),...(entry||{}),source_document_id:document?.id||entry?.source_document_id||'',source_reviewed:false,supersedes_assessment_id:entry?.id||null,title:entry?.title||document?.title||on.addAssessment})
+    assessmentTitleRef.current?.focus()
+    assessmentTitleRef.current?.scrollIntoView({behavior:'smooth',block:'center'})
+  }
+  function nextAction(guidance){
+    if(guidance.target==='upload') return onAddDocument(item.id)
+    if(guidance.target==='document') return onOpenDocument(guidance.document)
+    if(guidance.target==='assessment') return reviewAssessment(guidance.assessment,guidance.document)
+    setEditing(true)
+  }
+  async function saveAssessment(event){
+    event.preventDefault()
+    if(assessmentBusy.current) return
+    assessmentBusy.current=true
+    setSavingAssessment(true)
+    try{if(await onAddAssessment(item.id,assessment))setAssessment(emptyAssessment())}
+    finally{assessmentBusy.current=false;setSavingAssessment(false)}
+  }
   const client=clients.find(entry=>entry.id===item.client_id)
-  const readiness=!documents.length?on.notAssessable:!assessments.length?on.reviewRequired:on.reviewed
+  const readiness=!documents.length?on.notAssessable:evidenceState.complete?evidenceCopy.reviewed:evidenceCopy.pending
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
     <div className="caseTitleRow"><div><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2>{item.title}</h2><p>{client?.name||on.clientUnknown}{item.reference_no?` · ${item.reference_no}`:''}</p></div><button className="secondary" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button></div>
+    <PrimaryNextStepCard language={language} item={item} documents={documents} assessments={assessments} onAction={nextAction}/>
     {editing&&<form className="actionCard coreForm" onSubmit={event=>{event.preventDefault();onSave(item.id,draft).then(saved=>{if(saved)setEditing(false)})}}>
       <label htmlFor={fieldId(item.id,'title')}>{on.title}<input id={fieldId(item.id,'title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
       <label htmlFor={fieldId(item.id,'client')}>{on.client}<select id={fieldId(item.id,'client')} value={draft.client_id} onChange={event=>setDraft({...draft,client_id:event.target.value})}><option value="">{on.noClient}</option>{clients.map(entry=><option value={entry.id} key={entry.id}>{entry.name}</option>)}</select></label>
@@ -114,15 +147,14 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
       <button className="primary full">{on.saveChanges}</button>
     </form>}
     <section className="caseCoreGrid"><article><b>{on.homeCountry}</b><p>{COUNTRY_CATALOG.find(country=>country.key===(item.home_country||'DE'))?.label||item.home_country||'DE'}</p></article><article><b>{on.targetCountry}</b><p>{COUNTRY_CATALOG.find(country=>country.key===(item.target_country||'DE'))?.jurisdictionLabel||item.target_country||'DE'}</p></article><article><b>{on.goal}</b><p>{item.goal||'—'}</p></article><article><b>{on.summary}</b><p>{item.summary||'—'}</p></article><article><b>{on.deadline}</b><p>{item.deadline_at?new Date(item.deadline_at).toLocaleString():'—'}</p></article><article><b>{on.nextAction}</b><p>{item.next_action||'—'}</p></article></section>
-    <LegalComparisonPanel supabase={supabase} ownerId={ownerId} language={language} outputLanguage={outputLanguage} item={item} workspaceCopy={on} onPrivacyUpdate={onPrivacyUpdate}/>
+    {supabase&&ownerId&&<LegalComparisonPanel supabase={supabase} ownerId={ownerId} language={language} outputLanguage={outputLanguage} item={item} workspaceCopy={on} onPrivacyUpdate={onPrivacyUpdate}/>}
     <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case"/>
-    <PrimaryNextStepCard language={language} item={item} documents={documents} assessments={assessments}/>
     <CaseTimeline language={language} caseDeadline={item.deadline_at||''} documents={documents}/>
-    <CaseCompletionPanels language={language} item={item} documents={documents} assessments={assessments} onEdit={()=>setEditing(true)} onAddDocument={()=>onAddDocument(item.id)} onOpenDocument={onOpenDocument} onAssess={()=>setAssessment(current=>({...current,title:current.title||on.addAssessment}))}/>
-    <section className={`readinessCard ${!documents.length?'attentionBox':''}`}><b>{on.assessmentState}</b><p>{readiness}</p></section>
+    <CaseCompletionPanels language={language} item={item} documents={documents} assessments={assessments} onEdit={()=>setEditing(true)} onAddDocument={()=>onAddDocument(item.id)} onOpenDocument={onOpenDocument} onAssess={()=>reviewAssessment()}/>
+    <section className={`readinessCard ${!documents.length?'attentionBox':''}`}><b>{on.assessmentState}</b><p>{readiness}</p><small>{evidenceCopy.boundary}</small></section>
     <section className="detailCard"><div className="detailCardHead"><h3>{on.sourceBasis}</h3><button className="secondary" type="button" onClick={()=>onAddDocument(item.id)}>＋ {on.documentUpload}</button></div>{documents.length?<div className="sourceList">{documents.map(document=><button type="button" onClick={()=>onOpenDocument(document)} key={document.id}><span>{document.document_date||new Date(document.created_at).toLocaleDateString()}</span><b>{document.title}</b><small>{document.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</small></button>)}</div>:<div className="emptyState">{on.noDocuments}</div>}</section>
-    <section className="detailCard"><h3>{on.currentAssessments}</h3>{assessments.length?<div className="assessmentList">{assessments.map(entry=><article className={`assessment ${entry.traffic_light}`} key={entry.id}><div><span>{trafficLightLabel(on,entry.traffic_light)}</span><b>{entry.title}</b></div><p>{entry.reasoning||'—'}</p><small>{on.nextAction}: {entry.next_step||'—'}</small><AssessmentExplainability language={language} reasoning={entry.reasoning} next={entry.next_step}/></article>)}</div>:<p>{on.noAssessment}</p>}
-      <form className="inlineAssessment" onSubmit={event=>{event.preventDefault();onAddAssessment(item.id,assessment).then(saved=>{if(saved)setAssessment({title:'',traffic_light:'yellow',reasoning:'',next_step:''})})}}><h4>{on.addAssessment}</h4><label htmlFor={fieldId(item.id,'assessment-title')}>{on.assessmentTitle}<input id={fieldId(item.id,'assessment-title')} value={assessment.title} onChange={event=>setAssessment({...assessment,title:event.target.value})} required/></label><label htmlFor={fieldId(item.id,'assessment-light')}>{on.trafficLight}<select id={fieldId(item.id,'assessment-light')} value={assessment.traffic_light} onChange={event=>setAssessment({...assessment,traffic_light:event.target.value})}><option value="green">🟢 {on.green}</option><option value="yellow">🟡 {on.yellow}</option><option value="red">🔴 {on.red}</option><option value="white">⚪ {on.white}</option></select></label><label htmlFor={fieldId(item.id,'assessment-reasoning')}>{on.reasoning}<textarea id={fieldId(item.id,'assessment-reasoning')} value={assessment.reasoning} onChange={event=>setAssessment({...assessment,reasoning:event.target.value})} required/></label><label htmlFor={fieldId(item.id,'assessment-next')}>{on.assessmentNext}<textarea id={fieldId(item.id,'assessment-next')} value={assessment.next_step} onChange={event=>setAssessment({...assessment,next_step:event.target.value})}/></label><button className="secondary full" type="submit">{on.saveAssessment}</button></form>
+    <section className="detailCard"><h3>{on.currentAssessments}</h3>{assessments.length?<div className="assessmentList">{assessments.map(entry=><article className={`assessment ${entry.traffic_light}`} key={entry.id}><div><span>{trafficLightLabel(on,entry.traffic_light)}</span><b>{entry.title}</b></div>{!currentIds.has(entry.id)&&<p className="modeBadge">{evidenceCopy.history}</p>}<p>{entry.reasoning||'—'}</p><small>{on.nextAction}: {entry.next_step||'—'}</small><AssessmentExplainability language={language} reasoning={entry.reasoning} next={entry.next_step} assessment={entry} documents={documents} onOpenDocument={onOpenDocument} onReview={currentIds.has(entry.id)?reviewAssessment:undefined}/></article>)}</div>:<p>{on.noAssessment}</p>}
+      <form className="inlineAssessment" onSubmit={saveAssessment}><h4>{on.addAssessment}</h4><label htmlFor={fieldId(item.id,'assessment-title')}>{on.assessmentTitle}<input ref={assessmentTitleRef} id={fieldId(item.id,'assessment-title')} value={assessment.title} onChange={event=>setAssessment({...assessment,title:event.target.value})} required/></label><label htmlFor={fieldId(item.id,'assessment-light')}>{on.trafficLight}<select id={fieldId(item.id,'assessment-light')} value={assessment.traffic_light} onChange={event=>setAssessment({...assessment,traffic_light:event.target.value})}><option value="green">🟢 {on.green}</option><option value="yellow">🟡 {on.yellow}</option><option value="red">🔴 {on.red}</option><option value="white">⚪ {on.white}</option></select></label><label htmlFor={fieldId(item.id,'assessment-reasoning')}>{on.reasoning}<textarea id={fieldId(item.id,'assessment-reasoning')} value={assessment.reasoning} onChange={event=>setAssessment({...assessment,reasoning:event.target.value})} required/></label><label htmlFor={fieldId(item.id,'assessment-next')}>{on.assessmentNext}<textarea id={fieldId(item.id,'assessment-next')} value={assessment.next_step} onChange={event=>setAssessment({...assessment,next_step:event.target.value})}/></label><AssessmentEvidenceFields language={language} caseId={item.id} documents={documents} assessment={assessment} setAssessment={setAssessment}/><button className="secondary full" type="submit" disabled={savingAssessment}>{on.saveAssessment}</button></form>
     </section>
   </>
 }
@@ -148,17 +180,42 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
   const letterUi=bilingualLetterUi(language)
   const [draft,setDraft]=useState({title:item.title||'',case_id:item.case_id||'',document_type:item.document_type||'',document_date:item.document_date||'',extracted_text:item.extracted_text||'',analysis_summary:item.analysis_summary||'',analysis_next_step:item.analysis_next_step||'',reference_copy:item.reference_copy||item.response_letter_de||'',reference_copy_language:item.reference_copy_language||'de',customer_copy:item.customer_copy||'',customer_copy_language:item.customer_copy_language||outputLanguage,response_recipient:item.response_recipient||'',response_subject:item.response_subject||'',analysis_traffic_light:item.analysis_traffic_light||'yellow',analysis_reasoning:item.analysis_reasoning||'',analysis_confidence:item.analysis_confidence||'',data_classification:allowedClassifications.includes(item.data_classification)?item.data_classification:'',test_data_confirmed:false})
   const [analysisPhase,setAnalysisPhase]=useState(item.extracted_text||item.analysis_summary||item.analysis_next_step?'saved':'uploaded')
+  const evidenceCopy=caseGuidanceCopy(language)
+  const [savedFingerprint,setSavedFingerprint]=useState(()=>documentDraftFingerprint(draft))
+  const [saving,setSaving]=useState(false)
+  const saveBusy=useRef(false)
+  const [originalUrl,setOriginalUrl]=useState('')
+  const dirty=documentDraftFingerprint(draft)!==savedFingerprint
+  useEffect(()=>{
+    if(!dirty)return
+    const warn=event=>{event.preventDefault();event.returnValue=''}
+    window.addEventListener('beforeunload',warn)
+    return ()=>window.removeEventListener('beforeunload',warn)
+  },[dirty])
+  async function openOriginal(){
+    setOriginalUrl('')
+    const result=await onOpen(item)
+    if(result?.url)setOriginalUrl(result.url)
+  }
   async function save(event){
     event.preventDefault()
+    if(saveBusy.current||!dirty)return
+    saveBusy.current=true
+    setSaving(true)
+    try{
     const saved=await onSave(item.id,draft)
     if(saved){
       setAnalysisPhase('saved')
+      setSavedFingerprint(documentDraftFingerprint(draft))
       setDraft(current=>({...current,analysis_generated:false,test_data_confirmed:false}))
     }
+    }finally{saveBusy.current=false;setSaving(false)}
   }
   return <>
-    <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
-    <section className="documentReviewHead"><div><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={()=>onOpen(item)}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
+    <button className="backBtn" data-persistent-back type="button" onClick={()=>{if(!dirty||window.confirm(evidenceCopy.unsaved))onBack()}}>{on.back}</button>
+    <section className="documentReviewHead"><div><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={openOriginal}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" disabled={dirty||saving} onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
+    {dirty&&<p role="status" className="attentionBox">{evidenceCopy.saveFirst}</p>}
+    {originalUrl&&<a className="secondary" href={originalUrl} target="_blank" rel="noopener noreferrer">{evidenceCopy.openFallback}</a>}
     <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document"/>
     <DocumentAutoAssessment language={language} text={draft.extracted_text}/>
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</p></div>
@@ -182,7 +239,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
       <label htmlFor={fieldId(item.id,'analysis-light')}>{on.trafficLight}<select id={fieldId(item.id,'analysis-light')} value={draft.analysis_traffic_light} onChange={event=>setDraft({...draft,analysis_traffic_light:event.target.value})}><option value="green">🟢 {on.green}</option><option value="yellow">🟡 {on.yellow}</option><option value="red">🔴 {on.red}</option><option value="white">⚪ {on.white}</option></select></label>
       <label className="wideField" htmlFor={fieldId(item.id,'analysis-reasoning')}>{on.reasoning}<textarea id={fieldId(item.id,'analysis-reasoning')} value={draft.analysis_reasoning} onChange={event=>setDraft({...draft,analysis_reasoning:event.target.value})} rows="4"/></label>
       <label className="wideField" htmlFor={fieldId(item.id,'analysis-next')}>{on.analysisNext}<textarea id={fieldId(item.id,'analysis-next')} value={draft.analysis_next_step} onChange={event=>setDraft({...draft,analysis_next_step:event.target.value})}/></label>
-      <button className="primary full wideField">{analysis?.save||on.saveDocument}</button>
+      <button className="primary full wideField" disabled={saving||!dirty}>{analysis?.save||on.saveDocument}</button>
     </form>
   </>
 }

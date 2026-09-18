@@ -91,12 +91,18 @@ export function updateCaseRecord(supabase,{ownerId,caseId,payload}){
 }
 
 export async function createAssessmentRecord(supabase,{caseId,draft}){
-  const result=await supabase.rpc('create_gold_assessment',{
+  const result=await supabase.rpc('create_gold_assessment_v135',{
     p_case_id:caseId,
     p_title:draft.title.trim(),
     p_traffic_light:draft.traffic_light,
     p_reasoning:draft.reasoning.trim()||null,
-    p_next_step:draft.next_step.trim()||null
+    p_next_step:draft.next_step.trim()||null,
+    p_source_document_id:draft.source_document_id||null,
+    p_source_locator:draft.source_locator?.trim()||null,
+    p_source_excerpt:draft.source_excerpt?.trim()||null,
+    p_statement_kind:draft.statement_kind||'inference',
+    p_source_reviewed:draft.source_reviewed===true,
+    p_supersedes_assessment_id:draft.supersedes_assessment_id||null
   })
   if(result.error)return {assessment:null,updatedCase:null,error:result.error}
   return {assessment:result.data?.assessment||null,updatedCase:result.data?.case||null,error:null}

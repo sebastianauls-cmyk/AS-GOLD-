@@ -1,0 +1,3 @@
+/* V135: source fields remain usable on narrow screens and RTL layouts. */
+.assessmentEvidenceFields{grid-column:1/-1;min-width:0;border:1px solid #d8cba9;border-radius:12px;padding:14px;display:grid;gap:12px}
+.assessmentEvidenceFields legend{font-weight:750;padding:0 6px}.assessmentEvidenceFields .documentPrivacyConfirm{display:flex;align-items:flex-start;gap:10px}.assessmentEvidenceFields input[type=checkbox]{width:20px;min-width:20px;height:20px;padding:0}.assessmentEvidenceFields blockquote,.v38AssessmentWhy blockquote{overflow-wrap:anywhere}.v38PrimaryNextStep .primary{min-height:48px;width:100%}

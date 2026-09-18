@@ -35,7 +35,17 @@ if(process.env.NODE_ENV==='production'){
 const nextConfig={
   poweredByHeader:false,
   async headers(){
-    return [{source:'/:path*',headers:securityHeaders}]
+    const rules=[{source:'/:path*',headers:securityHeaders}]
+    // Only the synthetic preview may be framed by its own origin, so its
+    // responsive layout can be reviewed. All actual app routes keep DENY.
+    if(process.env.VERCEL_ENV!=='production')rules.push({
+      source:'/vorschau/v135',
+      headers:[
+        {key:'Content-Security-Policy',value:contentSecurityPolicy.replace("frame-ancestors 'none'","frame-ancestors 'self'")},
+        {key:'X-Frame-Options',value:'SAMEORIGIN'},
+      ],
+    })
+    return rules
   },
 }
 

@@ -4,7 +4,7 @@ import { analyzeDeadlines } from '../app/modules/lib/deadlineIntelligence.mjs'
 import { prioritizeNextStep, supportedRecommendationLanguages } from '../app/modules/lib/nextStepEngine.mjs'
 
 const now=new Date('2026-09-01T10:00:00Z')
-const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg']
+const expectedLanguages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 assert.deepEqual(supportedRecommendationLanguages.sort(),expectedLanguages.sort())
 function simulate(name,{text='',caseDeadline='',missing=false,assessments=[],caseNext='',expectedDeadline,expectedKind,expectedWhen}){const deadline=analyzeDeadlines({text,caseDeadline,now});const recommendation=prioritizeNextStep({language:'de',missing,deadlineStatus:deadline.status,deadlineAction:deadline.primary?'Fristgrundlage prüfen und erforderliche Handlung vorbereiten.':'',assessments,caseNext});if(expectedDeadline) assert.equal(deadline.status,expectedDeadline,`${name}: falsche Fristenstufe`);assert.equal(recommendation.kind,expectedKind,`${name}: falsche Hauptpriorität`);if(expectedWhen) assert.equal(recommendation.when,expectedWhen,`${name}: falscher Zeitpunkt`);assert.ok(recommendation.action&&recommendation.action.length>4,`${name}: keine verwertbare Hauptempfehlung`);return {name,deadline:deadline.status,recommendation:recommendation.kind}}
 const results=[]

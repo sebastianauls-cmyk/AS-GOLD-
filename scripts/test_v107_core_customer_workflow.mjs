@@ -41,8 +41,8 @@ let captured=null
 const expected={assessment:{id:'assessment-1',traffic_light:'green'},case:{id:'case-1',traffic_light:'green'}}
 const fakeSupabase={rpc:async(name,args)=>{captured={name,args};return {data:expected,error:null}}}
 const result=await createAssessmentRecord(fakeSupabase,{caseId:'case-1',draft:{title:'Aktueller Stand',traffic_light:'green',reasoning:'Geprüft',next_step:'Abschließen'}})
-assert.equal(captured.name,'create_gold_assessment')
-assert.deepEqual(captured.args,{p_case_id:'case-1',p_title:'Aktueller Stand',p_traffic_light:'green',p_reasoning:'Geprüft',p_next_step:'Abschließen'})
+assert.equal(captured.name,'create_gold_assessment_v135')
+assert.deepEqual(captured.args,{p_case_id:'case-1',p_title:'Aktueller Stand',p_traffic_light:'green',p_reasoning:'Geprüft',p_next_step:'Abschließen',p_source_document_id:null,p_source_locator:null,p_source_excerpt:null,p_statement_kind:'inference',p_source_reviewed:false,p_supersedes_assessment_id:null})
 assert.deepEqual(result,{assessment:expected.assessment,updatedCase:expected.case,error:null})
 
 assert.match(caseWorkflow,/updateClientRecord/)

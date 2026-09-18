@@ -20,6 +20,7 @@ export function createCaseWorkflowActions({
   setNewCase,
   setShowCaseForm,
   setSelectedCase,
+  setSelectedClient,
   recordLocalAction,
   recordServerAudit
 }){
