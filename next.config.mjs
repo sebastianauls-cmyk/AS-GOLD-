@@ -45,6 +45,13 @@ const nextConfig={
         {key:'X-Frame-Options',value:'SAMEORIGIN'},
       ],
     })
+    if(process.env.VERCEL_ENV!=='production')rules.push({
+      source:'/vorschau/v136',
+      headers:[
+        {key:'Content-Security-Policy',value:contentSecurityPolicy.replace("frame-ancestors 'none'","frame-ancestors 'self'")},
+        {key:'X-Frame-Options',value:'SAMEORIGIN'},
+      ],
+    })
     return rules
   },
 }
