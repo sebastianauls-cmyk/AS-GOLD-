@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { CaseDetail, DocumentDetail, getV24Copy } from '../../modules/cases/CaseWorkspace'
 import { assessmentEvidence } from '../../modules/cases/lib/caseEvidence.mjs'
 
@@ -9,6 +9,8 @@ const initialDocument={id:'preview-document',case_id:initialCase.id,title:'Synth
 const initialAssessment={id:'preview-assessment',case_id:initialCase.id,title:'Unterlagen',traffic_light:'yellow',reasoning:'Das Musterschreiben bittet um ergänzende Unterlagen.',next_step:'Fehlende Unterlagen bestimmen und zusammenstellen.',statement_kind:'inference',source_document_id:initialDocument.id,source_document_updated_at:initialDocument.updated_at,source_title_snapshot:initialDocument.title,source_locator:'Seite 1 – Abschnitt Unterlagen',source_excerpt:'Bitte reichen Sie die fehlenden Unterlagen ein.',source_reviewed_at:null,created_at:'2026-09-17T11:00:00Z'}
 
 export function GuidancePreview({framed}) {
+  const [mounted,setMounted]=useState(false)
+  useEffect(()=>setMounted(true),[])
   const [width,setWidth]=useState('100%')
   const [language,setLanguage]=useState('de')
   const [item,setItem]=useState(initialCase)
@@ -30,6 +32,8 @@ export function GuidancePreview({framed}) {
     if(draft.source_reviewed&&assessmentEvidence(record,documents).status!=='reviewed'){setMessage('Bitte ein wörtliches Zitat aus dem Dokument und die Fundstelle angeben.');return false}
     setAssessments(previous=>[record,...previous]);setItem(previous=>({...previous,traffic_light:draft.traffic_light}));setMessage('Bewertung in dieser Vorschau gespeichert.');return true
   }
+  // Match the authenticated app: render locale-dependent case dates in the browser.
+  if(!mounted)return <p>V135-Vorschau wird geladen …</p>
   const content=<main style={{maxWidth:960,margin:'0 auto',padding:16}} dir={['ar','fa'].includes(language)?'rtl':'ltr'}>
     <p className="modeBadge">V135 · SYNTHETISCHE FUNKTIONSVORSCHAU</p>
     <p>Frei erfundene Daten. Änderungen gelten nur in dieser Vorschau und werden beim Neuladen zurückgesetzt. Dokumentanalyse, Upload und Freigabe sind hier nicht mit Live-Diensten verbunden. Die Übergabe-Exporte enthalten nur diese Musterdaten.</p>
