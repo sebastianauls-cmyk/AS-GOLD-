@@ -4,7 +4,8 @@ import path from 'node:path'
 import { APP_RELEASE, APP_VERSION, withAppVersion } from '../app/modules/release/appRelease.mjs'
 import { PRODUCT_BRAND, PRODUCT_DESCRIPTOR, PRODUCT_NAME } from '../app/modules/brand/productBrand.mjs'
 import { supportedLanguages } from '../app/modules/language/languageRegistry.mjs'
-import { getLegalPage, legalPageIds, localizablePageIds } from '../app/modules/compliance/legalTranslations.mjs'
+import { getLegalPage, legalPageIds, legalShellCopy, localizablePageIds } from '../app/modules/compliance/legalTranslations.mjs'
+import { privacyDashboardCopy, withdrawalCopy } from '../app/modules/compliance/privacyInteractionTranslations.mjs'
 
 const read=file=>fs.readFileSync(file,'utf8')
 const languageKeys=supportedLanguages.map(language=>language.key)
@@ -17,16 +18,28 @@ assert.equal(PRODUCT_NAME,'ASH Workspace Gold')
 assert.equal(PRODUCT_DESCRIPTOR,'Der digitale Fall- und Dokumentenmanager')
 assert.equal(PRODUCT_BRAND.workspace,'Workspace')
 assert.equal(PRODUCT_BRAND.edition,'Gold')
-assert.deepEqual(localizablePageIds,['testen'],'only the non-binding tester guide may use localized LegalDocument content')
+assert.deepEqual(localizablePageIds,legalPageIds,'every legal page must follow the selected app language')
 
 for(const language of languageKeys){
+  assert.ok(legalShellCopy[language],`${language}: localized legal shell missing`)
+  assert.ok(withdrawalCopy[language],`${language}: localized withdrawal form missing`)
+  assert.ok(privacyDashboardCopy[language],`${language}: localized privacy controls missing`)
   const testerPage=getLegalPage('testen',language)
   const baseTitle=testerPage?.title||`${PRODUCT_NAME} sicher ausprobieren`
   const displayedTitle=withAppVersion(baseTitle)
   assert.match(displayedTitle,new RegExp(`(?:^|\\s|·)${APP_VERSION}(?:$|\\s)`),`${language}: tester heading must inherit ${APP_VERSION}`)
   assert.equal((displayedTitle.match(new RegExp(APP_VERSION,'g'))||[]).length,1,`${language}: version must appear exactly once in the heading`)
   assert.match(baseTitle,/ASH Workspace Gold/,`${language}: tester heading must use the central public brand`)
-  for(const pageId of legalPageIds.filter(pageId=>pageId!=='testen')) assert.equal(getLegalPage(pageId,language),null,`${language}/${pageId}: legal content must stay German`)
+  if(language==='de'){
+    for(const pageId of legalPageIds) assert.equal(getLegalPage(pageId,language),null,`${language}/${pageId}: German source content must remain the authoritative fallback`)
+  }else{
+    for(const pageId of legalPageIds){
+      const translatedPage=getLegalPage(pageId,language)
+      assert.ok(translatedPage,`${language}/${pageId}: localized legal content missing`)
+      assert.ok(translatedPage.title?.trim()&&translatedPage.intro?.trim(),`${language}/${pageId}: localized legal heading missing`)
+      assert.ok(translatedPage.sections?.length,`${language}/${pageId}: localized legal sections missing`)
+    }
+  }
 }
 
 for(const file of ['app/testen/page.js','app/modules/tester/TesterGuide.js','app/modules/compliance/legalTranslations.mjs']){
@@ -47,8 +60,8 @@ assert.match(read('public/ash-workspace-gold-icon.svg'),/aria-label="ASH Workspa
 assert.match(read('supabase/functions/gold-withdrawal/index.ts'),/ASH Workspace Gold – Eingangsbestätigung/)
 
 const legalDocument=read('app/modules/compliance/LegalDocument.js')
-assert.match(legalDocument,/localizable=false/)
+assert.match(legalDocument,/localizable=true/)
 assert.match(legalDocument,/localizable\?getLegalPage\(pageId,language\):null/)
 assert.match(legalDocument,/if\(!localizable\)return/)
 assert.match(legalDocument,/if\(localizable\)localStorage\.setItem/)
-console.log(`${APP_VERSION} release and brand consistency passed through version-neutral V80 language/legal modules: ${PRODUCT_NAME}, ${languageKeys.length} languages, German legal pages.`)
+console.log(`${APP_VERSION} release and brand consistency passed through version-neutral V80 language/legal modules: ${PRODUCT_NAME}, ${languageKeys.length} languages, localized legal pages with authoritative German source.`)

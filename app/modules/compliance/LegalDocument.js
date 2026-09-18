@@ -54,7 +54,7 @@ export function LegalNotice({children,tone='info'}){
   return <div className={`legalNotice legalNotice-${tone}`}>{children}</div>
 }
 
-export function LegalDocument({pageId,localizable=false,showRelease=false,eyebrow='ASH Workspace Gold · Rechtliches',title,intro,children,updated='30. August 2026',localizedExtra=null,localizedExtraAfterSection=0}){
+export function LegalDocument({pageId,localizable=true,showRelease=false,eyebrow='ASH Workspace Gold · Rechtliches',title,intro,children,updated='30. August 2026',localizedExtra=null,localizedExtraAfterSection=0}){
   const [language,setLanguage]=useState('de')
   const translated=useMemo(()=>localizable?getLegalPage(pageId,language):null,[localizable,pageId,language])
   const shell=legalShellCopy[language]||legalShellCopy.de

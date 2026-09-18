@@ -3,13 +3,16 @@
 import { useEffect, useState } from 'react'
 import OptionalExtensions from '../optional/OptionalExtensions'
 import { LegalFooter } from '../compliance/LegalFooter'
+import { supportedLanguages } from '../language/languageRegistry.mjs'
 import { supabase } from '../services/supabaseClient'
 
 const button={border:'1px solid #c9ad66',background:'#fffaf0',borderRadius:10,padding:'10px 13px',fontWeight:800,color:'#5a4516',textDecoration:'none',textAlign:'center'}
 const card={border:'1px solid #e1d6b9',background:'#fffdf7',borderRadius:16,padding:18,marginBottom:20}
 const badge={display:'inline-flex',alignItems:'center',gap:7,padding:'6px 10px',borderRadius:999,background:'#fff2bf',color:'#6b520d',fontWeight:800,fontSize:13}
+const languageKeys=new Set(supportedLanguages.map(language=>language.key))
 
 export default function IntegrationHub(){
+  const [language,setLanguage]=useState('de')
   const [connections,setConnections]=useState([])
   const [loading,setLoading]=useState(true)
   const [connecting,setConnecting]=useState('')
@@ -38,6 +41,10 @@ export default function IntegrationHub(){
 
   useEffect(()=>{
     const params=new URLSearchParams(window.location.search)
+    const queryLanguage=params.get('lang')
+    const savedLanguage=localStorage.getItem('asgold-language')
+    const activeLanguage=languageKeys.has(queryLanguage)?queryLanguage:languageKeys.has(savedLanguage)?savedLanguage:'de'
+    setLanguage(activeLanguage)
     const connected=params.get('connected')
     const account=params.get('account')
     const error=params.get('error')
@@ -86,5 +93,5 @@ export default function IntegrationHub(){
     </section>
     <OptionalExtensions/>
     <p style={{marginTop:20,color:'#666'}}>Externe E-Mail-Konten werden nur nach ausdrücklicher Verbindung verwendet. Ohne Verbindung erfolgt weder automatisches Lesen noch Senden.</p>
-  </main><LegalFooter language="de"/></>
+  </main><LegalFooter language={language}/></>
 }

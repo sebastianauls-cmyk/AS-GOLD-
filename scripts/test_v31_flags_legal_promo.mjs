@@ -5,7 +5,7 @@ import { legalPageIds, legalShellCopy, legalTranslations } from '../app/lib/v31L
 import { privacyDashboardCopy, withdrawalCopy } from '../app/lib/v31InteractiveLegalTranslations.mjs'
 import { promoTranslations } from '../app/lib/v31PromoTranslations.mjs'
 
-const languageKeys=['de','en','fr','tr','pl','ru','ar','fa']
+const languageKeys=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 assert.deepEqual(supportedLanguages.map(item=>item.key),languageKeys)
 for(const language of supportedLanguages){
   assert.ok(language.flags,`${language.key}: flag missing`)
@@ -36,11 +36,11 @@ assert.match(migration,/'payment_enabled',false/i)
 assert.match(migration,/revoke all on table private\.gold_promo_codes from public, anon, authenticated/i)
 assert.doesNotMatch(migration,/insert\s+into\s+private\.gold_promo_codes/i,'No commercial promo code may be seeded')
 
-const pageSource=await readFile(new URL('../app/page.js',import.meta.url),'utf8')
-const switcherSource=await readFile(new URL('../app/components/LanguageSwitcher.js',import.meta.url),'utf8')
-assert.match(pageSource,/p_promo_code/)
-assert.match(pageSource,/LanguageSwitcher/)
-assert.match(pageSource,/PromoCodeControl/)
+const pricingSource=await readFile(new URL('../app/modules/services/pricingRepository.js',import.meta.url),'utf8')
+const upgradeSource=await readFile(new URL('../app/modules/pricing/UpgradePanel.js',import.meta.url),'utf8')
+const switcherSource=await readFile(new URL('../app/modules/language/LanguageSwitcher.js',import.meta.url),'utf8')
+assert.match(pricingSource,/p_promo_code/)
+assert.match(upgradeSource,/PromoCodeControl/)
 assert.match(switcherSource,/country-flag-icons\/react\/3x2/)
 assert.match(switcherSource,/FlagSet/)
 console.log('V31 flags, legal translations and secure promo contract: OK')

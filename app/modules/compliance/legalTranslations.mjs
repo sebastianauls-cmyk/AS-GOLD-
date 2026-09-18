@@ -1,8 +1,10 @@
+import { bulgarianLegalCopy, romanianLegalCopy } from './legalTranslationDataRoBg.mjs'
+
 const s=(title,paragraphs=[],items=[],links=[])=>({title,paragraphs,items,links})
 const p=(title,intro,sections,notice=null)=>({title,intro,sections,notice})
 
 export const legalPageIds=['impressum','datenschutz','nutzungsbedingungen','cookies','kiTransparenz','kontakt','rechtliches','testen','widerruf','datenschutzsteuerung']
-export const localizablePageIds=Object.freeze(['testen'])
+export const localizablePageIds=Object.freeze([...legalPageIds])
 
 export const legalShellCopy={
   de:{eyebrow:'ASH Workspace Gold · Rechtliches',back:'Zur App',updated:'Stand',binding:'Verbindliche Fassung: Deutsch',note:'Automatisch mit der App-Sprache angezeigt. Rechtlich maßgeblich bleibt die deutsche Fassung.'},
@@ -13,6 +15,8 @@ export const legalShellCopy={
   ru:{eyebrow:'ASH Workspace Gold · Правовая информация',back:'В приложение',updated:'Обновлено',binding:'Юридически обязательная версия: немецкая',note:'Автоматически показывается на языке приложения. Юридическую силу сохраняет немецкая версия.'},
   ar:{eyebrow:'ASH Workspace Gold · المعلومات القانونية',back:'العودة إلى التطبيق',updated:'آخر تحديث',binding:'النسخة الملزمة: الألمانية',note:'يُعرض النص تلقائياً بلغة التطبيق. تبقى النسخة الألمانية هي الملزمة قانوناً.'},
   fa:{eyebrow:'ASH Workspace Gold · اطلاعات حقوقی',back:'بازگشت به برنامه',updated:'به‌روزرسانی',binding:'نسخه لازم‌الاجرا: آلمانی',note:'متن به‌صورت خودکار به زبان برنامه نمایش داده می‌شود. نسخه آلمانی از نظر حقوقی ملاک است.'},
+  ro:{eyebrow:'ASH Workspace Gold · Informații juridice',back:'Înapoi la aplicație',updated:'Actualizat',binding:'Versiunea obligatorie: germană',note:'Textul este afișat automat în limba aplicației. Versiunea germană rămâne obligatorie din punct de vedere juridic.'},
+  bg:{eyebrow:'ASH Workspace Gold · Правна информация',back:'Обратно към приложението',updated:'Актуализирано',binding:'Правно обвързваща версия: немска',note:'Текстът се показва автоматично на езика на приложението. Немската версия остава правно обвързваща.'},
   vi:{eyebrow:'ASH Workspace Gold · Pháp lý',back:'Quay lại ứng dụng',updated:'Cập nhật',binding:'Bản có giá trị pháp lý: tiếng Đức',note:'Nội dung tự động hiển thị theo ngôn ngữ ứng dụng. Bản tiếng Đức vẫn là bản có giá trị pháp lý ràng buộc.'}
 }
 
@@ -259,6 +263,9 @@ const fa=compactLegal({
   electronic:'امکان انصراف الکترونیکی',withdrawalInfo:'اطلاعات حق انصراف',withdrawalInfoText:'مصرف‌کننده معمولاً چهارده روز فرصت دارد بدون ذکر دلیل از قرارداد از راه دور منصرف شود، مگر استثنا یا پایان قانونی اعمال شود. اعلام روشن به Sebastian Auls کافی است. پس از انصراف معتبر، خدمات طبق قانون بازگردانده می‌شود؛ در آزمایش رایگان مبلغی برای استرداد نیست.',model:'نمونه فرم انصراف',modelText:'به Sebastian Auls، Chrysanderstraße 75، 21029 Hamburg، ایمیل: sebastian.auls@gmail.com. بدین‌وسیله از قرارداد استفاده از ASH Workspace Gold منصرف می‌شوم. مرجع قرارداد/حساب، نام و تاریخ: ____________________.',currentTest:['آزمایش فعلی','ثبت‌نام رایگان و بدون پرداخت یا اشتراک است. انصراف معتبر بااین‌حال رابطه قراردادی را روشن پایان می‌دهد.'],personalStatus:'وضعیت شخصی شما',voluntary:['تصمیم شما داوطلبانه است','بدون مجوز هوش مصنوعی می‌توان فیلدها را دستی ویرایش کرد. انتقال برای هر سند تأیید صریح تازه می‌خواهد.']
 })
 
+const ro=compactLegal(romanianLegalCopy)
+const bg=compactLegal(bulgarianLegalCopy)
+
 const vi={
   impressum:p('Thông tin nhà cung cấp','Thông tin về nhà cung cấp ASH Workspace Gold theo § 5 Luật Dịch vụ Kỹ thuật số Đức (DDG).',[
     s('Nhà cung cấp dịch vụ',['Sebastian Auls – Unternehmens- und Konzeptberatung\nChrysanderstraße 75\n21029 Hamburg\nĐức']),
@@ -333,7 +340,7 @@ const vi={
   ],{tone:'info',title:'Lựa chọn vẫn tự nguyện',text:'Không có phê duyệt AI, bạn vẫn có thể sửa trường tài liệu thủ công. Mỗi lần truyền cần một xác nhận mới cho tài liệu.'})
 }
 
-export const legalTranslations={en,fr,tr,pl,ru,ar,fa,vi}
+export const legalTranslations={en,fr,tr,pl,ru,ar,fa,ro,bg,vi}
 
 export function getLegalPage(pageId,language){
   if(language==='de'||!localizablePageIds.includes(pageId)) return null
