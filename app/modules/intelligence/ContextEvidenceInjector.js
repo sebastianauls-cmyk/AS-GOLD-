@@ -41,6 +41,9 @@ export function ContextEvidencePanel({language='de',countryCode='DE',view='case'
     nextActions:[action]
   }),[language,countryCode,view,record,action])
   const dir=language==='ar'||language==='fa'?'rtl':'ltr'
+  // Case/document evidence and country research have dedicated, case-bound panels.
+  // A generic country profile cannot establish risk or immigration requirements.
+  if(view==='case'||view==='document')return null
   if(loading) return <section className="recommendationBox evidenceActionPanel contextEvidencePanel" dir={dir}><div><span className="modeBadge">⚪ {c.review}</span><h3>{v[view]}</h3><p>{v.checking}</p></div></section>
   return <section className="recommendationBox evidenceActionPanel contextEvidencePanel" dir={dir} data-v95-evidence-surface={view}>
     <div><span className="modeBadge">{result.ampel} {result.verified?c.verified:c.review}</span><h3>{v[view]}</h3></div>

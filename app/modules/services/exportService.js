@@ -1,3 +1,4 @@
+import { createTextPdf } from './textPdf.mjs'
 import { assessmentEvidenceText } from '../cases/lib/assessmentEvidenceText.mjs'
 import { OFFICE_EXPORT_RENDER_VERSION, createPptxBlob, createXlsxBlob } from './officeExportsUnicode.js'
 import { normalizeOutputLanguage, outputLanguageLabels } from '../language/outputLanguage.js'
@@ -16,7 +17,6 @@ function trafficLightDot(value){
   return normalized==='red'||normalized==='rot'?'🔴':normalized==='green'||normalized==='grün'||normalized==='gruen'?'🟢':normalized==='yellow'||normalized==='gelb'?'🟡':'⚪'
 }
 
-const PDF_COLORS={gold:'#9a7414',ink:'#1f2937',muted:'#5f6874',line:'#d9dde3',green:'#2f855a',yellow:'#d69e2e',red:'#c53030',white:'#ffffff'}
 const DOCX_TRAFFIC_COLORS={'🟢':'2F855A','🟡':'D69E2E','🔴':'C53030','⚪':'94A3B8'}
 const REQUIRED_OFFICE_EXPORT_RENDER_VERSION='v131-traffic-rich-runs'
 
@@ -26,27 +26,10 @@ function assertOfficeExportRenderer(){
   }
 }
 
-function canvasLines(context,value,maxWidth){
-  const lines=[]
-  for(const paragraph of String(value??'').split(/\r?\n/)){
-    if(!paragraph){lines.push('');continue}
-    const words=paragraph.split(/\s+/)
-    let line=''
-    for(const word of words){
-      const next=line?`${line} ${word}`:word
-      if(line&&context.measureText(next).width>maxWidth){lines.push(line);line=word}
-      else line=next
-    }
-    lines.push(line)
-  }
-  return lines
-}
-
 function trafficMarker(line){
   const match=String(line).match(/(🟢|🟡|🔴|⚪)/)
   if(!match) return null
-  const colors={'🟢':PDF_COLORS.green,'🟡':PDF_COLORS.yellow,'🔴':PDF_COLORS.red,'⚪':PDF_COLORS.white}
-  return {symbol:match[1],color:colors[match[1]],text:String(line).replace(match[1],'').trim()}
+  return {symbol:match[1],text:String(line).replace(match[1],'').trim()}
 }
 
 function createDocxValueRuns(TextRun,value){
@@ -65,76 +48,10 @@ function createDocxValueRuns(TextRun,value){
   return runs
 }
 
-async function createUnicodePdfBlob({jsPDF,rows,outputLanguage}){
-  if(typeof document==='undefined') throw new Error('PDF export is only available in the browser.')
-  const rtl=outputLanguage==='ar'||outputLanguage==='fa'
-  const width=1240,height=1754,margin=90,contentWidth=width-margin*2
-  const pages=[]
-  let canvas,context,y
-
-  function newPage(){
-    canvas=document.createElement('canvas');canvas.width=width;canvas.height=height
-    context=canvas.getContext('2d')
-    context.fillStyle='#ffffff';context.fillRect(0,0,width,height)
-    context.fillStyle='#fff6d8';context.fillRect(margin,55,contentWidth,56)
-    context.fillStyle=PDF_COLORS.gold;context.font='700 23px Arial, "Noto Sans", "Segoe UI", sans-serif';context.textAlign='center';context.direction='ltr';context.fillText('ASH WORKSPACE GOLD',width/2,91)
-    y=155
-    pages.push({canvas,context})
-  }
-
-  function finishPage(page,index){
-    const ctx=page.context
-    ctx.strokeStyle=PDF_COLORS.line;ctx.beginPath();ctx.moveTo(margin,height-72);ctx.lineTo(width-margin,height-72);ctx.stroke()
-    ctx.fillStyle=PDF_COLORS.muted;ctx.font='18px Arial, "Noto Sans", "Segoe UI", sans-serif';ctx.textAlign='left';ctx.direction='ltr';ctx.fillText('ASH Workspace Gold · geprüfter Export',margin,height-42)
-    ctx.textAlign='right';ctx.fillText(`${index+1} / ${pages.length}`,width-margin,height-42)
-  }
-
-  function ensureSpace(required){if(y+required>height-105)newPage()}
-
-  newPage()
-  rows.forEach((row,index)=>{
-    const label=String(row?.[0]??'')
-    const value=String(row?.[1]??'')
-    if(index===0){
-      context.font='700 42px Arial, "Noto Sans", "Segoe UI", sans-serif'
-      const titleLines=canvasLines(context,label,contentWidth)
-      ensureSpace(titleLines.length*54+28)
-      context.fillStyle=PDF_COLORS.ink;context.textAlign=rtl?'right':'left';context.direction=rtl?'rtl':'ltr'
-      for(const line of titleLines){context.fillText(line,rtl?width-margin:margin,y);y+=54}
-      y+=22
-      return
-    }
-
-    context.font='700 23px Arial, "Noto Sans", "Segoe UI", sans-serif'
-    const labelLines=canvasLines(context,label,contentWidth)
-    context.font='24px Arial, "Noto Sans", "Segoe UI", sans-serif'
-    const valueLines=canvasLines(context,value||'—',contentWidth-18)
-    ensureSpace(labelLines.length*31+valueLines.length*34+44)
-    context.textAlign=rtl?'right':'left';context.direction=rtl?'rtl':'ltr';context.fillStyle=PDF_COLORS.gold;context.font='700 23px Arial, "Noto Sans", "Segoe UI", sans-serif'
-    for(const line of labelLines){context.fillText(line,rtl?width-margin:margin,y);y+=31}
-    context.fillStyle=PDF_COLORS.ink;context.font='24px Arial, "Noto Sans", "Segoe UI", sans-serif'
-    for(const rawLine of valueLines){
-      const marker=trafficMarker(rawLine)
-      const text=marker?.text??rawLine
-      const textX=rtl?width-margin-34:margin+34
-      if(marker){
-        const circleX=rtl?width-margin-14:margin+14
-        context.beginPath();context.arc(circleX,y-8,11,0,Math.PI*2);context.fillStyle=marker.color;context.fill();context.strokeStyle=marker.color===PDF_COLORS.white?'#94a3b8':marker.color;context.stroke();context.fillStyle=PDF_COLORS.ink
-      }
-      context.fillText(text,marker?textX:(rtl?width-margin:margin),y)
-      y+=34
-    }
-    context.strokeStyle=PDF_COLORS.line;context.beginPath();context.moveTo(margin,y+4);context.lineTo(width-margin,y+4);context.stroke();y+=32
-  })
-
-  pages.forEach(finishPage)
-  const pdf=new jsPDF({unit:'pt',format:'a4',compress:true})
-  pages.forEach((page,index)=>{
-    if(index) pdf.addPage()
-    pdf.addImage(page.canvas.toDataURL('image/jpeg',0.94),'JPEG',0,0,595.28,841.89,undefined,'FAST')
-  })
-  pdf.setProperties({title:String(rows[0]?.[0]||'ASH Workspace Gold Export'),subject:'ASH Workspace Gold Export',creator:'ASH Workspace Gold'})
-  return pdf.output('blob')
+async function createUnicodePdfBlob({rows,outputLanguage}){
+  const blocks=rows.flatMap((row,index)=>index===0?[{text:String(row[0]),kind:'title'}]:[
+    {text:String(row[0]),kind:'heading'},{text:String(row[1]||'—'),kind:'body'}])
+  return createTextPdf({blocks,language:outputLanguage})
 }
 
 export function buildWorkspaceExportRows({ref,data,copy,outputLanguage='de'}){
@@ -166,8 +83,7 @@ export async function createWorkspaceExportArtifact({ref,type,data,copy,outputLa
     return {blob:await Packer.toBlob(new Document({sections:[{children}]})),filename:base+'.docx'}
   }
   if(type==='pdf'){
-    const {jsPDF}=await import('jspdf')
-    return {blob:await createUnicodePdfBlob({jsPDF,rows,outputLanguage:normalizeOutputLanguage(outputLanguage)}),filename:base+'.pdf'}
+    return {blob:await createUnicodePdfBlob({rows,outputLanguage:normalizeOutputLanguage(outputLanguage)}),filename:base+'.pdf'}
   }
   if(type==='xlsx'){
     assertOfficeExportRenderer()

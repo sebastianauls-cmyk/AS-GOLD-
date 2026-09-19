@@ -1,0 +1,2 @@
+const labels={de:['Offen','Geschlossen'],en:['Open','Closed'],fr:['Ouvert','Clos'],tr:['Açık','Kapalı'],pl:['Otwarte','Zamknięte'],ru:['Открыто','Закрыто'],ar:['مفتوح','مغلق'],fa:['باز','بسته'],ro:['Deschis','Închis'],bg:['Отворен','Затворен'],vi:['Đang mở','Đã đóng']}
+export function caseStatusLabel(language,status) {return status==='open'?(labels[language]||labels.de)[0]:status==='closed'?(labels[language]||labels.de)[1]:status}

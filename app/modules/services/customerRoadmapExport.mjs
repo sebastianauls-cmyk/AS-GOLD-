@@ -1,3 +1,5 @@
+import { readableStepText } from '../cases/lib/roadmapDisplay.mjs'
+import { createTextPdf } from './textPdf.mjs'
 import { roadmapSteps, ROADMAP_COLORS } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
 import { roadmapUi } from '../cases/lib/customerRoadmapCopy.mjs'
 
@@ -30,7 +32,7 @@ export function roadmapExportBlocks(record,{letterId}={}) {
   roadmapSteps(record).forEach((step,index)=>{
     add(`${index+1}. ${step.title}`,'step',step.light)
     add(`${ui[step.phase]} · ${ui[step.light]}`,'meta')
-    for(const [key,value] of [['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]]) if(value) add(`${ui[key]}: ${value}`)
+    for(const [key,value] of [['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]]) if(value) add(`${ui[key]}: ${readableStepText(value,record.result.steps)}`)
     if(step.update?.note) add(`${ui.progress}: ${step.update.note}${step.done?' · '+ui.complete:''}`,'meta')
     if(step.evidence.length) add(`${ui.evidence}: ${step.evidence.map(entry=>`${titles.get(entry.document_id)||entry.document_id}: „${entry.quote}“`).join('\n')}`,'meta')
   })
@@ -55,68 +57,10 @@ export async function createRoadmapDocx(record,options={}) {
   return Packer.toBlob(new Document({creator:'ASH Workspace Gold',title:blocks[0]?.text,styles:{default:{document:{run:{font:'Arial',size:22}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:2300,right:1134,bottom:1200,left:1134,header:500,footer:500}}},headers:{default:header},footers:{default:footer},children:blocks.map(paragraph)}]}))
 }
 
-function wrap(context,text,width) {
-  const lines=[]
-  for(const paragraph of String(text).split('\n')) {
-    if(!paragraph){lines.push('');continue}
-    let line=''
-    for(const word of paragraph.split(/\s+/u)) {
-      if(context.measureText(word).width>width) {
-        if(line){lines.push(line);line=''}
-        for(const char of Array.from(word)) {if(context.measureText(line+char).width>width){lines.push(line);line=''}line+=char}
-      } else {
-        if(line&&context.measureText(line+' '+word).width>width){lines.push(line);line=''}
-        line+=(line?' ':'')+word
-      }
-    }
-    if(line)lines.push(line)
-  }
-  return lines
-}
-
 export async function createRoadmapPdf(record,options={}) {
-  if(typeof document==='undefined') throw new Error('PDF export requires a browser.')
-  const {jsPDF}=await import('jspdf')
-  const rtl=['ar','fa'].includes(options.letterId?record.reference_language:record.output_language)
-  const width=1240,height=1754,margin=100,maxY=height-115,contentWidth=width-margin*2,pages=[]
-  let canvas,context,y
-  function page() {
-    canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;context=canvas.getContext('2d')
-    context.fillStyle='white';context.fillRect(0,0,width,height)
-    context.font='bold 20px Arial, sans-serif';context.fillStyle='#596375';context.textAlign=rtl?'right':'left';context.direction=rtl?'rtl':'ltr'
-    y=75
-    const header=wrap(context,record.style.letterhead||record.style.sender_name||'ASH Workspace Gold',contentWidth)
-    for(const line of header) {context.fillText(line,rtl?width-margin:margin,y);y+=25}
-    context.strokeStyle='#d8dfe6';context.beginPath();context.moveTo(margin,y+8);context.lineTo(width-margin,y+8);context.stroke();y+=60
-    pages.push({canvas,context})
-  }
-  page()
-  for(const block of roadmapExportBlocks(record,options)) {
-    const heading=['title','heading','step'].includes(block.kind)
-    const size=block.kind==='title'?35:block.kind==='meta'?20:25
-    const lineHeight=size*1.43
-    const font=`${heading?'bold ':''}${size}px Arial, sans-serif`
-    if(heading)y+=12
-    context.font=font
-    const inset=block.light?24:block.kind==='bullet'?18:0
-    const lines=wrap(context,(block.kind==='bullet'?'• ':'')+block.text,contentWidth-inset)
-    if(heading&&y+lineHeight*Math.min(lines.length+2,5)>maxY)page()
-    for(let index=0;index<lines.length;index++) {
-      if(y+lineHeight>maxY)page()
-      context.font=font;context.fillStyle=block.kind==='meta'?'#596375':'#202B3B';context.textAlign=rtl?'right':'left';context.direction=rtl?'rtl':'ltr'
-      if(block.light&&index===0) {context.fillStyle=ROADMAP_COLORS[block.light];context.beginPath();context.arc(rtl?width-margin-7:margin+7,y-size*.3,6,0,Math.PI*2);context.fill();context.fillStyle='#202B3B'}
-      context.fillText(lines[index],rtl?width-margin-inset:margin+inset,y);y+=lineHeight
-    }
-    y+=block.kind==='meta'?13:20
-  }
-  const pdf=new jsPDF({unit:'pt',format:'a4',compress:true})
-  pages.forEach((entry,index)=>{
-    const ctx=entry.context;ctx.font='18px Arial';ctx.fillStyle='#64748b';ctx.textAlign='left';ctx.direction='ltr';ctx.fillText('ASH Workspace Gold',margin,height-55)
-    ctx.textAlign='right';ctx.fillText(`${index+1} / ${pages.length}`,width-margin,height-55)
-    if(index)pdf.addPage()
-    pdf.addImage(entry.canvas.toDataURL('image/jpeg',.95),'JPEG',0,0,595.28,841.89,undefined,'FAST')
-  })
-  return pdf.output('blob')
+  return createTextPdf({blocks:roadmapExportBlocks(record,options),
+    header:record.style.letterhead||record.style.sender_name||'ASH Workspace Gold',
+    language:options.letterId?record.reference_language:record.output_language,fonts:options.fonts})
 }
 
 export async function createRoadmapExport(record,type,options={}) {

@@ -15,9 +15,10 @@ export function sealIntegrationToken(value){
 }
 
 export function openIntegrationToken(value){
-  if(!value) return null
+  if(typeof value!=='string'||!value||!/^[A-Za-z0-9_-]+$/.test(value)) return null
   try{
     const raw=Buffer.from(value,'base64url')
+    if(raw.length<29||raw.toString('base64url')!==value)return null
     const iv=raw.subarray(0,12)
     const tag=raw.subarray(12,28)
     const encrypted=raw.subarray(28)

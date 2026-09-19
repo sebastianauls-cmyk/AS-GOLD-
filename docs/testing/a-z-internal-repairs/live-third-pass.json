@@ -1,0 +1,385 @@
+{
+  "synthetic_only": true,
+  "started_at": "2026-09-19T23:05:03Z",
+  "evaluation_version": 3,
+  "runs": [
+    {
+      "case": "negative_confirmed_payment",
+      "calls": [
+        {
+          "http_status": 200,
+          "wall_seconds": 47.89,
+          "response": {
+            "status": "completed",
+            "negative_control": true,
+            "issues": [
+              {
+                "code": "meaning",
+                "location": "opening",
+                "reason": "Die Aussage „Ob die Teilzahlung von 1.800 EUR überhaupt eingegangen ist, ist im Original nicht bestätigt“ kehrt den Status der Originalaussage „Ihre Teilzahlung von 1.800 EUR ist eingegangen“ um. Das Original bestätigt den Zahlungseingang; ein eigener Zahlungsbeleg darf zusätzlich geprüft werden, aber die Zahlung darf nicht als unbestätigtes Ereignis dargestellt werden."
+              },
+              {
+                "code": "meaning",
+                "location": "meaning; next; customer_action; facts.steps[id=1]; closing",
+                "reason": "Die Formulierungen „Vor einer externen Kommunikation muss ... geklärt werden, ob überhaupt ein realer Vorgang gemeint ist“, „Zuerst klärst Du die praktische Anwendbarkeit“ und „Bestätige zunächst, ob der Fall nur intern simuliert wird“ machen die reale Anwendbarkeit zur Vorbedingung. Das Original lautet ausdrücklich „SYNTHETISCHER TEST. Keine echten Personen oder Unternehmen.“ Der Fall ist innerhalb des synthetischen Szenarios zu bearbeiten; eine Umwandlung oder Bestätigung als realer Vorgang ist nicht erforderlich. Die konkrete Frist bleibt dabei szenariointern bestehen: „Wir fordern noch 3.300 EUR bis 24.09.2026.“"
+              }
+            ],
+            "events": [
+              {
+                "stage": "review",
+                "attempt": 1,
+                "reasoning_effort": "high",
+                "response_id": "resp_0e88913bd74db8f6016aaf1527adac87d2be5769fa68ffaddc",
+                "model": "gpt-5.6-luna",
+                "status": "completed",
+                "usage": {
+                  "input_tokens": 4430,
+                  "input_tokens_details": {
+                    "cache_write_tokens": 4427,
+                    "cached_tokens": 0
+                  },
+                  "output_tokens": 6242,
+                  "output_tokens_details": {
+                    "reasoning_tokens": 5952
+                  },
+                  "total_tokens": 10672
+                },
+                "output": "{\"issues\":[{\"code\":\"meaning\",\"location\":\"opening\",\"reason\":\"Die Aussage „Ob die Teilzahlung von 1.800 EUR überhaupt eingegangen ist, ist im Original nicht bestätigt“ kehrt den Status der Originalaussage „Ihre Teilzahlung von 1.800 EUR ist eingegangen“ um. Das Original bestätigt den Zahlungseingang; ein eigener Zahlungsbeleg darf zusätzlich geprüft werden, aber die Zahlung darf nicht als unbestätigtes Ereignis dargestellt werden.\"},{\"code\":\"meaning\",\"location\":\"meaning; next; customer_action; facts.steps[id=1]; closing\",\"reason\":\"Die Formulierungen „Vor einer externen Kommunikation muss ... geklärt werden, ob überhaupt ein realer Vorgang gemeint ist“, „Zuerst klärst Du die praktische Anwendbarkeit“ und „Bestätige zunächst, ob der Fall nur intern simuliert wird“ machen die reale Anwendbarkeit zur Vorbedingung. Das Original lautet ausdrücklich „SYNTHETISCHER TEST. Keine echten Personen oder Unternehmen.“ Der Fall ist innerhalb des synthetischen Szenarios zu bearbeiten; eine Umwandlung oder Bestätigung als realer Vorgang ist nicht erforderlich. Die konkrete Frist bleibt dabei szenariointern bestehen: „Wir fordern noch 3.300 EUR bis 24.09.2026.“\"}]}"
+              }
+            ],
+            "elapsed_ms": 40425
+          }
+        }
+      ]
+    },
+    {
+      "case": "initial",
+      "calls": [
+        {
+          "http_status": 202,
+          "wall_seconds": 58.82,
+          "response": {
+            "status": "processing",
+            "stage": "review",
+            "attempt": 1,
+            "events": [
+              {
+                "stage": "generation",
+                "attempt": 1,
+                "reasoning_effort": "high",
+                "response_id": "resp_00411564a088d106016aaf15576a9c87d2ba6034ca5b3149cd",
+                "model": "gpt-5.6-luna",
+                "status": "completed",
+                "usage": {
+                  "input_tokens": 3709,
+                  "input_tokens_details": {
+                    "cache_write_tokens": 3706,
+                    "cached_tokens": 0
+                  },
+                  "output_tokens": 7756,
+                  "output_tokens_details": {
+                    "reasoning_tokens": 5178
+                  },
+                  "total_tokens": 11465
+                },
+                "output": "{\"title\":\"Forderungsaufstellung zur Forderung über 3.300 EUR anfordern\",\"opening\":\"Im Schreiben von Beispiel-Service ist der Eingang der Teilzahlung von 1.800 EUR bestätigt; zugleich werden noch 3.300 EUR bis zum 24.09.2026 gefordert. Da keine Forderungsaufstellung beigefügt ist, sollte Mara Beispiel die Berechnung und die Berücksichtigung der Zahlung vor diesem Datum schriftlich anfordern.\",\"key_points\":[\"Beispiel-Service bestätigt im Schreiben: Die Teilzahlung von 1.800 EUR ist eingegangen.\",\"Das Schreiben nennt einen Rechnungsbetrag von 4.800 EUR und fordert noch 3.300 EUR bis zum 24.09.2026; die einfache Differenz nach Abzug der Teilzahlung wären 3.000 EUR.\",\"Eine Forderungsaufstellung ist laut Schreiben nicht beigefügt.\"],\"meaning\":\"Die eingegangene Teilzahlung sollte als bestätigt behandelt und nicht erneut nachgewiesen werden. Offen ist nur, wie sich der noch geforderte Betrag von 3.300 EUR zusammensetzt und ob darin weitere Positionen enthalten sind. Die Anfrage nach der Aufstellung bestätigt für sich genommen nicht, dass die im Schreiben genannte Frist eingehalten wurde.\",\"next\":\"Mara sollte die Kontaktadresse von Beispiel-Service prüfen und die vorbereitete Anfrage möglichst vor dem 24.09.2026 versenden. Danach sollte sie die Antwort und die Aufstellung anhand der genannten Beträge prüfen.\",\"customer_action\":\"Prüfe vor dem Versand die richtige Post- oder E-Mail-Adresse von Beispiel-Service, ergänze sie bei Bedarf und sende die vorbereitete Anfrage unter der Referenz TEST-104. Bewahre eine Kopie der Anfrage und der späteren Antwort auf.\",\"facts\":[{\"text\":\"Das Schreiben nennt einen Rechnungsbetrag von 4.800 EUR.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Der Rechnungsbetrag beträgt 4.800 EUR.\"}]},{\"text\":\"Beispiel-Service bestätigt im Schreiben den Eingang einer Teilzahlung von 1.800 EUR.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Ihre Teilzahlung von 1.800 EUR ist eingegangen.\"}]},{\"text\":\"Im Schreiben werden noch 3.300 EUR bis zum 24.09.2026 gefordert.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Wir fordern noch 3.300 EUR bis 24.09.2026.\"}]},{\"text\":\"Eine Forderungsaufstellung war dem Schreiben laut dessen Text nicht beigefügt.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Eine Forderungsaufstellung ist nicht beigefügt.\"}]},{\"text\":\"Bei einfacher Verrechnung ergeben 4.800 EUR minus 1.800 EUR 3.000 EUR; gleichzeitig werden noch 3.300 EUR gefordert. Ob weitere Positionen enthalten sind, lässt sich aus dem Schreiben ohne Aufstellung nicht feststellen.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Der Rechnungsbetrag beträgt 4.800 EUR.\"},{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Ihre Teilzahlung von 1.800 EUR ist eingegangen.\"},{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Wir fordern noch 3.300 EUR bis 24.09.2026.\"},{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Eine Forderungsaufstellung ist nicht beigefügt.\"}]}],\"open_questions\":[{\"question\":\"Welche Einzelpositionen und Berechnung ergeben den noch geforderten Betrag von 3.300 EUR, nachdem die Teilzahlung von 1.800 EUR als eingegangen bestätigt wurde?\",\"who\":\"Beispiel-Service\",\"why\":\"Die einfache Differenz aus Rechnungsbetrag und bestätigter Teilzahlung beträgt 3.000 EUR; die fehlende Aufstellung erklärt die Abweichung noch nicht.\"},{\"question\":\"Welche geprüfte Post- oder E-Mail-Adresse soll für die Anfrage an Beispiel-Service verwendet werden?\",\"who\":\"Mara Beispiel\",\"why\":\"Im vorliegenden Text ist keine Kontaktadresse angegeben; sie muss vor dem Versand geprüft werden.\"},{\"question\":\"Wie behandelt Beispiel-Service die genannte Frist bis zum 24.09.2026, während Mara die angeforderte Aufstellung prüft?\",\"who\":\"Beispiel-Service\",\"why\":\"Die Antwort soll klären, ob die Forderung bis zur Übersendung und Prüfung der Aufstellung weiter in der genannten Form verfolgt wird.\"}],\"steps\":[{\"id\":\"S1\",\"title\":\"Aufstellung und Berechnung vor der genannten Frist anfordern\",\"phase\":\"now\",\"light\":\"red\",\"reason\":\"Das Schreiben enthält die konkrete, noch nicht abgelaufene Fristangabe „bis 24.09.2026“. Deshalb ist die Anforderung jetzt vorrangig. Der Versand der Anfrage bestätigt nicht, dass eine Frist eingehalten wurde.\",\"owner\":\"Mara Beispiel\",\"action\":\"Mara prüft die Kontaktadresse von Beispiel-Service und versendet die vorbereitete formelle Anfrage. Sie bittet um eine nachvollziehbare Aufstellung, die Berücksichtigung der bestätigten Zahlung von 1.800 EUR und die Grundlage für den noch geforderten Betrag von 3.300 EUR.\",\"waiting_for\":\"Eine schriftliche Antwort von Beispiel-Service mit der Forderungsaufstellung und der Berechnung des Betrags von 3.300 EUR.\",\"after_response\":\"Wenn eine Aufstellung eingeht, wird sie in Schritt S3 mit den im Schreiben genannten Beträgen abgeglichen. Wenn keine Antwort eingeht, gilt die Anfrage nicht als erledigt; es folgt der Nachfassschritt in S2.\",\"done_when\":\"Der Versand der Anfrage an die von Mara geprüfte Kontaktadresse ist mit Datum und einer Kopie der gesendeten Anfrage dokumentiert; die Anfrage enthält die Referenz TEST-104 und die genannten offenen Punkte.\",\"follow_up\":\"Vorschlag: Falls keine Antwort eingeht, einmal über denselben geprüften Kontaktweg nachfassen und das Ausbleiben der Antwort mit Datum dokumentieren.\",\"depends_on\":[],\"deadline\":{\"date\":\"2026-09-24\",\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Wir fordern noch 3.300 EUR bis 24.09.2026.\"},\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Wir fordern noch 3.300 EUR bis 24.09.2026.\"},{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Eine Forderungsaufstellung ist nicht beigefügt.\"}]},{\"id\":\"S2\",\"title\":\"Antwort und fehlende Reaktion dokumentieren\",\"phase\":\"waiting\",\"light\":\"yellow\",\"reason\":\"Die angeforderte Forderungsaufstellung ist im vorliegenden Schreiben nicht beigefügt; eine spätere Antwort ist in den Unterlagen nicht belegt.\",\"owner\":\"Mara Beispiel\",\"action\":\"Mara prüft den gewählten Kontaktweg auf eine Antwort von Beispiel-Service und hält fest, ob eine Aufstellung, eine bloße Zahlungsaufforderung oder keine Antwort eingegangen ist.\",\"waiting_for\":\"Eine Antwort von Beispiel-Service, die den Betrag von 3.300 EUR aufschlüsselt und die Berücksichtigung der Teilzahlung von 1.800 EUR erläutert.\",\"after_response\":\"Bei Eingang einer nachvollziehbaren Aufstellung geht Mara zu S3 über. Bei ausbleibender Antwort setzt sie den in S1 vorgeschlagenen Nachfassversuch um und dokumentiert, dass die Aufstellung weiterhin fehlt.\",\"done_when\":\"Entweder liegt die Antwort von Beispiel-Service mit Eingangsdatum und Inhalt vor, oder bei ausbleibender Antwort ist der vorgeschlagene Nachfassversuch mit Datum und Ergebnis dokumentiert.\",\"follow_up\":\"Vorschlag: Nach einem angemessenen, von Mara festzulegenden Zeitraum ohne Antwort erneut schriftlich nachfassen; dieser Zeitraum ist keine aus dem Schreiben abgeleitete gesetzliche Frist.\",\"depends_on\":[\"S1\"],\"deadline\":null,\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Eine Forderungsaufstellung ist nicht beigefügt.\"}]},{\"id\":\"S3\",\"title\":\"Aufstellung mit den bestätigten Beträgen abgleichen\",\"phase\":\"afterwards\",\"light\":\"yellow\",\"reason\":\"Die im Schreiben genannten Beträge ergeben bei einfacher Verrechnung 3.000 EUR, während 3.300 EUR gefordert werden. Die Ursache der Abweichung ist ohne Aufstellung offen.\",\"owner\":\"Mara Beispiel\",\"action\":\"Mara gleicht die eingegangene Aufstellung mit dem Rechnungsbetrag von 4.800 EUR, der bestätigten Teilzahlung von 1.800 EUR und der Restforderung von 3.300 EUR ab. Sie prüft insbesondere die einzelnen Positionen und die Zahlungszuordnung.\",\"waiting_for\":\"Eine Aufstellung oder ergänzende Antwort von Beispiel-Service, die die Differenz zwischen der einfachen Verrechnung von 3.000 EUR und der Forderung von 3.300 EUR erklärt.\",\"after_response\":\"Wenn die Aufstellung den Betrag nachvollziehbar erklärt, dokumentiert Mara die einzelnen Positionen und entscheidet über den weiteren Umgang. Wenn die Abweichung bestehen bleibt oder die Antwort unvollständig ist, richtet sie eine gezielte weitere Nachfrage an Beispiel-Service.\",\"done_when\":\"Der Abgleich ist schriftlich dokumentiert und entweder sind die 3.300 EUR anhand der Aufstellung nachvollziehbar erklärt oder die verbleibenden konkreten Unklarheiten sind festgehalten und an Beispiel-Service weitergegeben.\",\"follow_up\":\"Vorschlag: Bei einer unvollständigen oder ausbleibenden Erklärung eine weitere konsolidierte Nachfrage stellen und die Forderung erst nach der Klärung als nachvollziehbar dokumentieren.\",\"depends_on\":[\"S2\"],\"deadline\":null,\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Der Rechnungsbetrag beträgt 4.800 EUR.\"},{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Ihre Teilzahlung von 1.800 EUR ist eingegangen.\"},{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Wir fordern noch 3.300 EUR bis 24.09.2026.\"}]}],\"letters\":[{\"id\":\"L1\",\"recipient\":\"Beispiel-Service\",\"subject\":\"Bitte um Forderungsaufstellung zu Referenz TEST-104\",\"body\":\"Sehr geehrte Damen und Herren,\\n\\nin Ihrem Schreiben zur Referenz TEST-104 nennen Sie einen Rechnungsbetrag von 4.800 EUR, bestätigen den Eingang meiner Teilzahlung von 1.800 EUR und fordern noch 3.300 EUR bis zum 24.09.2026.\\n\\nBitte senden Sie mir eine vollständige und nachvollziehbare Forderungsaufstellung. Bitte weisen Sie insbesondere aus, wie die eingegangene Teilzahlung von 1.800 EUR berücksichtigt wurde und aus welchen Positionen sich der noch geforderte Betrag von 3.300 EUR zusammensetzt. Falls darin weitere Beträge enthalten sind, bitte ich um deren jeweilige Bezeichnung und Berechnung.\\n\\nBitte teilen Sie mir außerdem mit, ob die genannte Zahlungsfrist bis zum 24.09.2026 bis zur Übersendung und Prüfung der Aufstellung weiter zugrunde gelegt wird.\\n\\nMit freundlichen Grüßen\\nMara Beispiel\",\"customer_translation\":\"\",\"document_ids\":[\"33333333-3333-4333-8333-333333333333\"]}],\"closing\":\"Mit der schriftlichen Aufstellung lässt sich klären, wie die bestätigte Zahlung berücksichtigt wurde und woraus sich die verbleibenden 3.300 EUR zusammensetzen.\"}"
+              }
+            ],
+            "elapsed_ms": 51360
+          }
+        },
+        {
+          "http_status": 200,
+          "wall_seconds": 25.31,
+          "response": {
+            "status": "completed",
+            "result": {
+              "title": "Forderungsaufstellung zur Forderung über 3.300 EUR anfordern",
+              "opening": "Im Schreiben von Beispiel-Service ist der Eingang der Teilzahlung von 1.800 EUR bestätigt; zugleich werden noch 3.300 EUR bis zum 24.09.2026 gefordert. Da keine Forderungsaufstellung beigefügt ist, sollte Mara Beispiel die Berechnung und die Berücksichtigung der Zahlung vor diesem Datum schriftlich anfordern.",
+              "key_points": [
+                "Beispiel-Service bestätigt im Schreiben: Die Teilzahlung von 1.800 EUR ist eingegangen.",
+                "Das Schreiben nennt einen Rechnungsbetrag von 4.800 EUR und fordert noch 3.300 EUR bis zum 24.09.2026; die einfache Differenz nach Abzug der Teilzahlung wären 3.000 EUR.",
+                "Eine Forderungsaufstellung ist laut Schreiben nicht beigefügt."
+              ],
+              "meaning": "Die eingegangene Teilzahlung sollte als bestätigt behandelt und nicht erneut nachgewiesen werden. Offen ist nur, wie sich der noch geforderte Betrag von 3.300 EUR zusammensetzt und ob darin weitere Positionen enthalten sind. Die Anfrage nach der Aufstellung bestätigt für sich genommen nicht, dass die im Schreiben genannte Frist eingehalten wurde.",
+              "next": "Mara sollte die Kontaktadresse von Beispiel-Service prüfen und die vorbereitete Anfrage möglichst vor dem 24.09.2026 versenden. Danach sollte sie die Antwort und die Aufstellung anhand der genannten Beträge prüfen.",
+              "customer_action": "Prüfe vor dem Versand die richtige Post- oder E-Mail-Adresse von Beispiel-Service, ergänze sie bei Bedarf und sende die vorbereitete Anfrage unter der Referenz TEST-104. Bewahre eine Kopie der Anfrage und der späteren Antwort auf.",
+              "facts": [
+                {
+                  "text": "Das Schreiben nennt einen Rechnungsbetrag von 4.800 EUR.",
+                  "evidence": [
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Der Rechnungsbetrag beträgt 4.800 EUR."
+                    }
+                  ]
+                },
+                {
+                  "text": "Beispiel-Service bestätigt im Schreiben den Eingang einer Teilzahlung von 1.800 EUR.",
+                  "evidence": [
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Ihre Teilzahlung von 1.800 EUR ist eingegangen."
+                    }
+                  ]
+                },
+                {
+                  "text": "Im Schreiben werden noch 3.300 EUR bis zum 24.09.2026 gefordert.",
+                  "evidence": [
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Wir fordern noch 3.300 EUR bis 24.09.2026."
+                    }
+                  ]
+                },
+                {
+                  "text": "Eine Forderungsaufstellung war dem Schreiben laut dessen Text nicht beigefügt.",
+                  "evidence": [
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Eine Forderungsaufstellung ist nicht beigefügt."
+                    }
+                  ]
+                },
+                {
+                  "text": "Bei einfacher Verrechnung ergeben 4.800 EUR minus 1.800 EUR 3.000 EUR; gleichzeitig werden noch 3.300 EUR gefordert. Ob weitere Positionen enthalten sind, lässt sich aus dem Schreiben ohne Aufstellung nicht feststellen.",
+                  "evidence": [
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Der Rechnungsbetrag beträgt 4.800 EUR."
+                    },
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Ihre Teilzahlung von 1.800 EUR ist eingegangen."
+                    },
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Wir fordern noch 3.300 EUR bis 24.09.2026."
+                    },
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Eine Forderungsaufstellung ist nicht beigefügt."
+                    }
+                  ]
+                }
+              ],
+              "open_questions": [
+                {
+                  "question": "Welche Einzelpositionen und Berechnung ergeben den noch geforderten Betrag von 3.300 EUR, nachdem die Teilzahlung von 1.800 EUR als eingegangen bestätigt wurde?",
+                  "who": "Beispiel-Service",
+                  "why": "Die einfache Differenz aus Rechnungsbetrag und bestätigter Teilzahlung beträgt 3.000 EUR; die fehlende Aufstellung erklärt die Abweichung noch nicht."
+                },
+                {
+                  "question": "Welche geprüfte Post- oder E-Mail-Adresse soll für die Anfrage an Beispiel-Service verwendet werden?",
+                  "who": "Mara Beispiel",
+                  "why": "Im vorliegenden Text ist keine Kontaktadresse angegeben; sie muss vor dem Versand geprüft werden."
+                },
+                {
+                  "question": "Wie behandelt Beispiel-Service die genannte Frist bis zum 24.09.2026, während Mara die angeforderte Aufstellung prüft?",
+                  "who": "Beispiel-Service",
+                  "why": "Die Antwort soll klären, ob die Forderung bis zur Übersendung und Prüfung der Aufstellung weiter in der genannten Form verfolgt wird."
+                }
+              ],
+              "steps": [
+                {
+                  "id": "S1",
+                  "title": "Aufstellung und Berechnung vor der genannten Frist anfordern",
+                  "phase": "now",
+                  "light": "red",
+                  "reason": "Das Schreiben enthält die konkrete, noch nicht abgelaufene Fristangabe „bis 24.09.2026“. Deshalb ist die Anforderung jetzt vorrangig. Der Versand der Anfrage bestätigt nicht, dass eine Frist eingehalten wurde.",
+                  "owner": "Mara Beispiel",
+                  "action": "Mara prüft die Kontaktadresse von Beispiel-Service und versendet die vorbereitete formelle Anfrage. Sie bittet um eine nachvollziehbare Aufstellung, die Berücksichtigung der bestätigten Zahlung von 1.800 EUR und die Grundlage für den noch geforderten Betrag von 3.300 EUR.",
+                  "waiting_for": "Eine schriftliche Antwort von Beispiel-Service mit der Forderungsaufstellung und der Berechnung des Betrags von 3.300 EUR.",
+                  "after_response": "Wenn eine Aufstellung eingeht, wird sie in Schritt S3 mit den im Schreiben genannten Beträgen abgeglichen. Wenn keine Antwort eingeht, gilt die Anfrage nicht als erledigt; es folgt der Nachfassschritt in S2.",
+                  "done_when": "Der Versand der Anfrage an die von Mara geprüfte Kontaktadresse ist mit Datum und einer Kopie der gesendeten Anfrage dokumentiert; die Anfrage enthält die Referenz TEST-104 und die genannten offenen Punkte.",
+                  "follow_up": "Vorschlag: Falls keine Antwort eingeht, einmal über denselben geprüften Kontaktweg nachfassen und das Ausbleiben der Antwort mit Datum dokumentieren.",
+                  "depends_on": [],
+                  "deadline": {
+                    "date": "2026-09-24",
+                    "document_id": "33333333-3333-4333-8333-333333333333",
+                    "quote": "Wir fordern noch 3.300 EUR bis 24.09.2026."
+                  },
+                  "evidence": [
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Wir fordern noch 3.300 EUR bis 24.09.2026."
+                    },
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Eine Forderungsaufstellung ist nicht beigefügt."
+                    }
+                  ]
+                },
+                {
+                  "id": "S2",
+                  "title": "Antwort und fehlende Reaktion dokumentieren",
+                  "phase": "waiting",
+                  "light": "yellow",
+                  "reason": "Die angeforderte Forderungsaufstellung ist im vorliegenden Schreiben nicht beigefügt; eine spätere Antwort ist in den Unterlagen nicht belegt.",
+                  "owner": "Mara Beispiel",
+                  "action": "Mara prüft den gewählten Kontaktweg auf eine Antwort von Beispiel-Service und hält fest, ob eine Aufstellung, eine bloße Zahlungsaufforderung oder keine Antwort eingegangen ist.",
+                  "waiting_for": "Eine Antwort von Beispiel-Service, die den Betrag von 3.300 EUR aufschlüsselt und die Berücksichtigung der Teilzahlung von 1.800 EUR erläutert.",
+                  "after_response": "Bei Eingang einer nachvollziehbaren Aufstellung geht Mara zu S3 über. Bei ausbleibender Antwort setzt sie den in S1 vorgeschlagenen Nachfassversuch um und dokumentiert, dass die Aufstellung weiterhin fehlt.",
+                  "done_when": "Entweder liegt die Antwort von Beispiel-Service mit Eingangsdatum und Inhalt vor, oder bei ausbleibender Antwort ist der vorgeschlagene Nachfassversuch mit Datum und Ergebnis dokumentiert.",
+                  "follow_up": "Vorschlag: Nach einem angemessenen, von Mara festzulegenden Zeitraum ohne Antwort erneut schriftlich nachfassen; dieser Zeitraum ist keine aus dem Schreiben abgeleitete gesetzliche Frist.",
+                  "depends_on": [
+                    "S1"
+                  ],
+                  "deadline": null,
+                  "evidence": [
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Eine Forderungsaufstellung ist nicht beigefügt."
+                    }
+                  ]
+                },
+                {
+                  "id": "S3",
+                  "title": "Aufstellung mit den bestätigten Beträgen abgleichen",
+                  "phase": "afterwards",
+                  "light": "yellow",
+                  "reason": "Die im Schreiben genannten Beträge ergeben bei einfacher Verrechnung 3.000 EUR, während 3.300 EUR gefordert werden. Die Ursache der Abweichung ist ohne Aufstellung offen.",
+                  "owner": "Mara Beispiel",
+                  "action": "Mara gleicht die eingegangene Aufstellung mit dem Rechnungsbetrag von 4.800 EUR, der bestätigten Teilzahlung von 1.800 EUR und der Restforderung von 3.300 EUR ab. Sie prüft insbesondere die einzelnen Positionen und die Zahlungszuordnung.",
+                  "waiting_for": "Eine Aufstellung oder ergänzende Antwort von Beispiel-Service, die die Differenz zwischen der einfachen Verrechnung von 3.000 EUR und der Forderung von 3.300 EUR erklärt.",
+                  "after_response": "Wenn die Aufstellung den Betrag nachvollziehbar erklärt, dokumentiert Mara die einzelnen Positionen und entscheidet über den weiteren Umgang. Wenn die Abweichung bestehen bleibt oder die Antwort unvollständig ist, richtet sie eine gezielte weitere Nachfrage an Beispiel-Service.",
+                  "done_when": "Der Abgleich ist schriftlich dokumentiert und entweder sind die 3.300 EUR anhand der Aufstellung nachvollziehbar erklärt oder die verbleibenden konkreten Unklarheiten sind festgehalten und an Beispiel-Service weitergegeben.",
+                  "follow_up": "Vorschlag: Bei einer unvollständigen oder ausbleibenden Erklärung eine weitere konsolidierte Nachfrage stellen und die Forderung erst nach der Klärung als nachvollziehbar dokumentieren.",
+                  "depends_on": [
+                    "S2"
+                  ],
+                  "deadline": null,
+                  "evidence": [
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Der Rechnungsbetrag beträgt 4.800 EUR."
+                    },
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Ihre Teilzahlung von 1.800 EUR ist eingegangen."
+                    },
+                    {
+                      "document_id": "33333333-3333-4333-8333-333333333333",
+                      "quote": "Wir fordern noch 3.300 EUR bis 24.09.2026."
+                    }
+                  ]
+                }
+              ],
+              "letters": [
+                {
+                  "id": "L1",
+                  "recipient": "Beispiel-Service",
+                  "subject": "Bitte um Forderungsaufstellung zu Referenz TEST-104",
+                  "body": "Sehr geehrte Damen und Herren,\n\nin Ihrem Schreiben zur Referenz TEST-104 nennen Sie einen Rechnungsbetrag von 4.800 EUR, bestätigen den Eingang meiner Teilzahlung von 1.800 EUR und fordern noch 3.300 EUR bis zum 24.09.2026.\n\nBitte senden Sie mir eine vollständige und nachvollziehbare Forderungsaufstellung. Bitte weisen Sie insbesondere aus, wie die eingegangene Teilzahlung von 1.800 EUR berücksichtigt wurde und aus welchen Positionen sich der noch geforderte Betrag von 3.300 EUR zusammensetzt. Falls darin weitere Beträge enthalten sind, bitte ich um deren jeweilige Bezeichnung und Berechnung.\n\nBitte teilen Sie mir außerdem mit, ob die genannte Zahlungsfrist bis zum 24.09.2026 bis zur Übersendung und Prüfung der Aufstellung weiter zugrunde gelegt wird.\n\nMit freundlichen Grüßen\nMara Beispiel",
+                  "customer_translation": "",
+                  "document_ids": [
+                    "33333333-3333-4333-8333-333333333333"
+                  ]
+                }
+              ],
+              "closing": "Mit der schriftlichen Aufstellung lässt sich klären, wie die bestätigte Zahlung berücksichtigt wurde und woraus sich die verbleibenden 3.300 EUR zusammensetzen."
+            },
+            "attempts": 1,
+            "model": "gpt-5.6-luna",
+            "response_id": "resp_00411564a088d106016aaf15576a9c87d2ba6034ca5b3149cd",
+            "review_response_id": "resp_082cca81a9754df0016aaf15926ebc87d2a50f60edaa1e081a",
+            "events": [
+              {
+                "stage": "review",
+                "attempt": 1,
+                "reasoning_effort": "high",
+                "response_id": "resp_082cca81a9754df0016aaf15926ebc87d2a50f60edaa1e081a",
+                "model": "gpt-5.6-luna",
+                "status": "completed",
+                "usage": {
+                  "input_tokens": 4649,
+                  "input_tokens_details": {
+                    "cache_write_tokens": 2945,
+                    "cached_tokens": 1701
+                  },
+                  "output_tokens": 2557,
+                  "output_tokens_details": {
+                    "reasoning_tokens": 2539
+                  },
+                  "total_tokens": 7206
+                },
+                "output": "{\"issues\":[]}"
+              }
+            ],
+            "elapsed_ms": 17675
+          }
+        }
+      ]
+    },
+    {
+      "case": "updated_bilingual",
+      "calls": [
+        {
+          "http_status": 202,
+          "wall_seconds": 80.29,
+          "response": {
+            "status": "processing",
+            "stage": "generation",
+            "attempt": 2,
+            "events": [
+              {
+                "stage": "generation",
+                "attempt": 1,
+                "reasoning_effort": "high",
+                "response_id": "resp_0c8dc866efc78f91016aaf15ad323487d2b8ca3483412c7064",
+                "model": "gpt-5.6-luna",
+                "status": "completed",
+                "usage": {
+                  "input_tokens": 3975,
+                  "input_tokens_details": {
+                    "cache_write_tokens": 3972,
+                    "cached_tokens": 0
+                  },
+                  "output_tokens": 10509,
+                  "output_tokens_details": {
+                    "reasoning_tokens": 7694
+                  },
+                  "total_tokens": 14484
+                },
+                "output": "{\"title\":\"Customer roadmap: clarify the stated remainder under TEST-104\",\"opening\":\"According to Beispiel-Service's correction, the earlier EUR 3,300 demand was incorrect: the stated remainder is EUR 3,000 after the confirmed EUR 1,800 allocation to the EUR 4,800 invoice. The same correction states a payment deadline of 2 October 2026, while the corrected itemized statement is still not attached.\",\"key_points\":[\"The EUR 1,800 partial payment is confirmed in the correction as allocated to the EUR 4,800 invoice; the stated outstanding remainder is EUR 3,000.\",\"The correction says that the earlier EUR 3,300 demand was incorrect and that 2 October 2026 replaces 24 September 2026 as the payment deadline.\",\"The remaining task is to obtain and check the corrected itemized statement; the confirmed EUR 1,800 allocation should not be reopened without a specific new discrepancy.\"],\"meaning\":\"The supplied documents give a corrected amount and a replacement payment deadline, but they do not provide the calculation or individual items behind the EUR 3,000 remainder. Mara should request that statement from Beispiel-Service, compare it with the invoice and confirmed payment allocation, and then decide how to respond. No external legal or tax verification has been performed.\",\"next\":\"First verify the available contact channel for Beispiel-Service and send the prepared clarification letter. Keep the correction's confirmation of the EUR 1,800 allocation as the working fact, and do not treat the request itself as a payment, an objection having been submitted, or proof that any deadline has been met.\",\"customer_action\":\"Mara Beispiel should check the recipient details, send the German draft letter, retain a copy and dispatch record, and request the corrected itemized statement before deciding how to handle the stated EUR 3,000 remainder.\",\"facts\":[{\"text\":\"The first notice states that the invoice amount was EUR 4,800 and that Mara's partial payment of EUR 1,800 was received.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Der Rechnungsbetrag beträgt 4.800 EUR. Ihre Teilzahlung von 1.800 EUR ist eingegangen.\"}]},{\"text\":\"The first notice demanded a further EUR 3,300 by 24 September 2026 and stated that no receivables statement was attached.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Wir fordern noch 3.300 EUR bis 24.09.2026. Eine Forderungsaufstellung ist nicht beigefügt.\"}]},{\"text\":\"The correction states that the EUR 1,800 payment was confirmed against the EUR 4,800 invoice and that the outstanding remainder is EUR 3,000.\",\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Nach Prüfung bestätigen wir Ihre Teilzahlung von 1.800 EUR auf die Rechnung über 4.800 EUR. Der offene Restbetrag beträgt 3.000 EUR.\"}]},{\"text\":\"The correction states that the earlier EUR 3,300 demand was incorrect and that 2 October 2026 replaces 24 September 2026 as the payment deadline.\",\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die frühere Forderung von 3.300 EUR war unzutreffend. Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"}]},{\"text\":\"The correction states that a corrected receivables statement is still not attached.\",\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Eine korrigierte Forderungsaufstellung ist noch nicht beigefügt.\"}]},{\"text\":\"The correction states that the remaining payment was not recorded as received by the sender on 19 September 2026.\",\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlung des Restbetrags liegt uns am 19.09.2026 nicht vor.\"}]}],\"open_questions\":[{\"question\":\"Which verified email or postal channel should Mara use for Beispiel-Service before sending the draft?\",\"who\":\"Mara Beispiel\",\"why\":\"The supplied texts identify Beispiel-Service but do not provide a postal or email address.\"},{\"question\":\"Can Beispiel-Service provide a corrected itemized statement showing the individual items, the allocation of EUR 1,800, and the calculation of EUR 3,000?\",\"who\":\"Beispiel-Service\",\"why\":\"The correction gives the remainder but expressly says that the corrected receivables statement is not attached.\"},{\"question\":\"Is the referenced EUR 4,800 invoice available to Mara, including its line items and relevant period, for comparison with the requested statement?\",\"who\":\"Mara Beispiel\",\"why\":\"The supplied texts state the invoice amount but do not include the invoice document or its individual items.\"}],\"steps\":[{\"id\":\"1\",\"title\":\"Request the corrected calculation\",\"phase\":\"now\",\"light\":\"red\",\"reason\":\"The correction states a payment deadline of 02.10.2026, says that the EUR 3,300 demand was incorrect, and says that the corrected receivables statement is not attached.\",\"owner\":\"Mara Beispiel\",\"action\":\"Verify the recipient channel and send the prepared German letter to Beispiel-Service. Ask for the corrected itemized statement and for the calculation showing how the stated EUR 3,000 remainder follows from the EUR 4,800 invoice and the confirmed EUR 1,800 allocation.\",\"waiting_for\":\"A written reply and corrected itemized statement from Beispiel-Service.\",\"after_response\":\"Mara should preserve the response and move to the comparison in step 2. If the reply does not explain the EUR 3,000, record the exact missing item rather than treating the amount as independently verified.\",\"done_when\":\"The request has been sent through a verified channel and a copy plus dispatch record has been retained.\",\"follow_up\":\"Suggested practical follow-up: if no reply arrives, send one focused reminder after 5 calendar days and before 02.10.2026. This suggested interval is not a statutory deadline.\",\"depends_on\":[],\"deadline\":{\"date\":\"2026-10-02\",\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"},\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die frühere Forderung von 3.300 EUR war unzutreffend. Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"},{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Eine Forderungsaufstellung ist nicht beigefügt.\"}]},{\"id\":\"2\",\"title\":\"Check the received breakdown\",\"phase\":\"waiting\",\"light\":\"yellow\",\"reason\":\"The stated EUR 3,000 remainder is documented in the correction, but the itemized basis is still absent.\",\"owner\":\"Mara Beispiel\",\"action\":\"When the reply arrives, compare the itemized statement with the EUR 4,800 invoice and the confirmed EUR 1,800 allocation. Check whether every component and the resulting EUR 3,000 can be identified from the documents received.\",\"waiting_for\":\"A complete corrected statement and any clarification needed from Beispiel-Service.\",\"after_response\":\"If the statement reconciles, proceed to the customer decision in step 3. If it does not, send a focused follow-up identifying only the unexplained position or calculation; do not silently adopt a different total.\",\"done_when\":\"The statement has been received and either the EUR 3,000 calculation is checkable from identified components and the EUR 1,800 allocation, or the unresolved discrepancy is recorded precisely.\",\"follow_up\":\"Suggested practical follow-up: if the reply is incomplete, request only the missing positions or calculation and follow up after 5 calendar days. This suggested interval is not a statutory deadline.\",\"depends_on\":[\"1\"],\"deadline\":{\"date\":\"2026-10-02\",\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"},\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Der offene Restbetrag beträgt 3.000 EUR. Eine korrigierte Forderungsaufstellung ist noch nicht beigefügt.\"},{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Der Rechnungsbetrag beträgt 4.800 EUR. Ihre Teilzahlung von 1.800 EUR ist eingegangen.\"}]},{\"id\":\"3\",\"title\":\"Decide how to handle the stated remainder\",\"phase\":\"afterwards\",\"light\":\"red\",\"reason\":\"The correction names 02.10.2026 as the replacement payment deadline. The supplied documents do not independently establish the legal effect of that deadline or provide payment instructions.\",\"owner\":\"Mara Beispiel\",\"action\":\"After the comparison, decide how to proceed. If the statement supports EUR 3,000, Mara may arrange the chosen response using payment instructions confirmed by Beispiel-Service. If a discrepancy remains, send a targeted written question and preserve the unresolved points rather than assuming that the claim is settled or invalid.\",\"waiting_for\":\"The completed comparison and any answers needed to resolve identified discrepancies.\",\"after_response\":\"If the calculation is supported, record the customer's chosen response and any resulting customer-controlled payment or communication. If it remains unresolved, continue the written clarification with Beispiel-Service and do not treat silence as confirmation.\",\"done_when\":\"Mara has recorded a decision based on the received statement, with either a checkable calculation or a clearly documented unresolved discrepancy and next request.\",\"follow_up\":\"Suggested practical follow-up: if no complete statement arrives before 02.10.2026, ask Beispiel-Service in writing for the current status and, if needed, an agreed extension. No legal effect is assumed from silence or from making that request.\",\"depends_on\":[\"2\"],\"deadline\":{\"date\":\"2026-10-02\",\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"},\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Der offene Restbetrag beträgt 3.000 EUR. Die Zahlung des Restbetrags liegt uns am 19.09.2026 nicht vor.\"}]}],\"letters\":[{\"id\":\"L1\",\"recipient\":\"Beispiel-Service\",\"subject\":\"Bitte um korrigierte Forderungsaufstellung zu Referenz TEST-104\",\"body\":\"Sehr geehrte Damen und Herren,\\n\\nin Ihrer Mitteilung zu Referenz TEST-104 bestätigen Sie meine Teilzahlung von 1.800 EUR auf die Rechnung über 4.800 EUR und nennen einen offenen Restbetrag von 3.000 EUR. Zugleich teilen Sie mit, dass die frühere Forderung von 3.300 EUR unzutreffend war und die Zahlungsfrist 02.10.2026 die bisherige Frist 24.09.2026 ersetzt.\\n\\nEine korrigierte Forderungsaufstellung war der Mitteilung nicht beigefügt. Bitte übersenden Sie mir eine nachvollziehbare Aufstellung, aus der die einzelnen Positionen, die Anrechnung meiner Teilzahlung von 1.800 EUR und die Berechnung des Restbetrags von 3.000 EUR hervorgehen. Bitte teilen Sie mir außerdem mit, ob der genannte Restbetrag und die Zahlungsfrist 02.10.2026 weiterhin maßgeblich sind.\\n\\nMit freundlichen Grüßen\\n\\nMara Beispiel\",\"customer_translation\":\"Dear Sir or Madam,\\n\\nIn your communication concerning reference TEST-104, you confirm my partial payment of EUR 1,800 against the EUR 4,800 invoice and state an outstanding balance of EUR 3,000. You also state that the earlier claim of EUR 3,300 was incorrect and that the payment deadline of 2 October 2026 replaces the previous deadline of 24 September 2026.\\n\\nA corrected itemized statement was not enclosed with the communication. Please send me a comprehensible statement showing the individual items, the allocation of my partial payment of EUR 1,800, and the calculation of the outstanding balance of EUR 3,000. Please also tell me whether the stated balance and the payment deadline of 2 October 2026 remain applicable.\\n\\nYours faithfully,\\n\\nMara Beispiel\",\"document_ids\":[\"33333333-3333-4333-8333-333333333333\",\"44444444-4444-4444-8444-444444444444\"]}],\"closing\":\"The practical sequence is clear: request the missing breakdown, check the corrected EUR 3,000 figure against the confirmed EUR 1,800 allocation, and then document Mara's decision before the stated 2 October 2026 deadline.\"}"
+              }
+            ],
+            "elapsed_ms": 72348
+          }
+        },
+        {
+          "http_status": 422,
+          "wall_seconds": 49.27,
+          "response": {
+            "error": "Die Belegprüfung blieb nach der Korrektur offen. Bitte Originale und Zuordnung prüfen; es wurde kein Ergebnis gespeichert.",
+            "code": "model_workflow_failed",
+            "events": [
+              {
+                "stage": "correction",
+                "attempt": 2,
+                "reasoning_effort": "high",
+                "response_id": "resp_0f445b55a27f8edd016aaf15fc6bc887d286c836504d6acd4f",
+                "model": "gpt-5.6-luna",
+                "status": "completed",
+                "usage": {
+                  "input_tokens": 6962,
+                  "input_tokens_details": {
+                    "cache_write_tokens": 2987,
+                    "cached_tokens": 3972
+                  },
+                  "output_tokens": 6070,
+                  "output_tokens_details": {
+                    "reasoning_tokens": 3218
+                  },
+                  "total_tokens": 13032
+                },
+                "output": "{\"title\":\"Customer roadmap: clarify the stated remainder under TEST-104\",\"opening\":\"According to Beispiel-Service's correction, the earlier EUR 3,300 demand was incorrect. The correction confirms the EUR 1,800 partial payment against the EUR 4,800 invoice, states an outstanding remainder of EUR 3,000, and replaces the earlier payment deadline with 2 October 2026.\",\"key_points\":[\"The EUR 1,800 partial payment is confirmed in the correction as allocated to the EUR 4,800 invoice; the stated outstanding remainder is EUR 3,000.\",\"The correction says that the earlier EUR 3,300 demand was incorrect and that 2 October 2026 replaces 24 September 2026 as the payment deadline.\",\"The remaining task is to obtain and check the corrected itemized statement; the confirmed EUR 1,800 allocation should not be reopened without a specific new discrepancy.\"],\"meaning\":\"The supplied documents give a corrected amount and a replacement payment deadline, but they do not provide the calculation or individual items behind the EUR 3,000 remainder. Mara should request that statement from Beispiel-Service, compare it with the invoice and confirmed payment allocation, and then decide how to respond. No external legal or tax verification has been performed.\",\"next\":\"First verify the available contact channel for Beispiel-Service and send the prepared clarification letter. Keep the correction's confirmation of the EUR 1,800 allocation as the working fact, and do not treat the request itself as a payment, an objection having been submitted, or proof that any deadline has been met.\",\"customer_action\":\"Mara Beispiel should check the recipient details, send the German draft letter, retain a copy and dispatch record, and request the corrected itemized statement before deciding how to handle the stated EUR 3,000 remainder.\",\"facts\":[{\"text\":\"The notice states that the invoice amount was EUR 4,800 and that Mara's partial payment of EUR 1,800 was received.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Der Rechnungsbetrag beträgt 4.800 EUR. Ihre Teilzahlung von 1.800 EUR ist eingegangen.\"}]},{\"text\":\"The notice demanded a further EUR 3,300 by 24 September 2026 and stated that no receivables statement was attached.\",\"evidence\":[{\"document_id\":\"33333333-3333-4333-8333-333333333333\",\"quote\":\"Wir fordern noch 3.300 EUR bis 24.09.2026. Eine Forderungsaufstellung ist nicht beigefügt.\"}]},{\"text\":\"The correction states that the EUR 1,800 payment was confirmed against the EUR 4,800 invoice and that the outstanding remainder is EUR 3,000.\",\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Nach Prüfung bestätigen wir Ihre Teilzahlung von 1.800 EUR auf die Rechnung über 4.800 EUR. Der offene Restbetrag beträgt 3.000 EUR.\"}]},{\"text\":\"The correction states that the earlier EUR 3,300 demand was incorrect and that 2 October 2026 replaces 24 September 2026 as the payment deadline.\",\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die frühere Forderung von 3.300 EUR war unzutreffend. Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"}]},{\"text\":\"The correction states that a corrected receivables statement is still not attached.\",\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Eine korrigierte Forderungsaufstellung ist noch nicht beigefügt.\"}]},{\"text\":\"The correction states that the payment of the remainder was not received by the sender on 19 September 2026.\",\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlung des Restbetrags liegt uns am 19.09.2026 nicht vor.\"}]}],\"open_questions\":[{\"question\":\"Which verified email or postal channel should Mara use for Beispiel-Service before sending the draft?\",\"who\":\"Mara Beispiel\",\"why\":\"The supplied texts identify Beispiel-Service but do not provide a postal or email address.\"},{\"question\":\"Can Beispiel-Service provide a corrected itemized statement showing the individual items, the allocation of EUR 1,800, and the calculation of EUR 3,000?\",\"who\":\"Beispiel-Service\",\"why\":\"The correction gives the remainder but expressly says that the corrected receivables statement is not attached.\"},{\"question\":\"Is the referenced EUR 4,800 invoice available to Mara, including its line items and relevant period, for comparison with the requested statement?\",\"who\":\"Mara Beispiel\",\"why\":\"The supplied texts state the invoice amount but do not include the invoice document or its individual items.\"}],\"steps\":[{\"id\":\"1\",\"title\":\"Request the corrected calculation\",\"phase\":\"now\",\"light\":\"red\",\"reason\":\"The correction states a payment deadline of 02.10.2026, says that the EUR 3,300 demand was incorrect, and says that the corrected receivables statement is not attached.\",\"owner\":\"Mara Beispiel\",\"action\":\"Verify the recipient channel and send the prepared German letter to Beispiel-Service. Ask for the corrected itemized statement and for the calculation showing how the stated EUR 3,000 remainder follows from the EUR 4,800 invoice and the confirmed EUR 1,800 allocation.\",\"waiting_for\":\"A written reply and corrected itemized statement from Beispiel-Service.\",\"after_response\":\"Mara should preserve the response and move to the comparison in step 2. If the reply does not explain the EUR 3,000, record the exact missing item rather than treating the amount as independently verified.\",\"done_when\":\"The request has been sent through a verified channel and a copy plus dispatch record has been retained.\",\"follow_up\":\"Suggested practical follow-up: if no reply arrives, send one focused reminder after 5 calendar days and before 02.10.2026. This suggested interval is not a statutory deadline.\",\"depends_on\":[],\"deadline\":{\"date\":\"2026-10-02\",\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"},\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die frühere Forderung von 3.300 EUR war unzutreffend. Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"},{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Eine korrigierte Forderungsaufstellung ist noch nicht beigefügt.\"}]},{\"id\":\"2\",\"title\":\"Check the received breakdown\",\"phase\":\"waiting\",\"light\":\"yellow\",\"reason\":\"The stated EUR 3,000 remainder is documented in the correction, but the corrected itemized basis is still absent.\",\"owner\":\"Mara Beispiel\",\"action\":\"When the reply arrives, compare the itemized statement with the EUR 4,800 invoice and the confirmed EUR 1,800 allocation. Check whether every component and the resulting EUR 3,000 can be identified from the documents received.\",\"waiting_for\":\"A complete corrected statement and any clarification needed from Beispiel-Service.\",\"after_response\":\"If the statement reconciles, proceed to the customer decision in step 3. If it does not, send a focused follow-up identifying only the unexplained position or calculation; do not silently adopt a different total.\",\"done_when\":\"The statement has been received and either the EUR 3,000 calculation is checkable from identified components and the EUR 1,800 allocation, or the unresolved discrepancy is recorded precisely.\",\"follow_up\":\"Suggested practical follow-up: if the reply is incomplete, request only the missing positions or calculation and follow up after 5 calendar days. This suggested interval is not a statutory deadline.\",\"depends_on\":[\"1\"],\"deadline\":{\"date\":\"2026-10-02\",\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"},\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Der offene Restbetrag beträgt 3.000 EUR. Eine korrigierte Forderungsaufstellung ist noch nicht beigefügt.\"},{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Nach Prüfung bestätigen wir Ihre Teilzahlung von 1.800 EUR auf die Rechnung über 4.800 EUR.\"}]},{\"id\":\"3\",\"title\":\"Decide how to handle the stated remainder\",\"phase\":\"afterwards\",\"light\":\"red\",\"reason\":\"The correction names 02.10.2026 as the replacement payment deadline. The supplied documents do not independently establish the legal effect of that deadline or provide payment instructions.\",\"owner\":\"Mara Beispiel\",\"action\":\"After the comparison, decide how to proceed. If the statement supports EUR 3,000, Mara may arrange the chosen response using payment instructions confirmed by Beispiel-Service. If a discrepancy remains, send a targeted written question and preserve the unresolved points rather than assuming that the claim is settled or invalid.\",\"waiting_for\":\"The completed comparison and any answers needed to resolve identified discrepancies.\",\"after_response\":\"If the calculation is supported, record the customer's chosen response and any resulting customer-controlled payment or communication. If it remains unresolved, continue the written clarification with Beispiel-Service and do not treat silence as confirmation.\",\"done_when\":\"Mara has recorded a decision based on the received statement, with either a checkable calculation or a clearly documented unresolved discrepancy and next request.\",\"follow_up\":\"Suggested practical follow-up: if no complete statement arrives before 02.10.2026, ask Beispiel-Service in writing for the current status and, if needed, an agreed extension. No legal effect is assumed from silence or from making that request.\",\"depends_on\":[\"2\"],\"deadline\":{\"date\":\"2026-10-02\",\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"},\"evidence\":[{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Der offene Restbetrag beträgt 3.000 EUR. Die Zahlung des Restbetrags liegt uns am 19.09.2026 nicht vor.\"},{\"document_id\":\"44444444-4444-4444-8444-444444444444\",\"quote\":\"Die Zahlungsfrist 02.10.2026 ersetzt die bisherige Frist 24.09.2026.\"}]}],\"letters\":[{\"id\":\"L1\",\"recipient\":\"Beispiel-Service\",\"subject\":\"Bitte um korrigierte Forderungsaufstellung zu Referenz TEST-104\",\"body\":\"Sehr geehrte Damen und Herren,\\n\\nin Ihrer Mitteilung zu Referenz TEST-104 bestätigen Sie meine Teilzahlung von 1.800 EUR auf die Rechnung über 4.800 EUR und nennen einen offenen Restbetrag von 3.000 EUR. Zugleich teilen Sie mit, dass die frühere Forderung von 3.300 EUR unzutreffend war und die Zahlungsfrist 02.10.2026 die bisherige Frist 24.09.2026 ersetzt.\\n\\nEine korrigierte Forderungsaufstellung ist noch nicht beigefügt. Bitte übersenden Sie mir eine nachvollziehbare Aufstellung, aus der die einzelnen Positionen, die Anrechnung meiner Teilzahlung von 1.800 EUR und die Berechnung des Restbetrags von 3.000 EUR hervorgehen. Bitte teilen Sie mir außerdem mit, ob der genannte Restbetrag und die Zahlungsfrist 02.10.2026 weiterhin maßgeblich sind.\\n\\nMit freundlichen Grüßen\\n\\nMara Beispiel\",\"customer_translation\":\"Dear Sir or Madam,\\n\\nIn your communication concerning reference TEST-104, you confirm my partial payment of EUR 1,800 against the EUR 4,800 invoice and state an outstanding balance of EUR 3,000. You also state that the earlier claim of EUR 3,300 was incorrect and that the payment deadline of 2 October 2026 replaces the previous deadline of 24 September 2026.\\n\\nA corrected itemized statement is still not attached. Please send me a comprehensible statement showing the individual items, the allocation of my partial payment of EUR 1,800, and the calculation of the outstanding balance of EUR 3,000. Please also tell me whether the stated balance and the payment deadline of 2 October 2026 remain applicable.\\n\\nYours faithfully,\\n\\nMara Beispiel\",\"document_ids\":[\"33333333-3333-4333-8333-333333333333\",\"44444444-4444-4444-8444-444444444444\"]}],\"closing\":\"The practical sequence is clear: request the missing breakdown, check the corrected EUR 3,000 figure against the confirmed EUR 1,800 allocation, and then document Mara's decision before the stated 2 October 2026 deadline.\"}"
+              }
+            ],
+            "elapsed_ms": 42057
+          }
+        }
+      ]
+    }
+  ]
+}

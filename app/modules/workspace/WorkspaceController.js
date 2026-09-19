@@ -173,7 +173,7 @@ export default function WorkspaceController(){
   const recommendedTier=goalTier[selectedGoal]||'free'
   const recommendedPlan=localizedPlans.find(plan=>plan.key===recommendedTier)||localizedPlans[0]
   const currentSufficient=(tierRank[currentTier]||1)>=(tierRank[recommendedTier]||1)
-  const deadlineOverview=useMemo(()=>buildDeadlineOverview(data.cases),[data.cases])
+  const deadlineOverview=useMemo(()=>buildDeadlineOverview(data.cases,data.documents),[data.cases,data.documents])
   const deadlineCases=deadlineOverview.dated
   const deadlineCopy=getDeadlineUi(language)
   const promoQuotes=Object.values(quotes).filter(Boolean)
@@ -333,7 +333,7 @@ export default function WorkspaceController(){
   }
 
   function protectedWorkspace(content){
-    return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} legalLabel={t.legal} languageLabel={t.language} outputLanguageLabel={t.outputLanguage} logoutLabel={a.logout} onLogout={()=>signOutSession(supabase)} message={message} deadlineCopy={deadlineCopy} deadlineCount={deadlineOverview.dated.length} unresolvedDeadlineCount={deadlineOverview.unresolved.length} onOpenDeadlines={openDeadlines}>{content}</ProtectedWorkspaceShell>
+    return <ProtectedWorkspaceShell language={language} outputLanguage={outputLanguage} onLanguageChange={setLanguage} onOutputLanguageChange={setOutputLanguage} legalLabel={t.legal} languageLabel={t.language} outputLanguageLabel={t.outputLanguage} logoutLabel={a.logout} onLogout={()=>signOutSession(supabase)} message={message} deadlineCopy={deadlineCopy} deadlineCount={deadlineOverview.dated.length} detectedDeadlineCount={deadlineOverview.detected.reduce((sum,entry)=>sum+entry.candidates.length,0)} unresolvedDeadlineCount={deadlineOverview.unresolved.length} onOpenDeadlines={openDeadlines}>{content}</ProtectedWorkspaceShell>
   }
 
   if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
@@ -354,9 +354,9 @@ export default function WorkspaceController(){
     return protectedWorkspace(<><CaseDetail continuation={resultContinuation} key={selectedCase.id} copy={core} analysis={analysisUi} language={language} outputLanguage={outputLanguage} supabase={supabase} ownerId={user?.id} item={data.cases.find(item=>item.id===selectedCase.id)||selectedCase} clients={data.clients} documents={caseDocs} assessments={caseAssessments} onBack={()=>setSelectedCase(null)} onSave={updateCase} onAddAssessment={createAssessment} onAddDocument={caseId=>{setUploadCaseId(caseId);setDocumentMode('upload');setSelectedCase(null);setSection('documents')}} onOpenDocument={setSelectedDocument} onPrivacyUpdate={setPrivacySettings}/><div className="exportBar"><b>{a.exportResult}</b><select value={exportType} onChange={event=>setExportType(event.target.value)}><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="csv">CSV (.csv)</option><option value="txt">Text (.txt)</option></select><button className="primary" onClick={()=>doExport({kind:'case',item:data.cases.find(item=>item.id===selectedCase.id)||selectedCase},exportType)}>{a.export}</button></div></>)
   }
 
-  if(screen==='app'&&!selectedClient&&section==='cases') return protectedWorkspace(<CasesSurface a={a} core={core} clients={data.clients} cases={data.cases} newCase={newCase} setNewCase={setNewCase} showCaseForm={showCaseForm} setShowCaseForm={setShowCaseForm} createCase={createCase} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
+  if(screen==='app'&&!selectedClient&&section==='cases') return protectedWorkspace(<CasesSurface a={a} core={core} language={language} clients={data.clients} cases={data.cases} newCase={newCase} setNewCase={setNewCase} showCaseForm={showCaseForm} setShowCaseForm={setShowCaseForm} createCase={createCase} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
 
-  if(screen==='app'&&!selectedClient&&section==='deadlines') return protectedWorkspace(<DeadlinesSurface a={a} core={core} copy={deadlineCopy} datedCases={deadlineOverview.dated} unresolvedCases={deadlineOverview.unresolved} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
+  if(screen==='app'&&!selectedClient&&section==='deadlines') return protectedWorkspace(<DeadlinesSurface a={a} core={core} copy={deadlineCopy} datedCases={deadlineOverview.dated} unresolvedCases={deadlineOverview.unresolved} detectedCases={deadlineOverview.detected} language={language} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
 
   if(screen==='app'&&!selectedClient&&section==='documents') return protectedWorkspace(<DocumentsSurface a={a} access={access} documents={data.documents} core={core} v28={v28} cases={data.cases} documentMode={documentMode} setDocumentMode={setDocumentMode} uploadCaseId={uploadCaseId} uploadDocument={uploadDocument} uploading={uploading} allowedUploadAccept={allowedUploadAccept} setSelectedDocument={setSelectedDocument} onBack={()=>setSection('dashboard')} language={language}/>)
 
