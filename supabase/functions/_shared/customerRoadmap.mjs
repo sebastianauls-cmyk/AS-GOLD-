@@ -88,7 +88,19 @@ export function validateRoadmapResult(raw,source) {
       checkEvidence([{document_id,quote}],true)
       const [y,m,d]=date.split('-')
       const variants=[date,`${Number(d)}.${Number(m)}.${y}`,`${d}.${m}.${y}`,`${Number(d)}.${m}.${y}`,`${d}.${Number(m)}.${y}`]
-      if(!variants.some(value=>quote.includes(value))) throw new Error('Eine Frist ist nicht ausdrücklich im zitierten Original belegt.')
+      // Match a complete date in the original, then require the quotation to
+      // include that whole token. Substrings could turn 11.04.2030 into 1 April,
+      // even when the quotation itself was cropped to "1.04.2030".
+      const original=normalized(docs.get(document_id).extracted_text)
+      const quotation=normalized(quote)
+      const dates=[...original.matchAll(/(?<![\p{L}\p{N}])(?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{4})(?![\p{L}\p{N}])/gu)]
+        .filter(match=>variants.includes(match[0]))
+      let quotationStart=original.indexOf(quotation),dateQuoted=false
+      while(quotationStart!==-1&&!dateQuoted) {
+        dateQuoted=dates.some(match=>match.index>=quotationStart&&match.index+match[0].length<=quotationStart+quotation.length)
+        quotationStart=original.indexOf(quotation,quotationStart+1)
+      }
+      if(!dateQuoted) throw new Error('Eine Frist ist nicht ausdrücklich im zitierten Original belegt.')
     }
     seen.add(step.id)
   }

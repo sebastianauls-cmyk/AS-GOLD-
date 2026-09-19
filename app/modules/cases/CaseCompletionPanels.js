@@ -6,6 +6,8 @@ import { caseGuidanceCopy } from './lib/caseGuidanceCopy.mjs'
 import { assessmentEvidenceText } from './lib/assessmentEvidenceText.mjs'
 import { buildProfessionalHandoff, handoffPriority } from '../lib/v40ProfessionalHandoff.mjs'
 import { analyzeCaseConsistency } from '../lib/v41CaseConsistency.mjs'
+import { documentTimelineEntry } from './lib/caseIntelligence.mjs'
+import { documentDateLabel,timelineDateCopy } from './lib/timelineDateCopy.mjs'
 
 const labels={
   vi:{handoffTitle:'Bàn giao chuyên môn',handoffLead:'Chuẩn bị hồ sơ cho luật sư, bảo hiểm hoặc tư vấn viên. Tệp được tạo cục bộ trong trình duyệt.',ready:'Hồ sơ bàn giao đã sẵn sàng',check:'Kiểm tra trước khi chia sẻ',missing:'Còn thiếu',pdf:'Hồ sơ PDF',docx:'Hồ sơ DOCX',privacy:'Xuất tệp không gửi thêm dữ liệu. Kiểm tra bản gốc, thời hạn và đánh giá trước khi chia sẻ.',goal:'Mục tiêu',summary:'Tình trạng',deadline:'Thời hạn tiếp theo',next:'Bước tiếp theo',documents:'Tài liệu',assessments:'Đánh giá',timeline:'Dòng thời gian',generated:'Tạo bằng ASH Workspace Gold · tài liệu làm việc có cấu trúc, chưa được luật sư kiểm tra',consistencyTitle:'Tính nhất quán và bằng chứng của hồ sơ',score:'Mức độ đầy đủ',good:'Chuẩn bị tốt',review:'Nên kiểm tra',attention:'Bổ sung phần còn thiếu',gaps:'Nội dung thiếu hoặc chưa giải quyết',deviations:'Thông tin khác nhau giữa các tài liệu',deviationNote:'Không tự động coi là mâu thuẫn – kiểm tra xem có nói về thời kỳ hoặc mục khác nhau không.',none:'Không phát hiện khác biệt đáng chú ý.',gapLabels:{goal:'Thiếu mục tiêu hồ sơ',summary:'Thiếu tình trạng hồ sơ',deadline:'Chưa lưu thời hạn',next_action:'Thiếu bước tiếp theo',documents:'Chưa có tài liệu',unread_documents:'Tài liệu chưa được đọc nội dung',assessment:'Chưa ghi đánh giá',red_without_next:'Đánh giá đỏ thiếu bước tiếp theo'},amount:'Số tiền',date:'Ngày',actionsTitle:'Thực hiện ngay',actionsLead:'ASH Workspace Gold chuyển các nội dung chưa giải quyết thành nhiệm vụ cụ thể.',edit:'Sửa hồ sơ',upload:'Thêm tài liệu',reviewDoc:'Kiểm tra tài liệu',assess:'Bổ sung đánh giá',followup:'Xác định hành động tiếp theo',deviation:'Kiểm tra khác biệt',done:'Không có hành động khẩn cấp từ các phần thiếu đã phát hiện.'},
@@ -23,17 +25,21 @@ const labels={
 
 function t(language){return labels[labels[language]?language:'de']}
 function displayDate(value){if(!value)return '';try{return new Date(value).toLocaleDateString()}catch{return String(value)}}
-function timelineFor(item,documents){
-  const events=(documents||[]).map(document=>({date:document.document_date||document.created_at||'',title:document.title||'Dokument',detail:document.document_type||''})).filter(event=>event.date)
-  if(item?.deadline_at) events.push({date:item.deadline_at,title:'Frist',detail:item.next_action||''})
+function timelineFor(item,documents,language){
+  const dates=timelineDateCopy(language)
+  const events=(documents||[]).filter(Boolean).map(document=>{
+    const entry=documentTimelineEntry(document)
+    return {date:entry.date||dates.unknown,title:`${entry.type==='upload'?dates.upload:entry.type==='document'?dates.document:dates.unknown} · ${entry.title}`,detail:[entry.detail,entry.type==='upload'?`${dates.unknown}. ${dates.note}`:''].filter(Boolean).join(' · ')}
+  })
+  if(item?.deadline_at) events.push({date:item.deadline_at,title:t(language).deadline,detail:item.next_action||''})
   return events
 }
 function handoffData(item,documents,assessments,language){
   return buildProfessionalHandoff({
     title:item?.title||'ASH Workspace Gold Fallakte',goal:item?.goal||'',summary:item?.summary||'',deadline:item?.deadline_at?displayDate(item.deadline_at):'',nextAction:item?.next_action||'',
-    documents:(documents||[]).map(document=>({date:document.document_date||displayDate(document.created_at),title:document.title||'',status:document.extracted_text?'Text vorhanden':''})),
+    documents:(documents||[]).map(document=>({date:documentDateLabel(document,language),title:document.title||'',status:document.extracted_text?'Text vorhanden':''})),
     assessments:(assessments||[]).map(entry=>({trafficLight:entry.traffic_light||'yellow',title:entry.title||'',reasoning:[entry.reasoning,assessmentEvidenceText(entry,documents,language,assessments)].filter(Boolean).join('\n'),nextStep:entry.next_step||''})),
-    timeline:timelineFor(item,documents)
+    timeline:timelineFor(item,documents,language)
   })
 }
 function fileName(ext){return `ASH-Workspace-Gold_Uebergabeakte_${new Date().toISOString().slice(0,10)}.${ext}`}

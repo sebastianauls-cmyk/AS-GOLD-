@@ -20,6 +20,28 @@ const forged=structuredClone(roadmapTestResult);forged.facts[0].evidence[0].quot
 assert.throws(()=>validateRoadmapResult(forged,source),/Original/)
 const wrongDeadline=structuredClone(roadmapTestResult);wrongDeadline.steps[0].deadline.date='2026-10-01'
 assert.throws(()=>validateRoadmapResult(wrongDeadline,source),/Frist/)
+// A date must be complete in its quoted original, not a matching substring.
+function deadlineCheck(original,date,quote=original) {
+  const document={...source.documents[0],id:'deadline-evidence',extracted_text:original}
+  const result=structuredClone(roadmapTestResult)
+  result.steps[0].deadline={date,document_id:document.id,quote}
+  return ()=>validateRoadmapResult(result,{...source,documents:[...source.documents,document]})
+}
+for(const [original,date,quote] of [
+  ['Bitte antworten Sie bis 11.04.2030.','2030-04-01'],
+  ['Bitte antworten Sie bis 21.04.2030.','2030-04-01','1.04.2030'],
+  ['Bitte antworten Sie bis 11.04.2030.','2030-04-11','11.04.203'],
+  ['Bitte antworten Sie bis 1.04.20300.','2030-04-01'],
+  ['Bitte antworten Sie bis 2030-04-011.','2030-04-01'],
+  ['Bitte antworten Sie bis 12030-04-01.','2030-04-01'],
+  ['Termin 01.04.2030. Bitte antworten Sie bis 11.04.2030.','2030-04-01','Bitte antworten Sie bis 11.04.2030.'],
+  ['Kennung X2030-04-01Y, kein Fristdatum.','2030-04-01']
+]) assert.throws(deadlineCheck(original,date,quote),/Frist/,original)
+for(const written of ['1.4.2030','01.04.2030','1.04.2030','01.4.2030','2030-04-01']) {
+  assert.doesNotThrow(deadlineCheck(`Bitte antworten Sie bis (${written}).`,'2030-04-01',written))
+}
+assert.doesNotThrow(deadlineCheck('Vom 11.04.2030-21.04.2030.','2030-04-21'))
+assert.doesNotThrow(deadlineCheck('Bitte antworten\nSie bis 11.04.2030.','2030-04-11','Bitte antworten Sie bis 11.04.2030.'))
 const cycle=structuredClone(roadmapTestResult);cycle.steps[0].depends_on=['abschluss']
 assert.throws(()=>validateRoadmapResult(cycle,source),/Reihenfolge/)
 const falseGreen=structuredClone(roadmapTestResult);falseGreen.steps[0].light='green'
