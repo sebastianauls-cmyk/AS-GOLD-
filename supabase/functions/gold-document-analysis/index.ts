@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2.57.4";
+import { CASE_EVIDENCE_RULES } from '../_shared/caseEvidenceRules.mjs';
 
 const PRIVACY_NOTICE_VERSION='2026-08-30-v1';
 const TERMS_VERSION='2026-08-30-test-v1';
@@ -84,7 +85,7 @@ Erzeuge GENAU diese getrennten Ergebnisse:
 9. traffic_light: green nur bei geklärter, unkritischer Lage; yellow bei offenen Angaben oder normalem Prüfbedarf; red bei erkennbarer akuter Frist, Vollstreckungs-/Kündigungs-/Zahlungsgefahr; white wenn ohne verifizierte Grundlage keine fachliche Einstufung möglich ist.
 10. assessment_reasoning: kurze, konkrete Begründung der Ampel auf ${outputLanguageName}, einschließlich der entscheidenden Dokumentstelle und offener Prüflücken. Keine unbestätigte Rechtsbehauptung.
 
-Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar aus einem ausdrücklich genannten Datum und Zeitraum folgen. Das Ergebnis bleibt ein prüfbarer Entwurf vor Freigabe.${spokenContextInstruction}`;
+Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar aus einem ausdrücklich genannten Datum und Zeitraum folgen. Eine Frist nach Zugang darf ohne belegten Zugang nicht aus dem Briefdatum berechnet werden. Prüfdatum: ${new Date().toISOString().slice(0,10)}. Das Ergebnis bleibt ein prüfbarer Entwurf vor Freigabe.${CASE_EVIDENCE_RULES}${spokenContextInstruction}`;
 
   log('info','provider_request_started',{file_mime:fileMime,file_bytes:bytes.byteLength,reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,target_country:requestedCountry});
   const provider=await fetch('https://api.openai.com/v1/responses',{method:'POST',signal:AbortSignal.timeout(90000),headers:{Authorization:`Bearer ${providerKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-5.6-luna',store:false,reasoning:{effort:'low'},instructions,input:[{role:'user',content:[{type:'input_text',text:`Verarbeite dieses Dokument vollständig. Referenzsprache: ${referenceLanguageName}. Kundensprache: ${outputLanguageName}. Länder-/Rechtsraum-Kontext: ${countryContextName}. Gib ausschließlich das strukturierte Ergebnis zurück.`},filePart]}],text:{format:{type:'json_schema',name:'as_workspace_gold_document_workflow_v123',strict:true,schema}},max_output_tokens:12000})}).catch(()=>null);

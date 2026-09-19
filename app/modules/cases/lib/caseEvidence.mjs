@@ -1,4 +1,5 @@
 const normalize = value => String(value || '').trim().replace(/\s+/gu, ' ')
+const belongsToCase = (entry, item) => entry.case_id === item?.id && (!item?.owner_id || entry.owner_id === item.owner_id)
 
 export function currentAssessments(assessments = []) {
   const replaced = new Set(assessments.map(item => item.supersedes_assessment_id).filter(Boolean))
@@ -19,8 +20,8 @@ export function assessmentEvidence(assessment, documents = []) {
 }
 
 export function caseEvidenceStatus(item, documents = [], assessments = []) {
-  const scoped = documents.filter(document => document.case_id === item?.id)
-  const current = currentAssessments(assessments.filter(assessment => assessment.case_id === item?.id))
+  const scoped = documents.filter(document => belongsToCase(document, item))
+  const current = currentAssessments(assessments.filter(assessment => belongsToCase(assessment, item)))
   const entries = current.map(assessment => ({assessment, ...assessmentEvidence(assessment, scoped)}))
   const uncovered = scoped.filter(document => !entries.some(entry => entry.document?.id === document.id && entry.status === 'reviewed'))
   return {current, entries, uncovered, complete: scoped.length > 0 && entries.length > 0 && !uncovered.length && entries.every(entry => entry.status === 'reviewed')}
@@ -33,7 +34,7 @@ export function caseGuidance({item, documents = [], assessments = [], deadlineSt
     const document = documents.find(entry => entry.id === deadlineDocument?.id && entry.case_id === item?.id && (!item?.owner_id || entry.owner_id === item.owner_id))
     return {kind: 'deadline', target: document ? 'document' : 'edit', document, state}
   }
-  const scoped = documents.filter(document => document.case_id === item?.id)
+  const scoped = documents.filter(document => belongsToCase(document, item))
   if (!scoped.length) return {kind: 'upload', target: 'upload', state}
   const unread = scoped.find(document => !normalize(document.extracted_text))
   if (unread) return {kind: 'read', target: 'document', document: unread, state}

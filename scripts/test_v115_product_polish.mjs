@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import { APP_RELEASE, APP_VERSION } from '../app/modules/release/appRelease.mjs'
+import { documentTimelineEntry } from '../app/modules/cases/lib/caseIntelligence.mjs'
 
 const read=path=>fs.readFileSync(new URL(path,import.meta.url),'utf8')
 
@@ -14,7 +15,9 @@ assert.match(exportService,/document\.body\.append\(anchor\)/,'browser downloads
 assert.match(exportService,/setTimeout\(\(\)=>URL\.revokeObjectURL\(url\),1000\)/,'object URLs must remain valid until the browser has accepted the download')
 
 const timeline=read('../app/modules/cases/CaseTimelineAutoAssessment.js')
-assert.match(timeline,/detail:document\?\.document_type\|\|''/,'timeline details must describe the document instead of repeating its raw timestamp')
+assert.match(timeline,/documentTimelineEntry/,'timeline must use the canonical date provenance helper')
+assert.equal(documentTimelineEntry({document_type:'Brief',created_at:'2026-07-09T10:00:00Z'}).detail,'Brief','timeline details must describe the document instead of repeating its raw timestamp')
+assert.equal(documentTimelineEntry({created_at:'2026-07-09T10:00:00Z'}).detail,'','an unknown document type must not repeat the upload timestamp')
 assert.match(timeline,/<time dateTime=\{entry\.date\}>\{entry\.date\}<\/time>/,'timeline dates must use semantic machine-readable time markup')
 assert.doesNotMatch(timeline,/detail:String\(rawDate\)/,'raw ISO timestamps must not be repeated in the visible timeline')
 

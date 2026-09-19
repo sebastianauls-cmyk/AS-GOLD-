@@ -1,7 +1,8 @@
 'use client'
 
 import { analyzeDeadlines } from '../lib/v38DeadlineIntelligence.mjs'
-import { autoDocumentAssessment,sortTimelineEntries } from '../lib/v39CaseIntelligence.mjs'
+import { autoDocumentAssessment,sortTimelineEntries,documentTimelineEntry,timelineIsoDate } from '../lib/v39CaseIntelligence.mjs'
+import { timelineDateCopy } from './lib/timelineDateCopy.mjs'
 
 export const caseIntelligenceLabels={
   de:{auto:'Automatische Dokument-Ampel',provisional:'Vorläufig – Original prüfen',basis:'Erkannte Grundlage',next:'Nächster Schritt',timeline:'Fall-Timeline',document:'Dokument',deadline:'Frist',caseStart:'Fallstand',noTimeline:'Noch keine datierten Ereignisse erkannt.',green:'Grün',yellow:'Gelb',red:'Rot'},
@@ -20,17 +21,6 @@ function copyFor(language='de'){
   return caseIntelligenceLabels[language]||caseIntelligenceLabels.de
 }
 
-function isoDate(value=''){
-  const raw=String(value||'').trim()
-  if(!raw) return ''
-  const iso=raw.match(/^(\d{4}-\d{2}-\d{2})/)
-  if(iso) return iso[1]
-  const local=raw.match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/)
-  if(local){const [,d,m,y]=local;return [y,m.padStart(2,'0'),d.padStart(2,'0')].join('-')}
-  const date=new Date(raw)
-  return Number.isNaN(date.getTime())?'':date.toISOString().slice(0,10)
-}
-
 export function DocumentAutoAssessment({language='de',text=''}){
   const t=copyFor(language)
   const deadline=analyzeDeadlines({text})
@@ -47,19 +37,16 @@ export function DocumentAutoAssessment({language='de',text=''}){
 
 export function CaseTimeline({language='de',caseDeadline='',documents=[]}){
   const t=copyFor(language)
+  const dates=timelineDateCopy(language)
   const entries=[]
-  const deadlineDate=isoDate(caseDeadline)
+  const deadlineDate=timelineIsoDate(caseDeadline)
   if(deadlineDate) entries.push({date:deadlineDate,type:'deadline',title:t.deadline,detail:''})
-  for(const document of documents){
-    const rawDate=document?.document_date||document?.created_at||''
-    const date=isoDate(rawDate)
-    if(date) entries.push({date,type:'document',title:document?.title||t.document,detail:document?.document_type||''})
-  }
+  for(const document of documents.filter(Boolean)) entries.push(documentTimelineEntry(document))
   const sorted=sortTimelineEntries(entries)
   return <section className="detailCard v39Timeline" data-v39-timeline="true">
     <div className="detailCardHead"><div><h3>{t.timeline}</h3></div></div>
     <ol className="v39TimelineList">
-      {sorted.length?sorted.map((entry,index)=><li key={`${entry.type}-${entry.date}-${index}`}><time dateTime={entry.date}>{entry.date}</time><div><b>{entry.type==='deadline'?t.deadline:t.document} · {entry.title}</b>{entry.detail?<small>{entry.detail}</small>:null}</div></li>):<li className="emptyState">{t.noTimeline}</li>}
+      {sorted.length?sorted.map((entry,index)=><li key={`${entry.id||entry.type}-${entry.date}-${index}`} data-date-basis={entry.dateBasis||'case_deadline'}>{entry.date?<time dateTime={entry.date}>{entry.date}</time>:<span>{dates.unknown}</span>}<div><b>{entry.type==='deadline'?t.deadline:entry.dateBasis==='document_date'?dates.document:entry.type==='upload'?dates.upload:t.document} · {entry.title||t.document}</b>{entry.detail?<small>{entry.detail}</small>:null}{entry.type==='upload'?<small>{dates.unknown} · {dates.note}</small>:null}</div></li>):<li className="emptyState">{t.noTimeline}</li>}
     </ol>
   </section>
 }
