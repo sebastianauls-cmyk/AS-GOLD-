@@ -16,14 +16,16 @@ Vorgabe von Sebastian Auls am 19. September 2026: Es dürfen nur echte, belegte 
 - Digitale TXT-/CSV-Originaltexte werden unabhängig vom Modell dekodiert und unverändert übernommen. UTF-8 und ausdrücklich durch BOM gekennzeichnetes UTF-16 sind unterstützt. Eine nicht eindeutig lesbare Kodierung führt zu einer klaren Fehlermeldung.
 - Bei anderen Dokumentformaten darf eine Transkription nicht leer sein oder durch Modellkommentar ersetzt werden; die Gegenprüfung bezieht die übergebene Datei ein. Das ist keine Garantie fehlerfreier Texterkennung.
 - Eine bestätigte Teilaussage bleibt bestätigt, auch wenn ein späterer Satz eine andere Aussage einschränkt. Zitatgleichheit ersetzt keine inhaltliche Prüfung.
+- „Nicht bestätigt“, „fehlt“, „unvollständig“, „ungeprüft“ und „nicht im vorliegenden Text genannt“ sind verschiedene Zustände. Bedingungen, Reichweite, zeitliche Einordnung und Urheberzuordnung müssen erhalten bleiben. Kurze Notizen werden knapp und mit Quellenzuordnung erklärt.
+- Liegt ein digitaler Originaltext bereits in der gewählten Ausgabesprache vor, wird auch die Ausgabefassung unverändert übernommen. Echte Übersetzungen in andere Sprachen bleiben eigenständige, inhaltlich zu prüfende Ergebnisse.
 - Rot benötigt eine belegte dringliche Frist oder laufende konkrete Gefahr. Fehlende Unterlagen und der erste Arbeitsschritt begründen allein keine Dringlichkeit.
 - Bei ungeklärter Absenderrolle, Gegenüber oder Zweck wird kein fertiges Antwortschreiben aus einer angenommenen Rolle erzeugt. Frühere Empfänger-/Betreffwerte dürfen nach erneuter Analyse nicht als vermeintlich bestätigte Daten stehen bleiben.
 
-## Technische Durchsetzung in V138
+## Technische Durchsetzung in V139
 
 1. Erzeugen, Originaltext übernehmen und Struktur-/Belegregeln prüfen.
 2. Inhaltliche Gegenprüfung anhand derselben Originale beziehungsweise tatsächlich abgerufener Recherchetexte.
-3. Für Dokumentanalyse und Fahrplan höchstens ein Korrekturlauf, danach erneut beide Prüfungen.
+3. Für Dokumentanalyse und Fahrplan höchstens ein Korrekturlauf, danach erneut beide Prüfungen. Die Korrektur soll den konkreten Fehler und seine Folgeaussagen beheben, ohne unbetroffene Felder neu zu formulieren. Die Gegenprüfung muss konkrete problematische Formulierungen an den Originalen erklären; reine Stilwünsche sind keine Sachfehler.
 4. Keine Speicherung eines Analyseergebnisses, wenn die Gegenprüfung scheitert oder ausfällt. Der Rechtsraumvergleich wird bei unzureichender Quellenstützung ebenfalls nicht gespeichert.
 5. Eigentümerprüfung, RLS, vorhandene Verarbeitungsfreigaben und Versandfreigaben bleiben verbindlich. Diese Prüfungen erteilen keine Versand-, Vertretungs- oder Veröffentlichungsvollmacht für Kundenangelegenheiten.
 

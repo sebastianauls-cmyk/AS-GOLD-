@@ -16,7 +16,13 @@ for(const item of historyCaseCorpus)for(const doc of item.documents){
   const result=finalizeDocumentResult({...base,extracted_text:'Kein Dokument vorgelegt.'},{schema,originalText:original,referenceLanguage:'de',outputLanguage:'de'})
   assert.equal(result.extracted_text,doc.extracted_text)
   assert.equal(result.reference_copy,'');assert.equal(result.customer_copy,'')
+  const sameLanguage=finalizeDocumentResult({...base,extracted_text:'',document_translation:'Unbelegte Umformulierung'},{schema,originalText:original,referenceLanguage:'de',outputLanguage:'de-DE'})
+  assert.equal(sameLanguage.document_translation,doc.extracted_text,'same-language output preserves every source proposition')
 }
+const translated=finalizeDocumentResult({...base,source_language:'pl',extracted_text:'Umowa istnieje.',document_translation:'Der Vertrag besteht.'},{schema,originalText:'Umowa istnieje.',referenceLanguage:'de',outputLanguage:'de'})
+assert.equal(translated.document_translation,'Der Vertrag besteht.','a real translation must not be overwritten with a foreign original')
+const scanned=finalizeDocumentResult({...base,extracted_text:'Ein Vertrag besteht.',document_translation:'Ein Vertrag besteht.'},{schema,referenceLanguage:'de',outputLanguage:'de'})
+assert.equal(scanned.document_translation,'Ein Vertrag besteht.','image/PDF transcription still needs model review')
 for(const original of ['  Zeile 1\r\nZeile 2\n','§ 5 – Grüße, 1.000 €','Zażółć gęślą jaźń','متن اصلی','Dữ liệu gốc'])assert.equal(originalPlainText(encode(original),'text/plain; charset=utf-8'),original)
 assert.equal(originalPlainText(new Uint8Array([0xff,0xfe,0x41,0,0xe4,0]),'text/plain'),'Aä')
 assert.equal(originalPlainText(new Uint8Array([0xfe,0xff,0,0x41,0,0xe4]),'text/plain'),'Aä')
@@ -48,6 +54,16 @@ assert.throws(()=>validateQualityReview({issues:[{code:'made_up',location:'x',re
 await assert.rejects(runReviewedModel({providerKey:'synthetic-test-key',request:baseRequest,reviewContent:[],validate:validation,budgetMs:0,fetchImpl:()=>{throw Error('must not call provider')}}),/zu lange/)
 mock=provider([roadmapTestResult,{approved:true}])
 await assert.rejects(runReviewedModel({providerKey:'synthetic-test-key',request:baseRequest,reviewContent:[],validate:validation,fetchImpl:mock.fetchImpl}),/Gegenprüfung/)
+// A review that spends its token budget without a verdict must never approve.
+let incompleteCalls=0
+const incompleteFetch=async()=>{
+  incompleteCalls++
+  return new Response(JSON.stringify(incompleteCalls===1
+    ?{id:'complete-generation',status:'completed',output_text:JSON.stringify(roadmapTestResult)}
+    :{id:'incomplete-review',status:'incomplete',output:[]}),{status:200})
+}
+await assert.rejects(runReviewedModel({providerKey:'synthetic-test-key',request:baseRequest,reviewContent:[],validate:validation,fetchImpl:incompleteFetch}),/unvollständig/)
+assert.equal(incompleteCalls,2,'no accepted result or unbounded retry after an incomplete review')
 
 const domains=['gesetze-im-internet.de']
 const url='https://www.gesetze-im-internet.de/bgb/__286.html'
@@ -68,4 +84,4 @@ let destinations=[]
 const redirected=await retrieveOfficialEvidence([{url}],domains,{fetchImpl:async target=>{destinations.push(target);return new Response(null,{status:302,headers:{location:'https://127.0.0.1/private'}})}})
 assert.equal(redirected.size,0);assert.equal(destinations.length,1,'untrusted redirect is never fetched')
 for(const response of [new Response('Not found',{status:404}),new Response('PDF',{headers:{'content-type':'application/pdf'}}),new Response(html,{headers:{'content-type':'text/html','content-length':'2000000'}})])assert.equal((await retrieveOfficialEvidence([{url}],domains,{fetchImpl:async()=>response})).size,0)
-console.log('V138: 104 original texts preserved; role gate, bounded repair, mandatory review, time budget, real-search provenance and safe official retrieval passed. Mocked provider checks are not live model acceptance.')
+console.log('V139: 104 original texts and same-language copies preserved; foreign translation, role gate, bounded repair, mandatory review, time budget, real-search provenance and safe official retrieval passed. Mocked provider checks are not live model acceptance.')
