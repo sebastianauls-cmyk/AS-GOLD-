@@ -54,6 +54,16 @@ assert.throws(()=>validateQualityReview({issues:[{code:'made_up',location:'x',re
 await assert.rejects(runReviewedModel({providerKey:'synthetic-test-key',request:baseRequest,reviewContent:[],validate:validation,budgetMs:0,fetchImpl:()=>{throw Error('must not call provider')}}),/zu lange/)
 mock=provider([roadmapTestResult,{approved:true}])
 await assert.rejects(runReviewedModel({providerKey:'synthetic-test-key',request:baseRequest,reviewContent:[],validate:validation,fetchImpl:mock.fetchImpl}),/Gegenprüfung/)
+// A review that spends its token budget without a verdict must never approve.
+let incompleteCalls=0
+const incompleteFetch=async()=>{
+  incompleteCalls++
+  return new Response(JSON.stringify(incompleteCalls===1
+    ?{id:'complete-generation',status:'completed',output_text:JSON.stringify(roadmapTestResult)}
+    :{id:'incomplete-review',status:'incomplete',output:[]}),{status:200})
+}
+await assert.rejects(runReviewedModel({providerKey:'synthetic-test-key',request:baseRequest,reviewContent:[],validate:validation,fetchImpl:incompleteFetch}),/unvollständig/)
+assert.equal(incompleteCalls,2,'no accepted result or unbounded retry after an incomplete review')
 
 const domains=['gesetze-im-internet.de']
 const url='https://www.gesetze-im-internet.de/bgb/__286.html'
