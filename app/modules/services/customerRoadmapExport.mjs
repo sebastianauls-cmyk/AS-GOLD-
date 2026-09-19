@@ -15,6 +15,11 @@ export function roadmapExportBlocks(record,{letterId}={}) {
     add(letter.recipient)
     add(letter.subject,'title')
     for(const line of letter.body.split(/\r?\n/)) add(line||' ','body')
+    for(const block of blocks)block.language=record.reference_language
+    if(letter.customer_translation?.trim()) {
+      blocks.push({text:ui.translation,kind:'heading',language:record.output_language,pageBreakBefore:true})
+      for(const line of letter.customer_translation.split(/\r?\n/))blocks.push({text:line||' ',kind:'body',language:record.output_language})
+    }
     return blocks
   }
   add(record.result.title,'title')
@@ -46,7 +51,7 @@ export async function createRoadmapDocx(record,options={}) {
   const blocks=roadmapExportBlocks(record,options)
   const rtl=['ar','fa'].includes(options.letterId?record.reference_language:record.output_language)
   const paragraph=block=>new Paragraph({
-    bidirectional:rtl,keepNext:['title','heading','step'].includes(block.kind),
+    bidirectional:block.language?['ar','fa'].includes(block.language):rtl,pageBreakBefore:!!block.pageBreakBefore,keepNext:['title','heading','step'].includes(block.kind),
     spacing:{before:['heading','step'].includes(block.kind)?200:0,after:block.kind==='meta'?110:150,line:290},
     children:[...(block.light?[new TextRun({text:'● ',font:'Arial',color:ROADMAP_COLORS[block.light].slice(1),size:21})]:[]),
       ...block.text.split('\n').map((line,index)=>new TextRun({text:(block.kind==='bullet'&&index===0?'• ':'')+line,break:index?1:undefined,

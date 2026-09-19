@@ -3,11 +3,13 @@ import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
 import {spawnSync} from 'node:child_process'
+import JSZip from 'jszip'
 import {createTextPdf,pdfLight,pdfTextBlocks} from '../app/modules/services/textPdf.mjs'
-import {createRoadmapPdf} from '../app/modules/services/customerRoadmapExport.mjs'
+import {createRoadmapPdf,createRoadmapDocx} from '../app/modules/services/customerRoadmapExport.mjs'
 import {createHandoffPdf} from '../app/modules/services/professionalHandoffExport.mjs'
 import {buildProfessionalHandoff} from '../app/modules/cases/lib/professionalHandoff.mjs'
 import {roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
+import {roadmapUi} from '../app/modules/cases/lib/customerRoadmapCopy.mjs'
 
 const fonts=['DejaVuSans.ttf','DejaVuSans-Bold.ttf'].map(name=>fs.readFileSync('public/fonts/'+name).toString('base64'))
 const directory=fs.mkdtempSync(path.join(os.tmpdir(),'ash-pdf-test-'))
@@ -18,6 +20,40 @@ const outputs=[['roadmap',await createRoadmapPdf(record,{fonts}),'Wird grün, so
 const samples={de:'Grüße, nächste Schritte und 3.000,00 EUR.',en:'Documents and next steps.',fr:'Échéance et pièces à vérifier.',tr:'İşlem, görüş ve sonraki adımlar.',pl:'Zażółć gęślą jaźń.',ru:'Проверка документов.',ar:'مراجعة المستندات والخطوات التالية',fa:'بررسی اسناد و مراحل بعدی',ro:'Înștiințare și următorii pași.',bg:'Проверка на документите.',vi:'Kiểm tra tài liệu và thời hạn.'}
 for(const [language,text] of Object.entries(samples))outputs.push([language,await createTextPdf({fonts,language,blocks:[{text,kind:'title'},{text:'🟡 '+text},{text:('CHECK '+text+' ').repeat(180)},{text:'END-OF-EXPORT',light:'green'}]}),text])
 const poppler=spawnSync('pdftotext',['-v'],{encoding:'utf8'}).status===0
+for(const [reference,customer] of [['de','en'],['de','ar'],['ar','de']]) {
+  const bilingual=roadmapTestRecord()
+  bilingual.reference_language=reference;bilingual.output_language=customer
+  const letter=bilingual.result.letters[0]
+  letter.body=samples[reference]
+  letter.customer_translation=samples[customer]+'\n\nTRANSLATION-END'
+  const name=`bilingual-${reference}-${customer}`
+  const pdf=await createRoadmapPdf(bilingual,{fonts,letterId:letter.id})
+  const file=path.join(directory,name+'.pdf')
+  fs.writeFileSync(file,Buffer.from(await pdf.arrayBuffer()))
+  if(poppler) {
+    const original=spawnSync('pdftotext',['-f','1','-l','1','-raw',file,'-'],{encoding:'utf8'})
+    const translation=spawnSync('pdftotext',['-f','2','-raw',file,'-'],{encoding:'utf8'})
+    assert.equal(original.status,0,original.stderr)
+    assert.equal(translation.status,0,translation.stderr)
+    assert.doesNotMatch(original.stdout,/TRANSLATION-END/,'recipient letter stays on its own page')
+    assert.match(translation.stdout,/TRANSLATION-END/,'customer translation must be exported completely')
+    const clean=translation.stdout.replace(/[\u202a-\u202e]/g,'')
+    assert.ok(clean.includes(samples[customer])||clean.includes([...samples[customer]].reverse().join('')),'translation text is retained in PDF')
+  }
+  const docx=await createRoadmapDocx(bilingual,{letterId:letter.id})
+  fs.writeFileSync(path.join(directory,name+'.docx'),Buffer.from(await docx.arrayBuffer()))
+  const xml=await (await JSZip.loadAsync(await docx.arrayBuffer())).file('word/document.xml').async('string')
+  assert.ok(xml.includes(samples[reference]),'Word retains recipient letter')
+  assert.ok(xml.includes(samples[customer])&&xml.includes('TRANSLATION-END'),'Word retains complete customer translation')
+  const paragraphs=[...xml.matchAll(/<w:p[ >][\s\S]*?<\/w:p>/g)].map(match=>match[0])
+  const heading=paragraphs.find(paragraph=>paragraph.includes(roadmapUi(customer).translation))
+  assert.match(heading,/<w:pageBreakBefore\/>/,'translation starts separately from recipient letter in Word')
+  for(const [language,text] of [[reference,samples[reference]],[customer,samples[customer]]]) {
+    const paragraph=paragraphs.find(value=>value.includes(text))
+    if(language==='ar')assert.match(paragraph,/<w:bidi\/>/,'Arabic paragraph direction is independent of the other language')
+    else assert.doesNotMatch(paragraph,/<w:bidi\/>/,'Latin paragraph is not forced right-to-left')
+  }
+}
 for(const [name,blob,expected] of outputs) {
   const bytes=Buffer.from(await blob.arrayBuffer()),file=path.join(directory,name+'.pdf')
   assert.equal(bytes.subarray(0,4).toString(),'%PDF')
@@ -42,4 +78,4 @@ for(const [name,blob,expected] of outputs) {
 assert.equal(pdfLight('🟡 yellow'),'yellow');assert.equal(pdfLight('🟢 green'),'green')
 assert.deepEqual(pdfTextBlocks([{text:'Titel',light:'🟡 yellow'}])[0].light,'yellow')
 assert.equal(pdfTextBlocks([{text:'🟡 Zahlung offen'}])[0].text,'Zahlung offen')
-console.log(`PDF repair: actual roadmap, letter and handoff renderers plus 11 language fixtures; embedded fonts, text mapping, no raster pages${poppler?', extracted text and long-content end markers':''} passed. Samples: ${directory}`)
+console.log(`PDF repair: actual roadmap, letter and handoff renderers plus 11 language fixtures and bilingual Word/PDF letters; embedded fonts, text mapping, no raster pages${poppler?', extracted text, separate translation pages and long-content end markers':''} passed. Samples: ${directory}`)

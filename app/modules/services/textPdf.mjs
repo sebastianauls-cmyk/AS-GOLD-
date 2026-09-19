@@ -19,7 +19,7 @@ async function loadFonts() {
 export function pdfTextBlocks(blocks) {
   return blocks.flatMap(block=>String(block.text??'').split(/\r?\n/).map((line,index)=>{
     const marker=line.match(/🟢|🟡|🔴|⚪/u)?.[0]
-    return {...block,text:marker?line.replace(marker,'').trim():line,light:marker?MARKERS[marker]:index===0&&block.light?pdfLight(block.light):null}
+    return {...block,text:marker?line.replace(marker,'').trim():line,light:marker?MARKERS[marker]:index===0&&block.light?pdfLight(block.light):null,pageBreakBefore:index===0&&block.pageBreakBefore}
   }))
 }
 
@@ -33,11 +33,11 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
   const contentWidth=width-2*margin,rtl=['ar','fa'].includes(language)
   let y=0
   const font=(size,bold=false)=>{pdf.setFont('ASH',bold?'bold':'normal');pdf.setFontSize(size)}
-  const text=(line,x,atY,align='left')=>{
+  const text=(line,x,atY,align='left',direction=rtl)=>{
     // Logical Unicode input must be reordered once, never reversed as a string.
     const arabic=/[\u0600-\u06ff]/u.test(line)
     if(arabic)pdf.internal.write('/Span << /ActualText <FEFF'+Array.from({length:line.length},(_,i)=>line.charCodeAt(i).toString(16).padStart(4,'0')).join('')+'> >> BDC')
-    pdf.text(line,x,atY,{align,R2L:false,isInputVisual:false,isOutputVisual:true,isInputRtl:arabic?rtl:false,isOutputRtl:false})
+    pdf.text(line,x,atY,{align,R2L:false,isInputVisual:false,isOutputVisual:true,isInputRtl:arabic?direction:false,isOutputRtl:false})
     if(arabic)pdf.internal.write('EMC')
   }
   function page(first=false) {
@@ -48,6 +48,8 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
   }
   page(true)
   for(const block of pdfTextBlocks(blocks)) {
+    if(block.pageBreakBefore)page()
+    const blockRtl=block.language?['ar','fa'].includes(block.language):rtl
     const heading=['title','heading','step'].includes(block.kind)
     const size=block.kind==='title'?17:block.kind==='meta'?9:11,lineHeight=size*1.45
     const inset=block.light?15:block.kind==='bullet'?10:0
@@ -61,9 +63,9 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
       if(block.light&&index===0) {
         const color=PDF_LIGHT_COLORS[block.light]||PDF_LIGHT_COLORS.white
         pdf.setDrawColor(color);pdf.setFillColor(block.light==='white'?'#FFFFFF':color)
-        pdf.circle(rtl?width-margin-4:margin+4,y-size*.32,3.6,'FD')
+        pdf.circle(blockRtl?width-margin-4:margin+4,y-size*.32,3.6,'FD')
       }
-      text(lines[index],rtl?width-margin-inset:margin+inset,y,rtl?'right':'left');y+=lineHeight
+      text(lines[index],blockRtl?width-margin-inset:margin+inset,y,blockRtl?'right':'left',blockRtl);y+=lineHeight
     }
     y+=block.kind==='meta'?7:10
   }
