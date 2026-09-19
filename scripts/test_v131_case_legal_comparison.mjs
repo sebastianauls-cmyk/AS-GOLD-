@@ -20,7 +20,7 @@ assert.equal(APP_VERSION,`V${APP_RELEASE.number}`)
 assert.equal(CASE_LEGAL_COMPARISON_TOPICS.length,10)
 
 const contract=caseLegalComparisonContract()
-assert.equal(contract.version,'v131')
+assert.equal(contract.version,'v138')
 for(const rule of [
   'official_sources_only',
   'visible_clickable_sources',
@@ -39,10 +39,11 @@ assert.equal(safeLegalSourceUrl('https://example.gov/rule'),'https://example.gov
 const normalized=normalizeCaseLegalComparisonRecord({
   overall_light:'green',
   sources:[
-    {title:'Official rule',url:'https://example.gov/rule',publisher:'Authority'},
+    {title:'Official rule',url:'https://example.gov/rule',publisher:'Authority',source_text:'Synthetic retrieved source fixture. '.repeat(5),content_sha256:'a'.repeat(64),checked_at:'2026-09-19T00:00:00Z'},
     {title:'Unsafe',url:'javascript:alert(1)'}
   ],
   result:{
+    source_verification:{version:'v138',review_passed:true,review_response_id:'synthetic-review-id'},
     applicable_law:{status:'known',explanation:'Claim',missing_factors:['Place'],source_urls:['https://example.gov/rule']},
     rows:[{
       issue:'Customer issue',difference_status:'same',confidence:'high',practical_meaning:'Meaning',
@@ -52,6 +53,8 @@ const normalized=normalizeCaseLegalComparisonRecord({
     professional_review_required:false
   }
 })
+const legacy=normalizeCaseLegalComparisonRecord({question:'Legacy research',sources:[{title:'Old citation',url:'https://example.gov/rule'}],result:{overall_summary:'Unverified rule',rows:[{home:{explanation:'Unverified rule',source_urls:['https://example.gov/rule']},target:{explanation:'Unverified rule',source_urls:['https://example.gov/rule']}}]}})
+assert.equal(legacy.sources.length,0);assert.equal(legacy.rows.length,0);assert.equal(legacy.overall_summary,'');assert.equal(legacy.needs_source_refresh,true);assert.equal(legacy.light.key,'white')
 assert.equal(normalized.sources.length,1,'unsafe source URLs must be removed')
 assert.equal(normalized.applicable_law.status,'likely','missing applicability facts must prevent a definitive status')
 assert.equal(normalized.rows[0].difference_status,'unclear','a comparison without sources for both sides must remain unclear')

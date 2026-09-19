@@ -108,7 +108,7 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
 
     {home.key===target.key?<div className="emptyState legalComparisonEmpty">{ui.sameCountry}</div>:<>
       {records.length>0&&<div className="legalComparisonToolbar">
-        <label>{ui.history}<select value={activeRecord?.id||''} onChange={event=>{setActiveId(event.target.value);setShowForm(false)}}>{records.map(record=><option value={record.id} key={record.id}>{lightSymbol(record.overall_light)} {topicLabels[record.topic]||record.topic} · {formatDate(record.created_at,language)}</option>)}</select></label>
+        <label>{ui.history}<select value={activeRecord?.id||''} onChange={event=>{setActiveId(event.target.value);setShowForm(false)}}>{records.map(record=><option value={record.id} key={record.id}>{normalizeCaseLegalComparisonRecord(record).light.symbol} {topicLabels[record.topic]||record.topic} · {formatDate(record.created_at,language)}</option>)}</select></label>
         <button className="secondary" type="button" onClick={()=>setShowForm(value=>!value)}>{showForm?workspaceCopy.cancel:`＋ ${ui.newComparison}`}</button>
       </div>}
 
@@ -125,6 +125,7 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
       {loading?<div className="legalComparisonLoading">{ui.creating}</div>:!activeRecord&&!showForm?<div className="emptyState legalComparisonEmpty">{ui.noResults}</div>:null}
 
       {activeRecord&&comparison&&!showForm&&<article className="legalComparisonResult">
+        {comparison.needs_source_refresh&&<p className="attentionBox" role="status">⚪ {ui.sourceRefresh}</p>}
         <div className="legalComparisonResultHead"><div><span className={`comparisonLight ${comparison.light.key}`}>{comparison.light.symbol} {ui.result}</span><h4>{comparison.title||topicLabels[activeRecord.topic]||ui.result}</h4><p className="legalComparisonAsked"><b>{ui.requestedQuestion}:</b> {activeRecord.question}</p><p>{comparison.overall_summary||'—'}</p></div><small>{ui.sourceChecked}: {formatDate(comparison.source_checked_at,language)}</small></div>
 
         <section className="applicableLawCard">

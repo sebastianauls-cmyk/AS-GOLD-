@@ -1,4 +1,4 @@
-export const CASE_LEGAL_COMPARISON_VERSION='v131'
+export const CASE_LEGAL_COMPARISON_VERSION='v138'
 
 export const CASE_LEGAL_COMPARISON_TOPICS=Object.freeze([
   'applicable_law_jurisdiction',
@@ -36,7 +36,9 @@ function side(value={}){return {explanation:String(value?.explanation||''),sourc
 
 export function normalizeCaseLegalComparisonRecord(record={}){
   const payload=record?.result&&typeof record.result==='object'?record.result:{}
+  const verified=payload.source_verification?.version==='v138'&&payload.source_verification?.review_passed===true&&typeof payload.source_verification?.review_response_id==='string';
   const sources=(Array.isArray(record?.sources)?record.sources:Array.isArray(payload.sources)?payload.sources:[])
+    .filter(source=>verified&&typeof source?.source_text==='string'&&source.source_text.length>=100&&/^[a-f0-9]{64}$/.test(source?.content_sha256||'')&&Number.isFinite(Date.parse(source?.checked_at)))
     .map(source=>({
       title:String(source?.title||source?.url||''),
       url:safeLegalSourceUrl(source?.url),
@@ -47,18 +49,18 @@ export function normalizeCaseLegalComparisonRecord(record={}){
     .filter(source=>source.url)
   const allowedUrls=new Set(sources.map(source=>source.url))
   const keepKnown=urls=>urls.filter(url=>allowedUrls.has(url))
-  const rows=(Array.isArray(payload.rows)?payload.rows:[]).map(row=>{
+  const rows=(verified&&Array.isArray(payload.rows)?payload.rows:[]).map(row=>{
     const home=side(row?.home)
     const target=side(row?.target)
-    const normalizedHome={...home,source_urls:keepKnown(home.source_urls)}
-    const normalizedTarget={...target,source_urls:keepKnown(target.source_urls)}
+    const normalizedHome={...home,source_urls:keepKnown(home.source_urls)};if(!normalizedHome.source_urls.length)normalizedHome.explanation=''
+    const normalizedTarget={...target,source_urls:keepKnown(target.source_urls)};if(!normalizedTarget.source_urls.length)normalizedTarget.explanation=''
     const complete=normalizedHome.source_urls.length>0&&normalizedTarget.source_urls.length>0
     return {
       issue:String(row?.issue||''),
       difference_status:complete&&safeStatus.has(row?.difference_status)?row.difference_status:'unclear',
       home:normalizedHome,
       target:normalizedTarget,
-      practical_meaning:String(row?.practical_meaning||''),
+      practical_meaning:complete?String(row?.practical_meaning||''):'',
       confidence:complete&&safeConfidence.has(row?.confidence)?row.confidence:'low'
     }
   })
@@ -67,8 +69,8 @@ export function normalizeCaseLegalComparisonRecord(record={}){
   const applicabilityProposedStatus=applicabilitySources.length&&['known','likely'].includes(payload?.applicable_law?.status)?payload.applicable_law.status:'unclear'
   const applicability={
     status:applicabilityProposedStatus==='known'&&applicabilityMissingFactors.length?'likely':applicabilityProposedStatus,
-    explanation:String(payload?.applicable_law?.explanation||''),
-    missing_factors:applicabilityMissingFactors,
+    explanation:applicabilitySources.length?String(payload?.applicable_law?.explanation||''):'',
+    missing_factors:verified?applicabilityMissingFactors:[],
     source_urls:applicabilitySources
   }
   const completeRows=rows.filter(row=>row.home.source_urls.length>0&&row.target.source_urls.length>0)
@@ -78,15 +80,16 @@ export function normalizeCaseLegalComparisonRecord(record={}){
   const light=completeRows.length===0?CASE_LEGAL_COMPARISON_LIGHTS.white:hasRisk?CASE_LEGAL_COMPARISON_LIGHTS.red:hasGap||hasDifference?CASE_LEGAL_COMPARISON_LIGHTS.yellow:CASE_LEGAL_COMPARISON_LIGHTS.green
   return {
     id:record?.id||null,
-    title:String(payload.title||''),
+    title:verified?String(payload.title||''):String(record?.question||''),
     light,
-    overall_summary:String(payload.overall_summary||''),
+    overall_summary:verified?String(payload.overall_summary||''):'',
     applicable_law:applicability,
     rows,
-    open_questions:strings(payload.open_questions),
-    next_steps:strings(payload.next_steps),
-    customer_explanation:String(payload.customer_explanation||''),
+    open_questions:verified?strings(payload.open_questions):[],
+    next_steps:verified?strings(payload.next_steps):[],
+    customer_explanation:verified?String(payload.customer_explanation||''):'',
     professional_review_required:true,
+    needs_source_refresh:!verified,
     sources,
     source_checked_at:record?.source_checked_at||null,
     created_at:record?.created_at||null
@@ -101,6 +104,7 @@ export function caseLegalComparisonContract(){
     required_sections:['applicable_law','rows','customer_explanation','open_questions','next_steps','sources'],
     rules:{
       official_sources_only:true,
+      retrieved_source_content_required:true,
       visible_clickable_sources:true,
       home_country_is_not_automatically_applicable_law:true,
       target_country_is_not_automatically_applicable_law:true,

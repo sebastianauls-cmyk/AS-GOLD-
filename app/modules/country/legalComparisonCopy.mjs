@@ -37,8 +37,22 @@ const topicLabels={
   fr:{applicable_law_jurisdiction:'Loi applicable et compétence',contract_consumer:'Contrat et consommation',employment:'Travail',rent_property:'Location et immobilier',claims_payments:'Créances et paiements',insurance:'Assurance',administrative_social:'Administration et prestations sociales',travel_residence:'Voyage, entrée et séjour',data_protection:'Protection des données',other:'Autre question juridique'}
 }
 
+const sourceRefreshCopy={
+  "de": "Für diesen älteren oder unvollständigen Stand fehlt der neue Quellennachweis. Bitte die Recherche erneut ausführen. Ungeprüfte Aussagen werden nicht als Ergebnis angezeigt.",
+  "en": "This older or incomplete result lacks the current source verification. Please run the research again. Unverified claims are not displayed as results.",
+  "fr": "Ce résultat ancien ou incomplet ne dispose pas de la vérification actuelle des sources. Relancez la recherche. Les affirmations non vérifiées ne sont pas affichées comme résultats.",
+  "tr": "Bu eski veya eksik sonuç için güncel kaynak doğrulaması yok. Lütfen araştırmayı yeniden başlatın. Doğrulanmamış iddialar sonuç olarak gösterilmez.",
+  "pl": "Ten starszy lub niepełny wynik nie ma aktualnego potwierdzenia źródeł. Uruchom badanie ponownie. Niezweryfikowane twierdzenia nie są pokazywane jako wyniki.",
+  "ru": "Для этого старого или неполного результата нет актуальной проверки источников. Повторите поиск. Непроверенные утверждения не отображаются как результаты.",
+  "ar": "تفتقر هذه النتيجة القديمة أو غير المكتملة إلى التحقق الحالي من المصادر. يرجى إعادة البحث. لا تُعرض الادعاءات غير المتحقق منها كنتائج.",
+  "fa": "این نتیجه قدیمی یا ناقص، تأیید فعلی منابع را ندارد. لطفاً پژوهش را دوباره اجرا کنید. ادعاهای تأییدنشده به‌عنوان نتیجه نمایش داده نمی‌شوند.",
+  "ro": "Acest rezultat mai vechi sau incomplet nu are verificarea actuală a surselor. Reluați cercetarea. Afirmațiile neverificate nu sunt afișate ca rezultate.",
+  "bg": "За този по-стар или непълен резултат липсва актуалната проверка на източниците. Стартирайте проучването отново. Непроверени твърдения не се показват като резултати.",
+  "vi": "Kết quả cũ hoặc chưa đầy đủ này thiếu bước xác minh nguồn hiện tại. Vui lòng chạy lại nghiên cứu. Các khẳng định chưa được xác minh không được hiển thị như kết quả."
+}
+
 export function legalComparisonUi(language='de'){
-  return {...en,...(baseByLanguage[language]||de)}
+  return {...en,...(baseByLanguage[language]||de),sourceRefresh:sourceRefreshCopy[language]||sourceRefreshCopy.de}
 }
 
 export function legalComparisonTopicLabels(language='de'){

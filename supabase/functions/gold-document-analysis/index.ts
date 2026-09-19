@@ -1,6 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2.57.4";
 import { CASE_EVIDENCE_RULES } from '../_shared/caseEvidenceRules.mjs';
+import { originalPlainText, finalizeDocumentResult, runReviewedModel, MODEL_QUALITY_VERSION, ModelWorkflowError } from '../_shared/modelQuality.mjs';
 
 const PRIVACY_NOTICE_VERSION='2026-08-30-v1';
 const TERMS_VERSION='2026-08-30-test-v1';
@@ -14,7 +15,7 @@ const headersFor=(req:Request)=>{const origin=allowedOrigin(req.headers.get('Ori
 const reply=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:headersFor(req)});
 function base64(bytes:Uint8Array){let binary='';for(let index=0;index<bytes.length;index+=0x8000) binary+=String.fromCharCode(...bytes.subarray(index,Math.min(index+0x8000,bytes.length)));return btoa(binary);}
 function mime(path:string,type?:string){
-  if(type&&type!=='application/octet-stream')return type;
+  if(type&&type.split(';')[0].trim().toLowerCase()!=='application/octet-stream')return type.split(';')[0].trim().toLowerCase();
   const extension=path.toLowerCase().split('.').pop()||'';
   const types:Record<string,string>={pdf:'application/pdf',png:'image/png',webp:'image/webp',gif:'image/gif',jpg:'image/jpeg',jpeg:'image/jpeg',txt:'text/plain',csv:'text/csv',rtf:'application/rtf',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',xlsx:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation',odt:'application/vnd.oasis.opendocument.text',ods:'application/vnd.oasis.opendocument.spreadsheet',odp:'application/vnd.oasis.opendocument.presentation',eml:'message/rfc822'};
   return types[extension]||'application/octet-stream';
@@ -61,24 +62,27 @@ Deno.serve(async(req:Request)=>{
 
   const voiceContext=typeof document.voice_context==='string'&&document.voice_context.trim()?document.voice_context.trim().slice(0,4000):null;
   const voiceLanguage=typeof document.voice_language==='string'&&document.voice_language.trim()?document.voice_language.trim():null;
+  try {
+  // MODEL_WORKFLOW_START: shared production/evaluation boundary, after authenticated file loading.
+  const originalText=originalPlainText(bytes,fileMime);
   const dataUrl=`data:${fileMime};base64,${base64(bytes)}`;
-  const filePart=fileMime.startsWith('image/')?{type:'input_image',image_url:dataUrl,detail:'high'}:{type:'input_file',filename:filePath.split('/').pop()||'document',file_data:dataUrl};
+  const filePart=originalText!==null?{type:'input_text',text:JSON.stringify({original_document_text:originalText})}:fileMime.startsWith('image/')?{type:'input_image',image_url:dataUrl,detail:'high'}:{type:'input_file',filename:filePath.split('/').pop()||'document',file_data:dataUrl};
   const schema={type:'object',additionalProperties:false,properties:{
     source_language:{type:'string'},extracted_text:{type:'string'},document_translation:{type:'string'},document_type:{type:['string','null']},summary:{type:'string'},next_step:{type:'string'},reference_copy:{type:'string'},customer_copy:{type:'string'},response_recipient:{type:['string','null']},response_subject:{type:'string'},traffic_light:{type:'string',enum:['green','yellow','red','white']},assessment_reasoning:{type:'string'},document_date:{type:['string','null']},sender_or_author:{type:['string','null']},recipient:{type:['string','null']},reference_numbers:{type:'array',items:{type:'string'}},deadlines:{type:'array',items:{type:'string'}},monetary_amounts:{type:'array',items:{type:'string'}},confidence:{type:'string',enum:['hoch','mittel','niedrig']}
   },required:['source_language','extracted_text','document_translation','document_type','summary','next_step','reference_copy','customer_copy','response_recipient','response_subject','traffic_light','assessment_reasoning','document_date','sender_or_author','recipient','reference_numbers','deadlines','monetary_amounts','confidence']};
 
   const spokenContextInstruction=voiceContext?`\n\nZusätzlicher, vom Nutzer bestätigter gesprochener Kontext (${voiceLanguage||'Sprache unbekannt'}): ${voiceContext}\nDieser Kontext ist NICHT Teil des Dokuments. Verwende ihn nur zur Einordnung in summary, next_step und gegebenenfalls reference_copy/customer_copy. Er darf niemals in extracted_text oder document_translation hineingemischt werden.`:'';
-  const instructions=`Du verarbeitest ein Dokument für ASH Workspace Gold in einem kontrollierten Arbeitsablauf. Referenzsprache des Antwortschreibens: ${referenceLanguageName}. Kundensprache/Ausgabesprache: ${outputLanguageName}. Gewählter Länder-/Rechtsraum-Kontext: ${countryContextName}. Sprache und Land sind getrennte Parameter. Referenzsprache, Kundensprache und Land müssen unabhängig voneinander behandelt werden. Das Land bestimmt nur den Kontext, in dem landesspezifische Begriffe, Behörden, Fristen oder organisatorische Besonderheiten vorsichtig eingeordnet werden sollen. Behaupte keine landesspezifische Rechtslage, wenn sie aus dem Dokument oder gesicherten Kenntnissen nicht belastbar folgt. Im Zweifel kennzeichne die Unsicherheit ausdrücklich.
+  const instructions=`Du verarbeitest ein Dokument für ASH Workspace Gold in einem kontrollierten Arbeitsablauf. Referenzsprache des Antwortschreibens: ${referenceLanguageName}. Kundensprache/Ausgabesprache: ${outputLanguageName}. Gewählter Länder-/Rechtsraum-Kontext: ${countryContextName}. Sprache und Land sind getrennte Parameter. Referenzsprache, Kundensprache und Land müssen unabhängig voneinander behandelt werden. Das Land bestimmt nur den Kontext, in dem landesspezifische Begriffe, Behörden, Fristen oder organisatorische Besonderheiten vorsichtig eingeordnet werden sollen. Diese Dokumentanalyse führt keine externe Recherche durch. Rechtsbehauptungen aus der Unterlage nur als deren Aussagen wiedergeben; keine Rechtslage aus Modellwissen ergänzen. Wo ein externer Nachweis fehlt, benenne die konkrete Recherchefrage und die offene Grundlage.
 
-Lies das Original vollständig und sachlich. Erfinde keine Tatsachen, Namen, Aktenzeichen, Fristen, Beträge oder Rechtspositionen. Wenn Angaben für ein Antwortschreiben fehlen, verwende neutrale Platzhalter in eckigen Klammern statt zu raten.
+Lies das Original vollständig und sachlich. Beziehe Lücken ausdrücklich auf den vorgelegten Text: „im vorliegenden Text nicht genannt“ bedeutet nicht, dass die Information oder ein Dokument anderswo nicht existiert. Wenn eine Notiz ein Angebot oder einen Bescheid nur beschreibt, klassifiziere die vorliegende Notiz nicht als dieses vollständige Angebot oder diesen Bescheid. Erfinde keine Tatsachen, Namen, Aktenzeichen, Fristen, Beträge oder Rechtspositionen. Wenn Angaben für ein Antwortschreiben fehlen, verwende neutrale Platzhalter in eckigen Klammern statt zu raten.
 
 Erzeuge GENAU diese getrennten Ergebnisse:
 0. source_language: erkannte Originalsprache des Dokuments als kurzer Sprachcode, bevorzugt ISO-639-1 wie de, pl, en, tr, ru, ar, fa, fr, ro, bg, vi. Wenn das Dokument mehrsprachig ist, nenne die dominante Sprache.
-1. extracted_text: möglichst originalgetreue Transkription in der Sprache des Dokuments.
+1. extracted_text: möglichst originalgetreue Transkription in der Sprache des Dokuments. Auch eine kurze Notiz ist eine vorhandene Unterlage. Aussagen über fehlende Bescheide oder Anlagen bedeuten NICHT, dass die übergebene Datei fehlt. Keine Kommentare oder Zusammenfassungen in die Transkription einfügen. Bei original_document_text diesen Text vollständig und unverändert übernehmen.
 2. document_translation: vollständige, gut lesbare Übersetzung des wesentlichen Dokumentinhalts auf ${outputLanguageName}. Eigennamen, Aktenzeichen, Beträge und Datumsangaben unverändert lassen.
 3. summary: verständliche Erklärung auf ${outputLanguageName}. Beziehe den gewählten Kontext ${countryContextName} nur dort ein, wo er für das Verständnis relevant und belastbar ist.
 4. next_step: konkrete organisatorische nächste Schritte auf ${outputLanguageName}, priorisiert und kurz. Bei landesspezifischer Unsicherheit darauf hinweisen, dass eine Prüfung für ${countryContextName} erforderlich ist.
-5. reference_copy: ein sachliches, professionelles, versandfertiges Antwortschreiben auf ${referenceLanguageName}. Es muss zum Dokument passen, darf keine nicht belegten Rechtsbehauptungen oder Anerkenntnisse erfinden und soll vorhandene Referenzen/Aktenzeichen korrekt übernehmen. Wenn noch eine zwingende Angabe fehlt, verwende [PLATZHALTER]. Kein Kommentar vor oder nach dem Schreiben.
+5. reference_copy: ein sachliches, professionelles, versandfertiges Antwortschreiben auf ${referenceLanguageName}. Es muss zum Dokument passen, darf keine nicht belegten Rechtsbehauptungen oder Anerkenntnisse erfinden und soll vorhandene Referenzen/Aktenzeichen korrekt übernehmen. Zuerst Absenderrolle, Gegenüber und Zweck aus der Unterlage bestimmen. Fehlt diese Grundlage, reference_copy='', customer_copy='', response_recipient=null und response_subject=''; in next_step gezielt nach Rolle, Empfänger und Zweck fragen. Ein Antrag oder eine Eingangsbestätigung erlaubt keine Antwort im Namen der empfangenden Stelle. Nur bei geklärter Rolle für fehlende Adress-/Namensdetails [PLATZHALTER] verwenden. Kein Kommentar vor oder nach dem Schreiben.
 6. customer_copy: Wenn ${referenceLanguageName} und ${outputLanguageName} verschieden sind, eine inhaltlich möglichst genaue Übersetzung genau der reference_copy auf ${outputLanguageName}, damit der Kunde versteht, was versendet werden soll. Keine neuen Inhalte hinzufügen. Wenn beide Sprachen identisch sind, gib eine leere Zeichenfolge zurück, weil die Referenzfassung nur einmal ausgegeben wird.
 7. response_recipient: der aus dem Dokument belastbar erkennbare Empfänger des Antwortschreibens, regelmäßig der Absender des eingegangenen Dokuments. Bei Unklarheit null, niemals raten.
 8. response_subject: kurzer Betreff auf ${referenceLanguageName} für das Antwortschreiben mit vorhandener Referenz oder Aktenzeichen.
@@ -87,14 +91,11 @@ Erzeuge GENAU diese getrennten Ergebnisse:
 
 Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar aus einem ausdrücklich genannten Datum und Zeitraum folgen. Eine Frist nach Zugang darf ohne belegten Zugang nicht aus dem Briefdatum berechnet werden. Prüfdatum: ${new Date().toISOString().slice(0,10)}. Das Ergebnis bleibt ein prüfbarer Entwurf vor Freigabe.${CASE_EVIDENCE_RULES}${spokenContextInstruction}`;
 
-  log('info','provider_request_started',{file_mime:fileMime,file_bytes:bytes.byteLength,reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,target_country:requestedCountry});
-  const provider=await fetch('https://api.openai.com/v1/responses',{method:'POST',signal:AbortSignal.timeout(90000),headers:{Authorization:`Bearer ${providerKey}`,'Content-Type':'application/json'},body:JSON.stringify({model:'gpt-5.6-luna',store:false,reasoning:{effort:'low'},instructions,input:[{role:'user',content:[{type:'input_text',text:`Verarbeite dieses Dokument vollständig. Referenzsprache: ${referenceLanguageName}. Kundensprache: ${outputLanguageName}. Länder-/Rechtsraum-Kontext: ${countryContextName}. Gib ausschließlich das strukturierte Ergebnis zurück.`},filePart]}],text:{format:{type:'json_schema',name:'as_workspace_gold_document_workflow_v123',strict:true,schema}},max_output_tokens:12000})}).catch(()=>null);
-  if(!provider){log('error','provider_unreachable');return reply(req,{error:'KI-Dienst ist derzeit nicht erreichbar',attempt_id:attemptId},502);}
-  const raw=await provider.json().catch(()=>({}));
-  if(!provider.ok){log('error','provider_rejected',{provider_status:provider.status});return reply(req,{error:'KI-Dienst konnte das Dokument nicht verarbeiten',provider_status:provider.status,attempt_id:attemptId},502);}
-  const output=raw?.output_text??raw?.output?.flatMap((item:any)=>item?.content||[]).find((item:any)=>item?.type==='output_text')?.text;
-  if(!output){log('error','provider_output_missing');return reply(req,{error:'KI-Dienst hat kein auswertbares Ergebnis geliefert',attempt_id:attemptId},502);}
-  let parsed;try{parsed=JSON.parse(output);}catch{log('error','provider_output_invalid');return reply(req,{error:'KI-Ergebnis hatte ein ungültiges Format',attempt_id:attemptId},502);}
+  const request={model:'gpt-5.6-luna',store:false,reasoning:{effort:'low'},instructions,input:[{role:'user',content:[{type:'input_text',text:`Verarbeite dieses Dokument vollständig. Referenzsprache: ${referenceLanguageName}. Kundensprache: ${outputLanguageName}. Länder-/Rechtsraum-Kontext: ${countryContextName}. Gib ausschließlich das strukturierte Ergebnis zurück.`},filePart]}],text:{format:{type:'json_schema',name:'as_workspace_gold_document_workflow_v123',strict:true,schema}},max_output_tokens:12000};
+  const reviewContent=[{type:'input_text',text:JSON.stringify({review_date:new Date().toISOString().slice(0,10),kind:'document',country_context:countryContextName,reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,voice_context:voiceContext,scope:'Original document analysis only; no external research was performed.'})},filePart];
+  const analysis=await runReviewedModel({providerKey,request,reviewContent,validate:raw=>finalizeDocumentResult(raw,{schema,originalText,referenceLanguage:requestedReferenceLanguage,outputLanguage:requestedOutputLanguage})});
+  const parsed=analysis.result;
+  // MODEL_WORKFLOW_END
 
   const processedAt=new Date().toISOString();
   const detectedSourceLanguage=typeof parsed?.source_language==='string'&&parsed.source_language.trim()?parsed.source_language.trim().toLowerCase().slice(0,16):(document.source_language||null);
@@ -103,5 +104,9 @@ Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar a
   if(!consumed) return reply(req,{error:'Die Analysefreigabe wurde zwischenzeitlich bereits verwendet. Bitte erneut bestätigen.'},409);
 
   log('info','completed',{reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,target_country:requestedCountry});
-  return reply(req,{status:'completed',message:'Dokument wurde mit erkannter Originalsprache, frei gewähltem Sprachpaar, Ampel und Länder-/Rechtsraum-Kontext verarbeitet. Bitte alles prüfen und bewusst freigeben.',release:'V123',attempt_id:attemptId,reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,target_country:requestedCountry,target_country_label:countryContextName,suggested_case_id:null,case_match_reason:null,...parsed,source_language:detectedSourceLanguage});
+  return reply(req,{status:'completed',message:'Dokument wurde mit erkannter Originalsprache, frei gewähltem Sprachpaar, Ampel und Länder-/Rechtsraum-Kontext verarbeitet. Bitte alles prüfen und bewusst freigeben.',release:MODEL_QUALITY_VERSION,attempt_id:attemptId,reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,target_country:requestedCountry,target_country_label:countryContextName,suggested_case_id:null,case_match_reason:null,...parsed,source_language:detectedSourceLanguage});
+  } catch(error) {
+    log('error','quality_or_provider_failed',{status:error instanceof ModelWorkflowError?error.status:502});
+    return reply(req,{error:error instanceof ModelWorkflowError?error.message:'Die Dokumentprüfung konnte nicht abgeschlossen werden.',attempt_id:attemptId},error instanceof ModelWorkflowError?error.status:502);
+  }
 });
