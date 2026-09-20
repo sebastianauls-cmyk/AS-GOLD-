@@ -10,6 +10,7 @@ import {createHandoffPdf} from '../app/modules/services/professionalHandoffExpor
 import {buildProfessionalHandoff} from '../app/modules/cases/lib/professionalHandoff.mjs'
 import {roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {roadmapUi} from '../app/modules/cases/lib/customerRoadmapCopy.mjs'
+import {updateRoadmapProgress} from '../supabase/functions/_shared/customerRoadmap.mjs'
 
 const fonts=['DejaVuSans.ttf','DejaVuSans-Bold.ttf'].map(name=>fs.readFileSync('public/fonts/'+name).toString('base64'))
 const directory=fs.mkdtempSync(path.join(os.tmpdir(),'ash-pdf-test-'))
@@ -20,6 +21,27 @@ const outputs=[['roadmap',await createRoadmapPdf(record,{fonts}),'Wird grün, so
 const samples={de:'Grüße, nächste Schritte und 3.000,00 EUR.',en:'Documents and next steps.',fr:'Échéance et pièces à vérifier.',tr:'İşlem, görüş ve sonraki adımlar.',pl:'Zażółć gęślą jaźń.',ru:'Проверка документов.',ar:'مراجعة المستندات والخطوات التالية',fa:'بررسی اسناد و مراحل بعدی',ro:'Înștiințare și următorii pași.',bg:'Проверка на документите.',vi:'Kiểm tra tài liệu và thời hạn.'}
 for(const [language,text] of Object.entries(samples))outputs.push([language,await createTextPdf({fonts,language,blocks:[{text,kind:'title'},{text:'🟡 '+text},{text:('CHECK '+text+' ').repeat(180)},{text:'END-OF-EXPORT',light:'green'}]}),text])
 const poppler=spawnSync('pdftotext',['-v'],{encoding:'utf8'}).status===0
+let reopened=roadmapTestRecord()
+for(const id of ['frist','anfragen','antworten','abschluss'])reopened={...reopened,...updateRoadmapProgress(reopened,{step_id:id,done:true,note:'Bestätigung mit Beleg abgelegt.'})}
+reopened={...reopened,...updateRoadmapProgress(reopened,{step_id:'anfragen',done:false,note:'Antwort fehlt; Anfrage korrigieren.'})}
+const reopenedPdf=await createRoadmapPdf(reopened,{fonts})
+const reopenedFile=path.join(directory,'reopened-roadmap.pdf')
+fs.writeFileSync(reopenedFile,Buffer.from(await reopenedPdf.arrayBuffer()))
+if(poppler) {
+  const extracted=spawnSync('pdftotext',['-raw',reopenedFile,'-'],{encoding:'utf8'})
+  assert.equal(extracted.status,0,extracted.stderr)
+  const text=extracted.stdout.replace(/\s+/g,' ')
+  for(const expected of [
+    'Zuerst erforderlich: 2. Beide Auskunftsanfragen vorbereiten',
+    'Zuerst erforderlich: 1. Empfangsbestätigung prüfen und einreichen · 3. Antworten auf Vollständigkeit prüfen',
+    'Automatisch wieder geöffnet nach Wiederöffnung von: 2. Beide Auskunftsanfragen vorbereiten',
+    'Vorherige Schritte sind noch offen.',
+    reopened.result.facts[0].evidence[0].quote,
+    reopened.source_documents[0].title
+  ])assert.ok(text.includes(expected),'PDF retains progress context and fact provenance: '+expected)
+  assert.equal(text.split('Automatisch wieder geöffnet nach Wiederöffnung von:').length-1,2,'both direct and transitive reopening appear in the actual PDF')
+  assert.equal(text.split('Vorherige Schritte sind noch offen.').length-1,2,'both blocked actions are identified in the actual PDF')
+}
 for(const [reference,customer] of [['de','en'],['de','ar'],['ar','de']]) {
   const bilingual=roadmapTestRecord()
   bilingual.reference_language=reference;bilingual.output_language=customer
@@ -78,4 +100,4 @@ for(const [name,blob,expected] of outputs) {
 assert.equal(pdfLight('🟡 yellow'),'yellow');assert.equal(pdfLight('🟢 green'),'green')
 assert.deepEqual(pdfTextBlocks([{text:'Titel',light:'🟡 yellow'}])[0].light,'yellow')
 assert.equal(pdfTextBlocks([{text:'🟡 Zahlung offen'}])[0].text,'Zahlung offen')
-console.log(`PDF repair: actual roadmap, letter and handoff renderers plus 11 language fixtures and bilingual Word/PDF letters; embedded fonts, text mapping, no raster pages${poppler?', extracted text, separate translation pages and long-content end markers':''} passed. Samples: ${directory}`)
+console.log(`PDF repair: actual roadmap, letter and handoff renderers plus 11 language fixtures and bilingual Word/PDF letters; embedded fonts, text mapping, no raster pages${poppler?', extracted text, fact provenance, reopened dependencies, separate translation pages and long-content end markers':''} passed. Samples: ${directory}`)

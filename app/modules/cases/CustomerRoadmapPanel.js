@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { roadmapStyle, roadmapSource, roadmapFingerprint, roadmapSteps, ROADMAP_COLORS, validateRoadmapInput } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
-import { readableStepText, roadmapProgressLabel } from './lib/roadmapDisplay.mjs'
+import { readableStepText, roadmapProgressLabel, roadmapStepReference } from './lib/roadmapDisplay.mjs'
 import { roadmapUi } from './lib/customerRoadmapCopy.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage'
 import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, authorizeRoadmap, roadmapErrorMessage } from '../services/customerRoadmap'
@@ -49,8 +49,9 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
         <div className="roadmapStepHead"><h4>{index+1}. {step.title}</h4><Dot light={step.light} label={ui[step.light]}/></div>
         <p className="roadmapPhase">{ui[step.phase]}</p>
         <dl>{[['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]].filter(([,value])=>value).map(([key,value])=><div key={key}><dt>{ui[key]}</dt><dd>{readableStepText(value,result.steps)}</dd></div>)}</dl>
-        {step.depends_on.length>0&&<p className="roadmapMeta">{ui.afterwards}: {step.depends_on.map(id=>`${steps.findIndex(item=>item.id===id)+1}. ${steps.find(item=>item.id===id)?.title}`).join(' · ')}</p>}
+        {step.depends_on.length>0&&<p className="roadmapMeta">{ui.prerequisites}: {step.depends_on.map(id=>roadmapStepReference(id,steps)).join(' · ')}</p>}
         <Evidence items={step.evidence} documents={documents} ui={ui} onOpenDocument={onOpenDocument}/>
+        {!step.done&&step.update?.reopened_by_step&&<p className="roadmapMeta">{ui.reopenedAfter}: {roadmapStepReference(step.update.reopened_by_step,steps)}</p>}
         {step.update?.note&&<p className="roadmapRecorded"><b>{ui.progress}:</b> {step.update.note}</p>}
         {step.blocked&&<p className="roadmapMeta">{ui.blocked}</p>}
         {onProgress&&<button className="secondary" type="button" disabled={busy||stale||(!step.done&&step.blocked)} onClick={()=>{setEditing(step.id);setNote('')}}>{step.done?controls.reopen:controls.done}</button>}

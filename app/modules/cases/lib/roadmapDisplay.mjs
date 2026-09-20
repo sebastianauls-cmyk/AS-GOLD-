@@ -1,3 +1,8 @@
+export function roadmapStepReference(id,steps=[]) {
+  const index=steps.findIndex(step=>step.id===id)
+  return index<0?String(id||''):`${index+1}. ${steps[index].title}`
+}
+
 // Resolve navigation IDs in action text only. Original quotations, facts and
 // letters remain verbatim and are never rewritten by this display helper.
 export function readableStepText(text,steps=[]) {

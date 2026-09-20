@@ -1,4 +1,4 @@
-import { readableStepText } from '../cases/lib/roadmapDisplay.mjs'
+import { readableStepText, roadmapStepReference } from '../cases/lib/roadmapDisplay.mjs'
 import { createTextPdf } from './textPdf.mjs'
 import { roadmapSteps, ROADMAP_COLORS } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
 import { roadmapUi } from '../cases/lib/customerRoadmapCopy.mjs'
@@ -22,24 +22,30 @@ export function roadmapExportBlocks(record,{letterId}={}) {
     }
     return blocks
   }
+  const titles=new Map(record.source_documents.map(doc=>[doc.id,doc.title]))
+  const addEvidence=items=>{
+    if(items?.length)add(`${ui.evidence}: ${items.map(entry=>`${titles.get(entry.document_id)||entry.document_id}: „${entry.quote}“`).join('\n')}`,'meta')
+  }
   add(record.result.title,'title')
   add(ui.draft,'meta')
   add(record.style.salutation)
   add(record.result.opening)
   for(const point of record.result.key_points) add(point,'bullet')
   for(const [key,value] of [['meaning',record.result.meaning],['next',record.result.next],['action',record.result.customer_action]]) {add(ui[key],'heading');add(value)}
-  if(record.result.facts.length) {add(ui.facts,'heading');for(const fact of record.result.facts)add(fact.text,'bullet')}
+  if(record.result.facts.length) {add(ui.facts,'heading');for(const fact of record.result.facts){add(fact.text,'bullet');addEvidence(fact.evidence)}}
   if(record.result.open_questions.length) {
     add(ui.questions,'heading')
     for(const question of record.result.open_questions) add(`${question.question}\n${ui.owner}: ${question.who}\n${ui.reason}: ${question.why}`)
   }
-  const titles=new Map(record.source_documents.map(doc=>[doc.id,doc.title]))
   roadmapSteps(record).forEach((step,index)=>{
     add(`${index+1}. ${step.title}`,'step',step.light)
     add(`${ui[step.phase]} · ${ui[step.light]}`,'meta')
     for(const [key,value] of [['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]]) if(value) add(`${ui[key]}: ${readableStepText(value,record.result.steps)}`)
+    if(step.depends_on.length)add(`${ui.prerequisites}: ${step.depends_on.map(id=>roadmapStepReference(id,record.result.steps)).join(' · ')}`,'meta')
+    if(!step.done&&step.update?.reopened_by_step)add(`${ui.reopenedAfter}: ${roadmapStepReference(step.update.reopened_by_step,record.result.steps)}`,'meta')
     if(step.update?.note) add(`${ui.progress}: ${step.update.note}${step.done?' · '+ui.complete:''}`,'meta')
-    if(step.evidence.length) add(`${ui.evidence}: ${step.evidence.map(entry=>`${titles.get(entry.document_id)||entry.document_id}: „${entry.quote}“`).join('\n')}`,'meta')
+    if(step.blocked)add(ui.blocked,'meta')
+    addEvidence(step.evidence)
   })
   add(record.style.closing||record.result.closing)
   add(record.style.sender_name)
