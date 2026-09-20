@@ -4,6 +4,7 @@ import { clearGuestTestRequest } from './guestTestRequest.mjs'
 import { getAuthErrorMessage } from './authMessages.mjs'
 import { signInTeamAccount } from '../team-account/teamAccountRepository.js'
 import { finishPasswordRecovery, isPasswordRecoveryActive, passwordRecoveryRevision } from './passwordRecoveryFlow.mjs'
+import { getWorkspaceConnectionCopy } from './workspaceConnectionCopy.mjs'
 
 const resetFeedback={
   de:{emailRequired:'Bitte zuerst Ihre E-Mail-Adresse eingeben.',sent:'Wenn die Adresse registriert ist, wurde ein Link zum Zurücksetzen gesendet.'},
@@ -58,14 +59,15 @@ export function createWorkspaceAuthActions({
   setMessage,
   sessionLoadRef
 }){
-  async function performLoadApp(session){
-    const recoveryAtStart=passwordRecoveryRevision()
-    const interrupted=()=>isPasswordRecoveryActive()||passwordRecoveryRevision()!==recoveryAtStart
+  async function performLoadApp(session,request){
+    const recoveryAtStart=request.recoveryRevision
+    const interrupted=()=>isPasswordRecoveryActive()||passwordRecoveryRevision()!==recoveryAtStart||(sessionLoadRef&&sessionLoadRef.current!==request)
     if(interrupted())return false
     setMessage('')
+    setScreen('workspace-connecting')
     const accessSnapshot=await getWorkspaceAccess(supabase)
     if(interrupted())return false
-    if(accessSnapshot.error){setMessage(accessSnapshot.error.message);setScreen('login');return false}
+    if(accessSnapshot.error){setMessage(getWorkspaceConnectionCopy(language).unavailable);setScreen('workspace-unavailable');return false}
     const row=accessSnapshot.access
     if(!row?.active||row?.status!=='approved'){
       setMessage(pendingMessages[language]||pendingMessages.de)
@@ -77,7 +79,7 @@ export function createWorkspaceAuthActions({
     const ownerId=session.user.id
     const bundle=await loadWorkspaceBundle(supabase,ownerId)
     if(interrupted())return false
-    if(bundle.error) setMessage(bundle.error.message)
+    if(bundle.error){setMessage(getWorkspaceConnectionCopy(language).unavailable);setScreen('workspace-unavailable');return false}
     let nextPrivacy=bundle.privacy
     if(!nextPrivacy){
       const createdPrivacy=await ensureRegistrationPrivacy(supabase,{ownerId,registrationMeta:session.user?.user_metadata||{},privacyNoticeVersion,termsVersion})
@@ -98,9 +100,40 @@ export function createWorkspaceAuthActions({
     const key=`${session?.user?.id||''}:${session?.access_token||''}`
     const active=sessionLoadRef?.current
     if(key&&active?.key===key&&active.promise)return active.promise
-    const promise=performLoadApp(session)
-    if(sessionLoadRef)sessionLoadRef.current={key,promise}
+    const request={key,promise:null,recoveryRevision:passwordRecoveryRevision()}
+    if(sessionLoadRef)sessionLoadRef.current=request
+    const promise=Promise.resolve().then(()=>performLoadApp(session,request)).catch(()=>{
+      if(isPasswordRecoveryActive()||passwordRecoveryRevision()!==request.recoveryRevision||(sessionLoadRef&&sessionLoadRef.current!==request))return false
+      setMessage(getWorkspaceConnectionCopy(language).unavailable)
+      setScreen('workspace-unavailable')
+      return false
+    }).then(loaded=>{
+      // Failed requests must not poison later attempts with the same valid token.
+      if(!loaded&&sessionLoadRef?.current===request)sessionLoadRef.current={key:null,promise:null}
+      return loaded
+    })
+    request.promise=promise
     return promise
+  }
+
+  async function retryWorkspace(){
+    const previousRequest=sessionLoadRef?.current
+    const recoveryAtStart=passwordRecoveryRevision()
+    const interrupted=()=>isPasswordRecoveryActive()||passwordRecoveryRevision()!==recoveryAtStart||(sessionLoadRef&&sessionLoadRef.current!==previousRequest)
+    setMessage('')
+    setScreen('workspace-connecting')
+    try{
+      const {data,error}=await getAuthSession(supabase)
+      if(interrupted())return false
+      if(error||!data?.session){setScreen('login');return false}
+      return loadApp(data.session)
+    }catch{
+      if(!interrupted()){
+        setMessage(getWorkspaceConnectionCopy(language).unavailable)
+        setScreen('workspace-unavailable')
+      }
+      return false
+    }
   }
 
   async function signIn(event){
@@ -183,5 +216,5 @@ export function createWorkspaceAuthActions({
     return true
   }
 
-  return {loadApp,signIn,signInTeam,startGuestTest,resetPassword,completePasswordRecovery,register}
+  return {loadApp,retryWorkspace,signIn,signInTeam,startGuestTest,resetPassword,completePasswordRecovery,register}
 }

@@ -11,6 +11,7 @@ import { ui } from '../public/publicUi'
 import { passwordRecoveryUi, passwordUi } from '../auth/passwordUi'
 import { ProtectedWorkspaceShell } from './ProtectedWorkspaceShell'
 import { LoadingSurface } from './LoadingSurface'
+import { WorkspaceConnectionSurface } from '../auth/WorkspaceConnectionSurface'
 import { AuthSurface } from '../auth/AuthSurface'
 import { PublicLanding } from '../public/PublicLanding'
 import { CasesSurface, ClientDetailSurface, ClientsSurface, DeadlinesSurface } from '../cases/WorkspaceCaseSurfaces'
@@ -233,7 +234,7 @@ export default function WorkspaceController(){
     supabase,ownerId:user?.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,deletionRequests,deletionBusy,privacyBusy,privacyCopy:v28,serverCopy:sct,setDeletionBusy,setPrivacyBusy,setDeletionRequests,setPrivacySettings,setMessage,recordServerAudit
   })
 
-  const {loadApp,signIn,signInTeam,startGuestTest,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
+  const {loadApp,retryWorkspace,signIn,signInTeam,startGuestTest,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
     supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,guestCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage,sessionLoadRef
   })
 
@@ -338,6 +339,8 @@ export default function WorkspaceController(){
   }
 
   if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
+
+  if(screen==='workspace-connecting'||screen==='workspace-unavailable') return <WorkspaceConnectionSurface language={language} busy={screen==='workspace-connecting'} onRetry={retryWorkspace} onSignOut={()=>signOutSession(supabase)}/>
 
   if(screen==='guest-test') return <LoadingSurface language={language} checking={guestCopy.starting}/>
 
