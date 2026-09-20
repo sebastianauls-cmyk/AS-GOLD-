@@ -8,6 +8,7 @@ import { InstallAppButton } from '../public/InstallAppButton'
 import { TeamAccountLoginNotice } from '../team-account/TeamAccountLoginNotice'
 import { getTeamAccountCopy, isTeamLoginScreen } from '../team-account/teamAccountConfig.mjs'
 import { APP_VERSION } from '../release/appRelease.mjs'
+import { finishPasswordRecovery } from './passwordRecoveryFlow.mjs'
 
 const v131AuthCopy={
   de:{badge:'Stand v131',headline:'Mehr als nur anmelden – Ihr digitaler Arbeitsbereich',lead:'Fälle verstehen, Dokumente auswerten, Länder vergleichen und Ergebnisse verständlich ausgeben.',features:[['📄','Dokumente & Fotos','Hochladen, erkennen, strukturieren und fallbezogen auswerten.'],['🌍','Sprachen & Länder','Mehrsprachige Eingabe und Ausgabe sowie Rechtsraumvergleich nach Zielland.'],['🚦','Analyse mit Ampel','Ergebnisse, Risiken, fehlende Unterlagen und nächste Schritte sofort erkennen.'],['✉️','Zweisprachige Schreiben','Kunden- und Empfängerschreiben auf Wunsch in zwei Sprachen ausgeben.'],['🎙️','Eingabe per Sprache','Sachverhalte auch per Mikrofon erfassen und weiterverarbeiten.'],['📤','Ausgabe & Freigabe','PDF/Word-Workflows, Vorschau und Freigabe vor der Weitergabe.']],hint:'Noch keinen Zugang? Kostenlos registrieren oder zuerst die Erklärung ansehen.',explain:'Erklärung ansehen'},
@@ -35,6 +36,7 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
   const isTeamLogin=isTeamLoginScreen(screen)
   const team=getTeamAccountCopy(language)
   const resetSensitiveFields=()=>{
+    finishPasswordRecovery()
     setShowPassword(false)
     setShowPassword2(false)
     setPassword('')
