@@ -1,3 +1,4 @@
+import { readableDocumentSummary } from '../language/documentLanguageWorkflow.mjs'
 import { createTextPdf } from './textPdf.mjs'
 import { assessmentEvidenceText } from '../cases/lib/assessmentEvidenceText.mjs'
 import { OFFICE_EXPORT_RENDER_VERSION, createPptxBlob, createXlsxBlob } from './officeExportsUnicode.js'
@@ -66,7 +67,7 @@ export function buildWorkspaceExportRows({ref,data,copy,outputLanguage='de'}){
     const label=normalized==='yellow'||normalized==='gelb'?ex.yellow:normalized==='green'||normalized==='grün'||normalized==='gruen'?ex.green:normalized==='red'||normalized==='rot'?ex.red:value||'—'
     return trafficLightDot(value)+' '+label
   }
-  if(ref.kind==='document')return [[ex.documentTitle,''],languageRow,[ex.document,ref.item.title||ex.document],[ex.documentType,ref.item.document_type||''],[ex.documentDate,ref.item.document_date||''],[ex.analysis,ref.item.analysis_summary||ex.noAnalysis],[ex.traffic,localLight(ref.item.analysis_traffic_light)],[ex.nextStep,ref.item.analysis_next_step||''],[ex.extracted,ref.item.extracted_text||''],[approvalUi.body,composeBilingualLetter(ref.item,ref.item.customer_copy_language||language)]]
+  if(ref.kind==='document')return [[ex.documentTitle,''],languageRow,[ex.document,ref.item.title||ex.document],[ex.documentType,ref.item.document_type||''],[ex.documentDate,ref.item.document_date||''],[ex.analysis,readableDocumentSummary(ref.item.analysis_summary,ref.item.extracted_text)||ex.noAnalysis],[ex.traffic,localLight(ref.item.analysis_traffic_light)],[ex.nextStep,ref.item.analysis_next_step||''],[ex.extracted,ref.item.extracted_text||''],[approvalUi.body,composeBilingualLetter(ref.item,ref.item.customer_copy_language||language)]]
   const caseDocuments=data.documents.filter(item=>item.case_id===ref.item.id)
   const caseAssessments=data.assessments.filter(item=>item.case_id===ref.item.id)
   const caseSources=data.sourceStatus.filter(item=>item.case_id===ref.item.id)

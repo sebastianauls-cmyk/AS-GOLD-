@@ -42,7 +42,9 @@ export async function legalComparisonErrorMessage(error,fallback){
   try{
     if(typeof error.context?.json==='function'){
       const payload=await error.context.json()
-      return payload?.error||payload?.message||payload?.detail||error.message||fallback
+      const message=payload?.error||payload?.message||payload?.detail||error.message||fallback
+      const issues=Array.isArray(payload?.issues)?payload.issues.slice(0,3).map(issue=>String(issue.reason||'').slice(0,700)).filter(Boolean):[]
+      return issues.length?message+'\n\n'+issues.map((reason,index)=>`${index+1}. ${reason}`).join('\n\n'):message
     }
   }catch{}
   return error.message||fallback

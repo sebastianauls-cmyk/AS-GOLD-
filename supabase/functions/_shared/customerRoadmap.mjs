@@ -51,6 +51,13 @@ export function roadmapSource(item,documents=[],assessments=[]) {
   }
 }
 
+// Previous AI summaries remain part of the freshness fingerprint, but are not
+// evidence for a new generation. This also avoids repeatedly feeding entire
+// translations and old drafts back into the model and its independent review.
+export function roadmapModelSource(source){
+  return {case:source.case,documents:source.documents.map(({id,title,data_classification,extracted_text})=>({id,title,data_classification,extracted_text})),assessments:source.assessments.filter(entry=>entry.source_reviewed_at&&entry.source_excerpt)}
+}
+
 export async function roadmapFingerprint(source) {
   const bytes = new TextEncoder().encode(JSON.stringify(source))
   const digest = await globalThis.crypto.subtle.digest('SHA-256',bytes)

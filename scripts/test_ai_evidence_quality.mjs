@@ -10,7 +10,7 @@ const encode=value=>new TextEncoder().encode(value)
 const docCode=fs.readFileSync('supabase/functions/gold-document-analysis/index.ts','utf8')
 const schemaLiteral=docCode.slice(docCode.indexOf('const schema=')+13,docCode.indexOf(';\n\n  const spokenContextInstruction'))
 const schema=Function('return ('+schemaLiteral+')')()
-const base={source_language:'de',extracted_text:'',document_translation:'Original',document_type:'Notiz',summary:'Eine Entscheidung fehlt.',next_step:'Bitte Absenderrolle, Empfänger und Zweck klären.',reference_copy:'Wir bestätigen den Eingang Ihres Antrags.',customer_copy:'Wrong role',response_recipient:null,response_subject:'Eingang',traffic_light:'yellow',assessment_reasoning:'Entscheidung nicht bestätigt.',document_date:null,sender_or_author:null,recipient:null,reference_numbers:[],deadlines:[],monetary_amounts:[],confidence:'niedrig'}
+const base={source_language:'de',extracted_text:'',document_translation:'Original',document_type:'Notiz',summary:'Eine Entscheidung fehlt.',next_step:'Bitte Absenderrolle, Empfänger und Zweck klären.',response_sender:null,response_role_evidence:'',reference_copy:'Wir bestätigen den Eingang Ihres Antrags.',customer_copy:'Wrong role',response_recipient:null,response_subject:'Eingang',traffic_light:'yellow',assessment_reasoning:'Entscheidung nicht bestätigt.',document_date:null,sender_or_author:null,recipient:null,reference_numbers:[],deadlines:[],monetary_amounts:[],confidence:'niedrig'}
 for(const item of historyCaseCorpus)for(const doc of item.documents){
   const original=originalPlainText(encode(doc.extracted_text),'text/plain')
   const result=finalizeDocumentResult({...base,extracted_text:'Kein Dokument vorgelegt.'},{schema,originalText:original,referenceLanguage:'de',outputLanguage:'de'})
@@ -33,6 +33,12 @@ assert.throws(()=>finalizeDocumentResult(base,{schema}),/Transkription/)
 assert.throws(()=>finalizeDocumentResult({...base,extracted_text:'Original',traffic_light:'blue'},{schema}),/Pflichtfeld/)
 const known=finalizeDocumentResult({...base,extracted_text:'Original',sender_or_author:'Behörde',recipient:'Nora Beispiel',response_recipient:'Behörde',reference_copy:'Sehr geehrte Damen und Herren, ich bitte um Auskunft.'},{schema,referenceLanguage:'de',outputLanguage:'pl'})
 assert.ok(known.reference_copy);assert.equal(known.customer_copy,'Wrong role','role grounding is not a translation rewrite')
+
+const explicitOriginal='Absender eines Schreibens soll Mara Beispiel selbst sein, keine Vertretung.'
+const explicit=finalizeDocumentResult({...base,extracted_text:explicitOriginal,response_sender:'Mara Beispiel',response_role_evidence:explicitOriginal,response_recipient:'TEST-Unternehmen B',reference_copy:'Sehr geehrte Damen und Herren, ich bitte um Erläuterung.'},{schema,referenceLanguage:'de',outputLanguage:'de'})
+assert.ok(explicit.reference_copy,'unknown author of a compiled note does not erase a directly evidenced own-reply role')
+const inventedRole=finalizeDocumentResult({...base,extracted_text:'Eine Zahlung wurde erwähnt.',response_sender:'Mara Beispiel',response_role_evidence:explicitOriginal,response_recipient:'TEST-Unternehmen B'},{schema,referenceLanguage:'de',outputLanguage:'de'})
+assert.equal(inventedRole.reference_copy,'','an invented role quote cannot unlock a letter')
 
 const source=roadmapSource(roadmapTestCase,roadmapTestDocuments,[])
 const invalid=structuredClone(roadmapTestResult);invalid.facts[0].evidence[0].quote='Invented research quotation'

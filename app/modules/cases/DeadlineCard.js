@@ -48,6 +48,7 @@ export function DeadlineWarningCard({language='de',caseDeadline='',text='',mode=
     <div className="detailCardHead"><div><h3 style={{margin:'.55rem 0 .2rem'}}>{t.title}</h3></div><strong>{status}</strong></div>
     <p style={{fontSize:'1.1rem',fontWeight:800,margin:'.65rem 0'}}>{formatDeadline(primary,language,t)}</p>
     <p><b>{t.basis}:</b> {basisText(primary,t)}</p>
+    {primary?.context&&<blockquote>{primary.context}</blockquote>}
     <p><b>{t.consequence}:</b> {consequenceText(result,t)}</p>
     <p><b>{t.action}:</b> {t.verify}</p>
   </section>

@@ -9,9 +9,11 @@ import { PrimaryNextStepCard } from './V38PrimaryNextStep'
 import { CaseTimeline, DocumentAutoAssessment } from './V39CaseTimelineAutoAssessment'
 import { CaseCompletionPanels } from './CaseCompletionPanels'
 import { componentTranslations } from '../lib/v30ComponentTranslations.mjs'
+import { localizedCountryName } from '../country/countryLabels.mjs'
 import { COUNTRY_CATALOG } from '../country/countryRegistry.mjs'
 import { APP_VERSION } from '../release/appRelease.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage.js'
+import { readableDocumentSummary } from '../language/documentLanguageWorkflow.mjs'
 import { bilingualLetterUi } from '../language/bilingualLetter.mjs'
 import { LegalComparisonPanel } from '../country/LegalComparisonPanel'
 import { AssessmentEvidenceFields } from './AssessmentEvidenceFields'
@@ -152,13 +154,13 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
       <label htmlFor={fieldId(item.id,'next')}>{on.nextAction}<textarea id={fieldId(item.id,'next')} value={draft.next_action} onChange={event=>setDraft({...draft,next_action:event.target.value})}/></label>
       <button className="primary full">{on.saveChanges}</button>
     </form>}
-    <section className="caseCoreGrid"><article><b>{on.homeCountry}</b><p>{COUNTRY_CATALOG.find(country=>country.key===(item.home_country||'DE'))?.label||item.home_country||'DE'}</p></article><article><b>{on.targetCountry}</b><p>{COUNTRY_CATALOG.find(country=>country.key===(item.target_country||'DE'))?.jurisdictionLabel||item.target_country||'DE'}</p></article><article><b>{on.goal}</b><p>{item.goal||'—'}</p></article><article><b>{on.summary}</b><p>{item.summary||'—'}</p></article><article><b>{on.deadline}</b><p>{item.deadline_at?new Date(item.deadline_at).toLocaleString():'—'}</p></article><article><b>{on.nextAction}</b><p>{item.next_action||'—'}</p></article></section>
+    <section className="caseCoreGrid"><article><b>{on.homeCountry}</b><p>{localizedCountryName(item.home_country||'DE',language)}</p></article><article><b>{on.targetCountry}</b><p>{localizedCountryName(item.target_country||'DE',language)}</p></article><article><b>{on.goal}</b><p>{item.goal||'—'}</p></article><article><b>{on.summary}</b><p>{item.summary||'—'}</p></article><article><b>{on.deadline}</b><p>{item.deadline_at?new Date(item.deadline_at).toLocaleString():'—'}</p></article><article><b>{on.nextAction}</b><p>{item.next_action||'—'}</p></article></section>
     {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} continuation={continuation}/>}
     {supabase&&ownerId&&<LegalComparisonPanel supabase={supabase} ownerId={ownerId} language={language} outputLanguage={outputLanguage} item={item} workspaceCopy={on} onPrivacyUpdate={onPrivacyUpdate}/>}
     <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>
     <DocumentDeadlineCandidates item={item} documents={documents} language={language} onOpenDocument={onOpenDocument} onEdit={()=>setEditing(true)}/>
     <CaseTimeline language={language} caseDeadline={item.deadline_at||''} documents={documents}/>
-    <CaseCompletionPanels language={language} item={item} documents={documents} assessments={assessments} onEdit={()=>setEditing(true)} onAddDocument={()=>onAddDocument(item.id)} onOpenDocument={onOpenDocument} onAssess={()=>reviewAssessment()}/>
+    <CaseCompletionPanels language={language} outputLanguage={outputLanguage} item={item} documents={documents} assessments={assessments} onEdit={()=>setEditing(true)} onAddDocument={()=>onAddDocument(item.id)} onOpenDocument={onOpenDocument} onAssess={()=>reviewAssessment()}/>
     <section className={`readinessCard ${!documents.length?'attentionBox':''}`}><b>{on.assessmentState}</b><p>{readiness}</p><small>{evidenceCopy.boundary}</small></section>
     <section className="detailCard"><div className="detailCardHead"><h3>{on.sourceBasis}</h3><button className="secondary" type="button" onClick={()=>onAddDocument(item.id)}>＋ {on.documentUpload}</button></div>{documents.length?<div className="sourceList">{documents.map(document=><button type="button" onClick={()=>onOpenDocument(document)} key={document.id}><span>{documentDateLabel(document,language)}</span><b>{document.title}</b><small>{document.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</small></button>)}</div>:<div className="emptyState">{on.noDocuments}</div>}</section>
     <section className="detailCard"><h3>{on.currentAssessments}</h3>{assessments.length?<div className="assessmentList">{assessments.map(entry=><article className={`assessment ${entry.traffic_light}`} key={entry.id}><div><span>{trafficLightLabel(on,entry.traffic_light)}</span><b>{entry.title}</b></div>{!currentIds.has(entry.id)&&<p className="modeBadge">{evidenceCopy.history}</p>}<p>{entry.reasoning||'—'}</p><small>{on.nextAction}: {entry.next_step||'—'}</small><AssessmentExplainability language={language} reasoning={entry.reasoning} next={entry.next_step} assessment={entry} documents={documents} onOpenDocument={onOpenDocument} onReview={currentIds.has(entry.id)?reviewAssessment:undefined}/></article>)}</div>:<p>{on.noAssessment}</p>}
@@ -183,10 +185,12 @@ export function DocumentSection({copy:on, privacy, cases, documents, mode, setMo
   </>
 }
 
-export function DocumentDetail({copy:on, analysis, privacy, language='de', outputLanguage='de', item, cases, onBack, onSave, onAnalyze, onOpen, onPrepareApproval, approvalLabel, continuation}){
+export function DocumentDetail({copy:on, analysis, privacy, language='de', outputLanguage='de', item, cases, documents=[], onBack, onSave, onAnalyze, onOpen, onPrepareApproval, approvalLabel, continuation}){
   const allowedClassifications=['synthetic','anonymized']
   const letterUi=bilingualLetterUi(language)
-  const [draft,setDraft]=useState({title:item.title||'',case_id:item.case_id||'',document_type:item.document_type||'',document_date:item.document_date||'',extracted_text:item.extracted_text||'',analysis_summary:item.analysis_summary||'',analysis_next_step:item.analysis_next_step||'',reference_copy:item.reference_copy||item.response_letter_de||'',reference_copy_language:item.reference_copy_language||'de',customer_copy:item.customer_copy||'',customer_copy_language:item.customer_copy_language||outputLanguage,response_recipient:item.response_recipient||'',response_subject:item.response_subject||'',analysis_traffic_light:item.analysis_traffic_light||'yellow',analysis_reasoning:item.analysis_reasoning||'',analysis_confidence:item.analysis_confidence||'',data_classification:allowedClassifications.includes(item.data_classification)?item.data_classification:'',test_data_confirmed:false})
+  const [draft,setDraft]=useState({title:item.title||'',case_id:item.case_id||'',document_type:item.document_type||'',document_date:item.document_date||'',extracted_text:item.extracted_text||'',analysis_summary:readableDocumentSummary(item.analysis_summary,item.extracted_text),analysis_next_step:item.analysis_next_step||'',reference_copy:item.reference_copy||item.response_letter_de||'',reference_copy_language:item.reference_copy_language||'de',customer_copy:item.customer_copy||'',customer_copy_language:item.customer_copy_language||outputLanguage,response_recipient:item.response_recipient||'',response_subject:item.response_subject||'',analysis_traffic_light:item.analysis_traffic_light||'yellow',analysis_reasoning:item.analysis_reasoning||'',analysis_confidence:item.analysis_confidence||'',data_classification:allowedClassifications.includes(item.data_classification)?item.data_classification:'',test_data_confirmed:false})
+  const linkedCase=cases.find(entry=>entry.id===draft.case_id)
+  const deadlineResult=linkedCase?analyzeCaseDeadlines(linkedCase,[...documents.filter(doc=>doc.id!==item.id),{...item,...draft}]):undefined
   const [analysisPhase,setAnalysisPhase]=useState(item.extracted_text||item.analysis_summary||item.analysis_next_step?'saved':'uploaded')
   const evidenceCopy=caseGuidanceCopy(language)
   const [savedFingerprint,setSavedFingerprint]=useState(()=>documentDraftFingerprint(draft))
@@ -224,8 +228,8 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
     <section className="documentReviewHead"><div><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={openOriginal}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" disabled={dirty||saving} onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
     {dirty&&<p role="status" className="attentionBox">{evidenceCopy.saveFirst}</p>}
     {originalUrl&&<a className="secondary" href={originalUrl} target="_blank" rel="noopener noreferrer">{evidenceCopy.openFallback}</a>}
-    <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document"/>
-    <DocumentAutoAssessment language={language} text={draft.extracted_text}/>
+    <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document" result={deadlineResult}/>
+    <DocumentAutoAssessment language={language} text={draft.extracted_text} deadlineResult={deadlineResult}/>
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</p></div>
     <section className="actionCard coreForm documentLanguagePair">
       <label htmlFor={fieldId(item.id,'reference-copy-language')}>{letterUi.referenceLanguage}<select id={fieldId(item.id,'reference-copy-language')} value={draft.reference_copy_language} onChange={event=>setDraft({...draft,reference_copy_language:event.target.value})} required>{OUTPUT_LANGUAGES.map(key=><option value={key} key={key}>{outputLanguageLabels[key]}</option>)}</select></label>

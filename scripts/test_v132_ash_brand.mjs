@@ -11,7 +11,7 @@ const walk=directory=>fs.readdirSync(directory,{withFileTypes:true}).flatMap(ent
   return /\.(?:js|mjs|ts|tsx)$/.test(entry.name)?[target]:[]
 })
 
-assert.equal(APP_VERSION,'V139')
+assert.equal(APP_VERSION,'V140')
 assert.equal(PRODUCT_NAME,'ASH Workspace Gold')
 assert.equal(PRODUCT_BRAND.shortName,'ASH Workspace')
 assert.equal(PRODUCT_BRAND.monogram,'ASH')

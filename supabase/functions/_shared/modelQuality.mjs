@@ -1,7 +1,7 @@
 // Server-only generation and review. Nothing is persisted before both checks pass.
-export const MODEL_QUALITY_VERSION = 'v139'
+export const MODEL_QUALITY_VERSION = 'v140'
 export class ModelWorkflowError extends Error {
-  constructor(message,status=422,code='model_workflow_failed') { super(message); this.name='ModelWorkflowError'; this.status=status; this.code=code }
+  constructor(message,status=422,code='model_workflow_failed',issues=[]) { super(message); this.name='ModelWorkflowError'; this.status=status; this.code=code; this.issues=issues.slice(0,8).map(({code,location,reason})=>({code,location:String(location||'').slice(0,120),reason:String(reason||'').slice(0,700)})) }
 }
 
 export function originalPlainText(bytes,mime) {
@@ -39,7 +39,10 @@ export function finalizeDocumentResult(raw,{schema,originalText=null,referenceLa
   for(const key of ['summary','next_step','assessment_reasoning']) if(!present(result[key])) throw new ModelWorkflowError('Die Dokumentausgabe ist unvollständig: '+key)
   // A document's unknown sender/recipient cannot establish the author's reply role.
   // The model is instructed to ask for these details in next_step. Review checks it.
-  if(!named(result.sender_or_author)||!named(result.recipient)||!named(result.response_recipient)) {
+  const normalize=value=>String(value||'').replace(/\s+/gu,' ').trim()
+  const roleQuote=normalize(result.response_role_evidence)
+  const explicitReplyRole=named(result.response_sender)&&named(result.response_recipient)&&roleQuote.length>=8&&normalize(result.extracted_text).includes(roleQuote)
+  if(!explicitReplyRole&&(!named(result.sender_or_author)||!named(result.recipient)||!named(result.response_recipient))) {
     result.reference_copy=''; result.customer_copy=''; result.response_recipient=null; result.response_subject=''
   }
   if(!present(result.reference_copy)) result.customer_copy=''
@@ -57,7 +60,7 @@ First compare every blanket absence claim (no information about X / keine Angabe
 2. Provenance: original document text is authoritative. Metadata, a case goal, AI summaries and user statements are not verbatim original quotes. Missing information may appear as a question or an explicitly described gap, never as a fabricated event. Future-dated metadata may be flagged as metadata, not silently treated as an event or original date. The server-supplied review_date is real execution context and may be used to flag past/future metadata without appearing in an original; it cannot establish a document, receipt or event date. Supplied country_context is the selected scope, not proof of applicable law. A request to check an issue for that selected country is allowed; an unsupported assertion that its law applies is not.
 A statement explicitly limited to what the PROVIDED TEXTS do not establish may be supported by inspecting those texts as a whole; it does not need an original sentence declaring that absence and does not deny an event elsewhere. Keep facts actually mentioned or confirmed in those texts intact.
 An original demand explicitly addressed to a named customer establishes that customer's perspective for a proposed own reply to the named issuer about the demand. A prior outgoing letter or a mandate to represent oneself is not required. Missing postal/email details can remain placeholders to verify before sending. This does not establish an agency role or identify an unnamed actor. Flag a contrary claim that this explicitly addressed customer's own reply role is absent; do not invent such a role gap to remove a supported draft.
-3. Urgency: red requires an actual, source-supported urgent deadline or ongoing concrete danger (for example active enforcement or an unsecured damaged entrance). Gathering information, defining a goal, choosing a period and being the first step are NOT in themselves urgent. A possible theoretical loss is not evidence of urgency. Yellow/open or white/insufficient basis is appropriate for ordinary gaps. Do not downgrade actual urgent risk solely because its exact date is missing.
+3. Urgency: a date alone supports red only when it is past or at most two calendar days after review_date. A later payment date alone does not make either payment or preparatory information gathering red. Red requires an actual, source-supported urgent deadline or ongoing concrete danger (for example active enforcement or an unsecured damaged entrance). Gathering information, defining a goal, choosing a period and being the first step are NOT in themselves urgent. A possible theoretical loss is not evidence of urgency. Yellow/open or white/insufficient basis is appropriate for ordinary gaps. Do not downgrade actual urgent risk solely because its exact date is missing.
 4. Sender role: a request or receipt does not establish that the user is the receiving authority. Letters must have a supported sender perspective, recipient and purpose. No invented acknowledgement, mandate, attachments or completed submission. In single-document analysis, when sender/recipient/role is unclear, there must be no reference_copy/customer_copy; next_step must ask to clarify role/recipient/purpose. It is valid to withhold a letter in this situation. Case roadmap organisational questions are allowed without creating a letter. The supplied style.customer_name identifies the reader of the ASH explanation. Proposed information-gathering tasks may be assigned to that reader (Du/Sie/Kunde) without documentary proof of a contract or mandate. This does not establish that the reader performed a past act or may represent another party; letters and such factual claims still need source-supported roles.
 5. Transcription: short notes are valid documents even when they describe missing original decisions or annexes. extracted_text must preserve the supplied text, not contain commentary about absence of a file. Do not demand an external original decision when a note was actually supplied; its statements still need appropriate attribution. Empty transcription of readable material fails. Keep spoken extra context out of transcription and translation.
 6. No fabricated research: model memory, a claimed URL, search result title or a previous AI summary is NOT an independently verified source. Without supplied retrieved research text, flag external legal, tax, medical, market or scientific rules presented as established facts. Statements in a document may be faithfully attributed to that document, not promoted into independently researched truth. For a research comparison, every legal conclusion, practical consequence and customer summary must actually follow from the supplied fetched source text, fit the named jurisdiction and case facts, and preserve limitations. The mere presence of an official URL is insufficient. No invented statutes, judgments, rates, deadlines or claims to have searched. Missing sources must remain explicit gaps.
@@ -127,16 +130,16 @@ export async function runReviewedModel({providerKey,request,validate,reviewConte
 // Each authenticated continuation performs exactly one provider call. This keeps
 // the full review and the single repair while avoiding a shared request timeout.
 // The caller must authenticate, re-load originals, and verify the sealed state.
-export async function advanceReviewedModel({providerKey,request,validate,reviewContent,state=null,fetchImpl=fetch,onResponse,budgetMs=120000}) {
+export async function advanceReviewedModel({providerKey,request,validate,reviewContent,state=null,fetchImpl=fetch,onResponse,budgetMs=140000}) {
   const current=state||{stage:'generation',attempt:1,feedback:[],previous:null}
   if(!['generation','review'].includes(current.stage)||![1,2].includes(current.attempt))throw new ModelWorkflowError('Ungültiger Prüfablauf.',409)
-  const deadline=Date.now()+Math.min(budgetMs,120000),attempt=current.attempt,callTimeoutMs=115000
+  const deadline=Date.now()+Math.min(budgetMs,140000),attempt=current.attempt,callTimeoutMs=135000
   if(current.stage==='generation') {
     const generated=await callModel(providerKey,{...request,...(attempt>1?{reasoning:{...request.reasoning,effort:'high'}}:{}),input:[...request.input,...correctionInput(attempt,current.feedback,current.previous)]},{deadline,fetchImpl,onResponse,stage:attempt>1?'correction':'generation',attempt,callTimeoutMs})
     let candidate,structuralFeedback=[],validationContext=current.validationContext
     try {candidate=validate(generated.parsed,current.validationContext)}
     catch(error) {
-      if(attempt===2)throw new ModelWorkflowError('Die Belegprüfung blieb nach der Korrektur offen. Bitte Originale und Zuordnung prüfen; es wurde kein Ergebnis gespeichert.')
+      if(attempt===2)throw new ModelWorkflowError('Die Zuordnung zu den Originalen ist noch offen. Es wurde kein neues Ergebnis gespeichert.',422,'source_unresolved',[{code:'source',location:'output',reason:error.message}])
       candidate=generated.parsed
       validationContext=error.repairContext
       structuralFeedback=[{code:'source',location:'output',reason:error.message}]
@@ -151,6 +154,6 @@ export async function advanceReviewedModel({providerKey,request,validate,reviewC
   const review=await reviewModelCandidate({providerKey,candidate,reviewContent,deadline,fetchImpl,onResponse,attempt,callTimeoutMs})
   const feedback=[...structuralFeedback,...review.issues]
   if(!feedback.length)return {status:'completed',result:candidate,attempts:attempt,model:current.model,response_id:current.response_id,review_response_id:review.response_id}
-  if(attempt===2)throw new ModelWorkflowError('Die inhaltliche Gegenprüfung blieb nach der Korrektur offen. Bitte Originale und Zuordnung prüfen; es wurde kein Ergebnis gespeichert.')
+  if(attempt===2)throw new ModelWorkflowError('Der Fahrplan konnte noch nicht freigegeben werden. Es wurde kein neues Ergebnis gespeichert. Die offenen Prüfpunkte stehen unten.',422,'review_unresolved',feedback)
   return {status:'processing',state:{stage:'generation',attempt:2,previous:candidate,validationContext,feedback}}
 }
