@@ -3,6 +3,7 @@ import { AUTH_REDIRECT_URL, getAuthSession, registerTestAccount, sendPasswordRes
 import { clearGuestTestRequest } from './guestTestRequest.mjs'
 import { getAuthErrorMessage } from './authMessages.mjs'
 import { signInTeamAccount } from '../team-account/teamAccountRepository.js'
+import { finishPasswordRecovery, isPasswordRecoveryActive, passwordRecoveryRevision } from './passwordRecoveryFlow.mjs'
 
 const resetFeedback={
   de:{emailRequired:'Bitte zuerst Ihre E-Mail-Adresse eingeben.',sent:'Wenn die Adresse registriert ist, wurde ein Link zum Zurücksetzen gesendet.'},
@@ -58,8 +59,12 @@ export function createWorkspaceAuthActions({
   sessionLoadRef
 }){
   async function performLoadApp(session){
+    const recoveryAtStart=passwordRecoveryRevision()
+    const interrupted=()=>isPasswordRecoveryActive()||passwordRecoveryRevision()!==recoveryAtStart
+    if(interrupted())return false
     setMessage('')
     const accessSnapshot=await getWorkspaceAccess(supabase)
+    if(interrupted())return false
     if(accessSnapshot.error){setMessage(accessSnapshot.error.message);setScreen('login');return false}
     const row=accessSnapshot.access
     if(!row?.active||row?.status!=='approved'){
@@ -71,10 +76,12 @@ export function createWorkspaceAuthActions({
     setUpgrades(accessSnapshot.upgrades||[])
     const ownerId=session.user.id
     const bundle=await loadWorkspaceBundle(supabase,ownerId)
+    if(interrupted())return false
     if(bundle.error) setMessage(bundle.error.message)
     let nextPrivacy=bundle.privacy
     if(!nextPrivacy){
       const createdPrivacy=await ensureRegistrationPrivacy(supabase,{ownerId,registrationMeta:session.user?.user_metadata||{},privacyNoticeVersion,termsVersion})
+      if(interrupted())return false
       if(!createdPrivacy.error&&createdPrivacy.data) nextPrivacy=createdPrivacy.data
     }
     setData(bundle.data)
@@ -87,6 +94,7 @@ export function createWorkspaceAuthActions({
   }
 
   function loadApp(session){
+    if(isPasswordRecoveryActive())return Promise.resolve(false)
     const key=`${session?.user?.id||''}:${session?.access_token||''}`
     const active=sessionLoadRef?.current
     if(key&&active?.key===key&&active.promise)return active.promise
@@ -147,6 +155,8 @@ export function createWorkspaceAuthActions({
     if(password!==password2){setMessage(notices.pwMismatch);return false}
     const {error}=await updatePassword(supabase,{password})
     if(error){setMessage(getAuthErrorMessage(error,language));return false}
+    finishPasswordRecovery()
+    if(sessionLoadRef)sessionLoadRef.current={key:null,promise:null}
     setPassword('')
     setPassword2('')
     const {data:{session}}=await getAuthSession(supabase)

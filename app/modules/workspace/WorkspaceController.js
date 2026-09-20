@@ -272,7 +272,8 @@ export default function WorkspaceController(){
     supabase,
     loadApp,
     setScreen,
-    onPasswordRecovery:()=>{setMessage('');setScreen('recovery')},
+    onPasswordRecovery:session=>{setEmail(session.user.email||'');setMessage('');setScreen('recovery')},
+    onPasswordRecoveryError:()=>{setPassword('');setPassword2('');setMessage(recoveryCopy.invalid);setScreen('request-reset')},
     onSignedOut:()=>{
       sessionLoadRef.current={key:null,promise:null}
       setUser(null)

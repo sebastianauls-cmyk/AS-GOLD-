@@ -20,3 +20,18 @@ export const passwordRecoveryUi = {
   bg:{title:'Задайте нова парола',lead:'Защитената връзка е потвърдена. Сега задайте нова парола за ASH Workspace Gold.',submit:'Запази паролата',updated:'Паролата е променена успешно.',back:'Назад към входа'},
   vi:{title:'Đặt mật khẩu mới',lead:'Liên kết bảo mật đã được xác nhận. Bây giờ hãy đặt mật khẩu mới cho ASH Workspace Gold.',submit:'Lưu mật khẩu',updated:'Mật khẩu của bạn đã được thay đổi thành công.',back:'Quay lại đăng nhập'}
 }
+
+const invalidRecoveryLink={
+  de:'Der Rücksetzlink ist abgelaufen, wurde bereits verwendet oder konnte nicht bestätigt werden. Fordern Sie einen neuen Link an und öffnen Sie die neueste E-Mail.',
+  en:'The reset link has expired, was already used, or could not be verified. Request a new link and open the latest email.',
+  fr:'Le lien a expiré, a déjà été utilisé ou n’a pas pu être vérifié. Demandez un nouveau lien et ouvrez le dernier e-mail.',
+  tr:'Sıfırlama bağlantısının süresi dolmuş, daha önce kullanılmış veya bağlantı doğrulanamamış. Yeni bir bağlantı isteyin ve en son e-postayı açın.',
+  pl:'Link wygasł, został już użyty lub nie można go potwierdzić. Poproś o nowy link i otwórz najnowszą wiadomość.',
+  ru:'Срок действия ссылки истёк, она уже использована или не подтверждена. Запросите новую ссылку и откройте последнее письмо.',
+  ar:'انتهت صلاحية رابط إعادة التعيين أو سبق استخدامه أو تعذر التحقق منه. اطلب رابطاً جديداً وافتح أحدث رسالة بريد إلكتروني.',
+  fa:'پیوند بازنشانی منقضی شده، قبلاً استفاده شده یا تأیید نشده است. پیوند جدیدی درخواست کنید و آخرین ایمیل را باز کنید.',
+  ro:'Linkul a expirat, a fost deja folosit sau nu a putut fi verificat. Solicitați un link nou și deschideți cel mai recent e-mail.',
+  bg:'Връзката е изтекла, вече е използвана или не може да бъде потвърдена. Поискайте нова връзка и отворете най-новия имейл.',
+  vi:'Liên kết đã hết hạn, đã được dùng hoặc không thể xác minh. Hãy yêu cầu liên kết mới và mở email mới nhất.'
+}
+for(const [language,invalid] of Object.entries(invalidRecoveryLink))passwordRecoveryUi[language].invalid=invalid
