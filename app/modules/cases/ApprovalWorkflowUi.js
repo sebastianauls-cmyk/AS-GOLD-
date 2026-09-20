@@ -35,7 +35,7 @@ export function getV25ApprovalCopy(language){ return copy[language] || copy.de }
 function statusText(on,status){ return on[status] || status }
 function typeText(on,type){ return on.types[type] || type }
 
-export function ApprovalSection({copy:on,outputLanguage='de',cases,documents,approvals,defaults,onCreate,onSelect}){
+export function ApprovalSection({copy:on,outputLanguage='de',cases,documents,approvals,defaults,onCreate,onSelect,onCancel,cancelLabel}){
   const [showForm,setShowForm]=useState(Boolean(defaults?.caseId||defaults?.documentId))
   const [draft,setDraft]=useState({case_id:defaults?.caseId||'',document_id:defaults?.documentId||'',approval_type:'send',recipient:defaults?.recipient||'',subject:defaults?.subject||'',body:defaults?.body||''})
   const matchingDocuments=useMemo(()=>documents.filter(item=>item.case_id===draft.case_id),[documents,draft.case_id])
@@ -63,7 +63,7 @@ export function ApprovalSection({copy:on,outputLanguage='de',cases,documents,app
   }
 
   return <>
-    <section className="approvalIntro"><div><h3>{on.title}</h3><p>{on.lead}</p></div><button type="button" className="primary" onClick={()=>setShowForm(value=>!value)}>{showForm?on.cancel:`＋ ${on.newApproval}`}</button></section>
+    <section className="approvalIntro"><div><h3>{on.title}</h3><p>{on.lead}</p></div><button type="button" className="primary" onClick={()=>{if(showForm&&onCancel){onCancel();return}setShowForm(value=>!value)}}>{showForm?(onCancel?cancelLabel:on.cancel):`＋ ${on.newApproval}`}</button></section>
     {showForm&&<form className="actionCard approvalForm" onSubmit={submit}>
       <label>{on.case}<select value={draft.case_id} onChange={event=>setDraft({...draft,case_id:event.target.value,document_id:''})} required><option value="">{on.chooseCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
       <label>{on.document}<select value={draft.document_id} onChange={event=>selectDocument(event.target.value)}><option value="">{on.noDocument}</option>{matchingDocuments.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>

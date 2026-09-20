@@ -14,6 +14,7 @@ import { COUNTRY_CATALOG } from '../country/countryRegistry.mjs'
 import { APP_VERSION } from '../release/appRelease.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage.js'
 import { initializeDocumentReview } from '../documents/documentAnalysisRecovery.mjs'
+import { documentNavigationCopy } from '../documents/documentNavigationCopy.mjs'
 import { bilingualLetterUi } from '../language/bilingualLetter.mjs'
 import { LegalComparisonPanel } from '../country/LegalComparisonPanel'
 import { AssessmentEvidenceFields } from './AssessmentEvidenceFields'
@@ -187,6 +188,8 @@ export function DocumentSection({copy:on, privacy, cases, documents, mode, setMo
 
 export function DocumentDetail({copy:on, analysis, privacy, language='de', outputLanguage='de', item, cases, documents=[], onBack, onSave, onAnalyze, onRecover, onOpen, onPrepareApproval, approvalLabel, continuation}){
   const allowedClassifications=['synthetic','anonymized']
+  const navigationCopy=documentNavigationCopy(language)
+  const analysisPanel=useRef(null)
   const letterUi=bilingualLetterUi(language)
   const [initialReview]=useState(()=>initializeDocumentReview(item,outputLanguage,cases.find(entry=>entry.id===item.case_id)?.target_country||'DE'))
   const [draft,setDraft]=useState(initialReview.draft)
@@ -199,6 +202,13 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
   const saveBusy=useRef(false)
   const [originalUrl,setOriginalUrl]=useState('')
   const dirty=!!draft.analysis_generated||documentDraftFingerprint(draft)!==savedFingerprint
+  function openAnalysis(){
+    const panel=analysisPanel.current
+    if(!panel)return
+    panel.focus({preventScroll:true})
+    const headerHeight=document.querySelector('.appTop')?.getBoundingClientRect().height||0
+    window.scrollTo({top:window.scrollY+panel.getBoundingClientRect().top-headerHeight-12,behavior:'auto'})
+  }
   useEffect(()=>{
     if(!dirty)return
     const warn=event=>{event.preventDefault();event.returnValue=''}
@@ -226,7 +236,11 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
   }
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={()=>{if(!dirty||window.confirm(evidenceCopy.unsaved))onBack()}}>{on.back}</button>
-    <section className="documentReviewHead"><div><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={openOriginal}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" disabled={dirty||saving} onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
+    <section className="documentReviewHead"><div><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">
+      {analysis&&onAnalyze&&<button className="primary" type="button" aria-controls={fieldId(item.id,'analysis')} onClick={openAnalysis}>{navigationCopy.openAnalysis}</button>}
+      {item.file_path&&<button className="secondary" type="button" onClick={openOriginal}>{on.originalFile}</button>}
+      {item.case_id&&onPrepareApproval&&<button className="secondary" type="button" disabled={dirty||saving} onClick={()=>onPrepareApproval(item)}>{navigationCopy.prepareLetter}</button>}
+    </div></section>
     {dirty&&<div role="status" className="attentionBox"><p>{evidenceCopy.saveFirst}</p><button className="primary" type="submit" form={fieldId(item.id,'review-form')} disabled={saving}>{analysis?.save||on.saveDocument}</button></div>}
     {originalUrl&&<a className="secondary" href={originalUrl} target="_blank" rel="noopener noreferrer">{evidenceCopy.openFallback}</a>}
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:analysisPhase==='failed'?(analysis?.analysisFailed||analysis?.failed):(analysis?.notStarted||on.noExtraction)}</p></div>
@@ -235,7 +249,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
       <label htmlFor={fieldId(item.id,'customer-copy-language')}>{letterUi.customerLanguage}<select id={fieldId(item.id,'customer-copy-language')} value={draft.customer_copy_language} onChange={event=>setDraft({...draft,customer_copy_language:event.target.value})} required>{OUTPUT_LANGUAGES.map(key=><option value={key} key={key}>{outputLanguageLabels[key]}</option>)}</select></label>
       <p className="wideField analysisManualNote">{letterUi.sameLanguage}</p>
     </section>
-    {analysis&&onAnalyze&&<ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} onRecover={onRecover} canRecover={!dirty} phase={analysisPhase} onPhase={setAnalysisPhase} analysisAllowed={allowedClassifications.includes(item.data_classification)} classificationMessage={privacy?.uploadRequired}/>}
+    {analysis&&onAnalyze&&<div ref={analysisPanel} id={fieldId(item.id,'analysis')} tabIndex={-1} aria-label={navigationCopy.openAnalysis}><ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} onRecover={onRecover} canRecover={!dirty} phase={analysisPhase} onPhase={setAnalysisPhase} analysisAllowed={allowedClassifications.includes(item.data_classification)} classificationMessage={privacy?.uploadRequired}/></div>}
     {continuation&&item.analysis_summary&&!dirty&&<ResultContinuation {...continuation} language={language}/>}
     <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document" result={deadlineResult}/>
     <DocumentAutoAssessment language={language} text={draft.extracted_text} deadlineResult={deadlineResult}/>
