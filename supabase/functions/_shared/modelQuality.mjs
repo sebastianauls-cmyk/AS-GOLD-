@@ -1,5 +1,5 @@
 // Server-only generation and review. Nothing is persisted before both checks pass.
-export const MODEL_QUALITY_VERSION = 'v140'
+export const MODEL_QUALITY_VERSION = 'v145'
 export class ModelWorkflowError extends Error {
   constructor(message,status=422,code='model_workflow_failed',issues=[]) { super(message); this.name='ModelWorkflowError'; this.status=status; this.code=code; this.issues=issues.slice(0,8).map(({code,location,reason})=>({code,location:String(location||'').slice(0,120),reason:String(reason||'').slice(0,700)})) }
 }
@@ -118,13 +118,13 @@ export async function runReviewedModel({providerKey,request,validate,reviewConte
       validationContext=error.repairContext||validationContext
       feedback=[{code:'source',location:'output',reason:error.message}]
       if(attempt===1) continue
-      throw new ModelWorkflowError('Die Belegprüfung blieb nach der Korrektur offen. Bitte Originale und Zuordnung prüfen; es wurde kein Ergebnis gespeichert.')
+      throw new ModelWorkflowError('Die Belegprüfung blieb nach der Korrektur offen. Bitte Originale und Zuordnung prüfen; es wurde kein Ergebnis gespeichert.',422,'source_unresolved',feedback)
     }
     const review=await reviewModelCandidate({providerKey,candidate:result,reviewContent,deadline,fetchImpl,onResponse,attempt})
     if(!review.issues.length) return {result,attempts:attempt,model:generated.model,response_id:generated.response_id,review_response_id:review.response_id}
     previous=result; feedback=review.issues
   }
-  throw new ModelWorkflowError('Die inhaltliche Gegenprüfung blieb nach der Korrektur offen. Bitte Originale und Zuordnung prüfen; es wurde kein Ergebnis gespeichert.')
+  throw new ModelWorkflowError('Die inhaltliche Gegenprüfung blieb nach der Korrektur offen. Bitte Originale und Zuordnung prüfen; es wurde kein Ergebnis gespeichert.',422,'review_unresolved',feedback)
 }
 
 // Each authenticated continuation performs exactly one provider call. This keeps
@@ -154,6 +154,6 @@ export async function advanceReviewedModel({providerKey,request,validate,reviewC
   const review=await reviewModelCandidate({providerKey,candidate,reviewContent,deadline,fetchImpl,onResponse,attempt,callTimeoutMs})
   const feedback=[...structuralFeedback,...review.issues]
   if(!feedback.length)return {status:'completed',result:candidate,attempts:attempt,model:current.model,response_id:current.response_id,review_response_id:review.response_id}
-  if(attempt===2)throw new ModelWorkflowError('Der Fahrplan konnte noch nicht freigegeben werden. Es wurde kein neues Ergebnis gespeichert. Die offenen Prüfpunkte stehen unten.',422,'review_unresolved',feedback)
+  if(attempt===2)throw new ModelWorkflowError('Das Ergebnis konnte noch nicht freigegeben werden. Es wurde kein neues Ergebnis gespeichert.',422,'review_unresolved',feedback)
   return {status:'processing',state:{stage:'generation',attempt:2,previous:candidate,validationContext,feedback}}
 }
