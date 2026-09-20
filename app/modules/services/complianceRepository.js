@@ -33,7 +33,7 @@ export function acknowledgeLegalSettings(supabase,{ownerId,privacyNoticeVersion,
 export async function authorizeDocumentAnalysis(supabase,{ownerId,documentId,privacyNoticeVersion,termsVersion}){
   const enabled=await supabase.from('account_privacy_settings').update({ai_processing_enabled:true,updated_at:new Date().toISOString()}).eq('owner_id',ownerId).eq('privacy_notice_version',privacyNoticeVersion).eq('terms_version',termsVersion).select().single()
   if(enabled.error)return {privacy:null,document:null,error:enabled.error}
-  const allowed=await supabase.from('documents').update({ai_processing_allowed:true,privacy_notice_version:privacyNoticeVersion,ai_notice_version:privacyNoticeVersion,updated_at:new Date().toISOString()}).eq('id',documentId).eq('owner_id',ownerId).in('data_classification',['synthetic','anonymized']).select().single()
+  const allowed=await supabase.from('documents').update({analysis_draft:null,ai_processing_allowed:true,privacy_notice_version:privacyNoticeVersion,ai_notice_version:privacyNoticeVersion,updated_at:new Date().toISOString()}).eq('id',documentId).eq('owner_id',ownerId).in('data_classification',['synthetic','anonymized']).select().single()
   if(allowed.error)return {privacy:enabled.data,document:null,error:allowed.error}
   return {privacy:enabled.data,document:allowed.data,error:null}
 }

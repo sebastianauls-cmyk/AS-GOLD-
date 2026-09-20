@@ -25,7 +25,8 @@ export function useWorkspaceAudit({supabase,userId}){
     const entry={at:new Date().toISOString(),kind,detail:'✓'}
     setActivityLog(previous=>{
       const next=[entry,...previous].slice(0,50)
-      localStorage.setItem(`asgold-activity-${userId}`,JSON.stringify(next))
+      // Device storage is optional; a quota/privacy error must not discard AI output.
+      try{localStorage.setItem(`asgold-activity-${userId}`,JSON.stringify(next))}catch{}
       return next
     })
   }

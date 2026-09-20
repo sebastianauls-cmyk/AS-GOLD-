@@ -88,6 +88,27 @@ for(const error of [clockError,{code:'42501',message:'permission denied'},{code:
 }
 
 // An unavailable module cannot be displayed as an empty successful workspace.
+// Refocusing after token renewal rechecks access without unmounting a live editor.
+{
+  const {state,actions}=harness()
+  assert.equal(await actions.loadApp(member),true)
+  state.screens.length=0
+  assert.equal(await actions.loadApp({...member,access_token:'renewed-synthetic-session'}),true)
+  assert.deepEqual(state.screens,['app'],'same-user renewal must retain the current editor and its pending result')
+  assert.equal(state.accessCalls,2,'access is still verified with the renewed session')
+  state.screens.length=0
+  assert.equal(await actions.loadApp({user:{id:'different-member'},access_token:'different-synthetic-session'}),true)
+  assert.deepEqual(state.screens,['workspace-connecting','app'],'a different account must never inherit the previous workspace')
+}
+{
+  const {state,actions}=harness()
+  await actions.loadApp(member)
+  state.access={access:{active:false,status:'pending'}}
+  assert.equal(await actions.loadApp({...member,access_token:'renewed-but-denied'}),false)
+  assert.equal(state.screens.at(-1),'login','preserving the editor must not bypass revoked access')
+}
+
+// An unavailable module cannot be displayed as an empty successful workspace.
 {
   const {state,actions}=harness()
   state.bundle={...bundle,error:clockError}

@@ -1,5 +1,5 @@
 // Server-only generation and review. Nothing is persisted before both checks pass.
-export const MODEL_QUALITY_VERSION = 'v145'
+export const MODEL_QUALITY_VERSION = 'v146'
 export class ModelWorkflowError extends Error {
   constructor(message,status=422,code='model_workflow_failed',issues=[]) { super(message); this.name='ModelWorkflowError'; this.status=status; this.code=code; this.issues=issues.slice(0,8).map(({code,location,reason})=>({code,location:String(location||'').slice(0,120),reason:String(reason||'').slice(0,700)})) }
 }

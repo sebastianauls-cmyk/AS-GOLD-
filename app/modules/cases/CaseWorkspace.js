@@ -13,7 +13,7 @@ import { localizedCountryName } from '../country/countryLabels.mjs'
 import { COUNTRY_CATALOG } from '../country/countryRegistry.mjs'
 import { APP_VERSION } from '../release/appRelease.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage.js'
-import { readableDocumentSummary } from '../language/documentLanguageWorkflow.mjs'
+import { initializeDocumentReview } from '../documents/documentAnalysisRecovery.mjs'
 import { bilingualLetterUi } from '../language/bilingualLetter.mjs'
 import { LegalComparisonPanel } from '../country/LegalComparisonPanel'
 import { AssessmentEvidenceFields } from './AssessmentEvidenceFields'
@@ -185,19 +185,20 @@ export function DocumentSection({copy:on, privacy, cases, documents, mode, setMo
   </>
 }
 
-export function DocumentDetail({copy:on, analysis, privacy, language='de', outputLanguage='de', item, cases, documents=[], onBack, onSave, onAnalyze, onOpen, onPrepareApproval, approvalLabel, continuation}){
+export function DocumentDetail({copy:on, analysis, privacy, language='de', outputLanguage='de', item, cases, documents=[], onBack, onSave, onAnalyze, onRecover, onOpen, onPrepareApproval, approvalLabel, continuation}){
   const allowedClassifications=['synthetic','anonymized']
   const letterUi=bilingualLetterUi(language)
-  const [draft,setDraft]=useState({title:item.title||'',case_id:item.case_id||'',document_type:item.document_type||'',document_date:item.document_date||'',extracted_text:item.extracted_text||'',analysis_summary:readableDocumentSummary(item.analysis_summary,item.extracted_text),analysis_next_step:item.analysis_next_step||'',reference_copy:item.reference_copy||item.response_letter_de||'',reference_copy_language:item.reference_copy_language||'de',customer_copy:item.customer_copy||'',customer_copy_language:item.customer_copy_language||outputLanguage,response_recipient:item.response_recipient||'',response_subject:item.response_subject||'',analysis_traffic_light:item.analysis_traffic_light||'yellow',analysis_reasoning:item.analysis_reasoning||'',analysis_confidence:item.analysis_confidence||'',data_classification:allowedClassifications.includes(item.data_classification)?item.data_classification:'',test_data_confirmed:false})
+  const [initialReview]=useState(()=>initializeDocumentReview(item,outputLanguage,cases.find(entry=>entry.id===item.case_id)?.target_country||'DE'))
+  const [draft,setDraft]=useState(initialReview.draft)
   const linkedCase=cases.find(entry=>entry.id===draft.case_id)
   const deadlineResult=linkedCase?analyzeCaseDeadlines(linkedCase,[...documents.filter(doc=>doc.id!==item.id),{...item,...draft}]):undefined
-  const [analysisPhase,setAnalysisPhase]=useState(item.extracted_text||item.analysis_summary||item.analysis_next_step?'saved':'uploaded')
+  const [analysisPhase,setAnalysisPhase]=useState(initialReview.recovered?'draft':item.extracted_text||item.analysis_summary||item.analysis_next_step?'saved':'uploaded')
   const evidenceCopy=caseGuidanceCopy(language)
-  const [savedFingerprint,setSavedFingerprint]=useState(()=>documentDraftFingerprint(draft))
+  const [savedFingerprint,setSavedFingerprint]=useState(()=>documentDraftFingerprint(initialReview.baseline))
   const [saving,setSaving]=useState(false)
   const saveBusy=useRef(false)
   const [originalUrl,setOriginalUrl]=useState('')
-  const dirty=documentDraftFingerprint(draft)!==savedFingerprint
+  const dirty=!!draft.analysis_generated||documentDraftFingerprint(draft)!==savedFingerprint
   useEffect(()=>{
     if(!dirty)return
     const warn=event=>{event.preventDefault();event.returnValue=''}
@@ -226,19 +227,19 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={()=>{if(!dirty||window.confirm(evidenceCopy.unsaved))onBack()}}>{on.back}</button>
     <section className="documentReviewHead"><div><h2>{on.documentReview}</h2><p>{on.documentReviewHelp}</p></div><div className="documentReviewActions">{item.file_path&&<button className="secondary" type="button" onClick={openOriginal}>{on.originalFile}</button>}{item.case_id&&onPrepareApproval&&<button className="primary" type="button" disabled={dirty||saving} onClick={()=>onPrepareApproval(item)}>{approvalLabel}</button>}</div></section>
-    {dirty&&<p role="status" className="attentionBox">{evidenceCopy.saveFirst}</p>}
+    {dirty&&<div role="status" className="attentionBox"><p>{evidenceCopy.saveFirst}</p><button className="primary" type="submit" form={fieldId(item.id,'review-form')} disabled={saving}>{analysis?.save||on.saveDocument}</button></div>}
     {originalUrl&&<a className="secondary" href={originalUrl} target="_blank" rel="noopener noreferrer">{evidenceCopy.openFallback}</a>}
-    <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document" result={deadlineResult}/>
-    <DocumentAutoAssessment language={language} text={draft.extracted_text} deadlineResult={deadlineResult}/>
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:analysisPhase==='failed'?(analysis?.analysisFailed||analysis?.failed):(analysis?.notStarted||on.noExtraction)}</p></div>
     <section className="actionCard coreForm documentLanguagePair">
       <label htmlFor={fieldId(item.id,'reference-copy-language')}>{letterUi.referenceLanguage}<select id={fieldId(item.id,'reference-copy-language')} value={draft.reference_copy_language} onChange={event=>setDraft({...draft,reference_copy_language:event.target.value})} required>{OUTPUT_LANGUAGES.map(key=><option value={key} key={key}>{outputLanguageLabels[key]}</option>)}</select></label>
       <label htmlFor={fieldId(item.id,'customer-copy-language')}>{letterUi.customerLanguage}<select id={fieldId(item.id,'customer-copy-language')} value={draft.customer_copy_language} onChange={event=>setDraft({...draft,customer_copy_language:event.target.value})} required>{OUTPUT_LANGUAGES.map(key=><option value={key} key={key}>{outputLanguageLabels[key]}</option>)}</select></label>
       <p className="wideField analysisManualNote">{letterUi.sameLanguage}</p>
     </section>
-    {analysis&&onAnalyze&&<ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} phase={analysisPhase} onPhase={setAnalysisPhase} analysisAllowed={allowedClassifications.includes(item.data_classification)} classificationMessage={privacy?.uploadRequired}/>}
+    {analysis&&onAnalyze&&<ControlledDocumentAnalysis copy={analysis} item={item} draft={draft} onChange={setDraft} onAnalyze={onAnalyze} onRecover={onRecover} canRecover={!dirty} phase={analysisPhase} onPhase={setAnalysisPhase} analysisAllowed={allowedClassifications.includes(item.data_classification)} classificationMessage={privacy?.uploadRequired}/>}
     {continuation&&item.analysis_summary&&!dirty&&<ResultContinuation {...continuation} language={language}/>}
-    <form className="actionCard coreForm documentReviewForm" onSubmit={save}>
+    <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document" result={deadlineResult}/>
+    <DocumentAutoAssessment language={language} text={draft.extracted_text} deadlineResult={deadlineResult}/>
+    <form id={fieldId(item.id,'review-form')} className="actionCard coreForm documentReviewForm" onSubmit={save}>
       <label htmlFor={fieldId(item.id,'document-title')}>{on.documentTitle}<input id={fieldId(item.id,'document-title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
       <label htmlFor={fieldId(item.id,'document-case')}>{on.selectCase}<select id={fieldId(item.id,'document-case')} value={draft.case_id} onChange={event=>setDraft({...draft,case_id:event.target.value})}><option value="">{on.withoutCase}</option>{cases.map(entry=><option value={entry.id} key={entry.id}>{entry.title}</option>)}</select></label>
       <label htmlFor={fieldId(item.id,'document-type')}>{on.documentType}<input id={fieldId(item.id,'document-type')} value={draft.document_type} onChange={event=>setDraft({...draft,document_type:event.target.value})}/></label>

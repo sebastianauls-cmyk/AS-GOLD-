@@ -222,7 +222,7 @@ export default function WorkspaceController(){
     supabase,ownerId:user?.id,data,approvalUi,outputLanguage,setData,setMessage,setApprovalDefaults,setSelectedApproval,setSelectedDocument,setSelectedCase,setSection,recordLocalAction,recordServerAudit
   })
 
-  const {analyzeDocument,updateDocument,uploadDocument,openDocument}=createDocumentWorkflowActions({
+  const {analyzeDocument,recoverDocumentAnalysis,updateDocument,uploadDocument,openDocument}=createDocumentWorkflowActions({
     supabase,ownerId:user?.id,data,access,language,privacyCurrent,outputLanguage,privacyCopy:v28,notices:n,uploadCopy:uui,analysisCopy:analysisUi,caseCopy:core,serverCopy:sct,setData,setMessage,setPrivacySettings,setUploading,setSection,setSelectedDocument,uploadInFlight,recordLocalAction,recordServerAudit
   })
 
@@ -350,7 +350,7 @@ export default function WorkspaceController(){
 
   if(screen==='app'&&selectedApproval) return protectedWorkspace(<ApprovalDetail key={`${selectedApproval.id}-${selectedApproval.preview_revision}-${selectedApproval.status}`} copy={approvalUi} item={selectedApproval} cases={data.cases} documents={data.documents} onBack={()=>setSelectedApproval(null)} onSave={updateApproval} onApprove={approveApproval} onReject={rejectApproval}/>)
 
-  if(screen==='app'&&selectedDocument) return protectedWorkspace(<DocumentDetail continuation={resultContinuation} key={selectedDocument.id} copy={core} analysis={analysisUi} privacy={v28} language={language} outputLanguage={outputLanguage} item={selectedDocument} cases={data.cases} documents={data.documents} onBack={()=>{const linked=data.cases.find(item=>item.id===selectedDocument.case_id);setSelectedDocument(null);if(linked)setSelectedCase(linked)}} onSave={updateDocument} onAnalyze={analyzeDocument} onOpen={openDocument} onPrepareApproval={prepareDocumentApproval} approvalLabel={approvalUi.prepareFromDocument}/>)
+  if(screen==='app'&&selectedDocument) return protectedWorkspace(<DocumentDetail continuation={resultContinuation} key={selectedDocument.id} copy={core} analysis={analysisUi} privacy={v28} language={language} outputLanguage={outputLanguage} item={selectedDocument} cases={data.cases} documents={data.documents} onBack={()=>{const linked=data.cases.find(item=>item.id===selectedDocument.case_id);setSelectedDocument(null);if(linked)setSelectedCase(linked)}} onSave={updateDocument} onAnalyze={analyzeDocument} onRecover={recoverDocumentAnalysis} onOpen={openDocument} onPrepareApproval={prepareDocumentApproval} approvalLabel={approvalUi.prepareFromDocument}/>)
 
   if(screen==='app'&&selectedCase){
     const caseDocs=data.documents.filter(document=>document.case_id===selectedCase.id)
