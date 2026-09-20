@@ -1,0 +1,15 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: export identifies the prerequisite before the dependent action
+    at file:///workspace/scratch/d395f9af43f5/ash-workspace-gold/scripts/test_v136_customer_roadmap.mjs:70:8 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { roadmapStyle, roadmapSource, roadmapFingerprint, roadmapSteps, ROADMAP_COLORS, validateRoadmapInput } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
+import { readableStepText, roadmapProgressLabel, roadmapStepReference } from './lib/roadmapDisplay.mjs'
 import { roadmapUi } from './lib/customerRoadmapCopy.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage'
 import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, authorizeRoadmap, roadmapErrorMessage } from '../services/customerRoadmap'
@@ -47,9 +48,10 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
       <ol className="roadmapStepList">{steps.map((step,index)=><li key={step.id} className="roadmapStep" data-step-id={step.id}>
         <div className="roadmapStepHead"><h4>{index+1}. {step.title}</h4><Dot light={step.light} label={ui[step.light]}/></div>
         <p className="roadmapPhase">{ui[step.phase]}</p>
-        <dl>{[['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]].filter(([,value])=>value).map(([key,value])=><div key={key}><dt>{ui[key]}</dt><dd>{value}</dd></div>)}</dl>
-        {step.depends_on.length>0&&<p className="roadmapMeta">{ui.afterwards}: {step.depends_on.map(id=>`${steps.findIndex(item=>item.id===id)+1}. ${steps.find(item=>item.id===id)?.title}`).join(' · ')}</p>}
+        <dl>{[['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]].filter(([,value])=>value).map(([key,value])=><div key={key}><dt>{ui[key]}</dt><dd>{readableStepText(value,result.steps)}</dd></div>)}</dl>
+        {step.depends_on.length>0&&<p className="roadmapMeta">{ui.prerequisites}: {step.depends_on.map(id=>roadmapStepReference(id,steps)).join(' · ')}</p>}
         <Evidence items={step.evidence} documents={documents} ui={ui} onOpenDocument={onOpenDocument}/>
+        {!step.done&&step.update?.reopened_by_step&&<p className="roadmapMeta">{ui.reopenedAfter}: {roadmapStepReference(step.update.reopened_by_step,steps)}</p>}
         {step.update?.note&&<p className="roadmapRecorded"><b>{ui.progress}:</b> {step.update.note}</p>}
         {step.blocked&&<p className="roadmapMeta">{ui.blocked}</p>}
         {onProgress&&<button className="secondary" type="button" disabled={busy||stale||(!step.done&&step.blocked)} onClick={()=>{setEditing(step.id);setNote('')}}>{step.done?controls.reopen:controls.done}</button>}
@@ -76,11 +78,15 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[full,setFull]=useState(false),[showForm,setShowForm]=useState(true)
   const [style,setStyle]=useState(()=>roadmapStyle({customer_name:client?.name||''}))
   const [referenceLanguage,setReferenceLanguage]=useState(outputLanguage),[confirmed,setConfirmed]=useState(false),[fingerprint,setFingerprint]=useState('')
+  const [processingStage,setProcessingStage]=useState('')
+  const activeCaseRef=useRef(item.id)
+  activeCaseRef.current=item.id
   const busyRef=useRef(false)
   const formRef=useRef(null)
   const source=useMemo(()=>roadmapSource(item,documents,assessments),[item,documents,assessments])
-  const record=records.find(entry=>entry.id===activeId)||records[0]
-  const stale=!!record&&(!fingerprint||record.source_fingerprint!==fingerprint||record.id!==records[0]?.id)
+  const caseRecords=records.filter(entry=>entry.case_id===item.id)
+  const record=caseRecords.find(entry=>entry.id===activeId)||caseRecords[0]
+  const stale=!!record&&(!fingerprint||record.source_fingerprint!==fingerprint||record.id!==caseRecords[0]?.id)
   const canCreate=continuation.canContinue!==false
   useEffect(()=>{
     let cancelled=false
@@ -101,19 +107,23 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   async function run(task) {
     if(busyRef.current)return false
     busyRef.current=true;setBusy(true);setError('')
-    try{return await task()}catch(error){setError(error?.message||ui.error);return false}finally{busyRef.current=false;setBusy(false)}
+    try{return await task()}catch(error){setError(error?.message||ui.error);return false}finally{busyRef.current=false;setBusy(false);setProcessingStage('')}
   }
   async function create(event) {
     event.preventDefault()
     if(!confirmed)return
+    const creatingCaseId=item.id
     return run(async()=>{
+      setProcessingStage('generation')
       validateRoadmapInput(source)
       const authorization=await authorizeRoadmap(supabase,{ownerId})
       if(authorization.error)throw new Error(ui.error)
+      if(activeCaseRef.current!==creatingCaseId)return false
       onPrivacyUpdate?.(authorization.data)
-      const {data,error}=await generateCustomerRoadmap(supabase,{caseId:item.id,style,outputLanguage,referenceLanguage})
+      const {data,error}=await generateCustomerRoadmap(supabase,{caseId:item.id,style,outputLanguage,referenceLanguage,onProgress:({stage})=>{if(activeCaseRef.current!==creatingCaseId)throw new Error(ui.stale);setProcessingStage(stage)}})
       if(error)throw new Error(await roadmapErrorMessage(error,ui.error))
       if(!data?.roadmap)throw new Error(ui.error)
+      if(activeCaseRef.current!==creatingCaseId)return false
       setRecords(previous=>[data.roadmap,...previous]);setActiveId(data.roadmap.id);setShowForm(false);setFull(false);setConfirmed(false)
       return true
     })
@@ -134,9 +144,10 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   return <section className="customerRoadmapPanel" id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>
     <header className="roadmapPanelHead"><div><h3 id={`roadmap-title-${item.id}`}>{ui.title}</h3><p>{ui.intro}</p></div>{record&&canCreate&&<button type="button" className="secondary" disabled={busy} onClick={expandForm}>{ui.refresh}</button>}</header>
     {loading&&<p role="status">{ui.loading}</p>}
+    {busy&&processingStage&&<p role="status" aria-live="polite">{roadmapProgressLabel(language,processingStage)}</p>}
     {error&&<p className="roadmapError" role="alert">{error}</p>}
     {stale&&<p className="roadmapStale" role="status">{ui.stale}</p>}
-    {records.length>1&&<label className="roadmapVersionSelect">{ui.history}<select value={activeId} onChange={event=>{setActiveId(event.target.value);setFull(false)}}>{records.map(entry=><option key={entry.id} value={entry.id}>{new Date(entry.created_at).toLocaleString(language)} · {outputLanguageLabels[entry.output_language]}</option>)}</select></label>}
+    {caseRecords.length>1&&<label className="roadmapVersionSelect">{ui.history}<select value={activeId} onChange={event=>{setActiveId(event.target.value);setFull(false)}}>{caseRecords.map(entry=><option key={entry.id} value={entry.id}>{new Date(entry.created_at).toLocaleString(language)} · {outputLanguageLabels[entry.output_language]}</option>)}</select></label>}
     {!canCreate&&!record&&<ResultContinuation {...continuation} language={language}/>}
     {showForm&&canCreate&&<form ref={formRef} className="roadmapSetup" onSubmit={create}>
       <details><summary>{ui.style}</summary><div className="roadmapFields">
@@ -148,7 +159,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
       <label className="roadmapConsent"><input type="checkbox" required checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>{ui.confirm}</span></label>
       <button type="submit" className="primary" disabled={busy||!confirmed||loading}>{busy?ui.creating:record?ui.refresh:ui.create}</button>
     </form>}
-    {busy&&<p role="status" aria-live="polite">{ui.loading}</p>}
+    {busy&&!processingStage&&<p role="status" aria-live="polite">{ui.loading}</p>}
     {record&&<CustomerRoadmapView key={record.id} record={record} stale={stale} documents={documents} onOpenDocument={onOpenDocument} onProgress={progress} onExport={exportFile} busy={busy} full={full} onFull={()=>setFull(true)} continuation={continuation} language={language}/>}
   </section>
 }

@@ -1,0 +1,112 @@
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] workflow failed { code: 'model_workflow_failed' }
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] workflow failed { code: 'model_workflow_failed' }
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'correction',
+  attempt: 2,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 2,
+  response_id: 'synthetic-4',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'correction',
+  attempt: 2,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 2,
+  response_id: 'synthetic-4',
+  status: 'completed'
+}
+[gold-case-roadmap] workflow failed { code: 'model_workflow_failed' }
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+Roadmap HTTP handler: duplicate/concurrent completion, quota, live access/privacy/source rechecks and failed-review persistence guard passed. Identity, database transport and model responses are synthetic; no authenticated browser acceptance claimed.

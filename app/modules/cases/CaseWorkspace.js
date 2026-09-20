@@ -18,6 +18,8 @@ import { AssessmentEvidenceFields } from './AssessmentEvidenceFields'
 import { caseEvidenceStatus } from './lib/caseEvidence.mjs'
 import { caseGuidanceCopy } from './lib/caseGuidanceCopy.mjs'
 import { analyzeCaseDeadlines } from './lib/caseDeadlineEvidence.mjs'
+import { caseStatusLabel } from './lib/caseStatus.mjs'
+import { DocumentDeadlineCandidates } from './DocumentDeadlineCandidates'
 import { CustomerRoadmapPanel } from './CustomerRoadmapPanel'
 import { ResultContinuation } from './ResultContinuation'
 import { documentDateLabel } from './lib/timelineDateCopy.mjs'
@@ -81,7 +83,7 @@ export function QuickActions({copy:on, onAction, deadlineCases=[]}){
   </>
 }
 
-export function CaseSection({copy:on, clients, cases, newCase, setNewCase, showForm, setShowForm, onSubmit, onSelect}){
+export function CaseSection({copy:on, language='de', clients, cases, newCase, setNewCase, showForm, setShowForm, onSubmit, onSelect}){
   const draftTestId=syntheticCaseId(newCase)
   return <>
     <button className="primary actionBtn" type="button" onClick={()=>setShowForm(value=>!value)}>{showForm?on.cancel:`＋ ${on.newCase}`}</button>
@@ -99,7 +101,7 @@ export function CaseSection({copy:on, clients, cases, newCase, setNewCase, showF
       <label htmlFor={fieldId('new-case','next')}>{on.nextAction}<textarea id={fieldId('new-case','next')} value={newCase.next_action} onChange={event=>setNewCase({...newCase,next_action:event.target.value})}/></label>
       <button className="primary full">{on.createCase}</button>
     </form>}
-    {cases.length?<div className="itemList">{cases.map(item=>{const testId=syntheticCaseId(item);return <button className="itemRow buttonRow" type="button" onClick={()=>onSelect(item)} key={item.id}><div><b>{item.title}</b><div className="pills">{testId&&<span className="pill syntheticCasePill">🧪 {testId} · {on.syntheticCase}</span>}<span className="pill">{item.status}</span><span className={`pill ${item.traffic_light||'yellow'}`}>{trafficLightLabel(on,item.traffic_light)}</span>{item.deadline_at&&<span className="pill">{new Date(item.deadline_at).toLocaleDateString()}</span>}</div></div><span className="chev">›</span></button>})}</div>:null}
+    {cases.length?<div className="itemList">{cases.map(item=>{const testId=syntheticCaseId(item);return <button className="itemRow buttonRow" type="button" onClick={()=>onSelect(item)} key={item.id}><div><b>{item.title}</b><div className="pills">{testId&&<span className="pill syntheticCasePill">🧪 {testId} · {on.syntheticCase}</span>}<span className="pill">{caseStatusLabel(language,item.status)}</span><span className={`pill ${item.traffic_light||'yellow'}`}>{trafficLightLabel(on,item.traffic_light)}</span>{item.deadline_at&&<span className="pill">{new Date(item.deadline_at).toLocaleDateString()}</span>}</div></div><span className="chev">›</span></button>})}</div>:null}
   </>
 }
 
@@ -154,6 +156,7 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
     {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} continuation={continuation}/>}
     {supabase&&ownerId&&<LegalComparisonPanel supabase={supabase} ownerId={ownerId} language={language} outputLanguage={outputLanguage} item={item} workspaceCopy={on} onPrivacyUpdate={onPrivacyUpdate}/>}
     <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>
+    <DocumentDeadlineCandidates item={item} documents={documents} language={language} onOpenDocument={onOpenDocument} onEdit={()=>setEditing(true)}/>
     <CaseTimeline language={language} caseDeadline={item.deadline_at||''} documents={documents}/>
     <CaseCompletionPanels language={language} item={item} documents={documents} assessments={assessments} onEdit={()=>setEditing(true)} onAddDocument={()=>onAddDocument(item.id)} onOpenDocument={onOpenDocument} onAssess={()=>reviewAssessment()}/>
     <section className={`readinessCard ${!documents.length?'attentionBox':''}`}><b>{on.assessmentState}</b><p>{readiness}</p><small>{evidenceCopy.boundary}</small></section>

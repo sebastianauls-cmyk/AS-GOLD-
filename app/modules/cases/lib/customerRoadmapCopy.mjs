@@ -13,4 +13,17 @@ const rows={
  vi:['Lộ trình cho khách hàng','Tổng hợp hồ sơ, giải thích tình hình và chuẩn bị các bước cùng thư từ.','Tạo lộ trình','Tạo lại','Đang tạo …','Cách xưng hô và tiêu đề thư','Tên khách hàng','Lời chào','Giọng văn','Thân mật','Trang trọng','Người gửi / chữ ký','Tiêu đề trên mỗi trang','Lời kết','Tôi xác nhận hồ sơ và tài liệu chỉ chứa dữ liệu thử nghiệm giả định hoặc đã ẩn danh và có thể được xử lý cùng nhau bằng AI.','Đang tải …','Không thể xử lý lộ trình.','Chưa có lộ trình.','Tài liệu đã thay đổi. Hãy tạo lộ trình mới.','Bản nháp · kiểm tra trước khi dùng','Điều này có nghĩa là','Bước tiếp theo','Việc bạn cần làm','Thông tin đã xác định','Câu hỏi còn mở','Lộ trình','Làm ngay','Làm song song','Chờ phản hồi','Kiểm tra sau đó','Người thực hiện','Lý do','Đang chờ','Sau khi có phản hồi','Chuyển xanh khi','Nhắc lại','Thời hạn có căn cứ','Nguồn','Xác nhận hoàn thành','Mở lại','Điều gì đã xong hoặc được mở lại? Ghi bằng chứng hoặc kết quả.','Lưu tiến độ','Hủy','Các bước cần thiết trước đó chưa hoàn thành.','Thư riêng','Bản dịch cho khách hàng','Các phiên bản trước','Đã xong và xác nhận','Còn mở / chờ phản hồi','Hành động / chú ý thời hạn','Kiểm tra căn cứ','Ngôn ngữ khách hàng','Ngôn ngữ thư','Đã lưu','Mở tài liệu','Xem trước đầy đủ','Lịch sử','Hoàn thành','Nguồn đã thay đổi']
 }
 export const ROADMAP_UI_LANGUAGES=Object.keys(rows)
-export function roadmapUi(language='de') {return Object.fromEntries(keys.map((key,index)=>[key,(rows[language]||rows.de)[index]]))}
+const dependencyCopy={
+ de:{prerequisites:'Zuerst erforderlich',reopenedAfter:'Automatisch wieder geöffnet nach Wiederöffnung von'},
+ en:{prerequisites:'Required first',reopenedAfter:'Reopened automatically after reopening'},
+ fr:{prerequisites:'À terminer au préalable',reopenedAfter:'Rouvert automatiquement après la réouverture de'},
+ tr:{prerequisites:'Önce tamamlanması gereken',reopenedAfter:'Şu adım yeniden açıldığı için otomatik olarak yeniden açıldı'},
+ pl:{prerequisites:'Najpierw wymagane',reopenedAfter:'Automatycznie otwarte ponownie po ponownym otwarciu'},
+ ru:{prerequisites:'Сначала необходимо выполнить',reopenedAfter:'Автоматически открыто заново после повторного открытия шага'},
+ ar:{prerequisites:'المطلوب إكماله أولاً',reopenedAfter:'أُعيد فتحه تلقائياً بعد إعادة فتح'},
+ fa:{prerequisites:'ابتدا باید تکمیل شود',reopenedAfter:'پس از بازگشایی این مرحله، به‌طور خودکار بازگشایی شد'},
+ ro:{prerequisites:'De finalizat mai întâi',reopenedAfter:'Redeschis automat după redeschiderea pasului'},
+ bg:{prerequisites:'Необходимо е първо да се изпълни',reopenedAfter:'Отворено отново автоматично след повторното отваряне на'},
+ vi:{prerequisites:'Cần hoàn thành trước',reopenedAfter:'Tự động mở lại sau khi mở lại bước'}
+}
+export function roadmapUi(language='de') {return {...Object.fromEntries(keys.map((key,index)=>[key,(rows[language]||rows.de)[index]])),...(dependencyCopy[language]||dependencyCopy.de)}}

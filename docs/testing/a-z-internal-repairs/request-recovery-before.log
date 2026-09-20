@@ -1,0 +1,40 @@
+(node:5) ExperimentalWarning: stripTypeScriptTypes is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: repeating a completed request must return the same saved roadmap
++ actual - expected
+
++ '572cad53-42d4-42fb-83e4-2e5425b9919c'
+- '6e8adc0c-bd0a-4865-a9dc-9c171c5275b3'
+
+    at file:///workspace/scratch/d395f9af43f5/ash-workspace-gold/scripts/test_roadmap_request_flow.mjs:83:10 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: '572cad53-42d4-42fb-83e4-2e5425b9919c',
+  expected: '6e8adc0c-bd0a-4865-a9dc-9c171c5275b3',
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.19.0

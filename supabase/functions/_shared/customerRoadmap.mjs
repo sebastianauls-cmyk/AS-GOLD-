@@ -64,12 +64,23 @@ export function validateRoadmapInput(source) {
   if(source.documents.length>30 || JSON.stringify(source).length>200000) throw new Error('Dieser Fall ist für einen gemeinsamen Durchlauf zu groß. Bitte in sachlich getrennte Teilfälle aufteilen; es wurden keine Unterlagen stillschweigend ausgelassen.')
 }
 
-export function validateRoadmapResult(raw,source) {
+export function validateRoadmapResult(raw,source,{outputLanguage,referenceLanguage,requiredLetterIds=[]}={}) {
   if(!raw || !text(raw.title) || !text(raw.opening) || !text(raw.meaning) || !text(raw.next) || !text(raw.customer_action)) throw new Error('Der Kundenfahrplan ist unvollständig.')
   if(!Array.isArray(raw.key_points) || raw.key_points.length<1 || raw.key_points.length>3) throw new Error('Die Kurzfassung muss ein bis drei Kernpunkte enthalten.')
   if(!Array.isArray(raw.steps) || !raw.steps.length || raw.steps.length>12 || list(raw.letters).length>6) throw new Error('Der Fahrplan enthält keine gültige Schrittfolge.')
+  if(requiredLetterIds.some(id=>!list(raw.letters).some(letter=>letter.id===id))) throw new Error('Ein Anschreiben darf nicht entfernt werden, um die fehlende Kundenübersetzung zu umgehen. Die Übersetzung muss ergänzt werden.')
   const docs = new Map(source.documents.map(doc=>[doc.id,doc]))
   const normalized = value=>text(value).replace(/\s+/gu,' ')
+  // Report every bad quote with its location. A generic first-error message
+  // made the model edit unrelated prose while repeating concatenated excerpts.
+  const evidenceErrors=[]
+  const inspectEvidence=(items,location)=>{
+    if(!Array.isArray(items))return
+    items.forEach((item,index)=>{if(!item||!docs.has(item.document_id)||normalized(item.quote).length<8||!normalized(docs.get(item.document_id).extracted_text).includes(normalized(item.quote)))evidenceErrors.push({location:`${location}[${index}]`,document_id:item?.document_id,quote:item?.quote})})
+  }
+  list(raw.facts).forEach((fact,index)=>inspectEvidence(fact.evidence,`facts[${index}].evidence`))
+  raw.steps.forEach((step,index)=>{inspectEvidence(step.evidence,`steps[${index}].evidence`);if(step.deadline)inspectEvidence([step.deadline],`steps[${index}].deadline`)})
+  if(evidenceErrors.length)throw new Error('Ein Beleg stimmt nicht mit dem Original überein. Korrigiere ALLE folgenden Belegstellen: '+JSON.stringify(evidenceErrors)+'. Jedes Zitat muss eine unveränderte zusammenhängende Stelle aus extracted_text mit mindestens 8 Zeichen sein. Nicht benachbarte Originalsätze müssen getrennte Belege werden; nicht zu einem Zitat zusammenziehen oder übersetzen. Unterstützte Aussagen und Anschreiben bleiben erhalten.')
   function checkEvidence(items,required=false) {
     if(!Array.isArray(items) || (required&&!items.length)) throw new Error('Ein Beleg für den Fahrplan fehlt.')
     for(const item of items) if(!docs.has(item.document_id) || normalized(item.quote).length<8 || !normalized(docs.get(item.document_id).extracted_text).includes(normalized(item.quote))) throw new Error('Ein Beleg stimmt nicht mit dem Original überein. Bitte erneut erstellen.')
@@ -109,6 +120,12 @@ export function validateRoadmapResult(raw,source) {
     if(!text(letter.id) || letterIds.has(letter.id) || !text(letter.recipient) || !text(letter.subject) || !text(letter.body)) throw new Error('Ein Anschreiben ist unvollständig.')
     if(!Array.isArray(letter.document_ids) || !letter.document_ids.length || letter.document_ids.some(id=>!docs.has(id))) throw new Error('Die Grundlage eines Anschreibens fehlt.')
     if(/[🔴🟡🟢⚪●]/u.test(letter.body)) throw new Error('Die formalen Anschreiben dürfen keine Ampelpunkte enthalten.')
+    if(outputLanguage&&referenceLanguage&&outputLanguage!==referenceLanguage&&!text(letter.customer_translation)) {
+      const error=new Error('Für jedes Anschreiben fehlt die vollständige Kundenübersetzung in die gewählte Ausgabesprache. Ergänze customer_translation; entferne dafür kein quellenbelegtes Anschreiben und erfinde keine ungeklärte Absenderrolle.')
+      error.repairContext={requiredLetterIds:raw.letters.map(entry=>entry.id)}
+      throw error
+    }
+    if(outputLanguage&&outputLanguage===referenceLanguage&&text(letter.customer_translation)) throw new Error('Bei gleicher Ausgabe- und Bezugssprache muss customer_translation leer bleiben.')
     letterIds.add(letter.id)
   }
   return raw

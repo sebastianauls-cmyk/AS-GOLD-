@@ -1,3 +1,4 @@
+import { documentDeadlineCandidates } from './lib/deadlineCandidates.mjs'
 export function deadlineTimestamp(value=''){
   const timestamp=Date.parse(String(value||''))
   return Number.isFinite(timestamp)?timestamp:null
@@ -5,7 +6,7 @@ export function deadlineTimestamp(value=''){
 
 const trafficLightPriority={red:0,yellow:1,white:2,green:3}
 
-export function buildDeadlineOverview(cases=[]){
+export function buildDeadlineOverview(cases=[],documents=[]){
   const dated=[]
   const unresolved=[]
   for(const item of cases){
@@ -17,7 +18,8 @@ export function buildDeadlineOverview(cases=[]){
     const priority=(trafficLightPriority[left?.traffic_light]??1)-(trafficLightPriority[right?.traffic_light]??1)
     return priority||String(left?.title||'').localeCompare(String(right?.title||''))
   })
-  return {dated,unresolved,total:dated.length+unresolved.length}
+  const detected=cases.flatMap(item=>{const candidates=documentDeadlineCandidates(item,documents);return candidates.length?[{item,candidates}]:[]})
+  return {dated,unresolved,detected,total:dated.length+unresolved.length}
 }
 
 export function orderDeadlineCases(cases=[]){

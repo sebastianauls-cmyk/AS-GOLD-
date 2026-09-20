@@ -1,0 +1,9 @@
+PDF repair: actual roadmap, letter and handoff renderers plus 11 language fixtures and bilingual Word/PDF letters; embedded fonts, text mapping, no raster pages, extracted text, fact provenance, reopened dependencies, separate translation pages and long-content end markers passed.
+V136: case isolation, complete input, original quotes, deadline provenance, stale reports, dependencies, reopening/history, fact provenance and progress context in export, 11 languages and separate Word letters passed.
+✓ Compiled successfully in 456ms
+  Generating static pages using 8 workers (0/29) ...
+  Generating static pages using 8 workers (7/29) 
+  Generating static pages using 8 workers (14/29) 
+  Generating static pages using 8 workers (21/29) 
+✓ Generating static pages using 8 workers (29/29) in 427ms
+Complete npm run build: exit code 0.
