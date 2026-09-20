@@ -110,7 +110,7 @@
     "test:complex-case": "node scripts/test_complex_case_evidence.mjs",
     "test:history-corpus": "node scripts/test_history_case_corpus.mjs",
     "test:ai-evidence-quality": "node scripts/test_ai_evidence_quality.mjs",
-    "test:product-repair": "node scripts/test_product_repair.mjs && node scripts/test_pdf_text_exports.mjs"
+    "test:product-repair": "node scripts/test_product_repair.mjs && node scripts/test_roadmap_request_flow.mjs && node scripts/test_pdf_text_exports.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",

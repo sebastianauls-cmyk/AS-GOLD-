@@ -67,10 +67,8 @@ Deno.serve(async(req:Request)=>{
     const permissions=accessRows?.[0]?.permissions;
     if(permissions?.full_analysis!==true) return reply(req,{error:'Für den Kundenfahrplan ist ein Zugang mit Fallanalyse erforderlich. Bitte zuerst den Leistungsumfang vergleichen.'},403);
     if(!settings?.ai_processing_enabled||settings.privacy_notice_version!==PRIVACY||!settings.privacy_notice_acknowledged_at||settings.terms_version!==TERMS||!settings.terms_acknowledged_at) return reply(req,{error:'Die aktuelle Datenschutzbestätigung oder KI-Freigabe fehlt.'},412);
-    if((count||0)>=((user as any).is_anonymous?4:20)) return reply(req,{error:'Das Tageslimit für neue Kundenfahrpläne ist erreicht.'},429);
     validateRoadmapInput(source);
     const providerKey=Deno.env.get('OPENAI_API_KEY');
-    if(!providerKey) return reply(req,{error:'Die KI-Erstellung ist noch nicht eingerichtet.'},503);
     const outputLanguage=ROADMAP_LANGUAGES.includes(body.output_language)?body.output_language:'de';
     const referenceLanguage=ROADMAP_LANGUAGES.includes(body.reference_language)?body.reference_language:outputLanguage;
     const style=roadmapStyle(body.style);
@@ -95,19 +93,37 @@ ${permissions.draft_letters===true?'Create separate formal draft letters for eac
     // MODEL_CONFIGURATION_END
     const binding={workflow:'roadmap-staged-v1',owner_id:user.id,case_id:body.case_id,fingerprint,outputLanguage,referenceLanguage,style,draft_letters:permissions.draft_letters===true};
     const checkpoint=body.checkpoint?await openModelCheckpoint({token:body.checkpoint,binding,secret}):null;
+    // A sealed run identity makes a retried completion return the original
+    // saved result. The current caller, permissions, privacy and sources have
+    // already been checked above; this lookup cannot bypass those boundaries.
+    const runId=checkpoint?.runId||crypto.randomUUID();
+    const existingRun=()=>client.from('case_roadmaps').select('*').eq('id',runId).eq('case_id',body.case_id).eq('owner_id',user.id).maybeSingle();
+    if(checkpoint) {
+      const {data:existing,error:existingError}=await existingRun();
+      if(existingError)return reply(req,{error:'Der gespeicherte Stand konnte nicht geprüft werden.'},503);
+      if(existing)return reply(req,{status:'completed',roadmap:existing});
+    }
+    if((count||0)>=((user as any).is_anonymous?4:20)) return reply(req,{error:'Das Tageslimit für neue Kundenfahrpläne ist erreicht.'},429);
+    if(!providerKey) return reply(req,{error:'Die KI-Erstellung ist noch nicht eingerichtet.'},503);
     const onResponse=({stage,attempt,response_id,status}:any)=>console.info('[gold-case-roadmap] model stage',{stage,attempt,response_id,status});
     const analysis=body.staged===true
       ?await advanceReviewedModel({providerKey,request,reviewContent,validate,state:checkpoint?.state,onResponse})
       :await runReviewedModel({providerKey,request,reviewContent,validate,onResponse});
     if(analysis.status==='processing') {
-      const token=await sealModelCheckpoint({state:analysis.state,binding,secret,issuedAt:checkpoint?.issuedAt});
+      const token=await sealModelCheckpoint({state:analysis.state,binding,secret,runId,issuedAt:checkpoint?.issuedAt});
       return reply(req,{status:'processing',checkpoint:token,stage:analysis.state.stage==='generation'?'correction':'review',attempt:analysis.state.attempt},202);
     }
     const result=analysis.result;
     // MODEL_WORKFLOW_END
     const fresh=await loadSource(client,body.case_id,user.id);
     if(!fresh||await roadmapFingerprint(fresh)!==fingerprint) return reply(req,{error:'Während der Erstellung wurden Unterlagen geändert. Bitte den aktuellen Stand neu erstellen.'},409);
-    const {data:record,error:saveError}=await admin.from('case_roadmaps').insert({owner_id:user.id,case_id:body.case_id,output_language:outputLanguage,reference_language:referenceLanguage,style,result,source_fingerprint:fingerprint,source_documents:source.documents.map((doc:any)=>({id:doc.id,title:doc.title,updated_at:doc.updated_at})),model:'gpt-5.6-luna',workflow_version:MODEL_QUALITY_VERSION}).select().single();
+    const {data:record,error:saveError}=await admin.from('case_roadmaps').insert({owner_id:user.id,id:runId,case_id:body.case_id,output_language:outputLanguage,reference_language:referenceLanguage,style,result,source_fingerprint:fingerprint,source_documents:source.documents.map((doc:any)=>({id:doc.id,title:doc.title,updated_at:doc.updated_at})),model:'gpt-5.6-luna',workflow_version:MODEL_QUALITY_VERSION}).select().single();
+    // Concurrent completions can race after the lookup. The existing primary
+    // key permits one insert only; never overwrite its result or progress.
+    if(saveError?.code==='23505'&&checkpoint) {
+      const {data:existing,error:existingError}=await existingRun();
+      if(!existingError&&existing)return reply(req,{status:'completed',roadmap:existing});
+    }
     if(saveError) {console.error('[gold-case-roadmap] save failed',{code:saveError.code});return reply(req,{error:'Der Kundenfahrplan konnte nicht gespeichert werden.'},503);}
     return reply(req,{status:'completed',roadmap:record});
   } catch(error) {

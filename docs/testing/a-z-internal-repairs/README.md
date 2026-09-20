@@ -12,6 +12,7 @@ Base: `b90edee6b491f23df597caf48f5d74c63c961f9f` (V139). This branch contains in
 - Country-selector and case-status labels follow the interface language. Roadmap progress shows generation, review and correction separately.
 - Quote feedback identifies every invalid location and quotation, rather than reporting only a generic first failure. Non-adjacent original passages must be separate evidence entries.
 - Integration tokens and roadmap checkpoints reject non-canonical Base64URL aliases. A real release-gate failure exposed that changing unused encoding bits could decode to identical authenticated bytes. The existing negative test is retained and supplemented with an actual ciphertext bit flip; the cryptographic check is not bypassed.
+- Roadmap continuations retain a sealed server-generated run ID. Repeated or concurrent completion saves one result and preserves existing progress. The client may recover one failed continuation transfer using the same checkpoint; it does not retry a server rejection or an initial request without a checkpoint. See [request recovery](request-recovery.md) for the reproduced defect and handler-level checks.
 
 ## Verification
 
