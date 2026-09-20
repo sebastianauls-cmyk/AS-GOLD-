@@ -47,7 +47,7 @@ export function roadmapExportBlocks(record,{letterId}={}) {
   roadmapSteps(record).forEach((step,index)=>{
     add(`${index+1}. ${step.title}`,'step',step.light)
     add(`${ui[step.phase]} · ${ui[step.light]}`,'meta')
-    for(const [key,value] of [['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]]) if(value) add(`${ui[key]}: ${readableStepText(value,record.result.steps)}`)
+    for(const [key,value] of [['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]]) if(value) add(`${ui[key]}: ${readableStepText(value,record.result.steps,record.result.letters)}`)
     if(step.depends_on.length)add(`${ui.prerequisites}: ${step.depends_on.map(id=>roadmapStepReference(id,record.result.steps)).join(' · ')}`,'meta')
     if(!step.done&&step.update?.reopened_by_step)add(`${ui.reopenedAfter}: ${roadmapStepReference(step.update.reopened_by_step,record.result.steps)}`,'meta')
     if(step.update?.note) add(`${ui.progress}: ${step.update.note}${step.done?' · '+ui.complete:''}`,'meta')

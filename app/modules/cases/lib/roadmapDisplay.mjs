@@ -5,10 +5,12 @@ export function roadmapStepReference(id,steps=[]) {
 
 // Resolve navigation IDs in action text only. Original quotations, facts and
 // letters remain verbatim and are never rewritten by this display helper.
-export function readableStepText(text,steps=[]) {
+export function readableStepText(text,steps=[],letters=[]) {
   // Only technical IDs may be rewritten. Numeric IDs could also be amounts,
   // dates or counts, and plain words could be ordinary customer prose.
-  const labels=new Map(steps.map((step,index)=>[step.id,`${index+1}. ${step.title}`]).filter(([id])=>/^(?:[A-Za-z][A-Za-z_-]*\d+|[A-Za-z][A-Za-z0-9]*[_-][A-Za-z0-9_-]+)$/u.test(id)))
+  const references=[...steps.map((step,index)=>[step.id,`${index+1}. ${step.title}`]),
+    ...letters.map(letter=>[letter.id,[letter.recipient,letter.subject].filter(Boolean).join(' · ')])]
+  const labels=new Map(references.filter(([id,label])=>label&&/^(?:[A-Za-z][A-Za-z_-]*\d+|[A-Za-z][A-Za-z0-9]*[_-][A-Za-z0-9_-]+)$/u.test(id)))
   if(!labels.size)return text
   const escaped=[...labels.keys()].sort((a,b)=>b.length-a.length).map(id=>id.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'))
   const pattern=new RegExp(`(?<![\\p{L}\\p{N}_-])(?:${escaped.join('|')})(?![\\p{L}\\p{N}_-])`,'gu')

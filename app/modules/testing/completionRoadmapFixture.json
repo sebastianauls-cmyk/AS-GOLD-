@@ -1,0 +1,230 @@
+{
+  "id": "synthetic-v141-roadmap",
+  "case_id": "synthetic-v141-case",
+  "output_language": "de",
+  "reference_language": "en",
+  "style": {
+    "tone": "personal",
+    "closing": "",
+    "letterhead": "",
+    "salutation": "",
+    "sender_name": "",
+    "customer_name": "Mara Beispiel - RETEST 20.09.2026"
+  },
+  "result": {
+    "next": "Prüfe den vorbereiteten Brief L1 und sende ihn selbst an TEST-Unternehmen B, um die Zahlungsempfängerdaten für 3.000,00 EUR bestätigen zu lassen. Danach entscheidest du anhand dieser Daten, ob du den korrigierten Betrag zahlst.",
+    "facts": [
+      {
+        "text": "Die Ausgangsunterlagen nennen für den Auftrag einen Gesamtpreis von 4.800,00 EUR und halten fest, dass 1.800,00 EUR am 12.09.2026 bei B eingegangen sind; B bestätigt diesen Eingang ausdrücklich.",
+        "evidence": [
+          {
+            "quote": "Auftrag vom 01.09.2026: Gestaltung einer Firmenbroschüre, Gesamtpreis 4.800,00 EUR.",
+            "document_id": "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10"
+          },
+          {
+            "quote": "Eine Teilzahlung von 1.800,00 EUR ist am 12.09.2026 bei B eingegangen.",
+            "document_id": "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10"
+          },
+          {
+            "quote": "B bestätigt in seiner Abrechnung ausdrücklich den Eingang dieser Teilzahlung.",
+            "document_id": "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10"
+          }
+        ]
+      },
+      {
+        "text": "Die erste Mahnung verlangte nach Abzug der Teilzahlung noch 3.300,00 EUR bis 24.09.2026 und nannte laut Ausgangsunterlagen keine Begründung für die Differenz.",
+        "evidence": [
+          {
+            "quote": "B verlangt nach Abzug der Teilzahlung noch 3.300,00 EUR bis 24.09.2026.",
+            "document_id": "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10"
+          },
+          {
+            "quote": "Die Mahnung nennt keine Zusatzleistung, Gebühr oder andere Begründung der Differenz.",
+            "document_id": "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10"
+          }
+        ]
+      },
+      {
+        "text": "Im Nachtrag bestätigt B einen Rechenfehler, nennt 3.000,00 EUR als korrekten Restbetrag, zieht die zusätzlichen 300,00 EUR zurück und ersetzt die frühere Zahlungsaufforderung.",
+        "evidence": [
+          {
+            "quote": "Wir bestätigen einen Rechenfehler in unserer Mahnung vom 18.09.2026.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          },
+          {
+            "quote": "Der korrekte Restbetrag aus 4.800,00 EUR abzüglich 1.800,00 EUR beträgt 3.000,00 EUR.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          },
+          {
+            "quote": "Wir ziehen die darüber hinaus verlangten 300,00 EUR zurück.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          },
+          {
+            "quote": "Die frühere Zahlungsaufforderung von 3.300,00 EUR bis 24.09.2026 wird ersetzt.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          }
+        ]
+      },
+      {
+        "text": "Der Nachtrag nennt den 02.10.2026 als Zahlungstermin; die Statusnotiz hält fest, dass noch nicht erneut bezahlt wurde und keine Abschlussbestätigung vorliegt.",
+        "evidence": [
+          {
+            "quote": "Bitte zahlen Sie den Restbetrag bis 02.10.2026.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          },
+          {
+            "quote": "Die Antwort von B ist eingegangen. Ich habe noch nicht erneut bezahlt.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          },
+          {
+            "quote": "Eine Abschlussbestätigung, dass alles bezahlt ist, liegt nicht vor.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          }
+        ]
+      }
+    ],
+    "steps": [
+      {
+        "id": "S1",
+        "light": "yellow",
+        "owner": "Mara Beispiel",
+        "phase": "now",
+        "title": "Zahlungsempfängerdaten bei B bestätigen lassen",
+        "action": "Prüfe den Entwurf L1 und sende ihn selbst an TEST-Unternehmen B. Bitte um Bestätigung der vollständigen Zahlungsempfängerdaten für 3.000,00 EUR zu Rechnung TEST-104.",
+        "reason": "B hat den Betrag korrigiert; vor einer möglichen Zahlung sollen die konkreten Zahlungsempfängerdaten bestätigt werden.",
+        "deadline": null,
+        "evidence": [
+          {
+            "quote": "Der korrekte Restbetrag aus 4.800,00 EUR abzüglich 1.800,00 EUR beträgt 3.000,00 EUR.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          },
+          {
+            "quote": "Rechnung TEST-104 vom 10.09.2026: 4.800,00 EUR, fällig am 17.09.2026.",
+            "document_id": "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10"
+          }
+        ],
+        "done_when": "Eine schriftliche Antwort von B mit vollständigen Zahlungsempfängerdaten liegt vor und wurde von Mara Beispiel geprüft.",
+        "follow_up": "Vorschlag: Wenn nach 3 Kalendertagen ab Versand keine Antwort vorliegt, einmal schriftlich nachfassen. Dieser Abstand ist nur ein Arbeitsvorschlag.",
+        "depends_on": [],
+        "waiting_for": "Eine schriftliche Antwort von B mit den konkreten Zahlungsempfängerdaten.",
+        "after_response": "Wenn B die Daten bestätigt, gleiche sie mit dem geplanten Zahlungsweg ab. Bei Unklarheiten frage vor einer Zahlung erneut bei B nach."
+      },
+      {
+        "id": "S2",
+        "light": "yellow",
+        "owner": "Mara Beispiel",
+        "phase": "waiting",
+        "title": "Zahlungsentscheidung treffen und gegebenenfalls 3.000,00 EUR zahlen",
+        "action": "Warte die Bestätigung aus S1 ab und entscheide dann, ob du 3.000,00 EUR zahlst. Falls du zahlst, überweise genau diesen korrigierten Betrag bis zum genannten Termin und bewahre den Zahlungsbeleg auf. Falls du nicht zahlst, dokumentiere diese Entscheidung; ein Zahlungsbeleg ist dann nicht erforderlich.",
+        "reason": "Der Nachtrag nennt 3.000,00 EUR und den 02.10.2026 als Zahlungstermin; laut Statusnotiz wurde noch nicht erneut bezahlt.",
+        "deadline": {
+          "date": "2026-10-02",
+          "quote": "Bitte zahlen Sie den Restbetrag bis 02.10.2026.",
+          "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+        },
+        "evidence": [
+          {
+            "quote": "Bitte zahlen Sie den Restbetrag bis 02.10.2026.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          },
+          {
+            "quote": "Ich habe noch nicht erneut bezahlt.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          }
+        ],
+        "done_when": "Mara Beispiel hat ihre Zahlungsentscheidung dokumentiert. Falls sie zahlt, weist der Zahlungsbeleg 3.000,00 EUR, den geprüften Empfänger und das Ausführungsdatum aus; falls sie nicht zahlt, ist der Schritt mit der dokumentierten Nichtzahlung abgeschlossen.",
+        "follow_up": "Vorschlag: Wenn die Empfängerdaten oder die Zahlungsentscheidung bis kurz vor dem 02.10.2026 fehlen, prüfe den Stand erneut. Der fehlende Zahlungsbeleg darf nicht als Zahlungsbestätigung behandelt werden.",
+        "depends_on": [
+          "S1"
+        ],
+        "waiting_for": "Zuerst die Bestätigung der Zahlungsempfängerdaten aus S1; bei einer Zahlung anschließend der Zahlungsbeleg.",
+        "after_response": "Wenn B die Daten bestätigt, prüfe Empfänger und Betrag. Wenn du dich für die Zahlung entscheidest, führe sie bis 02.10.2026 aus; wenn du dich dagegen entscheidest, kläre keinen Zahlungseingang als erledigt."
+      },
+      {
+        "id": "S3",
+        "light": "yellow",
+        "owner": "Mara Beispiel",
+        "phase": "afterwards",
+        "title": "Nach einer Zahlung die Abschlussbestätigung anfordern",
+        "action": "Nur falls du den Betrag tatsächlich gezahlt hast: Bewahre den Zahlungsbeleg auf und bitte B um eine schriftliche Bestätigung, dass 3.000,00 EUR auf Rechnung TEST-104 verbucht und alles ausgeglichen ist.",
+        "reason": "Eine Abschlussbestätigung ist noch nicht vorhanden und kann erst nach einer tatsächlich erfolgten Zahlung angefordert werden.",
+        "deadline": null,
+        "evidence": [
+          {
+            "quote": "Eine Abschlussbestätigung, dass alles bezahlt ist, liegt nicht vor.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          },
+          {
+            "quote": "Die Zahlung und die anschließende Bestätigung bleiben offen.",
+            "document_id": "71349ac8-9613-418e-ac4b-dde76cab3673"
+          }
+        ],
+        "done_when": "Nur falls gezahlt wurde: Eine schriftliche Antwort von B nennt die Zahlung von 3.000,00 EUR, ordnet sie Rechnung TEST-104 zu und bestätigt den Ausgleich. Falls keine Zahlung erfolgt, ist dieser Schritt nicht anwendbar.",
+        "follow_up": "Vorschlag: Wenn nach 3 Kalendertagen ab der Anfrage keine Bestätigung vorliegt, einmal nachfassen. Das Ausbleiben einer Bestätigung beweist weder eine Zahlung noch deren Verbuchung.",
+        "depends_on": [
+          "S2"
+        ],
+        "waiting_for": "Eine schriftliche Bestätigung von B zur Verbuchung der Zahlung und zum Ausgleich von Rechnung TEST-104.",
+        "after_response": "Wenn B den Betrag und die Rechnung eindeutig bestätigt, gleiche die Angaben mit dem Zahlungsbeleg ab. Wenn die Bestätigung ausbleibt oder unklar ist, frage gezielt nach der Verbuchung und dem offenen Saldo."
+      }
+    ],
+    "title": "Korrigierter Restbetrag und nächste Schritte gegenüber TEST-Unternehmen B",
+    "closing": "Die 300,00-EUR-Differenz ist laut B korrigiert. Entscheidend ist jetzt, die Zahlungsempfängerdaten zu prüfen und eine Zahlung oder Nichtzahlung bewusst zu dokumentieren; eine Abschlussbestätigung wird erst nach einer tatsächlichen Zahlung angefordert.",
+    "letters": [
+      {
+        "id": "L1",
+        "body": "Dear Sir or Madam,\n\nI acknowledge your correction of the amount stated in your reminder. I understand that the correct outstanding amount is EUR 3,000.00 and that the additional EUR 300.00 has been withdrawn.\n\nBefore making any payment, please confirm the complete payment recipient details for the EUR 3,000.00 payment relating to invoice TEST-104.\n\nYours faithfully,\nMara Beispiel",
+        "subject": "Correction of the Outstanding Amount and Confirmation of Payment Recipient Details",
+        "recipient": "TEST-Unternehmen B",
+        "document_ids": [
+          "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10",
+          "71349ac8-9613-418e-ac4b-dde76cab3673"
+        ],
+        "customer_translation": "Betreff: Korrektur des offenen Betrags und Bestätigung der Zahlungsempfängerdaten\n\nSehr geehrte Damen und Herren,\n\nich nehme Ihre Korrektur des in Ihrer Mahnung genannten Betrags zur Kenntnis. Ich habe verstanden, dass der korrekte offene Betrag 3.000,00 EUR beträgt und die zusätzlichen 300,00 EUR zurückgezogen wurden.\n\nBitte bestätigen Sie vor einer Zahlung die vollständigen Zahlungsempfängerdaten für die Zahlung von 3.000,00 EUR zu Rechnung TEST-104.\n\nMit freundlichen Grüßen\nMara Beispiel"
+      }
+    ],
+    "meaning": "Die Rechendifferenz von 300,00 EUR ist laut B geklärt. Offen sind noch die vollständigen Zahlungsempfängerdaten, deine Entscheidung beziehungsweise Zahlung des korrigierten Betrags und – nur nach erfolgter Zahlung – eine schriftliche Abschlussbestätigung.",
+    "opening": "Der Nachtrag von TEST-Unternehmen B korrigiert die Mahnung über 3.300,00 EUR: Laut Nachtrag beträgt der Restbetrag 3.000,00 EUR, und die zusätzlichen 300,00 EUR werden zurückgezogen. Die Zahlung und eine Abschlussbestätigung sind laut Statusnotiz noch offen; die Ampel bleibt deshalb gelb.",
+    "key_points": [
+      "B bestätigt laut Nachtrag einen Rechenfehler und ersetzt die frühere Zahlungsaufforderung über 3.300,00 EUR durch den korrigierten Restbetrag von 3.000,00 EUR.",
+      "B nennt den 02.10.2026 als Termin für die Zahlung des Restbetrags.",
+      "Laut Statusnotiz wurde noch nicht erneut bezahlt; eine Abschlussbestätigung, dass alles bezahlt ist, liegt nicht vor."
+    ],
+    "open_questions": [
+      {
+        "who": "TEST-Unternehmen B, angefragt durch Mara Beispiel",
+        "why": "Die Daten sollen vor einer möglichen Zahlung eindeutig geprüft werden.",
+        "question": "Welche vollständigen Zahlungsempfängerdaten bestätigt TEST-Unternehmen B für die Zahlung von 3.000,00 EUR zu Rechnung TEST-104?"
+      },
+      {
+        "who": "Mara Beispiel",
+        "why": "Die Zahlung ist laut Statusnotiz noch offen.",
+        "question": "Entscheidet sich Mara Beispiel nach der Bestätigung der Empfängerdaten für die Zahlung von 3.000,00 EUR bis zum von B genannten 02.10.2026?"
+      },
+      {
+        "who": "TEST-Unternehmen B, nach einer Zahlung durch Mara Beispiel",
+        "why": "Eine solche Abschlussbestätigung liegt laut Statusnotiz noch nicht vor.",
+        "question": "Falls die Zahlung erfolgt: Wird TEST-Unternehmen B danach schriftlich bestätigen, dass 3.000,00 EUR auf Rechnung TEST-104 verbucht und alles ausgeglichen ist?"
+      }
+    ],
+    "customer_action": "Prüfe vor dem Versand den Empfänger und den von dir verwendeten Kontaktweg. Zahle nicht auf Grundlage der alten Forderung von 3.300,00 EUR. Falls du dich für die Zahlung entscheidest, bewahre den Zahlungsbeleg auf und bitte B anschließend um eine Abschlussbestätigung."
+  },
+  "source_documents": [
+    {
+      "id": "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10",
+      "title": "01_Ausgangsunterlagen_TEST.pdf",
+      "updated_at": "2026-09-20T09:38:30.268+00:00"
+    },
+    {
+      "id": "71349ac8-9613-418e-ac4b-dde76cab3673",
+      "title": "02_Antwort_und_Abschluss_TEST.pdf",
+      "updated_at": "2026-09-20T09:53:15.023+00:00"
+    }
+  ],
+  "progress": {},
+  "events": [],
+  "model": "gpt-5.6-luna",
+  "workflow_version": "v140",
+  "created_at": "2026-09-20 10:46:00.251767+00",
+  "updated_at": "2026-09-20 11:30:39.968+00"
+}

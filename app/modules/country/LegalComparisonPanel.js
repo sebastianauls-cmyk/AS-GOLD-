@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import {roadmapProgressLabel} from '../cases/lib/roadmapDisplay.mjs'
 import { localizedCountryName } from './countryLabels.mjs'
 import { countryByKey } from './countryRegistry.mjs'
 import { CASE_LEGAL_COMPARISON_LIGHTS, CASE_LEGAL_COMPARISON_TOPICS, normalizeCaseLegalComparisonRecord } from './caseLegalComparison.mjs'
@@ -42,12 +43,17 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
   const [activeId,setActiveId]=useState('')
   const [loading,setLoading]=useState(true)
   const [busy,setBusy]=useState(false)
+  const [processingStage,setProcessingStage]=useState('')
   const [error,setError]=useState('')
   const [showForm,setShowForm]=useState(true)
   const [topic,setTopic]=useState('applicable_law_jurisdiction')
   const [question,setQuestion]=useState(String(item?.goal||'').slice(0,1200))
   const [classification,setClassification]=useState('synthetic')
   const [confirmed,setConfirmed]=useState(false)
+  const scope=`${item.id}|${home.key}|${target.key}`
+  const currentScope=useRef(scope),busyRef=useRef(false)
+  currentScope.current=scope
+  useEffect(()=>{setQuestion(String(item?.goal||'').slice(0,1200));setConfirmed(false)},[item.id])
 
   useEffect(()=>{
     let cancelled=false
@@ -70,30 +76,34 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
     return ()=>{cancelled=true}
   },[supabase,item.id,home.key,target.key,ui.loadFailed])
 
-  const activeRecord=useMemo(()=>records.find(record=>record.id===activeId)||records[0]||null,[records,activeId])
+  const activeRecord=useMemo(()=>{const matching=records.filter(record=>record.case_id===item.id&&record.home_country===home.key&&record.target_country===target.key);return matching.find(record=>record.id===activeId)||matching[0]||null},[records,activeId,item.id,home.key,target.key])
   const comparison=useMemo(()=>activeRecord?normalizeCaseLegalComparisonRecord(activeRecord):null,[activeRecord])
   const sources=comparison?.sources||[]
 
   async function createComparison(event){
     event.preventDefault()
+    if(busyRef.current)return
     setError('')
     const cleanQuestion=question.trim()
     if(cleanQuestion.length<12){setError(ui.questionRequired);return}
     if(!confirmed){setError(ui.privacyRequired);return}
-    setBusy(true)
+    const creatingScope=scope
+    busyRef.current=true;setBusy(true);setProcessingStage('')
     try{
       const authorization=await authorizeLegalComparison(supabase,{ownerId})
-      if(authorization.error){setError(authorization.error.message||ui.createFailed);return}
+      if(currentScope.current!==creatingScope)return
+      if(authorization.error){setError(await legalComparisonErrorMessage(authorization.error,ui.createFailed,language));return}
       onPrivacyUpdate?.(authorization.data)
-      const {data,error:invokeError}=await invokeCaseLegalComparison(supabase,{caseId:item.id,topic,question:cleanQuestion,outputLanguage,dataClassification:classification})
-      if(invokeError){setError(await legalComparisonErrorMessage(invokeError,ui.createFailed));return}
-      if(data?.status==='configuration_required'){setError(data.message||ui.createFailed);return}
+      const {data,error:invokeError}=await invokeCaseLegalComparison(supabase,{caseId:item.id,topic,question:cleanQuestion,outputLanguage,dataClassification:classification,onProgress:({stage})=>{if(currentScope.current!==creatingScope)throw new Error(ui.createFailed);setProcessingStage(stage)}})
+      if(currentScope.current!==creatingScope)return
+      if(invokeError){setError(await legalComparisonErrorMessage(invokeError,ui.createFailed,language));return}
+      if(data?.status==='configuration_required'){setError(ui.createFailed);return}
       if(!data?.comparison){setError(ui.createFailed);return}
       setRecords(previous=>[data.comparison,...previous.filter(record=>record.id!==data.comparison.id)])
       setActiveId(data.comparison.id)
       setShowForm(false)
       setConfirmed(false)
-    }finally{setBusy(false)}
+    }catch(error){if(currentScope.current===creatingScope)setError(await legalComparisonErrorMessage(error,ui.createFailed,language))}finally{busyRef.current=false;setBusy(false);setProcessingStage('')}
   }
 
   return <section className="legalComparisonPanel" aria-labelledby={`legal-comparison-${item.id}`}>
@@ -121,7 +131,7 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
         <small id={`legal-comparison-help-${item.id}`} className="legalComparisonHelp">{ui.questionHelp}</small>
         <label>{ui.classification}<select value={classification} onChange={event=>{setClassification(event.target.value);setConfirmed(false)}}><option value="synthetic">{ui.synthetic}</option><option value="anonymized">{ui.anonymized}</option></select></label>
         <label className="legalComparisonConsent"><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>{ui.consent}</span></label>
-        <button className="primary" type="submit" disabled={busy}>{busy?ui.creating:ui.create}</button>
+        <button className="primary" type="submit" disabled={busy}>{busy?(processingStage?roadmapProgressLabel(language,processingStage):ui.creating):ui.create}</button>
       </form>}
 
       {error&&<div className="legalComparisonError" role="alert">⚪ {error}</div>}

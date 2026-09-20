@@ -1,0 +1,43 @@
+{
+  "item": {
+    "id": "synthetic-v141-case",
+    "owner_id": "synthetic-v141-owner",
+    "client_id": null,
+    "title": "RETEST A-bis-Z: Mahnung und Teilzahlung",
+    "reference_no": "RETEST-2026-09-20 / TEST-104",
+    "status": "open",
+    "traffic_light": "yellow",
+    "summary": "VOLLSTÄNDIG ERFUNDENER WIEDERHOLUNGSTEST. Erste Frage: Ich habe eine Mahnung über 3.300 Euro bekommen, obwohl ich schon 1.800 Euro bezahlt habe. Kannst du mir erklären, ob das stimmt und was ich jetzt tun sollte? Mara Beispiel, TEST-Unternehmen A, gegenüber TEST-Unternehmen B, beide Deutschland. Identische Testunterlagen wie am 19.09.2026. Keine echten Personen und keine echte Kommunikation.",
+    "created_at": "2026-09-20T09:33:03.449761+00:00",
+    "updated_at": "2026-09-20T09:53:50.105+00:00",
+    "deadline_at": null,
+    "goal": "FOLGEAUFTRAG IM ERFUNDENEN TEST: Nutze beide Testunterlagen. Die neue Antwort vom simulierten 21.09.2026 klärt nur die 300-EUR-Differenz; 3000 EUR Zahlung bis 02.10.2026 und Abschlussbestätigung bleiben offen. Mara Beispiel handelt ausdrücklich im eigenen Namen gegenüber TEST-Unternehmen B. Erkläre den aktuellen Stand in verständlichem Deutsch mit Du, maximal drei Kernpunkten und konkretem Fahrplan. Bereite eine förmliche englische Antwort von Mara an B samt deutscher Übersetzung vor: Korrektur zur Kenntnis nehmen, den korrigierten Betrag nennen und um Bestätigung der Zahlungsempfängerdaten bitten. Keine erfolgte Zahlung und keine Vertretung behaupten.",
+    "evidence_status": "yellow",
+    "next_action": null,
+    "home_country": "DE",
+    "target_country": "DE",
+    "test_case_id": null,
+    "test_case_expected_ampel": null,
+    "test_case_language": null
+  },
+  "documents": [
+    {
+      "id": "47c40f3e-3c11-42aa-bcd2-1029ee2b4a10",
+      "title": "01_Ausgangsunterlagen_TEST.pdf",
+      "extracted_text": "ASH WORKSPACE GOLD / A BIS Z\nAUSGANGSUNTERLAGEN\nVollständig erfundener Entwicklertest. Keine echten Personen oder Unternehmen.\nFallkennung: ASH-AZ-2026-09-19. Währung: EUR. Alle Beträge sind Gesamtbeträge.\nKundin: Mara Beispiel, TEST-Unternehmen A, Deutschland.\nVertragspartner: TEST-Unternehmen B, Deutschland.\n1. AUFTRAG UND RECHNUNG (synthetischer Auszug)\nAuftrag vom 01.09.2026: Gestaltung einer Firmenbroschüre, Gesamtpreis 4.800,00 EUR.\nEine Zusatzleistung oder zusätzliche Vergütung wurde nicht vereinbart.\nRechnung TEST-104 vom 10.09.2026: 4.800,00 EUR, fällig am 17.09.2026.\nEine Teilzahlung von 1.800,00 EUR ist am 12.09.2026 bei B eingegangen.\nB bestätigt in seiner Abrechnung ausdrücklich den Eingang dieser Teilzahlung.\n2. MAHNUNG VOM 18.09.2026 (synthetischer Auszug)\nB verlangt nach Abzug der Teilzahlung noch 3.300,00 EUR bis 24.09.2026.\nDie Mahnung nennt keine Zusatzleistung, Gebühr oder andere Begründung der Differenz.\nEs liegt keine gerichtliche Mahnung vor. Eine weitere Zahlung ist nicht erfolgt.\n3. FRAGE UND ZIEL DER KUNDIN (Testeingabe vom 19.09.2026)\nIch verstehe die Mahnung nicht. Ich habe schon 1.800 EUR bezahlt.\nBitte gleiche die Zahlen ab und bereite eine sachliche Rückfrage an B vor.\nIch wünsche eine verständliche Du-Erklärung, eine Ampel und klare nächste Schritte.\nAbsender eines Schreibens soll Mara Beispiel selbst sein, keine Vertretung.\nDie Leistung an sich ist in diesem Testfall nicht streitig.\nDie Fälligkeit wird hier nur als Angabe der Rechnung dokumentiert, nicht rechtlich geprüft.\nFREI ERFUNDEN - ausschließlich für interne Produkttests - 19.09.2026",
+      "data_classification": "synthetic",
+      "updated_at": "2026-09-20T09:38:30.268+00:00",
+      "case_id": "synthetic-v141-case",
+      "owner_id": "synthetic-v141-owner"
+    },
+    {
+      "id": "71349ac8-9613-418e-ac4b-dde76cab3673",
+      "title": "02_Antwort_und_Abschluss_TEST.pdf",
+      "extracted_text": "ASH WORKSPACE GOLD / A BIS Z\nNACHTRAG / ANTWORT\nVollständig erfundener Entwicklertest. Keine echten Personen oder Unternehmen.\nFallkennung: ASH-AZ-2026-09-19. Bezug: Rechnung TEST-104.\n1. ANTWORT VON B VOM 21.09.2026 (simulierte spätere Entwicklung)\nWir bestätigen einen Rechenfehler in unserer Mahnung vom 18.09.2026.\nDer korrekte Restbetrag aus 4.800,00 EUR abzüglich 1.800,00 EUR beträgt 3.000,00 EUR.\nWir ziehen die darüber hinaus verlangten 300,00 EUR zurück.\nBitte zahlen Sie den Restbetrag bis 02.10.2026.\nDie frühere Zahlungsaufforderung von 3.300,00 EUR bis 24.09.2026 wird ersetzt.\n2. STATUS DER KUNDIN VOM 21.09.2026 (simuliert)\nDie Antwort von B ist eingegangen. Ich habe noch nicht erneut bezahlt.\nEine Abschlussbestätigung, dass alles bezahlt ist, liegt nicht vor.\nBitte aktualisiere den Fahrplan. Nur die Betragsdifferenz ist geklärt.\nDie Zahlung und die anschließende Bestätigung bleiben offen.\n3. TESTGRENZE\nDieses Dokument beschreibt eine erfundene spätere Entwicklung.\nEs belegt weder eine tatsächliche Zahlung noch eine tatsächliche Nachricht.\nDer Fall darf aufgrund dieses Nachtrags noch nicht vollständig grün werden.\nFREI ERFUNDEN - ausschließlich für interne Produkttests - 19.09.2026",
+      "data_classification": "synthetic",
+      "updated_at": "2026-09-20T09:53:15.023+00:00",
+      "case_id": "synthetic-v141-case",
+      "owner_id": "synthetic-v141-owner"
+    }
+  ]
+}

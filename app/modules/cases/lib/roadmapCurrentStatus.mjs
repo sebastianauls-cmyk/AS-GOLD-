@@ -43,5 +43,5 @@ export function roadmapCurrentStatus(record,{stale=false,today}={}) {
     step.follow_up?`${ui.followUp}: ${step.follow_up}`:copy.waitingAdvice
   ].filter(Boolean).join('\n'):step.action
   return {...result,step,state:waiting?'waiting':'ready',light:step.light,label:waiting?ui.waiting:ui[step.light],
-    next:roadmapStepReference(step.id,steps),action:readableStepText(action,steps)}
+    next:roadmapStepReference(step.id,steps),action:readableStepText(action,steps,record.result.letters)}
 }
