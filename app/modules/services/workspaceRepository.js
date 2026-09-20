@@ -5,12 +5,12 @@ function jwtIssuedInFuture(error){
   return /jwt issued at future/i.test(String(error?.message||''))
 }
 
-export async function retrySessionClock(operation,{attempts=3,delay=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds))}={}){
+export async function retrySessionClock(operation,{attempts=5,delay=milliseconds=>new Promise(resolve=>setTimeout(resolve,milliseconds))}={}){
   let result
   for(let attempt=0;attempt<attempts;attempt+=1){
     result=await operation()
     if(!result?.error||!jwtIssuedInFuture(result.error))return result
-    if(attempt<attempts-1)await delay(750*(attempt+1))
+    if(attempt<attempts-1)await delay(Math.min(1000*2**attempt,8000))
   }
   return result
 }
@@ -25,7 +25,7 @@ export async function getWorkspaceAccess(supabase){
 
 export async function loadWorkspaceBundle(supabase,ownerId){
   const modules=['cases','clients','documents','approvals','assessments','source_status','audit_events','deletion_requests','privacy_settings']
-  const results=await Promise.all([
+  const queries=[
     supabase.from('cases').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
     supabase.from('clients').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
     supabase.from('documents').select('*').eq('owner_id',ownerId).order('updated_at',{ascending:false}),
@@ -35,7 +35,9 @@ export async function loadWorkspaceBundle(supabase,ownerId){
     supabase.from('audit_events').select('*').eq('owner_id',ownerId).order('created_at',{ascending:false}).limit(20),
     supabase.from('deletion_requests').select('*').eq('owner_id',ownerId).order('created_at',{ascending:false}),
     supabase.from('account_privacy_settings').select('*').eq('owner_id',ownerId).maybeSingle()
-  ])
+  ]
+  // Awaiting a PostgREST builder again repeats the read with the same session.
+  const results=await Promise.all(queries.map(query=>retrySessionClock(()=>query)))
   const [cases,clients,documents,approvals,assessments,sourceStatus,auditRows,deletionRows,privacyRow]=results
   const failed=results.map((result,index)=>result.error?`${modules[index]}: ${result.error.message}`:null).filter(Boolean)
   return {
