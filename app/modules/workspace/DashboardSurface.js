@@ -1,21 +1,7 @@
-import { QuickActions } from '../cases/V24Workspace'
-import { EvidenceActionPanel } from '../intelligence/EvidenceActionPanel'
 import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
 import { appText } from './workspaceText'
-
-const dashboardUxCopy={
-  de:{priority:'Was jetzt wichtig ist',status:'Ihr Arbeitsstand',more:'Weitere Möglichkeiten',moreHelp:'Tarifempfehlung und Kontoinformationen anzeigen'},
-  en:{priority:'What matters now',status:'Your workspace status',more:'More options',moreHelp:'Show plan recommendation and account information'},
-  fr:{priority:'Ce qui compte maintenant',status:'État de votre espace',more:'Autres possibilités',moreHelp:'Afficher les recommandations et le compte'},
-  tr:{priority:'Şimdi önemli olan',status:'Çalışma alanı durumu',more:'Diğer seçenekler',moreHelp:'Paket önerisini ve hesap bilgilerini göster'},
-  pl:{priority:'Co jest teraz najważniejsze',status:'Stan obszaru roboczego',more:'Więcej możliwości',moreHelp:'Pokaż rekomendację planu i informacje o koncie'},
-  ru:{priority:'Что важно сейчас',status:'Состояние рабочего пространства',more:'Дополнительные возможности',moreHelp:'Показать рекомендацию тарифа и данные аккаунта'},
-  ar:{priority:'ما هو مهم الآن',status:'حالة مساحة العمل',more:'خيارات إضافية',moreHelp:'عرض توصية الخطة ومعلومات الحساب'},
-  fa:{priority:'آنچه اکنون مهم است',status:'وضعیت فضای کاری',more:'گزینه‌های بیشتر',moreHelp:'نمایش پیشنهاد طرح و اطلاعات حساب'},
-  ro:{priority:'Ce este important acum',status:'Starea spațiului de lucru',more:'Mai multe opțiuni',moreHelp:'Afișează recomandarea planului și contul'},
-  bg:{priority:'Какво е важно сега',status:'Състояние на работното пространство',more:'Още възможности',moreHelp:'Покажи препоръка за план и информация за акаунта'},
-  vi:{priority:'Điều quan trọng lúc này',status:'Trạng thái không gian làm việc',more:'Tùy chọn khác',moreHelp:'Hiển thị đề xuất gói và thông tin tài khoản'}
-}
+import { workspaceOverview } from './workspaceOverview.mjs'
+import { workspaceOverviewCopy } from './workspaceOverviewCopy.mjs'
 
 const insiderEntryCopy={
   de:{label:'PASSWORT 1 · VOLLZUGRIFF AUF ALLES',title:'Gemeinsamer Team-Arbeitsbereich',lead:'Auf das gesamte ASH Workspace zugreifen und jede Änderung vorbereiten. Passwort 2 gibt die neue Live-Version frei.',action:'Änderungszentrale öffnen',landing:'Interne Startfläche'},
@@ -31,98 +17,72 @@ const insiderEntryCopy={
   vi:{label:'TRUY CẬP NỘI BỘ',title:'Không gian làm việc chung của nhóm',lead:'Mở tài khoản nhóm, kiểm tra giao diện người dùng hoặc sao chép liên kết cài đặt.',action:'Mở quyền truy cập nhóm'}
 }
 
-const dashboardUxStyles=`
-.dashboardPriority{margin:0 0 18px;padding:24px;border:1px solid #cdb779;border-radius:22px;background:linear-gradient(135deg,#fff8df,#fff);box-shadow:0 14px 38px rgba(74,56,18,.08)}
-.dashboardPriorityHead{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:start}
-.dashboardPriority h2{margin:8px 0 7px;font-size:clamp(26px,4vw,38px);line-height:1.15}.dashboardPriority p{margin:0;color:#606a76;line-height:1.5;max-width:720px}
-.dashboardPrioritySignals{display:grid;grid-template-columns:repeat(3,minmax(78px,1fr));gap:8px}.prioritySignal{min-width:78px;padding:11px;border:1px solid #e2e4e8;border-radius:13px;background:#fff;text-align:center}.prioritySignal b{display:block;font-size:24px;color:#4e3b13}.prioritySignal small{display:block;margin-top:3px;color:#6d7580;line-height:1.2}.prioritySignal.attention{border-color:#d7b449;background:#fff7d8}.prioritySignal.attention b{color:#855f00}
-.dashboardPrimaryAction{margin-top:18px;min-height:48px;padding:12px 20px}.dashboardGuideSecondary{box-shadow:none}.dashboardCoreStats{margin-top:14px}.dashboardAccountTitle{margin-top:30px;margin-bottom:5px;font-size:1.2rem;color:#59636f}.dashboardMore{margin:22px 0 8px;border:1px solid #dfe2e6;border-radius:16px;background:#fff}.dashboardMore>summary{cursor:pointer;display:grid;gap:3px;padding:17px 18px;font-weight:850;color:#4d3b14}.dashboardMore>summary small{font-weight:500;color:#737d88}.dashboardMoreBody{padding:0 18px 18px}.dashboardSecondaryStats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboardRegressionOnly{display:none!important}
-.dashboardInsiderEntry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;margin:0 0 18px;padding:19px 21px;border:2px solid #d0ad4e;border-radius:18px;background:linear-gradient(135deg,#172131,#26364b);color:#fff;box-shadow:0 12px 32px rgba(20,30,44,.18)}.dashboardInsiderEntry h2{margin:6px 0 4px;color:#fff;font-size:1.35rem}.dashboardInsiderEntry p{margin:0;color:#e5ebf3;line-height:1.45}.dashboardInsiderEntry .modeBadge{background:#ffd765;color:#49360c}.dashboardInsiderActions{display:grid;gap:8px;min-width:220px}.dashboardInsiderActions .btn{min-height:48px;display:flex;align-items:center;justify-content:center;background:#ffd765;color:#172131;white-space:nowrap}.dashboardInsiderActions .linkBtn{color:#fff;text-align:center;font-size:.84rem}
-.aliReferenceCase{margin:0 0 18px;padding:22px;border:1px solid #d7b449;border-radius:20px;background:#fffdf6;box-shadow:0 12px 32px rgba(74,56,18,.07)}.aliReferenceHead{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.aliReferenceCase h2{margin:5px 0 5px;font-size:1.45rem}.aliReferenceCase p{margin:0;color:#67717d;line-height:1.45}.aliReferenceStatus{display:inline-flex;align-items:center;gap:7px;padding:8px 11px;border-radius:999px;background:#fff4c2;color:#6f5200;font-weight:800;white-space:nowrap}.aliReferenceStatus:before{content:'';width:10px;height:10px;border-radius:50%;background:#e3af15}.aliReferenceGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px}.aliReferenceItem{padding:13px 14px;border:1px solid #e5dfd2;border-radius:14px;background:#fff}.aliReferenceItem b{display:flex;align-items:center;gap:8px}.aliDot{width:10px;height:10px;border-radius:50%;background:#e3af15;flex:0 0 auto}.aliReferenceItem small{display:block;margin-top:6px;color:#6f7781;line-height:1.4}.aliReferenceActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.aliReferenceActions button{min-height:44px}
 
-@media(max-width:760px){.dashboardPriority{padding:18px}.dashboardPriorityHead{grid-template-columns:1fr;gap:14px}.dashboardPrioritySignals{grid-template-columns:repeat(3,1fr)}.dashboardPrimaryAction{width:100%}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardMoreBody{padding:0 12px 12px}}
-@media(max-width:760px){.dashboardInsiderEntry{grid-template-columns:1fr;padding:17px}.dashboardInsiderEntry .btn{width:100%}}
-@media(max-width:430px){.dashboardPrioritySignals{grid-template-columns:1fr 1fr 1fr}.prioritySignal{min-width:0;padding:9px 6px}.prioritySignal b{font-size:21px}.prioritySignal small{font-size:.72rem}.dashboardCoreStats{grid-template-columns:1fr 1fr}.dashboardCoreStats .stat{padding:15px}.dashboardSecondaryStats{grid-template-columns:1fr}.dashboardMore>summary{padding:15px}.aliReferenceHead{display:grid;grid-template-columns:1fr}.aliReferenceGrid{grid-template-columns:1fr}.aliReferenceActions{display:grid}.aliReferenceActions button{width:100%}}
-`
-
-export function DashboardSurface({core,handleQuickAction,onStartSyntheticCase,onBack,deadlineCases,a,user,currentTier,dg,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
+export function DashboardSurface({core,handleQuickAction,onOpenDocument,onOpenApproval,onStartSyntheticCase,onBack,a,user,currentTier,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
-  const guestAccess=access?.permissions?.guest_access===true
-  const ux=dashboardUxCopy[language]||dashboardUxCopy.en
+  const ux=workspaceOverviewCopy(language)
+  const overview=workspaceOverview(data)
+  const {next}=overview
   const insiderText=insiderEntryCopy[language]||insiderEntryCopy.en
   const hasInsiderAccess=access?.app_role==='owner'||access?.permissions?.shared_team_access===true
-  const openDeadlines=deadlineCases?.length||0
-  const totalItems=(data.cases?.length||0)+(data.documents?.length||0)+(data.approvals?.length||0)
-  const aliCase=(data.cases||[]).find(item=>/referenzfall a/i.test(item.title||''))
-  const aliAssessments=aliCase?(data.assessments||[]).filter(item=>item.case_id===aliCase.id):[]
-  return <>
-    <style>{dashboardUxStyles}</style>
+  const guestAccess=access?.permissions?.guest_access===true
+  const openDocument=item=>item&&onOpenDocument?onOpenDocument(item):setSection('documents')
+  const openApproval=item=>item&&onOpenApproval?onOpenApproval(item):setSection('approvals')
+  function openNext(){
+    if(next.kind==='read'||next.kind==='review')return openDocument(next.item)
+    if(next.kind==='approval')return openApproval(next.item)
+    if(next.kind==='deadline')return handleQuickAction('deadlines')
+    if(next.kind==='case')return handleQuickAction('open-case',next.item)
+    return handleQuickAction('case')
+  }
+  const nextButton=next.kind==='read'||next.kind==='review'?ux.openDocument:next.kind==='approval'?ux.openApproval:next.kind==='deadline'?ux.openDeadlines:next.kind==='case'?ux.openCase:ux.create
+  const cards=[
+    {key:'cases',label:a.sections.cases,count:overview.cases.length,action:()=>setSection('cases')},
+    {key:'documents',label:ux.documents,count:overview.reviewDocuments.length,action:()=>openDocument(overview.reviewDocuments[0])},
+    {key:'approvals',label:ux.approvals,count:overview.pendingApprovals.length,action:()=>openApproval(overview.pendingApprovals[0])},
+    {key:'deadlines',label:ux.deadlines,count:overview.deadlines.dated.length,detail:`${overview.deadlines.unresolved.length} ${ux.unresolved}`,action:()=>handleQuickAction('deadlines')}
+  ]
+  return <div className="workspaceOverview" dir={language==='ar'||language==='fa'?'rtl':'ltr'}>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backExplanation}</button>
-
-    {hasInsiderAccess&&<section className="dashboardInsiderEntry" aria-label={insiderText.title}>
-      <div><span className="modeBadge">{insiderText.label}</span><h2>{insiderText.title}</h2><p>{insiderText.lead}</p></div>
-      <div className="dashboardInsiderActions"><button type="button" className="btn" onClick={()=>setSection('change-control')}>{insiderText.action}</button><a className="linkBtn" href="/insider">{insiderText.landing||insiderText.action}</a></div>
-    </section>}
-
-    <section className="dashboardPriority" aria-labelledby="dashboard-priority-title">
-      <div className="dashboardPriorityHead">
-        <div><span className="eyebrow">{ux.priority}</span><h2 id="dashboard-priority-title">{dg.title}</h2><p>{dg.lead}</p></div>
-        <div className="dashboardPrioritySignals" aria-label={ux.status}>
-          <span className={openDeadlines?'prioritySignal attention':'prioritySignal'}><b>{openDeadlines}</b><small>{a.sections.deadlines||core.deadlines}</small></span>
-          <span className="prioritySignal"><b>{data.cases.length}</b><small>{a.sections.cases}</small></span>
-          <span className="prioritySignal"><b>{data.documents.length}</b><small>{a.sections.documents}</small></span>
-        </div>
-      </div>
-      <button className="primary dashboardPrimaryAction" onClick={()=>setSection(dg.nextSection)}>{dg.next} →</button>
+    <h1>{ux.title}</h1>
+    <section className="workspaceNext" aria-labelledby="workspace-next-title">
+      <span className="eyebrow">{ux.next}</span>
+      <h2 id="workspace-next-title">{ux[next.kind]}</h2>
+      <p className="workspaceNextSubject">{next.item?.title||next.item?.subject||ux.empty}</p>
+      <button className="primary" type="button" onClick={openNext}>{nextButton} <span aria-hidden="true">→</span></button>
     </section>
-
-    {aliCase&&<section className="aliReferenceCase" aria-label="Anonymisierter Referenzfall">
-      <div className="aliReferenceHead">
-        <div><span className="eyebrow">ANONYMISIERTER REFERENZFALL · GOLDSTANDARD</span><h2>{aliCase.title}</h2><p>{aliCase.summary||'Versicherung und Objektverwaltung werden als getrennte Sachkomplexe geführt.'}</p></div>
-        <span className="aliReferenceStatus">Gelb · in Bearbeitung</span>
-      </div>
-      <div className="aliReferenceGrid">
-        {aliAssessments.slice(0,4).map(item=><div className="aliReferenceItem" key={item.id}>
-          <b><span className="aliDot"/>{item.title}</b>
-          <small>{item.next_step||item.reasoning||'Nächsten Schritt prüfen.'}</small>
-        </div>)}
-      </div>
-      <div className="aliReferenceActions">
-        <button className="primary" type="button" onClick={()=>handleQuickAction('open-case',aliCase)}>Fall vollständig öffnen</button>
-        <button className="secondary" type="button" onClick={()=>setSection('cases')}>Alle Fälle anzeigen</button>
-      </div>
+    <nav className="workspaceOverviewGrid" aria-label={ux.title}>
+      {cards.map(card=><button type="button" className="workspaceOverviewCard" key={card.key} onClick={card.action}>
+        <span className="workspaceCardCount">{card.count}</span><span className="workspaceCardLabel">{card.label}</span>{card.detail&&<small>{card.detail}</small>}<span className="workspaceCardArrow" aria-hidden="true">→</span>
+      </button>)}
+    </nav>
+    <div className="workspaceCreateActions">
+      {next.kind!=='create'&&<button className="secondary" type="button" onClick={()=>handleQuickAction('case')}>＋ {ux.create}</button>}
+      <button className="secondary" type="button" onClick={()=>handleQuickAction('upload')}>＋ {ux.upload}</button>
+    </div>
+    {overview.recentCases.length>0&&<section className="workspaceRecent" aria-labelledby="workspace-recent-title">
+      <div className="workspaceRecentHead"><h2 id="workspace-recent-title">{ux.recent}</h2><button type="button" className="linkBtn" onClick={()=>setSection('cases')}>{ux.allCases}</button></div>
+      {overview.recentCases.map(item=><button type="button" className="workspaceRecentCase" key={item.id} onClick={()=>handleQuickAction('open-case',item)}><span>{item.title}</span><span aria-hidden="true">→</span></button>)}
     </section>}
-
-    <QuickActions copy={core} onAction={handleQuickAction} deadlineCases={deadlineCases}/>
-    <EvidenceActionPanel a={a} data={data}/>
-
-    <section className={`dashboardGuide dashboardGuideSecondary dash-${currentTier}`}>
-      <div className="dashboardGuideMain"><span className="modeBadge">{dg.mode}</span><h3>{ux.status}</h3><p>{totalItems?dg.lead:a.firstClient}</p></div>
-      <div className="dashboardSteps">{dg.steps.map((step,i)=><div className="dashboardStep" key={step}><span>{i+1}</span><b>{step.replace(/^\d+\.\s*/,'')}</b></div>)}</div>
-    </section>
-
-    <div className="stats dashboardCoreStats">{[['cases',a.sections.cases],['clients',a.sections.clients],['documents',a.sections.documents],['approvals',a.sections.approvals]].map(([k,l])=><button className="stat statButton" onClick={()=>setSection(k)} key={k}><b>{data[k].length}</b><span>{l}</span><small>{a.open}</small></button>)}</div>
-
-    <h2 className="dashboardAccountTitle">{a.overview}</h2>
-    <p className="muted">{a.signedInAs} {user?.email||guestCopy.displayName}</p>
-    {guestAccess&&<div className="note guestSessionNotice"><b>{guestCopy.active}</b><span>{guestCopy.scope}</span></div>}
-
-    <details className="dashboardMore">
-      <summary><span>{ux.more}</span><small>{ux.moreHelp}</small></summary>
-      <div className="dashboardMoreBody">
+    <details className="workspaceMore">
+      <summary>{ux.more}</summary>
+      <div className="workspaceMoreContent">
+        <div className="workspaceSecondaryLinks">{['clients','documents','approvals','account'].map(key=><button type="button" className="secondary" key={key} onClick={()=>setSection(key)}>{a.sections[key]||lt.contract}</button>)}</div>
+        <p className="muted">{a.signedInAs} {user?.email||guestCopy.displayName}</p>
+        {guestAccess&&<p className="guestSessionNotice"><b>{guestCopy.active}</b><span>{guestCopy.scope}</span></p>}
+        {hasInsiderAccess&&<section className="dashboardInsiderEntry" aria-label={insiderText.title}>
+          <h3>{insiderText.title}</h3>
+          <div className="workspaceSecondaryLinks"><button type="button" className="secondary" onClick={()=>setSection('change-control')}>{insiderText.action}</button><a className="linkBtn" href="/insider">{insiderText.landing||insiderText.action}</a></div>
+        </section>}
         <section className="recommendationBox">
-          <div><span className="modeBadge">{rt.recommended}</span><h3>{rt.title}</h3><p>{rt.lead}</p></div>
-          <select className="goalSelect" value={selectedGoal} onChange={e=>{setSelectedGoal(e.target.value);setShowRecommendation(true)}} aria-label={rt.chooseGoal}>{rt.goals.map(([k,label])=><option key={k} value={k}>{label}</option>)}</select>
+          <div><h3>{rt.title}</h3><p>{rt.lead}</p></div>
+          <select className="goalSelect" value={selectedGoal} onChange={event=>{setSelectedGoal(event.target.value);setShowRecommendation(true)}} aria-label={rt.chooseGoal}>{rt.goals.map(([key,label])=><option key={key} value={key}>{label}</option>)}</select>
           {showRecommendation&&<div className="recommendationResult"><div><b>{recommendedPlan.stage} · {recommendedPlan.name}</b><p>{currentSufficient?rt.enough:rt.upgradeReason}</p>{!currentSufficient&&<p className="benefitText">{recommendedPlan.expectation}</p>}</div>{!currentSufficient&&<button className="secondary" onClick={()=>setSection('pricing')}>{rt.showBenefit}</button>}</div>}
         </section>
         <div className="trialPromise"><b>{currentTier==='free'?a.freeActive:a.planActive.replace('{plan}',currentPlan.name)}</b><span>{currentTier==='free'?a.freePromise.replace('{limit}',access?.permissions?.document_limit||3):a.paidPromise}</span>{testAccessEnd&&<span><b>{promo.testAccessStatus.replace('{date}',testAccessEnd)}</b></span>}</div>
-        <div className="stats dashboardSecondaryStats">
-          {!guestAccess&&<button className="stat statButton" onClick={()=>setSection('pricing')}><b>↗</b><span>{a.upgrade}</span><small>{a.open}</small></button>}
-          <button className="stat statButton" onClick={()=>setSection('account')}><b>✓</b><span>{lt.contract}</span><small>{a.open}</small></button>
-        </div>
+        {!guestAccess&&<button className="secondary" type="button" onClick={()=>setSection('pricing')}>{a.upgrade}</button>}
       </div>
     </details>
-
-    <div className="dashboardRegressionOnly" aria-hidden="true"><SyntheticTesterPanel language={language} onOpenCase={onStartSyntheticCase}/></div>
-  </>
+    <div hidden><SyntheticTesterPanel language={language} onOpenCase={onStartSyntheticCase}/></div>
+  </div>
 }
