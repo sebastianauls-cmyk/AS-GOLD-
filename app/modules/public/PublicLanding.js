@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { LegalFooter } from '../compliance/LegalFooter'
 import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
@@ -17,6 +17,7 @@ import { PublicProductTour } from './PublicProductTour'
 import { PublicLanguageCountryModule } from './PublicLanguageCountryModule'
 import { publicLanguageCountryCopy } from './publicLanguageCountryCopy.mjs'
 import { InstallAppButton } from './InstallAppButton'
+import { PublicResultExample } from './PublicResultExample'
 
 const publicBackCopy={
   de:{label:'← Zurück',aria:'Zurück zum Anfang der Seite'},
@@ -62,6 +63,24 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
   const c=publicExperienceCopy(language)
   const crossBorder=publicLanguageCountryCopy(language)
 
+  useEffect(()=>{
+    function revealHash(){
+      const target=document.getElementById(window.location.hash.slice(1))
+      if(!target)return
+      for(let parent=target;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true
+      requestAnimationFrame(()=>target.scrollIntoView({block:'start'}))
+    }
+    revealHash()
+    window.addEventListener('hashchange',revealHash)
+    return()=>window.removeEventListener('hashchange',revealHash)
+  },[])
+
+  function revealLinkedSection(event){
+    const link=event.target.closest?.('a[href^="#"]')
+    const target=link&&document.getElementById(link.hash.slice(1))
+    for(let parent=target;parent;parent=parent.parentElement)if(parent.tagName==='DETAILS')parent.open=true
+  }
+
   function returnToPublicStart(){
     const cleanUrl=`${window.location.pathname}${window.location.search}`
     if(window.location.hash)window.history.replaceState(window.history.state,'',cleanUrl)
@@ -69,44 +88,47 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
     window.scrollTo({top:0,left:0,behavior:reducedMotion?'auto':'smooth'})
   }
 
-  return <div className="publicProductPage" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'}>
+  return <div className="publicProductPage" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} onClickCapture={revealLinkedSection}>
     <PublicHeader t={t} c={c} caseNavLabel={cd.nav} language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onScreenChange={setScreen} onPlayExplainer={()=>setExplainerSignal(value=>value+1)}/>
     <button className="publicPageBackButton" data-persistent-back type="button" onClick={returnToPublicStart} aria-label={backCopy.aria}>{backCopy.label}</button>
     <main>
       <section className="publicProductHero">
         <div className="wrap publicProductHeroGrid">
           <div className="publicProductIntro">
-            <p className="publicSummaryLabel">{c.summaryLabel}</p>
             <h1>{c.headline}</h1>
             <p className="lead">{c.lead}</p>
           </div>
-          <section className="publicCapabilitySummary" aria-labelledby="public-summary-title">
-            <h2 id="public-summary-title">{c.summaryTitle}</h2>
-            <ol>{c.summaryItems.map(([title,body],index)=><li key={title}><span aria-hidden="true">{String(index+1).padStart(2,'0')}</span><div><h3>{title}</h3><p>{body}</p></div></li>)}</ol>
-          </section>
+          <PublicResultExample language={language} outputLanguage={outputLanguage}/>
           <div className="publicProductEntry">
+            <div className="actions"><a className="primary btn" href="#beispiel">{c.previewAction}</a><button type="button" className="secondary btn publicRegister" onClick={()=>setScreen('register')}>{c.start}</button></div>
+            <p className="freeHint">{c.entryNote} · <a href="#preise">{t.prices}</a></p>
+            <section className="publicCapabilitySummary" aria-labelledby="public-summary-title">
+              <h2 id="public-summary-title" className="publicVisuallyHidden">{c.summaryTitle}</h2>
+              <ul>{c.benefits.map(title=><li key={title}><span aria-hidden="true">✓</span>{title}</li>)}</ul>
+            </section>
             <a className="publicLanguageCountryHeroLink" href="#sprachen-rechtsraeume">{crossBorder.nav} →</a>
-            <div className="actions"><button type="button" className="primary btn" onClick={()=>setScreen('register')}>{c.start}</button><a className="secondary btn" href="#funktionen">{c.preview}</a></div>
-            <p className="freeHint">{cd.freeHint}</p>
-            <button type="button" className="publicVideoLink" onClick={()=>setExplainerSignal(value=>value+1)}>{pc.explainer}</button>
           </div>
         </div>
-        <div className="wrap publicInstallRow"><InstallAppButton language={language} surface="public"/></div>
       </section>
-      <PublicProductTour pc={pc} c={c} onRegister={()=>setScreen('register')}/>
-      <PublicLanguageCountryModule language={language} onStart={onStartLanguageCase}/>
       <section id="ablauf" className="section publicHow">
         <div className="wrap">
           <h2>{c.how}</h2>
           <div className="publicHowSteps">{[pc.journey[0],pc.journey[1],pc.journey[4]].map(([key,title,body],index)=><article key={key}><span>{index+1}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
-          <details className="publicHelp"><summary>{c.help}</summary><ProductIntroCompact language={language}/><ProblemNavigator outputLanguage={outputLanguage} language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/></details>
-          <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
         </div>
       </section>
-      <PublicCaseDiscoverySection cd={cd} pa={pa} audience={audience} orderedPublicCases={orderedPublicCases} activePublicCase={activePublicCase} onSelectCase={setSelectedPublicCase} onRegister={()=>setScreen('register')}/>
-      <section className="publicControl section"><div className="wrap"><h2>{c.control}</h2><p className="lead">{c.controlBody}</p><p className="publicLegalContext"><b>{t.legal}</b><br/>{t.marketNote}</p></div></section>
+      <PublicLanguageCountryModule language={language} onStart={onStartLanguageCase} compact/>
       <PublicPricingSection a={a} c={c} payment={payment} paymentConfig={paymentConfig} jl={jl} localizedPlans={localizedPlans} rt={rt} selectedGoal={selectedGoal} onGoalChange={value=>{setSelectedGoal(value);setShowRecommendation(true)}} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} recommendedTier={recommendedTier} eur={eur} period={period} terms={terms} monthsLabel={monthsLabel} onRegister={()=>setScreen('register')}/>
-      <PublicTrustSections tt={tt} cd={cd} a={a} compact/>
+      <PublicProductTour pc={pc} c={c} onRegister={()=>setScreen('register')} compact/>
+      <PublicCaseDiscoverySection cd={cd} pa={pa} audience={audience} orderedPublicCases={orderedPublicCases} activePublicCase={activePublicCase} onSelectCase={setSelectedPublicCase} onRegister={()=>setScreen('register')} compact summaryLabel={c.moreCases}/>
+      <section className="publicControl section"><div className="wrap"><h2>{c.control}</h2><p className="lead">{c.controlBody}</p>
+        <details className="publicExtraHelp"><summary>{c.extraHelp}</summary>
+          <details className="publicHelp"><summary>{c.help}</summary><ProductIntroCompact language={language}/><ProblemNavigator outputLanguage={outputLanguage} language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/></details>
+          <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
+          <div className="publicInstallRow"><InstallAppButton language={language} surface="public"/></div>
+          <PublicTrustSections tt={tt} cd={cd} a={a} compact/>
+          <p className="publicLegalContext"><b>{t.legal}</b><br/>{t.marketNote}</p>
+        </details>
+      </div></section>
       <section id="fragen" className="section publicQuestions"><div className="wrap"><h2>{c.questions}</h2>{[[hero.title,hero.lead],[c.question1,c.answer1],[c.question2,c.answer2],[c.question3,c.answer3]].map(([question,answer])=><details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div></section>
       <section className="publicFinalAction"><div className="wrap"><h2>{c.ready}</h2><button type="button" className="primary btn" onClick={()=>setScreen('register')}>{c.start}</button><button type="button" className="secondary btn" onClick={()=>setScreen('login')}>{t.login}</button></div></section>
     </main>

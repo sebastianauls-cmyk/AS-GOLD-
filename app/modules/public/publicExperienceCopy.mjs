@@ -1,4 +1,5 @@
 import {publicSummaryCopy} from './publicSummaryCopy.mjs'
+import {publicEntryCopy} from './publicEntryCopy.mjs'
 
 // Public descriptions mirror the existing workspace. No account data is used.
 const copy={
@@ -15,7 +16,7 @@ const copy={
   vi:{headline:'Hiểu tài liệu. Biết bước tiếp theo.',lead:'ASH hỗ trợ cá nhân và doanh nghiệp trong các vấn đề trong nước và xuyên biên giới. Bạn có thể nhận giải thích và bản dịch tài liệu, hợp đồng, làm rõ câu hỏi về hồ sơ, theo dõi thời hạn và chuẩn bị bước tiếp theo cùng thư trả lời. Khi cần, bạn có thể so sánh khác biệt giữa các quốc gia và tải kết quả dưới dạng PDF hoặc Word.',features:'Chức năng',how:'Cách hoạt động',preview:'Khám phá không gian làm việc',tour:'Bạn nhận được gì sau khi đăng nhập',tourLead:'Chọn một mục để xem bạn có thể làm gì.',example:'Xem trước sản phẩm · ví dụ',overview:'Tổng quan của tôi',overviewBody:'Xem nhiệm vụ tiếp theo và mở trực tiếp tài liệu, thư hoặc hồ sơ liên quan.',cases:'Khách hàng và hồ sơ',casesBody:'Gắn hồ sơ với khách hàng và tập hợp tài liệu, người liên quan cùng mục tiêu.',roadmap:'Kế hoạch hành động',roadmapBody:'Xem ai cần làm gì, tài liệu nào còn thiếu và tiến độ thay đổi ra sao.',formats:'PDF, Word, Excel và PowerPoint',formatsBody:'Tải kết quả theo định dạng được mở trong gói, bao gồm CSV và văn bản nếu có.',availability:'Chức năng phụ thuộc vào gói. Bạn tự bắt đầu phân tích AI cho từng tài liệu; kết quả có thể kiểm tra và chỉnh sửa.',control:'Bạn kiểm tra. Bạn quyết định.',controlBody:'Màu cho biết tiến độ và tình trạng bằng chứng. Thời hạn chưa rõ được đánh dấu. Thư được xem trước khi duyệt; ứng dụng hiện không tự gửi thư.',details:'Xem chi tiết gói',options:'Ngôn ngữ và cài đặt',start:'Đăng ký miễn phí',help:'Mô tả vấn đề hoặc xem video',questions:'Câu hỏi thường gặp',question1:'Điều gì xảy ra sau khi đăng ký?',answer1:'Mở tổng quan, tạo hồ sơ và thêm tài liệu. Trong thử nghiệm hiện tại, hãy dùng tệp giả lập hoặc được ẩn danh hiệu quả.',question2:'Chức năng nào miễn phí?',answer2:'Đăng ký miễn phí. Bảng giá cho biết chức năng và định dạng của mỗi gói. Chỉ phát sinh phí khi bạn xác nhận rõ lựa chọn có phí.',question3:'Dùng ASH trên điện thoại được không?',answer3:'Có. Dùng trong trình duyệt, thêm ảnh hoặc tệp và cài trên màn hình chính. Nhập bằng giọng nói và cài đặt phụ thuộc vào thiết bị và trình duyệt.',ready:'Bắt đầu với hồ sơ đầu tiên.'}
 }
 
-export function publicExperienceCopy(language='de'){return {...(copy[language]||copy.de),...publicSummaryCopy(language)}}
+export function publicExperienceCopy(language='de'){return {...(copy[language]||copy.de),...publicSummaryCopy(language),...publicEntryCopy(language)}}
 
 export function publicTourAreas(pc,c){
   const feature=index=>pc.features[index]

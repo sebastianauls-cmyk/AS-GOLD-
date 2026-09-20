@@ -30,8 +30,8 @@ export const LANGUAGE_ENRICHMENT_TOPICS=Object.freeze([
 
 export const ALL_COUNTRY_CODES=Object.freeze(COUNTRY_CATALOG.map(country=>country.key))
 
-function countrySubmodules(){
-  return COUNTRY_CATALOG.map(country=>Object.freeze({
+function countrySubmodules(countries){
+  return countries.map(country=>Object.freeze({
     key:country.key,
     label:country.label,
     jurisdiction_label:country.jurisdictionLabel,
@@ -42,16 +42,21 @@ function countrySubmodules(){
   }))
 }
 
-export const LANGUAGE_MODULES=Object.freeze(
-  LANGUAGE_CATALOG.map(language=>Object.freeze({
+// A new translation module inherits configured jurisdictions; it creates no new legal claims.
+export function buildLanguageModules(languages=LANGUAGE_CATALOG,countries=COUNTRY_CATALOG){
+  if(new Set(languages.map(item=>item.key)).size!==languages.length)throw new Error('Duplicate language module')
+  for(const language of languages){
+    if(!language.key||!language.label||!language.locale||typeof language.rtl!=='boolean')throw new Error('Incomplete language module')
+  }
+  return Object.freeze(languages.map(language=>Object.freeze({
     key:language.key,
     label:language.label,
     locale:language.locale,
     rtl:language.rtl,
     direction:language.rtl?'rtl':'ltr',
     associated_country_codes:[...(language.countryCodes||[])],
-    available_country_codes:[...ALL_COUNTRY_CODES],
-    country_submodules:countrySubmodules(),
+    available_country_codes:countries.map(country=>country.key),
+    country_submodules:countrySubmodules(countries),
     capabilities:[...LANGUAGE_MODULE_CAPABILITIES],
     enrichment_topics:[...LANGUAGE_ENRICHMENT_TOPICS],
     independent_from_country:true,
@@ -59,8 +64,10 @@ export const LANGUAGE_MODULES=Object.freeze(
     may_change_target_country:false,
     inherits_verified_country_sources:true,
     inherits_all_configured_countries:true
-  }))
-)
+  })))
+}
+
+export const LANGUAGE_MODULES=buildLanguageModules()
 
 export function languageModuleByKey(key){
   if(!isSupportedLanguage(key)) return LANGUAGE_MODULES[0]

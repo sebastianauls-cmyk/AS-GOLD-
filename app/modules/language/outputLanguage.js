@@ -1,8 +1,9 @@
+import {LANGUAGE_CATALOG} from './languageRegistry.mjs'
 export const OUTPUT_LANGUAGE_STORAGE_KEY='asgold-output-language'
-export const OUTPUT_LANGUAGES=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
+export const OUTPUT_LANGUAGES=LANGUAGE_CATALOG.map(language=>language.key)
 const supported=new Set(OUTPUT_LANGUAGES)
 
-export const outputLanguageLabels={de:'Deutsch',en:'English',fr:'Français',tr:'Türkçe',pl:'Polski',ru:'Русский',ar:'العربية',fa:'فارسی',ro:'Română',bg:'Български',vi:'Tiếng Việt'}
+export const outputLanguageLabels=Object.fromEntries(LANGUAGE_CATALOG.map(({key,label})=>[key,label]))
 
 export function normalizeOutputLanguage(value){return supported.has(value)?value:'de'}
 

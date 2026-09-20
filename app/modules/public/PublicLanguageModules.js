@@ -20,6 +20,8 @@ const copy={
   vi:{welcome:'Chào mừng đến với ASH Workspace Gold – rất vui vì bạn có mặt.',interfaceTitle:'1. Ngôn ngữ giao diện',interfaceLabel:'Giao diện',outputTitle:'2. Ngôn ngữ kết quả và khách hàng',outputLabel:'Ngôn ngữ kết quả',outputHelp:'Tài liệu, kết quả và thư cho khách hàng hoặc người khác được tạo bằng {language}. Ngôn ngữ giao diện vẫn độc lập.',presenter:'Ai sẽ giải thích ASH Workspace Gold?',female:'Nữ thuyết trình',male:'Nam thuyết trình',play:'Phát video giải thích',back:'Quay lại'}
 }
 
+const compactLabels={de:['Seite','Übersetzung'],en:['Page','Translation'],fr:['Page','Traduction'],tr:['Sayfa','Çeviri'],pl:['Strona','Tłumaczenie'],ru:['Страница','Перевод'],ar:['الصفحة','الترجمة'],fa:['صفحه','ترجمه'],ro:['Pagină','Traducere'],bg:['Страница','Превод'],vi:['Trang','Bản dịch']}
+
 const warmWelcome={
   de:'Herzlich willkommen bei ASH Workspace Gold – hier sind Sie richtig und finden in Ruhe den nächsten Schritt.',
   en:'A warm welcome to ASH Workspace Gold – you are in the right place to find your next step at your own pace.',
@@ -44,6 +46,7 @@ const persistentLanguageBackStyles=`
 export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer,compact=false}){
   const [presenter,setPresenter]=useState('female')
   const text=copy[language]||copy.de
+  const shortLabels=compactLabels[language]||compactLabels.de
   const outputName=(outputLanguageNames[language]||outputLanguageNames.de)?.[outputLanguage]||outputLanguage
 
   useEffect(()=>{
@@ -72,9 +75,9 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
     {!compact&&<InstallAppButton language={language} surface="public"/>}
     {(language!=='de'||outputLanguage!=='de')&&<button type="button" className="publicBackButton" dir="ltr" onClick={returnToGerman} aria-label="Back to German – Oberfläche und Kundensprache auf Deutsch zurückstellen">← 🇩🇪 Back to German / Zurück zu Deutsch</button>}
     <div className="publicLanguageModule interfaceModule">
-      <strong className="publicLanguageTitle">{text.interfaceTitle}</strong>
+      <strong className="publicLanguageTitle">{compact?shortLabels[0]:text.interfaceTitle}</strong>
       <div className="publicLanguageMainRow">
-        <LanguageSwitcher value={language} onChange={onLanguageChange} label={text.interfaceLabel}/>
+        <LanguageSwitcher value={language} onChange={onLanguageChange} label={compact?shortLabels[0]:text.interfaceLabel}/>
       </div>
       {!compact&&<><span className="publicPresenterLabel">{text.presenter}</span>
       <div className="publicPresenterRow" role="group" aria-label={text.presenter}>
@@ -84,8 +87,8 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
       </div></>}
     </div>
     <div className="publicLanguageModule outputModule">
-      <strong className="publicLanguageTitle">{text.outputTitle}</strong>
-      <LanguageSwitcher value={outputLanguage} onChange={onOutputLanguageChange} label={text.outputLabel}/>
+      <strong className="publicLanguageTitle">{compact?shortLabels[1]:text.outputTitle}</strong>
+      <LanguageSwitcher value={outputLanguage} onChange={onOutputLanguageChange} label={compact?shortLabels[1]:text.outputLabel}/>
       <p>{text.outputHelp.replace('{language}',outputName)}</p>
       <span className="outputLanguageStatus" data-output-language-status aria-live="polite">✓ {text.outputLabel}: <b>{outputName}</b></span>
     </div>

@@ -36,7 +36,7 @@ function side(value={}){return {explanation:String(value?.explanation||''),sourc
 
 export function normalizeCaseLegalComparisonRecord(record={}){
   const payload=record?.result&&typeof record.result==='object'?record.result:{}
-  const verified=payload.source_verification?.version==='v138'&&payload.source_verification?.review_passed===true&&typeof payload.source_verification?.review_response_id==='string';
+  const verified=['v138','v141'].includes(payload.source_verification?.version)&&payload.source_verification?.review_passed===true&&typeof payload.source_verification?.review_response_id==='string'&&payload.source_verification.review_response_id.trim().length>0;
   const sources=(Array.isArray(record?.sources)?record.sources:Array.isArray(payload.sources)?payload.sources:[])
     .filter(source=>verified&&typeof source?.source_text==='string'&&source.source_text.length>=100&&/^[a-f0-9]{64}$/.test(source?.content_sha256||'')&&Number.isFinite(Date.parse(source?.checked_at)))
     .map(source=>({
@@ -82,12 +82,12 @@ export function normalizeCaseLegalComparisonRecord(record={}){
     id:record?.id||null,
     title:verified?String(payload.title||''):String(record?.question||''),
     light,
-    overall_summary:verified?String(payload.overall_summary||''):'',
+    overall_summary:completeRows.length?String(payload.overall_summary||''):'',
     applicable_law:applicability,
     rows,
     open_questions:verified?strings(payload.open_questions):[],
     next_steps:verified?strings(payload.next_steps):[],
-    customer_explanation:verified?String(payload.customer_explanation||''):'',
+    customer_explanation:completeRows.length?String(payload.customer_explanation||''):'',
     professional_review_required:true,
     needs_source_refresh:!verified,
     sources,

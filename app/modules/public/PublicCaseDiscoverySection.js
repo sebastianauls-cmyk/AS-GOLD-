@@ -9,10 +9,13 @@ export function PublicCaseDiscoverySection({
   orderedPublicCases,
   activePublicCase,
   onSelectCase,
-  onRegister
+  onRegister,
+  compact=false,
+  summaryLabel
 }){
   return <section id="fallarten" className="caseDiscovery section">
     <div className="wrap">
+      <details className="publicCaseDetails" open={compact?undefined:true}><summary>{summaryLabel||cd.title}</summary>
       <div className="caseIntro"><div className="eyebrow">{cd.eyebrow}</div><h2>{cd.title}</h2><p className="lead">{cd.lead}</p></div>
       <div className="caseChooser" aria-label={cd.title}>
         {orderedPublicCases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>{onSelectCase(item.key);jumpToPublicCaseResult()}} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
@@ -29,6 +32,7 @@ export function PublicCaseDiscoverySection({
       </article>
 
       <details id="asgold-user-audience" className="publicAudience"><summary>{audience.title}</summary><p>{audience.lead}</p><div className="publicAudienceGrid">{audience.items.map(([title,text])=><article key={title}><h3>{title}</h3><p>{text}</p></article>)}</div></details>
+      </details>
     </div>
   </section>
 }
