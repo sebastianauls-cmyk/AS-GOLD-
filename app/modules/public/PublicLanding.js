@@ -53,7 +53,7 @@ export const productCopy={
   vi:{eyebrow:'ASH Workspace Gold · không gian số hoàn chỉnh cho hồ sơ và tài liệu',cta:'Bắt đầu vụ việc',explainer:'▶ Xem giải thích ngắn',capTitle:'ASH Workspace Gold hiện có thể xử lý những gì',capLead:'Từ mô tả ban đầu đến kết quả đã được kiểm tra, toàn bộ quy trình nằm trong một cấu trúc liên tục: tài liệu, phân tích, đèn tín hiệu, thời hạn, so sánh pháp lý, thư, xem trước, phê duyệt và xuất.',more:'Xem thêm khả năng',featureEyebrow:'Các chức năng liên kết',featureTitle:'Không phải công cụ rời rạc — một quy trình xuyên suốt.',result:'Kết quả của bạn',proof:[['📄','Tài liệu','tải lên · ảnh · nhận dạng'],['🚦','Phân tích','🟢 🟡 🔴 hiển thị'],['⏱️','Thời hạn','phát hiện · cảnh báo · theo dõi'],['⚖️','Pháp lý','so sánh theo vụ việc'],['✉️','Thư','song ngữ'],['📤','Đầu ra','PDF · Word · phê duyệt']],journey:[['1','Ghi nhận','Nhập hoặc nói nội dung và thêm tài liệu hoặc ảnh.'],['2','Hiểu','Tài liệu, rủi ro, bằng chứng, đèn tín hiệu và thời hạn được tổng hợp.'],['3','So sánh','Quốc gia gốc, quốc gia đích và không gian pháp lý được so sánh theo vụ việc.'],['4','Chuẩn bị','Bước tiếp theo và thư được chuẩn bị bằng ngôn ngữ đã chọn.'],['5','Kiểm tra & phê duyệt','Kiểm tra bản xem trước, phê duyệt rõ ràng, sau đó xuất hoặc chuyển tiếp.']],features:[['📄','Tài liệu & hình ảnh','Tải lên, cấu trúc, gán và phân tích trong bối cảnh vụ việc.'],['🎙️','Nhập bằng giọng nói','Đưa sự việc từ micro vào cùng quy trình.'],['🚦','Phân tích đèn tín hiệu','Mỗi đánh giá có 🟢, 🟡 hoặc 🔴 cùng lý do.'],['🧩','Bằng chứng & thiếu sót','Hiển thị thông tin, tài liệu còn thiếu và mâu thuẫn.'],['⏱️','Thời hạn & tiến độ','Gộp thời hạn, phản ứng cần thiết, trạng thái và dòng thời gian.'],['⚖️','So sánh pháp lý','So sánh quốc gia và không gian pháp lý kèm nguồn và ghi chú cần kiểm tra.'],['🌍','11 ngôn ngữ','Tách ngôn ngữ giao diện và đầu ra; RTL cho tiếng Ả Rập và Ba Tư.'],['✉️','Thư song ngữ','Tạo hai phiên bản bằng hai ngôn ngữ tự chọn.'],['👁️','Xem trước & phê duyệt','Kiểm tra nội dung trước khi chuyển tiếp và phê duyệt rõ ràng.'],['📤','PDF & Word','Tạo đầu ra có phân tích, đèn tín hiệu, thời hạn và thư.'],['📚','Hồ sơ bàn giao','Cấu trúc vụ việc, tài liệu, đánh giá, nguồn, phê duyệt và bước tiếp theo.'],['🔒','Kiểm soát & truy vết','Giữ dữ liệu, phê duyệt, xuất và hành động quan trọng có thể truy vết.']]}
 }
 
-export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
+export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,onStartLanguageCase,cd,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
   const hero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
   const orderedPublicCases=orderCasesByResearch(cd.cases)
@@ -94,8 +94,8 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
         </div>
         <div className="wrap publicInstallRow"><InstallAppButton language={language} surface="public"/></div>
       </section>
-      <PublicLanguageCountryModule language={language}/>
       <PublicProductTour pc={pc} c={c} onRegister={()=>setScreen('register')}/>
+      <PublicLanguageCountryModule language={language} onStart={onStartLanguageCase}/>
       <section id="ablauf" className="section publicHow">
         <div className="wrap">
           <h2>{c.how}</h2>
