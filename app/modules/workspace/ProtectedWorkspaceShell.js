@@ -10,6 +10,7 @@ import { countrySwitcherLabel } from '../country/countryLabels.mjs'
 import { ContextEvidenceInjector } from '../intelligence/ContextEvidenceInjector'
 import { workspaceOverviewCopy } from './workspaceOverviewCopy.mjs'
 import { COUNTRY_CATALOG } from '../country/countryRegistry.mjs'
+import { publicSummaryCopy } from '../public/publicSummaryCopy.mjs'
 
 export function ProtectedWorkspaceShell({language,outputLanguage,onLanguageChange,onOutputLanguageChange,legalLabel,languageLabel,outputLanguageLabel,logoutLabel,onLogout,message,deadlineCopy,deadlineCount=0,detectedDeadlineCount=0,unresolvedDeadlineCount=0,onOpenDeadlines,children}){
   const {countryContext,setCountryContext}=useCountryContext()
@@ -19,6 +20,7 @@ export function ProtectedWorkspaceShell({language,outputLanguage,onLanguageChang
     <header className="appTop compactWorkspaceHeader">
       <div className="workspaceHeaderBrand"><ProductBrand/><span className="workspaceLegalContext">{countrySwitcherLabel(language)}: {activeCountry?.flag} {activeCountry?.label||countryContext}</span></div>
       <div className="workspaceHeaderActions">
+        <a className="workspaceProductLink" href={`/entdecken?lang=${language}`}>{publicSummaryCopy(language).summaryLink}</a>
         {deadlineCopy&&onOpenDeadlines&&<button className={`persistentDeadlineButton workspaceDeadlineShortcut ${unresolvedDeadlineCount?'hasUnresolved':''}`} type="button" onClick={onOpenDeadlines} aria-label={`${deadlineCopy.title}: ${deadlineCount} ${deadlineCopy.datedShort}, ${unresolvedDeadlineCount} ${deadlineCopy.unresolvedShort}`}><span aria-hidden="true">◷</span><span><b>{deadlineCopy.button}</b><small>{deadlineCount} {deadlineCopy.datedShort} · {unresolvedDeadlineCount} {deadlineCopy.unresolvedShort}{detectedDeadlineCount?` · ${detectedDeadlineCount} ${deadlineCandidateCopy(language).short}`:''}</small></span></button>}
         <details className="workspaceSettings" onKeyDown={event=>{if(event.key==='Escape'){event.currentTarget.open=false;event.currentTarget.querySelector('summary')?.focus()}}}>
           <summary><span aria-hidden="true">⚙</span> {ux.settings}</summary>

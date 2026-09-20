@@ -507,6 +507,21 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 .publicProductPage .publicBackButton{grid-column:1/-1;grid-row:2;justify-self:end;margin:0;font-size:.875rem!important;min-height:40px!important}
 .publicProductHero{padding:64px 0 30px;background:linear-gradient(150deg,#fff 55%,#f7f4ec)}
 .publicProductHeroGrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:64px;align-items:center}
+.publicProductHeroGrid{grid-template-areas:'intro summary' 'entry summary';gap:22px 48px;align-items:start}
+.publicProductIntro{grid-area:intro;min-width:0}
+.publicSummaryLabel{font-size:.85rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#725719;margin:0 0 16px}
+.publicProductIntro .lead{font-size:1.13rem;line-height:1.65;max-width:580px;margin-bottom:0}
+.publicProductEntry{grid-area:entry;min-width:0}
+.publicCapabilitySummary{grid-area:summary;min-width:0;padding:28px;background:#252d3b;border-radius:20px;color:#fff}
+.publicCapabilitySummary h2{font-size:1.15rem;color:#f0d99a;margin:0 0 10px;line-height:1.4}
+.publicCapabilitySummary ol{padding:0;margin:0;list-style:none}
+.publicCapabilitySummary li{display:grid;grid-template-columns:28px minmax(0,1fr);gap:14px;padding:20px 0;border-bottom:1px solid #ffffff28}
+.publicCapabilitySummary li:last-child{border-bottom:0;padding-bottom:0}
+.publicCapabilitySummary li>span{font-size:.8rem;font-weight:800;line-height:1.9;color:#f0d99a}
+.publicCapabilitySummary h3{font-size:1.08rem;line-height:1.4;color:#fff;margin:0 0 7px}
+.publicCapabilitySummary p{font-size:.96rem;line-height:1.6;color:#e0e5ed;margin:0}
+.workspaceProductLink{display:inline-flex;align-items:center;min-height:44px;color:#725719;font-size:.9rem;font-weight:750;text-underline-offset:4px;padding:6px 10px}
+.workspaceHeaderActions{flex-wrap:wrap}
 .publicProductHero h1{font-size:clamp(2.2rem,4.8vw,3.7rem);line-height:1.08;margin:0 0 24px;max-width:700px}
 .publicProductHero .actions{display:flex;flex-wrap:wrap;gap:12px;margin:28px 0 12px}
 .publicProductPage .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;text-decoration:none;line-height:1.4;text-align:center}
@@ -592,6 +607,10 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
   .publicProductPage .publicLanguageModule .flagLanguageMenu{position:fixed;inset:8px 12px;inset-inline:12px;width:auto;max-width:none;max-height:calc(100dvh - 16px);overflow-y:auto}
   .publicProductHero{padding-top:38px}
   .publicProductHeroGrid,.publicTourLayout{grid-template-columns:minmax(0,1fr)}
+  .publicProductHeroGrid{grid-template-areas:'intro' 'summary' 'entry';gap:24px}
+  .publicProductHero h1{font-size:clamp(2rem,8.5vw,2.65rem);margin-bottom:16px;line-height:1.12}
+  .publicCapabilitySummary{padding:22px}
+  .workspaceProductLink{flex-basis:100%;padding-inline:0}
   .publicWorkspacePreview{padding:22px}
   .publicTourChoices button{min-height:68px;padding:12px;gap:8px}
   .publicTourPanel{padding:24px}

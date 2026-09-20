@@ -6,11 +6,15 @@ on:
     paths:
       - '.github/workflows/browser-check.yml'
       - 'tests/browser/**'
+      - 'app/modules/public/**'
+      - 'app/entdecken/**'
   push:
     branches: [main]
     paths:
       - '.github/workflows/browser-check.yml'
       - 'tests/browser/**'
+      - 'app/modules/public/**'
+      - 'app/entdecken/**'
   workflow_dispatch:
 
 permissions:
@@ -29,6 +33,7 @@ jobs:
         working-directory: tests/browser
     env:
       ASH_BROWSER_BASE_URL: https://app-gold-workspace.vercel.app
+      ASH_BROWSER_LOCAL: ${{ github.event_name == 'pull_request' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,9 +43,15 @@ jobs:
           cache-dependency-path: tests/browser/package-lock.json
       - name: Install isolated browser test dependencies
         run: npm ci
+      - name: Build proposed application for pull-request verification
+        if: ${{ github.event_name == 'pull_request' }}
+        working-directory: .
+        run: |
+          npm ci
+          npm run build
       - name: Install independent Chromium and WebKit browsers
         run: npx playwright install --with-deps chromium webkit
-      - name: Check the currently published public application
+      - name: Check the proposed application or published production page
         run: npm test
       - name: Save screenshots and browser reports
         if: ${{ !cancelled() }}

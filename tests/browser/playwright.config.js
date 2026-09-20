@@ -1,5 +1,7 @@
 import {defineConfig,devices} from '@playwright/test'
 
+const local=process.env.ASH_BROWSER_LOCAL==='true'
+
 export default defineConfig({
   testDir:'./specs',
   outputDir:'test-results',
@@ -12,7 +14,7 @@ export default defineConfig({
   expect:{timeout:12_000},
   reporter:[['line'],['html',{outputFolder:'playwright-report',open:'never'}],['json',{outputFile:'test-results/results.json'}]],
   use:{
-    baseURL:process.env.ASH_BROWSER_BASE_URL||'https://app-gold-workspace.vercel.app',
+    baseURL:local?'http://127.0.0.1:3100':process.env.ASH_BROWSER_BASE_URL||'https://app-gold-workspace.vercel.app',
     navigationTimeout:30_000,
     actionTimeout:12_000,
     locale:'de-DE',
@@ -22,6 +24,7 @@ export default defineConfig({
     screenshot:'only-on-failure',
     video:'retain-on-failure'
   },
+  webServer:local?{command:'npm --prefix ../.. run start -- --port 3100',url:'http://127.0.0.1:3100/entdecken',reuseExistingServer:false,timeout:60_000}:undefined,
   projects:[
     {name:'desktop-chromium',use:{...devices['Desktop Chrome'],viewport:{width:1440,height:1000}}},
     {name:'android-emulation',use:{...devices['Pixel 7']}},
