@@ -21,9 +21,9 @@ function copyFor(language='de'){
   return caseIntelligenceLabels[language]||caseIntelligenceLabels.de
 }
 
-export function DocumentAutoAssessment({language='de',text=''}){
+export function DocumentAutoAssessment({language='de',text='',deadlineResult}){
   const t=copyFor(language)
-  const deadline=analyzeDeadlines({text})
+  const deadline=deadlineResult||analyzeDeadlines({text})
   const result=autoDocumentAssessment(text,deadline)
   const icon=result.trafficLight==='red'?'🔴':result.trafficLight==='green'?'🟢':'🟡'
   return <section className="detailCard v39AutoAssessment" data-v39-auto-assessment="true">

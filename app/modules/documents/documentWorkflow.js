@@ -1,3 +1,4 @@
+import { documentLimitMessage } from './documentLimit.mjs'
 import { createAssessmentRecord } from '../services/workspaceRepository'
 import { openPrivateDocument } from './openPrivateDocument.mjs'
 import { currentAssessments } from '../cases/lib/caseEvidence.mjs'
@@ -137,7 +138,7 @@ export function createDocumentWorkflowActions({
     if(!allowedUploadExtensions.has(extension)){setMessage(uploadCopy.unsupported);return false}
     if(file.size>maxUploadBytes){setMessage(uploadCopy.tooLarge);return false}
     const limit=Number(access?.permissions?.document_limit||0)
-    if(access?.app_role!=='owner' && limit>0 && data.documents.length>=limit){setMessage(notices.docLimit.replace('{limit}',limit));return false}
+    if(access?.app_role!=='owner' && limit>0 && data.documents.length>=limit){setMessage(documentLimitMessage(access,language,limit,notices.docLimit));return false}
     const intakeQuality=parseIntakeQuality(form.elements.intake_quality?.value)
     const source=form.elements.source?.value||'upload'
     const readiness=validateDocumentUploadReadiness({fileType:file.type,extension,source,intakeQuality})

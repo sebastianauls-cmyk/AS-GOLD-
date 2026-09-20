@@ -14,14 +14,35 @@ function dateFromParts(day,month,year){
 }
 
 function sentenceContext(text,index,length){
-  const before=text.slice(0,index)
-  const after=text.slice(index+length)
-  const leftBreak=Math.max(before.lastIndexOf('.'),before.lastIndexOf('!'),before.lastIndexOf('?'),before.lastIndexOf('\n'),before.lastIndexOf(';'))
-  const rightOffsets=[after.indexOf('.'),after.indexOf('!'),after.indexOf('?'),after.indexOf('\n'),after.indexOf(';')].filter(value=>value>=0)
-  const rightBreak=rightOffsets.length?Math.min(...rightOffsets):after.length
-  const start=leftBreak+1
-  const end=index+length+rightBreak
+  // Decimal amounts and dotted dates are not sentence boundaries.
+  const boundary=(at)=>/[!?;\n]/u.test(text[at])||(text[at]==='.'&&!/\d/u.test(text[at+1]||''))
+  let start=index,end=index+length
+  while(start>0&&!boundary(start-1))start--
+  while(end<text.length&&!boundary(end))end++
   return text.slice(start,end).trim()
+}
+
+const PAYMENT=/zahl|restbetrag|forderung|mahnung|fällig/iu
+const REPLACEMENT=/ersetzt|zurückgezogen|aufgehoben|verlängert|stattdessen|anstelle/iu
+const CONDITIONAL=/\b(?:nicht|falls|wenn|würde|könnte)\b/iu
+function dateState(context,token){
+  if(!REPLACEMENT.test(context)||CONDITIONAL.test(context))return 'active'
+  const before=context.slice(0,context.indexOf(token)),after=context.slice(context.indexOf(token)+token.length)
+  // Explicit old/new date relation, never simply the newest date in the file.
+  if(/(?:früher|bisher|alt|ursprünglich|anstelle|statt der)/iu.test(before)&&!/(?:neu|nun|stattdessen)[^.!?]*$/iu.test(before))return 'superseded'
+  if(/^(?:\s*[^\d]{0,60})?(?:wird|ist|wurde)\s+(?:hiermit\s+)?(?:ersetzt|zurückgezogen|aufgehoben)/iu.test(after))return 'superseded'
+  if(/(?:ersetzt|verlängert|verschoben)\s+(?:durch|auf|bis|zum)/iu.test(after))return 'superseded'
+  return 'active'
+}
+
+// Invoice due dates remain evidence of the original invoice. When the same
+// text contains a later payment request, they are history, not today's action.
+export function resolveDeadlineCandidates(entries){
+  const result=entries.map(entry=>({...entry}))
+  for(const entry of result){
+    if(entry.kind==='invoice_due'&&entry.invoice_reference&&result.some(other=>other.kind==='payment_request'&&other.invoice_reference===entry.invoice_reference&&other.state==='active'&&other.date>entry.date))entry.state='historical'
+  }
+  return result
 }
 
 export function parseGermanDate(value){
@@ -32,23 +53,30 @@ export function parseGermanDate(value){
 export function extractDeadlineDates(value){
   const text=String(value||'')
   const matches=[]
+  const invoiceIds=[...new Set([...text.matchAll(/Rechnung\s*:?\s*([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+)/giu)].map(entry=>entry[1].toUpperCase()))]
   DATE_RE.lastIndex=0
   let match
   while((match=DATE_RE.exec(text))){
     const date=dateFromParts(match[1],match[2],match[3])
     if(!date) continue
     const context=sentenceContext(text,match.index,match[0].length)
-    const strong=STRONG_DEADLINE_CUES.test(context)
+    const before=context.slice(0,context.indexOf(match[0]))
+    const earlier=[...before.matchAll(new RegExp(DATE_RE.source,'g'))].at(-1)
+    const localCue=earlier?before.slice(earlier.index+earlier[0].length):before
+    const strong=STRONG_DEADLINE_CUES.test(localCue)
     const ordinary=ORDINARY_DATE_CUES.test(context)
-    if(!strong) continue
+    if(!strong&&!(/frist/iu.test(localCue)&&REPLACEMENT.test(context))) continue
     matches.push({
       date,
       confidence:ordinary?'medium':'high',
       basis:ordinary?'Datum mit Fristbezug im Dokument – Terminbezug zusätzlich prüfen':'Expliziter Fristbezug im Dokument',
-      context
+      context,
+      invoice_reference:invoiceIds.length===1?invoiceIds[0]:null,
+      state:dateState(context,match[0]),
+      kind:/rechnung/iu.test(context)&&/fällig|zahlbar/iu.test(context)?'invoice_due':PAYMENT.test(context)?'payment_request':'deadline'
     })
   }
-  return matches
+  return resolveDeadlineCandidates(matches)
 }
 
 export function deadlineUrgency(deadline,now=new Date()){
@@ -60,14 +88,15 @@ export function deadlineUrgency(deadline,now=new Date()){
   return {level:'normal',days}
 }
 
-export function analyzeDeadlines({text='',caseDeadline='',now=new Date()}={}){
+export function analyzeDeadlines({text='',caseDeadline='',now=new Date(),entries=null}={}){
   const candidates=[]
   if(caseDeadline){
     const parsed=new Date(caseDeadline)
     if(!Number.isNaN(parsed.getTime())) candidates.push({date:parsed,source:'case',basis:'Im Fall hinterlegte Frist',confidence:'high'})
   }
-  for(const extracted of extractDeadlineDates(text)){
-    candidates.push({date:extracted.date,source:'document',basis:extracted.basis,confidence:extracted.confidence,context:extracted.context})
+  for(const extracted of entries||extractDeadlineDates(text)){
+    if(extracted.state&&extracted.state!=='active')continue
+    candidates.push({date:extracted.date,source:'document',basis:extracted.basis,confidence:extracted.confidence,context:extracted.context,document_id:extracted.document_id})
   }
   if(!candidates.length){
     return {status:'uncertain',primary:null,message:'Keine sichere Frist ableitbar. Originaldokument und Fallangaben prüfen.',consequence:'Keine Rechtsfolge behauptet, solange die Fristgrundlage nicht verifiziert ist.',candidates:0}

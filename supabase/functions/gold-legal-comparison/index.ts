@@ -216,6 +216,7 @@ Deno.serve(async(req:Request)=>{
   const retrieved=await retrieveOfficialEvidence(selected,allowedDomains);
   // A search hit or a model citation alone is insufficient. Only fetched text counts.
   const result:any=sanitizeResult(retrieved.size?parsed:{},retrieved,home,target,outputLanguage,question);
+  if(!result.sources.length)return reply(req,{code:'no_verified_sources',error:'Es konnten keine lesbaren amtlichen Quellen verifiziert werden. Es wurde kein Vergleich gespeichert. Bitte die konkrete Rechtsfrage eingrenzen und erneut recherchieren.',attempt_id:attemptId},422);
   for(const source of result.sources) Object.assign(source,retrieved.get(source.url),{publisher:new URL(source.url).hostname});
   let reviewResponseId=null;
   if(result.sources.length) {

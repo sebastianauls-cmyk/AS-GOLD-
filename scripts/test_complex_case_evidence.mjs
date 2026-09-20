@@ -23,7 +23,7 @@ for(const text of [
 ]) assert.notEqual(autoDocumentAssessment(text).trafficLight,'green',text)
 assert.equal(autoDocumentAssessment('Der Antrag wurde bewilligt und bestätigt.').trafficLight,'green')
 assert.equal(autoDocumentAssessment('Die Forderung ist vollständig gezahlt.').trafficLight,'green')
-assert.equal(autoDocumentAssessment('Mahnung und Zahlungsaufforderung. Nicht erledigt.').trafficLight,'red')
+assert.equal(autoDocumentAssessment('Mahnung und Zahlungsaufforderung. Nicht erledigt.').trafficLight,'yellow','two payment-demand keywords are not proof of urgency')
 for(const doc of complexTestDocuments) assert.notEqual(autoDocumentAssessment(doc.extracted_text,analyzeDeadlines({text:doc.extracted_text,now:complexCaseToday})).trafficLight,'green',doc.title)
 
 assert.equal(typeof intelligence.documentTimelineEntry,'function')

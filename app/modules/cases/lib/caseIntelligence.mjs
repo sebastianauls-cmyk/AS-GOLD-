@@ -25,7 +25,7 @@ export function autoDocumentAssessment(text='',deadlineResult=null){
   const high=deadlineResult?.status==='high'
   let trafficLight='yellow'
   let title='Prüfung erforderlich'
-  if(urgent||red.length>=2){trafficLight='red';title='Erhöhter Handlungsbedarf erkannt'}
+  if(urgent){trafficLight='red';title='Erhöhter Handlungsbedarf erkannt'}
   else if(green.length>0&&!red.length&&!high&&!uncertain.length){trafficLight='green';title='Derzeit keine offensichtliche Warnlage erkannt'}
   const basis=[]
   if(deadlineResult?.primary?.date) basis.push(`Frist ${deadlineResult.primary.date}`)

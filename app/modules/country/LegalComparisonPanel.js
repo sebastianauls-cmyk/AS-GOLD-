@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { localizedCountryName } from './countryLabels.mjs'
 import { countryByKey } from './countryRegistry.mjs'
 import { CASE_LEGAL_COMPARISON_LIGHTS, CASE_LEGAL_COMPARISON_TOPICS, normalizeCaseLegalComparisonRecord } from './caseLegalComparison.mjs'
 import { legalComparisonTopicLabels, legalComparisonUi } from './legalComparisonCopy.mjs'
@@ -33,8 +34,10 @@ function listBlock(title,items=[]){
 export function LegalComparisonPanel({supabase,ownerId,language='de',outputLanguage='de',item,workspaceCopy,onPrivacyUpdate}){
   const ui=legalComparisonUi(language)
   const topicLabels=legalComparisonTopicLabels(language)
-  const home=countryByKey(item?.home_country||'DE')
-  const target=countryByKey(item?.target_country||'DE')
+  const homeCountry=countryByKey(item?.home_country||'DE')
+  const home={...homeCountry,label:localizedCountryName(homeCountry.key,language)}
+  const targetCountry=countryByKey(item?.target_country||'DE')
+  const target={...targetCountry,label:localizedCountryName(targetCountry.key,language)}
   const [records,setRecords]=useState([])
   const [activeId,setActiveId]=useState('')
   const [loading,setLoading]=useState(true)

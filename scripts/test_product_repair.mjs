@@ -35,7 +35,7 @@ await assert.rejects(openModelCheckpoint({token,binding,secret:'different-test-k
 
 mock=provider([roadmapTestResult,defect,roadmapTestResult,defect]);state=null
 for(let step=0;step<3;step++)state=(await advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,state,fetchImpl:mock.fetchImpl})).state
-await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,state,fetchImpl:mock.fetchImpl}),/kein Ergebnis gespeichert/)
+await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,state,fetchImpl:mock.fetchImpl}),error=>error.code==='review_unresolved'&&error.issues[0].reason===defect.issues[0].reason)
 assert.equal(mock.requests.length,4,'one bounded correction, no weakening of the evidence gate')
 const multipleBadQuotes=structuredClone(roadmapTestResult)
 multipleBadQuotes.facts[0].evidence[0].quote='First invented quotation.'
@@ -72,7 +72,7 @@ mock=provider([roadmapTestResult,{issues:[]},removedLetters])
 state=(await advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate:validateBilingual,fetchImpl:mock.fetchImpl})).state
 assert.deepEqual(state.validationContext.requiredLetterIds,roadmapTestResult.letters.map(letter=>letter.id))
 state=(await advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate:validateBilingual,state,fetchImpl:mock.fetchImpl})).state
-await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate:validateBilingual,state,fetchImpl:mock.fetchImpl}),/Belegprüfung/,'a translation repair must not silently delete letters')
+await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate:validateBilingual,state,fetchImpl:mock.fetchImpl}),error=>error.code==='source_unresolved'&&error.issues[0].reason.includes('Anschreiben'),'a translation repair must not silently delete letters')
 mock=provider([roadmapTestResult,{issues:[]},translated,{issues:[]}]);state=null
 for(let step=0;step<4;step++){const result=await advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate:validateBilingual,state,fetchImpl:mock.fetchImpl});state=result.state;if(step===3){assert.equal(result.status,'completed');assert.equal(result.result.letters.length,roadmapTestResult.letters.length)}}
 const item={id:'case-a',owner_id:'owner-a',deadline_at:''}

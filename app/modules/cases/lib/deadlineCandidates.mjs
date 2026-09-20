@@ -1,20 +1,10 @@
-import { extractDeadlineDates } from './deadlineIntelligence.mjs'
+import { caseDeadlineEntries } from './caseDeadlineEvidence.mjs'
 
 // Original-text candidates remain separate from manually entered deadlines.
 // Neither a detected date nor an upload timestamp silently changes the case.
 export function documentDeadlineCandidates(item,documents=[]) {
-  const candidates=[]
-  for(const document of documents) {
-    if(document.case_id!==item?.id||(item?.owner_id&&document.owner_id!==item.owner_id))continue
-    const seen=new Set()
-    for(const entry of extractDeadlineDates(document.extracted_text||'')) {
-      const date=entry.date.toISOString().slice(0,10),key=date+'|'+entry.context
-      if(seen.has(key))continue
-      seen.add(key)
-      candidates.push({date,quote:entry.context,document_id:document.id,document_title:document.title||'',case_id:item.id,confirmed:false})
-    }
-  }
-  return candidates.sort((a,b)=>a.date.localeCompare(b.date)||String(a.document_id).localeCompare(String(b.document_id)))
+  const seen=new Set()
+  return caseDeadlineEntries(item,documents).filter(entry=>{const key=entry.document_id+'|'+entry.date.toISOString()+'|'+entry.context;if(seen.has(key))return false;seen.add(key);return true}).map(entry=>({...entry,date:entry.date.toISOString().slice(0,10),quote:entry.context,case_id:item.id,confirmed:false})).sort((a,b)=>a.date.localeCompare(b.date)||String(a.document_id).localeCompare(String(b.document_id)))
 }
 
 const copy={
@@ -30,4 +20,17 @@ const copy={
  bg:['Открити дати - предстои проверка','Проверете значението, актуалността и евентуалната замяна на датите, преди да въведете срок.','открити дати','Отвори оригинала','Промени срока'],
  vi:['Ngày được phát hiện - cần kiểm tra','Kiểm tra ý nghĩa, tính hiện hành và khả năng thay thế của các ngày trước khi nhập thời hạn hồ sơ.','ngày được phát hiện','Mở bản gốc','Sửa thời hạn hồ sơ']
 }
-export function deadlineCandidateCopy(language='de') {const [title,note,short,open,edit]=copy[language]||copy.de;return {title,note,short,open,edit}}
+const states={
+ de:['Aktuell vorgeschlagen · unbestätigt','Laut Unterlage ersetzt','Ursprüngliche Rechnungsfälligkeit · Verlauf'],
+ en:['Current proposal · unconfirmed','Replaced according to document','Original invoice due date · history'],
+ fr:['Proposition actuelle · non confirmée','Remplacée selon le document','Échéance initiale de facture · historique'],
+ tr:['Güncel öneri · onaylanmadı','Belgeye göre değiştirildi','İlk fatura vadesi · geçmiş'],
+ pl:['Aktualna propozycja · niepotwierdzona','Zastąpiony według dokumentu','Pierwotna płatność faktury · historia'],
+ ru:['Текущее предложение · не подтверждено','Заменено согласно документу','Первоначальный срок счета · история'],
+ ar:['اقتراح حالي · غير مؤكد','استُبدل وفق المستند','موعد الفاتورة الأصلي · السجل'],
+ fa:['پیشنهاد فعلی · تأیید نشده','طبق سند جایگزین شده','سررسید اولیه فاکتور · سابقه'],
+ ro:['Propunere actuală · neconfirmată','Înlocuit conform documentului','Scadența inițială a facturii · istoric'],
+ bg:['Текущо предложение · непотвърдено','Заменено според документа','Първоначален падеж на фактура · история'],
+ vi:['Đề xuất hiện tại · chưa xác nhận','Đã thay thế theo tài liệu','Hạn hóa đơn ban đầu · lịch sử']
+}
+export function deadlineCandidateCopy(language='de') {const [title,note,short,open,edit]=copy[language]||copy.de;const [active,superseded,historical]=states[language]||states.de;return {title,note,short,open,edit,active,superseded,historical}}
