@@ -2,6 +2,7 @@ import { readableStepText, roadmapStepReference } from '../cases/lib/roadmapDisp
 import { createTextPdf } from './textPdf.mjs'
 import { roadmapSteps, ROADMAP_COLORS } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
 import { roadmapUi } from '../cases/lib/customerRoadmapCopy.mjs'
+import { roadmapCurrentCopy,roadmapCurrentStatus } from '../cases/lib/roadmapCurrentStatus.mjs'
 
 // One semantic document model drives both Word and PDF. Letters have no status
 // points and are exported individually, never concatenated with customer advice.
@@ -29,9 +30,15 @@ export function roadmapExportBlocks(record,{letterId}={}) {
   add(record.result.title,'title')
   add(ui.draft,'meta')
   add(record.style.salutation)
+  const current=roadmapCurrentStatus(record),currentCopy=roadmapCurrentCopy(record.output_language)
+  add(currentCopy.current,'heading')
+  add(`${current.label} · ${currentCopy.confirmed}: ${current.completed} / ${current.total}`,'body',current.light)
+  for(const [key,value] of [['next',current.next],['action',current.action]]) {add(ui[key],'heading');add(value)}
+  if(current.step)add(`${ui.owner}: ${current.step.owner}`,'meta')
+  add(currentCopy.original,'heading')
   add(record.result.opening)
   for(const point of record.result.key_points) add(point,'bullet')
-  for(const [key,value] of [['meaning',record.result.meaning],['next',record.result.next],['action',record.result.customer_action]]) {add(ui[key],'heading');add(value)}
+  add(ui.meaning,'heading');add(record.result.meaning)
   if(record.result.facts.length) {add(ui.facts,'heading');for(const fact of record.result.facts){add(fact.text,'bullet');addEvidence(fact.evidence)}}
   if(record.result.open_questions.length) {
     add(ui.questions,'heading')

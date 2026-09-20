@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { roadmapStyle, roadmapSource, roadmapFingerprint, roadmapSteps, ROADMAP_COLORS, validateRoadmapInput } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
 import { readableStepText, roadmapProgressLabel, roadmapStepReference } from './lib/roadmapDisplay.mjs'
+import { roadmapCurrentCopy, roadmapCurrentStatus } from './lib/roadmapCurrentStatus.mjs'
 import { roadmapUi } from './lib/customerRoadmapCopy.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage'
 import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, authorizeRoadmap, roadmapErrorMessage } from '../services/customerRoadmap'
@@ -25,27 +26,41 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   const controls=roadmapUi(language)
   const [editing,setEditing]=useState('')
   const [note,setNote]=useState('')
+  const [focusStep,setFocusStep]=useState('')
+  const stepRefs=useRef(new Map())
   const result=record.result
   const steps=roadmapSteps(record,{stale})
+  const current=roadmapCurrentStatus(record,{stale})
+  const currentCopy=roadmapCurrentCopy(record.output_language)
+  const controlCopy=roadmapCurrentCopy(language)
+  useEffect(()=>{
+    if(!full||!focusStep)return
+    const element=stepRefs.current.get(focusStep)
+    if(element){element.scrollIntoView({behavior:'smooth',block:'start'});element.focus({preventScroll:true})}
+    setFocusStep('')
+  },[full,focusStep])
+  function openCurrentStep(){if(current.step)setFocusStep(current.step.id);onFull?.()}
   const rtl=['ar','fa'].includes(record.output_language)
   const safeExport=type=>onExport?.(type)
+  const assessment=<><p className="roadmapOpening">{result.opening}</p><ul>{result.key_points.map((point,index)=><li key={index}>{point}</li>)}</ul><p><b>{ui.meaning}</b><br/>{result.meaning}</p></>
   return <div className="customerRoadmapView" dir={rtl?'rtl':'ltr'}>
     <div className="roadmapLetterhead">{record.style.letterhead||record.style.sender_name}</div>
     <h3>{result.title}</h3><p className="roadmapMeta">{ui.draft}</p>
     {record.style.salutation&&<p>{record.style.salutation}</p>}
-    <p className="roadmapOpening">{result.opening}</p>
-    <ul>{result.key_points.map((point,index)=><li key={index}>{point}</li>)}</ul>
-    <div className="roadmapSummary">
-      {['meaning','next','customer_action'].map(key=><div key={key}><b>{ui[key==='customer_action'?'action':key]}</b><p>{result[key]}</p></div>)}
+    {current.historical?<details className="roadmapOriginalAssessment"><summary>{currentCopy.original}</summary>{assessment}</details>:assessment}
+    <div className="roadmapCurrentStatus" role="status" aria-live="polite"><b>{currentCopy.current}</b><Dot light={current.light} label={current.label}/>{!stale&&<span>{currentCopy.confirmed}: {current.completed} / {current.total}</span>}</div>
+    <div className="roadmapSummary" data-roadmap-state={current.state}>
+      <div><b>{ui.next}</b><p>{current.next}</p>{current.step&&onFull&&continuation.canContinue!==false&&<button type="button" className="secondary" disabled={busy} onClick={openCurrentStep}>{controlCopy.open}</button>}</div>
+      <div><b>{ui.action}</b><p>{current.action}</p>{current.step&&<p className="roadmapMeta">{ui.owner}: {current.step.owner}</p>}</div>
     </div>
-    <ResultContinuation {...continuation} language={language} onContinue={onFull}/>
+    <ResultContinuation {...continuation} language={language} onContinue={openCurrentStep}/>
     {full&&<>
       <div className="roadmapLegend">{['green','yellow','red','white'].map(light=><Dot key={light} light={light} label={ui[light]}/>)}</div>
       <div className="roadmapActions"><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('docx')}>Word</button><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('pdf')}>PDF</button></div>
       {result.facts.length>0&&<section><h4>{ui.facts}</h4>{result.facts.map((fact,index)=><div key={index}><p>{fact.text}</p><Evidence items={fact.evidence} documents={documents} ui={ui} onOpenDocument={onOpenDocument}/></div>)}</section>}
       {result.open_questions.length>0&&<section><h4>{ui.questions}</h4><ul>{result.open_questions.map((question,index)=><li key={index}><b>{question.question}</b><p>{ui.owner}: {question.who}<br/>{ui.reason}: {question.why}</p></li>)}</ul></section>}
       <h4>{ui.steps}</h4>
-      <ol className="roadmapStepList">{steps.map((step,index)=><li key={step.id} className="roadmapStep" data-step-id={step.id}>
+      <ol className="roadmapStepList">{steps.map((step,index)=><li key={step.id} className="roadmapStep" data-step-id={step.id} tabIndex={-1} ref={element=>{if(element)stepRefs.current.set(step.id,element);else stepRefs.current.delete(step.id)}}>
         <div className="roadmapStepHead"><h4>{index+1}. {step.title}</h4><Dot light={step.light} label={ui[step.light]}/></div>
         <p className="roadmapPhase">{ui[step.phase]}</p>
         <dl>{[['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]].filter(([,value])=>value).map(([key,value])=><div key={key}><dt>{ui[key]}</dt><dd>{readableStepText(value,result.steps)}</dd></div>)}</dl>

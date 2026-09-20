@@ -1,0 +1,789 @@
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 prebuild
+> npm run test:product-repair && npm run test:ai-evidence-quality && npm run test:history-corpus && npm run test:complex-case && npm run test:v34 && npm run test:v35 && npm run test:v36 && npm run test:v37 && npm run test:v37-e2e && npm run test:v37-readiness && npm run test:v38-deadlines && npm run test:v38-assessments && npm run test:v38-next-step && npm run test:v38-simulation && npm run test:v38-mobile && npm run test:v38-accessibility && npm run test:v38-prelaunch && npm run test:v38-practical-simulation && npm run test:v38-tester-guide && npm run test:v38-integrations && npm run test:v38-supabase-security && npm run test:v39-case-intelligence && npm run test:v40-handoff && npm run test:v41-consistency && npm run test:v42-actions && npm run test:v43-visibility && npm run test:v44-language-order && npm run test:v45-output-language && npm run test:v46-modules && npm run test:v56-parity && npm run test:v69-public-parity && npm run test:v70-tester && npm run test:v71-microphone && npm run test:v46-controller && npm run test:v46-direct-imports && npm run test:v72-vietnamese && npm run test:v73-recommendation && npm run test:v74-matrix && npm run test:v75-languages && npm run test:v76-tester-access && npm run test:v77-mobile-language && npm run test:v79-release-brand && npm run test:v81-language-workflow && npm run test:v82-country-context && npm run test:v83-improvement && npm run test:v84-country-legal && npm run test:v85-country-comparison && npm run test:v86-module-country-coverage && npm run test:v87-home-country-comparison && npm run test:v88-germany-master && npm run test:v89-cross-country-explanation && npm run test:v90-language-modules && npm run test:v91-all-countries-per-language && npm run test:v93-evidence-action && npm run test:v95-multisurface-evidence && npm run test:v98-intake && npm run test:v99-device && npm run test:v100-quality && npm run test:v101-auth && npm run test:v102-reset && npm run test:v103-reset-screen && npm run test:v104-reset-repair && npm run test:v105-email-reset && npm run test:v106-password-change && npm run test:v107-core && npm run test:v108-visible-testcases && npm run test:v46-session-audit && npm run test:v46-release
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:product-repair
+> node scripts/test_product_repair.mjs && node scripts/test_roadmap_request_flow.mjs && node scripts/test_pdf_text_exports.mjs && node scripts/test_practical_roadmap.mjs
+
+Product repair: staged generation/review/correction, encrypted owner/source-bound continuation, bounded client flow, negative controls, readable steps, deadline source isolation and 11 language labels passed. Model calls mocked; no live acceptance claimed.
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] workflow failed { code: 'model_workflow_failed' }
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] workflow failed { code: 'model_workflow_failed' }
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'correction',
+  attempt: 2,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 2,
+  response_id: 'synthetic-4',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'correction',
+  attempt: 2,
+  response_id: 'synthetic-3',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 2,
+  response_id: 'synthetic-4',
+  status: 'completed'
+}
+[gold-case-roadmap] workflow failed { code: 'model_workflow_failed' }
+[gold-case-roadmap] model stage {
+  stage: 'generation',
+  attempt: 1,
+  response_id: 'synthetic-1',
+  status: 'completed'
+}
+[gold-case-roadmap] model stage {
+  stage: 'review',
+  attempt: 1,
+  response_id: 'synthetic-2',
+  status: 'completed'
+}
+Roadmap HTTP handler: duplicate/concurrent completion, quota, live access/privacy/source rechecks and failed-review persistence guard passed. Identity, database transport and model responses are synthetic; no authenticated browser acceptance claimed.
+PDF repair: actual roadmap, letter and handoff renderers plus 11 language fixtures and bilingual Word/PDF letters; embedded fonts, text mapping, no raster pages, extracted text, fact provenance, reopened dependencies, separate translation pages and long-content end markers passed. Samples: /tmp/ash-pdf-test-VNGUQY
+Practical roadmap: next action, waiting, completion, reopening, changed sources, prerequisite/urgency ordering, 11-language status, unchanged evidence/letters and real Word/PDF exports passed.
+PDF text extraction: verified. Temporary export files: /tmp/ash-practical-roadmap-0BTvpD
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:ai-evidence-quality
+> node scripts/test_ai_evidence_quality.mjs
+
+V139: 104 original texts and same-language copies preserved; foreign translation, role gate, bounded repair, mandatory review, time budget, real-search provenance and safe official retrieval passed. Mocked provider checks are not live model acceptance.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:history-corpus
+> node scripts/test_history_case_corpus.mjs
+
+52 synthetic case groups / 104 documents: offline scope, evidence lifecycle, conservative status, provenance and roadmap contract checks passed. AI/domain and live acceptance remain pending.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:complex-case
+> node scripts/test_complex_case_evidence.mjs
+
+Complex case: negation, incomplete evidence, dated/undated timeline, relative/historical deadlines, case/owner isolation and provenance passed. Model generation is not part of this offline test.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v34
+> node scripts/test_v34_customer_path.mjs
+
+V34 customer-path regression checks passed for direct modular public-language flow and synchronous microphone ref
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v35
+> node scripts/test_v35_languages.mjs
+
+V35/V133 language guard: eleven app languages, RO/BG/VI catalogs, SVG flags, direct modular components and complete ASH video selection verified.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v36
+> node scripts/test_v36_explainer_video.mjs
+
+V36/V133 explainer guard: eleven languages, both presenters, subtitles and the current ASH video catalog are wired without legacy fallbacks.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v37
+> node scripts/test_v37_first_action.mjs
+
+V80 first-action regression checks passed against FirstAction.js with compatibility-only V37 bridge
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v37-e2e
+> node scripts/test_v37_end_to_end.mjs
+
+V98 end-to-end regression checks passed against modular document intake and current service boundaries
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v37-readiness
+> node scripts/test_v37_product_reife.mjs
+
+V80 product-readiness guard passed against WorkspaceController, FirstAction and delegated workflow modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-deadlines
+> node scripts/test_v38_deadline_intelligence.mjs
+
+V80 deadline intelligence guard passed against canonical version-neutral modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-assessments
+> node scripts/test_v38_assessment_explainability.mjs
+
+V80 assessment explainability guard passed against canonical version-neutral modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-next-step
+> node scripts/test_v38_primary_next_step.mjs
+
+V80 primary next-step guard passed against canonical version-neutral modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-simulation
+> node scripts/test_v38_synthetic_full_flow.mjs
+
+V80 synthetic full-flow simulation passed through WorkspaceController and version-neutral intelligence/export module boundaries.
+✓ Akute Dokumentfrist: deadline=immediate, next=deadline
+✓ Fallfrist in sechs Tagen: deadline=high, next=deadline
+✓ Akute Frist schlägt generische Unterlagenlücke: deadline=immediate, next=deadline
+✓ Fehlende Unterlagen vor hoher Frist: deadline=high, next=missing
+✓ Rote Bewertung ohne akute Frist: deadline=uncertain, next=assessment
+✓ Gelbe Bewertung vor grüner: deadline=uncertain, next=assessment
+✓ Hinterlegte Fallaktion als Fallback: deadline=uncertain, next=case
+✓ Unsichere Datenlage ohne nächste Aktion: deadline=uncertain, next=uncertain
+✓ Echte Fallfrist statt bloßem Besprechungstermin: deadline=high, next=deadline
+✓ Acute/overdue deadlines outrank generic missing-information notices in all currently supported recommendation languages
+✓ Deadline UI, assessment UI, next-step UI and PDF/DOCX/XLSX/PPTX export code paths are present in active modules
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-mobile
+> node scripts/test_v38_mobile_resilience.mjs
+
+V80 mobile resilience guard passed against canonical navigation module.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-accessibility
+> node scripts/test_v38_accessibility_hardening.mjs
+
+V80 accessibility hardening guard passed against canonical navigation module.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-prelaunch
+> node scripts/test_v38_prelaunch_guard.mjs
+
+V131 pre-launch guard passed: tester access requires personal provider approval; payment, privacy and security boundaries remain locked.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-practical-simulation
+> node scripts/test_v38_practical_simulation.mjs
+
+V107 practical simulation passed against WorkspaceController: auth gates, controlled test-document upload boundary, real DOCX/PDF/XLSX/PPTX generation, OAuth safeguards and navigation/export wiring verified.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-tester-guide
+> node scripts/test_v38_tester_guide.mjs
+
+V139 promo-only guard passed: tester routes are retired and promo-code access remains available.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-integrations
+> node scripts/test_v38_integration_availability.mjs
+
+V38 integration guard passed: optional modules remain gated while expressly enabled Google and Microsoft mailbox connection controls are exposed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v38-supabase-security
+> node scripts/test_v38_supabase_security_boundary.mjs
+
+V38 Supabase security-boundary guard passed: public audit RPC stays SECURITY INVOKER, anonymous execution is blocked, and the validated definer remains behind private schema.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v39-case-intelligence
+> node scripts/test_v39_case_intelligence.mjs
+
+V80 case intelligence guard passed against canonical version-neutral modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v40-handoff
+> node scripts/test_v40_professional_handoff.mjs
+
+V80 professional handoff guard passed against canonical version-neutral modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v41-consistency
+> node scripts/test_v41_case_consistency.mjs
+
+V80 case consistency guard passed against canonical engine and direct React panels.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v42-actions
+> node scripts/test_v42_actionable_gaps.mjs
+
+V80 actionable gaps guard passed against the version-neutral CaseWorkspace module.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v43-visibility
+> node scripts/test_v43_visibility_fix.mjs
+
+V43 replacement guard passed: permanent Back-to-German, language and explainer-video controls are directly mounted and wired.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v44-language-order
+> node scripts/test_v44_language_order.mjs
+
+V80 language-order guard passed: WorkspaceController uses the central language registry; remaining V36 facade is compatibility-only.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v45-output-language
+> node scripts/test_v45_output_language.mjs
+
+Multilingual document workflow guard passed for all supported languages via the central workflow module.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v46-modules
+> node scripts/test_v46_modular_boundaries.mjs
+
+V107 modular-boundaries guard passed: safe test-data classification and the canonical modular workflow remain active.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v56-parity
+> node scripts/test_v56_modular_parity.mjs
+
+V80 modular parity guard passed against version-neutral recommendation, case-priority and WorkspaceController modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v69-public-parity
+> node scripts/test_v69_modular_public_parity.mjs
+
+V131 public-parity guard passed: capability-first homepage, 11-language copy and promo-only public flow stay aligned.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v70-tester
+> node scripts/test_v70_tester_sharing.mjs
+
+V139 promo-only sharing guard passed: tester routes are retired and visible access is handled only through the regular promo-code flow.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v71-microphone
+> node scripts/test_v71_direct_microphone_activation.mjs
+
+V71 direct microphone activation guard passed: the single problem-card microphone reaches speech recognition directly, without duplicate routing or DOM lookup.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v46-controller
+> node scripts/test_v46_controller_workflows.mjs
+
+V131 controller workflow guard passed: WorkspaceController stays modular and legacy tester UI is retired in favor of promo-code-only access.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v46-direct-imports
+> node scripts/test_v46_workspace_direct_imports.mjs
+
+V80 workspace direct-import guard passed: WorkspaceController imports canonical modules directly; remaining compatibility facades are logic-free V80 bridges.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v72-vietnamese
+> node scripts/test_v72_vietnamese_modular_coverage.mjs
+
+V133 Vietnamese coverage passed through capability-first public surface, language, legal, pricing, product and current ASH video modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v73-recommendation
+> node scripts/test_v73_recommendation_and_language_separation.mjs
+
+V80 recommendation/language guard passed through WorkspaceController and version-neutral recommendation/language modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v74-matrix
+> node scripts/test_v74_natural_language_matrix.mjs
+
+V80 natural-language matrix passed through version-neutral recommendation modules: 40/40 tariffs and case types correct.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v75-languages
+> node scripts/test_v75_languages_min_to_max.mjs
+
+V80 language Min-to-Max matrix passed: 55/55 recommendations across 11 languages and five levels.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v76-tester-access
+> node scripts/test_v76_tester_full_access.mjs
+
+V80 tester full-access guard passed through WorkspaceController and current promo catalog: secure redemption, refreshed Business rights, visible end date, 0 EUR/no renewal contract and 10-tester cap are wired.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v77-mobile-language
+> node scripts/test_v77_mobile_language_overlay.mjs
+
+V77 mobile language overlay passed: isolated, top-aligned and vertically touch-scrollable menu.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v79-release-brand
+> node scripts/test_v79_release_and_brand_consistency.mjs
+
+V139 release and brand consistency passed through version-neutral V80 language/legal modules: ASH Workspace Gold, 11 languages, localized legal pages with authoritative German source.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v81-language-workflow
+> node scripts/test_v81_document_language_workflow.mjs
+
+V81 document language workflow guard passed for 11 languages and 6 workflow outputs.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v82-country-context
+> node scripts/test_country_context_module.mjs
+
+Country context module guard passed: country/jurisdiction stays independent from language workflow.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v83-improvement
+> node scripts/test_v83_continuous_improvement_architecture.mjs
+
+V83 continuous-improvement architecture guard passed: owner-first notice and explicit approval remain mandatory before implementation.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v84-country-legal
+> node scripts/test_v84_country_legal_modules.mjs
+
+V84 country legal module guard passed for 14 country modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v85-country-comparison
+> node scripts/test_v85_country_legal_comparison.mjs
+
+V85/V86 country legal comparison guard passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v86-module-country-coverage
+> node scripts/test_v86_product_module_country_coverage.mjs
+
+V86 product-module country coverage guard passed for 18 modules, including 14 legally relevant modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v87-home-country-comparison
+> node scripts/test_v87_home_country_comparison.mjs
+
+V87 home-country versus target-country comparison guard passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v88-germany-master
+> node scripts/test_v88_germany_master_legal_profile.mjs
+
+V88 Germany master legal profile guard passed with 5 official source groups, 6 court sources and 14 legally relevant product modules.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v89-cross-country-explanation
+> node scripts/test_v89_cross_country_explanation.mjs
+
+V89 cross-country explanation guard passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v90-language-modules
+> node scripts/test_v90_language_module_architecture.mjs
+
+V92 nested language/country module guard passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v91-all-countries-per-language
+> node scripts/test_v91_all_countries_per_language.mjs
+
+V91/V92 all countries per language guard passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v93-evidence-action
+> node scripts/test_v93_evidence_action_layer.mjs
+
+V93 evidence action layer guard passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v95-multisurface-evidence
+> node scripts/test_v95_multisurface_evidence_language_coverage.mjs
+
+V95 multi-surface evidence guard passed for 11 languages.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v98-intake
+> node scripts/test_v98_document_intake_voice.mjs
+
+✓ Scenario 1: German photo/scan -> isolated intake + standalone quality check + persistence
+✓ Scenario 2: Polish/foreign document -> source language detection stays separate from translation
+✓ Scenario 3: Document + microphone -> confirmed voice context stays separate from document text
+V98 document-intake and microphone regression suite passed: 3/3 scenarios, with V100 image quality delegated to its own module.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v99-device
+> node scripts/test_v99_device_readiness.mjs
+
+V99 device readiness guard passed: camera/microphone permission checks, localized runtime guidance, cleanup, status indicators and manual fallback are wired in 11 languages.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v100-quality
+> node scripts/test_v100_document_image_quality.mjs
+
+V100 document image-quality guard passed: isolated resolution, brightness, blur, crop and skew checks are wired in 11 languages.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v101-auth
+> node scripts/test_v101_auth_recovery.mjs
+
+V101 auth recovery guard passed: localized errors, clean screen changes and production-safe reset redirects are active in 11 languages.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v102-reset
+> node scripts/test_v102_password_reset_delivery.mjs
+
+V102 password reset delivery guard passed: the installed app uses the production relay with a fixed redirect and restricted origins.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v103-reset-screen
+> node scripts/test_v103_dedicated_reset_screen.mjs
+
+V103 dedicated reset screen guard passed: the direct reset entry contains only email and the reset submit action.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v104-reset-repair
+> node scripts/test_v104_recovery_link_repair.mjs
+
+V104 recovery link repair guard passed: localhost recovery sessions are validated and repaired entirely in the browser.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v105-email-reset
+> node scripts/test_v105_email_recovery_link.mjs
+
+V105 email recovery guard passed: copied Supabase recovery links are validated and exchanged directly in the browser.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v106-password-change
+> node scripts/test_v106_authenticated_password_change.mjs
+
+V106 authenticated password-change guard passed: only a verified browser session can update its own password.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v107-core
+> node scripts/test_v107_core_customer_workflow.mjs
+
+V107 core workflow regression passed: safe upload, reachable analysis, atomic current assessment, editable customer file, valid audit payloads and functional synthetic-case start.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v108-visible-testcases
+> node scripts/test_v108_visible_synthetic_cases.mjs
+
+V139 visible synthetic cases passed: all 12 cases open visibly, selection is separate from start, and created test cases retain a clear marker.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v46-session-audit
+> node scripts/test_v46_workspace_session_audit.mjs
+
+V80 workspace session/audit boundary guard passed against WorkspaceController
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v46-release
+> node scripts/test_v46_release_gate.mjs
+
+V131 FINAL RELEASE GATE PASSED: WorkspaceController remains modular, legacy tester routes stay retired and access is exposed through the regular promo-code flow.
+
+> ash-workspace-gold@1.0.0 build
+> npm run test:v109-corrections && npm run test:v110-navigation && npm run test:v111-auth-trigger && npm run test:v112-passwordless-test && npm run test:v113-synthetic-country && npm run test:v114-readiness && npm run test:v115-polish && npm run test:v116-privacy-race && npm run test:v117-guest-reentry && npm run test:v118-guest-restart && npm run test:v119-guest-identity && npm run test:v120-guest-start-race && npm run test:v121-single-guest-start && npm run test:v122-bilingual-letters && npm run test:v123-language-pair-letters && npm run test:v125-payments && npm run test:v126-navigation && npm run test:v127-navigation && npm run test:v128-ampel && npm run test:v129-deadlines && npm run test:v130-navigation && npm run test:v131-legal-comparison && npm run test:v131-installation && npm run test:v132-brand && npm run test:v133-videos && npm run test:team-change-control && npm run test:v135-guidance && npm run test:v136-roadmap && npm run test:v137-legal-localization && next build
+
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v109-corrections
+> node scripts/test_v109_customer_workflow_corrections.mjs
+
+V109 customer workflow corrections passed: preferences, per-case context, analysis handoff, approval prefill and evidence scoping are behaviorally verified.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v110-navigation
+> node scripts/test_v110_navigation_and_metadata.mjs
+
+V139 navigation/metadata regression passed: public utility routes, protected surfaces and title templates have explicit non-duplicated return paths.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v111-auth-trigger
+> node scripts/test_v111_auth_trigger_deduplication.mjs
+
+V139 auth-trigger guard passed: the obsolete duplicate is removed and the canonical registration trigger remains.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v112-passwordless-test
+> node scripts/test_v112_passwordless_synthetic_test.mjs
+
+V139 passwordless synthetic test guard passed: no password or email, explicit legal/test-data confirmation, two-hour expiry, two-document cap and owner-scoped authenticated access.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v113-synthetic-country
+> node scripts/test_v113_synthetic_case_country_handoff.mjs
+
+V139 synthetic-case handoff passed: all 12 test cases keep language, home country, target country and test marker.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v114-readiness
+> node scripts/test_v114_product_readiness.mjs
+
+V114 product-readiness checks passed: image gating, state reset, recovery screens, current version and 11-language messages are active.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v115-polish
+> node scripts/test_v115_product_polish.mjs
+
+V115 product-polish checks passed: export format metadata, clean timeline dates and version-neutral feature cards are active.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v116-privacy-race
+> node scripts/test_v116_privacy_race.mjs
+
+V116 regression passed: guest privacy is idempotent under RLS and interrupted private uploads recover without overwriting files.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v117-guest-reentry
+> node scripts/test_v117_guest_session_reentry.mjs
+
+V117 guest-session re-entry passed: expired anonymous sessions can start a fresh test while permanent sessions remain protected.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v118-guest-restart
+> node scripts/test_v118_guest_session_restart.mjs
+
+V118 guest-session restart passed: expired anonymous sessions are replaced locally while permanent accounts remain protected.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v119-guest-identity
+> node scripts/test_v119_guest_identity_fallback.mjs
+
+V119 guest identity fallback passed: real anonymous-session shapes restart while permanent accounts remain protected.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v120-guest-start-race
+> node scripts/test_v120_guest_start_race.mjs
+
+V120 guest-start race passed: restored anonymous sessions cannot consume the restart request before a fresh guest session exists.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v121-single-guest-start
+> node scripts/test_v121_single_guest_start.mjs
+
+V121 single guest start passed: auth events cannot trigger a duplicate anonymous account during guest replacement.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v122-bilingual-letters
+> node scripts/test_v122_bilingual_letters.mjs
+
+V122 compatibility passed: legacy German response fields still produce a complete paired approval and export.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v123-language-pair-letters
+> node scripts/test_v123_language_pair_letters.mjs
+
+V123 language-pair letters passed: any reference/customer language pair is supported and identical languages produce one version.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v125-payments
+> node scripts/test_v125_sumup_sandbox_checkout.mjs
+
+V125 optional SumUp guard passed: payment remains off by default and sandbox checkout can only be enabled after explicit optional-module opt-in.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v126-navigation
+> node scripts/test_v126_persistent_back_navigation.mjs
+
+V126 navigation guard passed: public, authentication and protected return buttons remain visible while scrolling on desktop and mobile.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v127-navigation
+> node scripts/test_v127_universal_back_navigation.mjs
+
+V127 navigation guard passed: every public, protected, legal, recovery and error surface keeps a compact return action reachable while scrolling.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v128-ampel
+> node scripts/test_v128_synthetic_ampel_mapping.mjs
+
+V128 traffic-light guard passed: all four synthetic expectations survive draft, normalization and storage while normal cases stay yellow.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v129-deadlines
+> node scripts/test_v129_deadlines_surface.mjs
+
+V129 deadlines surface verification passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v130-navigation
+> node scripts/test_v130_public_back_navigation.mjs
+
+V130 navigation guard passed: the public start-page back button remains visible while scrolling and returns to the page start.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v131-legal-comparison
+> node scripts/test_v131_case_legal_comparison.mjs
+
+V131 extreme end-to-end guard passed: 1 synthetic extreme case, 120 documents, 60 assessments, 24 sources, mixed deadlines/evidence, French-Arabic letter pair, approval state and real Word/Excel/PowerPoint artifacts.
+V131 pilot stress regression passed: 1100 synthetic cases, 8800 documents, 220 dated cases across 11 languages.
+V131 final synthetic output guard passed: document analysis, colored traffic lights, deadline, next step, bilingual letter, approval plus Word, Excel and PowerPoint exports remain complete.
+V131 legal-comparison guard passed: case-specific, source-bound, multilingual, immutable and review-required comparison flow is wired end to end.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v131-installation
+> node scripts/test_v131_installation_entry.mjs
+
+V131 installation/team guard passed: the public site stays separate, Password 1 grants full ASH Workspace access, and Password 2 releases the new live version.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v132-brand
+> node scripts/test_v132_ash_brand.mjs
+
+V139 ASH Workspace Gold brand guard passed: name, logo, PWA assets, metadata and downloads are consistent.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v133-videos
+> node scripts/test_v133_ash_explainer_videos.mjs
+
+V134 ASH video guard passed: 22 current videos, 22 local subtitle tracks, corrected German pronunciation and no legacy AS Gold source.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:team-change-control
+> node scripts/test_team_change_control.mjs
+
+Team change-control security guard passed: Password 1 grants full access to all of ASH Workspace and one Password 2 release gates the new live version.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v135-guidance
+> node scripts/test_v135_case_guidance.mjs && node scripts/test_v135_evidence_database.mjs
+
+V135 live-test regression: localized and labelled document dates survive mapping; ambiguous, conflicting and impossible dates stay open.
+V135: actionable case guidance, source isolation, changed/new documents, assessment history, 11 languages and mobile file opening passed.
+V135: successful customer save updates both the list and the open detail view.
+V135: case exports preserve exact evidence, review state and superseded history.
+V135: same-origin framing is limited to the synthetic preview; production keeps its frame protection.
+V135 database: real migration, exact quotes, ownership/RLS, case isolation, atomic replacement, deletion and anonymous access passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v136-roadmap
+> node scripts/test_v136_customer_roadmap.mjs && node scripts/test_v136_roadmap_database.mjs
+
+V136: case isolation, complete input, original quotes, deadline provenance, stale reports, dependencies, reopening/history, fact provenance and progress context in export, 11 languages and separate Word letters passed.
+V136 database: owner-only reads, expired and anonymous access, immutable generated reports and cascade deletion passed.
+npm warn Unknown env config "http-proxy". This will stop working in the next major version of npm.
+
+> ash-workspace-gold@1.0.0 test:v137-legal-localization
+> node scripts/test_v137_localized_legal_pages.mjs
+
+V137: 10 legal surfaces translated in 11 app languages; German remains the authoritative source.
+▲ Next.js 16.3.3 (Turbopack)
+✓ Running next.config.mjs took 10ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 307ms
+  Running TypeScript ...
+  Finished TypeScript in 8ms ...
+  Collecting page data using 8 workers ...
+  Generating static pages using 8 workers (0/29) ...
+  Generating static pages using 8 workers (7/29) 
+  Generating static pages using 8 workers (14/29) 
+  Generating static pages using 8 workers (21/29) 
+✓ Generating static pages using 8 workers (29/29) in 373ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /api/auth/password-reset
+├ ƒ /api/integrations/google/callback
+├ ƒ /api/integrations/google/start
+├ ƒ /api/integrations/microsoft/callback
+├ ƒ /api/integrations/microsoft/start
+├ ƒ /api/integrations/status
+├ ƒ /api/internal-change-control/decision
+├ ƒ /api/payments/cancel
+├ ƒ /api/payments/checkout
+├ ƒ /api/payments/config
+├ ƒ /api/payments/status
+├ ƒ /api/payments/webhook
+├ ƒ /api/team-account/login
+├ ƒ /api/team-account/setup
+├ ○ /cookies
+├ ○ /datenschutz
+├ ○ /datenschutzsteuerung
+├ ○ /einladungen
+├ ○ /erweiterungen
+├ ○ /impressum
+├ ○ /insider
+├ ○ /insider/einrichten
+├ ○ /installieren
+├ ○ /integrationen
+├ ○ /ki-transparenz
+├ ○ /kontakt
+├ ○ /manifest.webmanifest
+├ ○ /nutzungsbedingungen
+├ ○ /passwort-aendern
+├ ○ /rechtliches
+├ ○ /reset-reparatur
+├ ○ /testen
+├ ○ /tester-freischalten
+├ ○ /tester-verwaltung
+├ ƒ /vorschau/v135
+├ ƒ /vorschau/v136
+└ ○ /widerruf
+
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
