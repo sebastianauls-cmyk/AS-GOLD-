@@ -72,7 +72,7 @@ expect(languages.includes('problemLanguageProfiles={...baseProfiles,...extraProf
 expect(intro.includes('howAsGoldWorksCopy'),'product-intro component must consume the canonical direct module copy')
 expect(intro.includes('{index+1}'),'product flow must render four numbered steps')
 expect(title.includes('whatIsAsGoldCopy'),'hero title must consume the canonical ASH Workspace Gold explanation directly')
-expect(publicLanding.includes('{hero.title}')&&publicLanding.includes('{hero.lead}'),'hero copy must be rendered directly by PublicLanding')
+expect(publicLanding.includes('publicExperienceCopy(language)')&&publicLanding.includes('<h1>{c.headline}</h1>')&&publicLanding.includes('[hero.title,hero.lead]'),'public introduction and detailed explanation must be rendered from localized copy')
 expect(caseDiscovery.includes('id="asgold-user-audience"'),'audience content must be rendered directly by the case discovery module')
 expect((caseDiscovery.match(/\{audience\.title\}/g)||[]).length===1,'audience heading must be rendered once')
 expect(caseDiscovery.includes('jumpToPublicCaseResult()'),'case choice must invoke direct navigation from its React click handler')

@@ -43,7 +43,7 @@ if(firstAction.includes('{c.problem}')||firstAction.includes('{c.voice}')) throw
 mustContain(problem,'analyse()','problem analysis trigger')
 mustContain(problem,'recommendation','first recommendation result')
 mustContain(publicLanding,"setScreen('register')",'registration route in public content')
-mustContain(publicHeader,"onScreenChange('register')",'registration route in public header')
+mustContain(publicHeader,'href="#funktionen"','product preview route in public header')
 mustContain(publicHeader,"onScreenChange('login')",'login route in public header')
 mustContain(authRepository,'signInWithPassword','password login service')
 mustContain(authRepository,'auth.signUp','registration service action')

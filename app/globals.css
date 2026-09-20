@@ -477,3 +477,147 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 .workspaceRecentHead{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}.workspaceRecentHead h2{font-size:1.13rem;margin:0}.workspaceRecentHead button{min-height:44px}.workspaceRecentCase{display:flex;width:100%;align-items:center;justify-content:space-between;gap:16px;min-height:52px;padding:14px 0;text-align:start;background:transparent;border:0;border-bottom:1px solid #e0e3e7;color:#303946;font-weight:650;cursor:pointer}.workspaceRecentCase>span:first-child{overflow-wrap:anywhere;min-width:0}
 .workspaceMore{margin:24px 0 12px;border:1px solid #dfe2e6;border-radius:16px;background:#fff}.workspaceMore>summary{padding:16px;cursor:pointer;font-weight:750;color:#515965;min-height:48px}.workspaceMoreContent{padding:0 16px 16px}.workspaceMore .dashboardInsiderEntry{margin:18px 0;padding-top:12px;border-top:1px solid #e2e4e8}.workspaceMore .dashboardInsiderEntry h3{font-size:1rem}.workspaceOverviewCard:hover,.workspaceRecentCase:hover{background:#fffaf0}.workspaceOverview button:focus-visible,.workspaceSettings>summary:focus-visible{outline:3px solid #aa883a;outline-offset:3px}
 @media(max-width:700px){.workspaceOverviewGrid{grid-template-columns:repeat(2,minmax(0,1fr))}.appTop.compactWorkspaceHeader{padding:10px 16px;gap:8px}.workspaceHeaderBrand{width:100%}.workspaceHeaderActions{width:100%;justify-content:space-between}.workspaceHeaderActions .workspaceDeadlineShortcut{flex:1;min-width:0}.workspaceHeaderActions .workspaceSettings{flex:0 1 auto;min-width:0}.workspaceSettings>summary{font-size:.88rem;white-space:normal}.compactWorkspaceHeader~.appMain{margin-top:16px}.workspaceNext{padding:18px}.workspaceNext .primary{width:100%}.workspaceOverviewCard{padding:14px 26px 14px 14px;min-height:105px}.workspaceCreateActions{display:grid;grid-template-columns:1fr}.workspaceCreateActions button{width:100%}.workspaceRecentHead{align-items:flex-start}.workspaceSettingsPanel.appHeaderTools{max-height:calc(100dvh - 170px)}body:has(.compactWorkspaceHeader) .legalFooter{padding-bottom:calc(100px + env(safe-area-inset-bottom))}}
+/* V150: public product journey; language and output controls stay visible. */
+.publicProductPage{color:#202734;background:#fff;line-height:1.6}
+.publicProductPage .wrap{width:min(1180px,calc(100% - 40px));margin-inline:auto}
+.publicProductPage .section{padding:64px 0}
+.publicProductPage h1,.publicProductPage h2,.publicProductPage h3{color:#202734;letter-spacing:-.025em;overflow-wrap:anywhere}
+.publicProductPage h2{font-size:clamp(1.6rem,3vw,2.35rem);line-height:1.2;margin:0 0 18px}
+.publicProductPage h3{font-size:1.18rem;line-height:1.35}
+.publicProductPage .lead{font-size:1.12rem;line-height:1.65;color:#566171;max-width:760px;margin:0 0 24px}
+.publicProductPage a,.publicProductPage button,.publicProductPage summary{touch-action:manipulation}
+.publicProductPage button,.publicProductPage .btn{font-size:1rem;min-height:44px}
+.publicProductPage :is(a,button,summary):focus-visible{outline:3px solid #2265a5;outline-offset:4px}
+.publicProductPage .publicTop{position:relative;top:auto;backdrop-filter:none;-webkit-backdrop-filter:none;background:#fff;z-index:25}
+.publicProductPage .publicTop:has(.flagLanguageOpen){z-index:310}
+.publicProductPage .publicTop .nav{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px 24px;align-items:center;padding:18px 0}
+.publicProductPage .publicTop .brand{justify-content:flex-start;padding:0;min-width:0}
+.publicProductPage .brandDescriptor{display:none}
+.publicProductPage .publicTop .nav nav{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;width:auto}
+.publicProductPage .publicTop .nav nav a{display:flex;align-items:center;justify-content:center;width:auto;min-height:44px;padding:8px 12px;border:0;background:transparent;font-size:.95rem;font-weight:650;text-decoration:none;color:#465160;border-radius:8px}
+.publicProductPage .publicTop .nav nav a:hover{background:#f3f5f7;color:#171e29}
+.publicProductPage .publicTop .nav .publicSignIn{width:auto;padding:10px 18px;font-size:.95rem}
+.publicProductPage .publicLanguageModules{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:680px;margin-inline:auto}
+.publicProductPage .publicLanguageModule{display:grid;grid-template-columns:minmax(0,1fr);align-content:start;padding:0;border:0;box-shadow:none;background:transparent;border-radius:0;gap:4px}
+.publicProductPage .publicLanguageTitle{font-size:.875rem;margin:0;color:#566171;font-weight:650}
+.publicProductPage .publicLanguageModule .flagLanguage{max-width:none}
+.publicProductPage .publicLanguageModule .flagLanguageTrigger{min-height:44px;font-size:.95rem;padding:9px 12px;border-color:#d6dce3;box-shadow:none}
+.publicProductPage .publicLanguageModule .flagLanguageTrigger strong{overflow-wrap:anywhere;min-width:0}
+.publicProductPage .outputLanguageStatus{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;padding:0;margin:0}
+.publicProductPage .publicBackButton{grid-column:1/-1;grid-row:2;justify-self:end;margin:0;font-size:.875rem!important;min-height:40px!important}
+.publicProductHero{padding:64px 0 30px;background:linear-gradient(150deg,#fff 55%,#f7f4ec)}
+.publicProductHeroGrid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:64px;align-items:center}
+.publicProductHero h1{font-size:clamp(2.2rem,4.8vw,3.7rem);line-height:1.08;margin:0 0 24px;max-width:700px}
+.publicProductHero .actions{display:flex;flex-wrap:wrap;gap:12px;margin:28px 0 12px}
+.publicProductPage .btn{display:inline-flex;align-items:center;justify-content:center;padding:12px 18px;text-decoration:none;line-height:1.4;text-align:center}
+.publicProductHero .freeHint{font-size:.9rem;max-width:620px;font-weight:500;color:#596575}
+.publicProductPage .publicVideoLink{display:inline-flex;align-items:center;border:0;background:none;color:#725719;font-weight:750;padding:8px 0;margin-top:8px;text-align:start}
+.publicWorkspacePreview{padding:28px;border:1px solid #d9dfe5;border-radius:20px;background:#fff;box-shadow:0 24px 64px #1b283015;min-width:0}
+.publicPreviewLabel{font-size:.875rem;line-height:1.45;color:#617083;display:block;margin-bottom:16px}
+.publicWorkspacePreview h2{font-size:1.5rem;margin:0 0 22px}
+.publicPreviewTask{padding:22px;background:#faf7ef;border-inline-start:4px solid #98762b;border-radius:4px 12px 12px 4px}
+.publicPreviewTask>span{font-size:.875rem;color:#725719;font-weight:750}
+.publicPreviewTask h3{margin:10px 0;font-size:1.18rem}
+.publicPreviewTask p{margin:0 0 16px;color:#5a6674}
+.publicPreviewTask a{font-weight:750;color:#725719;text-decoration:none;display:inline-flex;align-items:center;min-height:44px}
+.publicPreviewAreas{display:grid;grid-template-columns:1fr 1fr;gap:0 18px;margin-top:20px}
+.publicPreviewAreas span{padding:12px 0;border-bottom:1px solid #e6e9ec;font-size:.875rem;font-weight:650;overflow-wrap:anywhere}
+.publicInstallRow{margin-top:28px!important}
+.publicProductPage .publicInstallRow .installAppControl{max-width:680px;margin:0}
+.publicProductPage .publicInstallRow .installAppPanel{box-shadow:none;background:transparent}
+.publicFeatureTour{border-top:1px solid #e4e7eb}
+.publicTourLayout{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:28px;margin-top:32px;align-items:start}
+.publicTourChoices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.publicTourChoices button{display:flex;align-items:center;gap:12px;text-align:start;padding:18px 14px;border:1px solid #d9dfe6;border-radius:12px;background:#fff;color:#435062;min-height:80px;line-height:1.4}
+.publicTourChoices button span{font-size:1.3rem;color:#98762b;flex:0 0 22px;text-align:center}
+.publicTourChoices button b{font-size:.95rem;font-weight:650;overflow-wrap:anywhere}
+.publicTourChoices button[aria-pressed=true]{background:#252d3b;border-color:#252d3b;color:#fff;box-shadow:inset 4px 0 #c7aa61}
+.publicTourChoices button[aria-pressed=true] span{color:#ebd49a}
+.publicTourPanel{padding:32px;background:#f6f7f9;border:1px solid #e1e5ea;border-radius:16px;min-width:0}
+.publicTourPanel h3{margin:0 0 24px;font-size:1.5rem}
+.publicTourPanel dl{margin:0 0 28px;display:grid;gap:24px}
+.publicTourPanel dt{font-weight:750;margin-bottom:8px}
+.publicTourPanel dd{margin:0;color:#536171;line-height:1.65}
+.publicAvailability{font-size:.95rem;color:#5a6574;line-height:1.6;margin:24px 0 0;max-width:880px}
+.publicAvailability a{color:#725719;display:inline-flex;align-items:center;min-height:44px;font-weight:700}
+.publicHow{background:#f6f7f9}
+.publicHowSteps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:36px;margin:30px 0}
+.publicHowSteps article{border-top:1px solid #cbd2db;padding-top:18px;min-width:0}
+.publicHowSteps article>span{font-size:1rem;font-weight:750;color:#876b29}
+.publicHowSteps h3{margin:12px 0}
+.publicHowSteps p{margin:0;color:#566171;line-height:1.6}
+.publicProductPage summary{cursor:pointer;font-size:1rem;line-height:1.5;min-height:48px;padding:14px 0;font-weight:700;color:#34404f}
+.publicHelp{border-top:1px solid #d9dfe6}
+.publicProductPage .caseChooser{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:28px 0 20px}
+.publicProductPage .caseChoice{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;min-height:94px;padding:14px;gap:6px;background:#fff;border-radius:12px;box-shadow:none}
+.publicProductPage .caseChoice>span{display:none}
+.publicProductPage .caseChoice.active{border:2px solid #98762b;background:#faf7ef;padding:13px}
+.publicProductPage .caseChoice small{font-size:.875rem;margin:0}
+.publicProductPage .caseResult{box-shadow:none;background:#f7f8fa;border:1px solid #e1e5ea;border-radius:16px}
+.publicProductPage .caseResultGrid>div{background:transparent;border:0;padding:0}
+.publicProductPage .caseResultGrid{gap:28px}
+.publicAudience{margin-top:24px;border-top:1px solid #dde2e7}
+.publicAudienceGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:24px}
+.publicAudienceGrid p{color:#566171}
+.publicControl{background:#252d3b;color:#fff}
+.publicProductPage .publicControl h2{color:#fff}
+.publicProductPage .publicControl .lead{color:#e1e6ed;max-width:860px}
+.publicLegalContext{border-top:1px solid #ffffff30;padding-top:20px;color:#d3dbe5;font-size:.95rem;margin:0;max-width:860px}
+.publicProductPage .prices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:start}
+.publicProductPage .priceCard{box-shadow:none;background:#fff;min-width:0}
+.publicProductPage .priceHead strong{font-size:1.7rem}
+.publicProductPage .tierHeadline{font-size:1.25rem}
+.publicPlanDetails{border-block:1px solid #e2e6eb;margin:18px 0}
+.publicPlanDetails summary{font-size:.95rem}
+.publicProductPage .publicPlanDetails .journeyBox{margin-top:6px}
+.publicProductPage .publicQuestions .wrap{max-width:860px}
+.publicQuestions details{border-bottom:1px solid #dce1e7;padding:4px 0}
+.publicQuestions details p{color:#566171;line-height:1.65;margin:4px 0 22px}
+.publicFinalAction{padding:48px 0;background:#f8f4ea}
+.publicFinalAction .btn{margin-inline-end:12px;margin-top:8px}
+.publicProductPage .legalFooter{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+.publicProductPage [id]{scroll-margin-top:24px}
+@media(max-width:960px){
+  .publicProductPage .publicTop .nav{grid-template-columns:minmax(0,1fr) auto;gap:12px}
+  .publicProductPage .publicTop .nav nav{grid-column:1/-1;grid-row:2;justify-content:flex-start}
+  .publicProductPage .publicSignIn{grid-column:2;grid-row:1}
+  .publicProductPage .publicLanguageModules{grid-row:3;max-width:none}
+  .publicProductHeroGrid{gap:28px}
+  .publicTourLayout{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:20px}
+  .publicProductPage .caseChooser{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .publicProductPage .prices{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:700px){
+  .publicProductPage .section{padding:44px 0}
+  .publicProductPage .publicLanguageModule .flagLanguageMenu{position:fixed;inset:8px 12px;inset-inline:12px;width:auto;max-width:none;max-height:calc(100dvh - 16px);overflow-y:auto}
+  .publicProductHero{padding-top:38px}
+  .publicProductHeroGrid,.publicTourLayout{grid-template-columns:minmax(0,1fr)}
+  .publicWorkspacePreview{padding:22px}
+  .publicTourChoices button{min-height:68px;padding:12px;gap:8px}
+  .publicTourPanel{padding:24px}
+  .publicHowSteps{grid-template-columns:1fr;gap:22px}
+  .publicHowSteps article{display:grid;grid-template-columns:28px minmax(0,1fr);gap:8px 12px}
+  .publicHowSteps h3{margin:0}
+  .publicHowSteps p{grid-column:2}
+  .publicAudienceGrid,.publicProductPage .prices,.publicProductPage .caseResultGrid{grid-template-columns:1fr}
+  .publicProductPage .publicTop .brandName strong{font-size:1rem;letter-spacing:.08em}
+  .publicProductPage .publicTop .brandEdition{font-size:.7rem;padding:3px 6px}
+  .publicProductPage .publicTop .logo{width:40px;height:40px}
+  .publicProductPage .publicTop .nav nav{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0}
+  .publicProductPage .publicTop .nav nav a{padding:6px 4px;font-size:.875rem;overflow-wrap:anywhere}
+  .publicProductPage .publicTop .nav .publicSignIn{padding:9px 10px;font-size:.875rem}
+  .publicProductPage .publicLanguageModules{gap:12px}
+  .publicProductPage .publicLanguageTitle{font-size:.875rem;line-height:1.4;min-height:2.8em}
+  .publicProductPage .publicLanguageModule .flagLanguageTrigger{padding:9px 8px;font-size:.875rem}
+  .publicProductPage .publicLanguageModule .flagIcon{width:22px}
+}
+@media(max-width:380px){
+  .publicProductPage .wrap{width:calc(100% - 28px)}
+  .publicProductPage .publicTop .brandName{flex-wrap:wrap;gap:3px}
+  .publicProductPage .publicTop .brand{gap:7px}
+  .publicProductHero .actions{display:grid;grid-template-columns:1fr}
+  .publicProductPage .publicLanguageModules{grid-template-columns:1fr}
+  .publicProductPage .publicLanguageTitle{min-height:0}
+  .publicProductPage .publicBackButton{grid-row:auto}
+}
+@media(prefers-reduced-motion:reduce){.publicProductPage *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
