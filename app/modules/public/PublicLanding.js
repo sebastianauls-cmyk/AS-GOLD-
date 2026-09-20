@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { LegalFooter } from '../compliance/LegalFooter'
-import { supportedLanguages } from '../language/v36Languages.mjs'
 import { heroTitleCopy } from './HeroTitleStabilizer'
 import { audienceCopy } from './HeroCopyEnhancer'
 import { orderCasesByResearch } from './casePriorityV56.mjs'
@@ -13,7 +12,10 @@ import { PublicHeader } from './PublicHeader'
 import { PublicCaseDiscoverySection } from './PublicCaseDiscoverySection'
 import { PublicTrustSections } from './PublicTrustSections'
 import { PublicPricingSection } from './PublicPricingSection'
-import { APP_VERSION } from '../release/appRelease.mjs'
+import { publicExperienceCopy } from './publicExperienceCopy.mjs'
+import { PublicProductTour } from './PublicProductTour'
+import { InstallAppButton } from './InstallAppButton'
+import { workspaceOverviewCopy } from '../workspace/workspaceOverviewCopy.mjs'
 
 const publicBackCopy={
   de:{label:'← Zurück',aria:'Zurück zum Anfang der Seite'},
@@ -29,7 +31,7 @@ const publicBackCopy={
   vi:{label:'← Quay lại',aria:'Quay lại đầu trang'}
 }
 
-const productCopy={
+export const productCopy={
   de:{
     eyebrow:'ASH Workspace Gold · vollständiger digitaler Fall- und Dokumentenarbeitsbereich',
     cta:'Fall starten',explainer:'▶ Kurz erklären lassen',capTitle:'Was ASH Workspace Gold heute abbildet',capLead:'Vom ersten Sachverhalt bis zur geprüften Ausgabe bleibt der Vorgang in einer durchgängigen Struktur: Dokumente, Analyse, Ampel, Fristen, Rechtsraum, Schreiben, Vorschau, Freigabe und Export.',more:'Weitere Möglichkeiten ansehen',featureEyebrow:'Funktionen im Zusammenhang',featureTitle:'Nicht einzelne Werkzeuge – ein durchgängiger Arbeitsablauf.',result:'Ihr Ergebnis',
@@ -49,21 +51,15 @@ const productCopy={
   vi:{eyebrow:'ASH Workspace Gold · không gian số hoàn chỉnh cho hồ sơ và tài liệu',cta:'Bắt đầu vụ việc',explainer:'▶ Xem giải thích ngắn',capTitle:'ASH Workspace Gold hiện có thể xử lý những gì',capLead:'Từ mô tả ban đầu đến kết quả đã được kiểm tra, toàn bộ quy trình nằm trong một cấu trúc liên tục: tài liệu, phân tích, đèn tín hiệu, thời hạn, so sánh pháp lý, thư, xem trước, phê duyệt và xuất.',more:'Xem thêm khả năng',featureEyebrow:'Các chức năng liên kết',featureTitle:'Không phải công cụ rời rạc — một quy trình xuyên suốt.',result:'Kết quả của bạn',proof:[['📄','Tài liệu','tải lên · ảnh · nhận dạng'],['🚦','Phân tích','🟢 🟡 🔴 hiển thị'],['⏱️','Thời hạn','phát hiện · cảnh báo · theo dõi'],['⚖️','Pháp lý','so sánh theo vụ việc'],['✉️','Thư','song ngữ'],['📤','Đầu ra','PDF · Word · phê duyệt']],journey:[['1','Ghi nhận','Nhập hoặc nói nội dung và thêm tài liệu hoặc ảnh.'],['2','Hiểu','Tài liệu, rủi ro, bằng chứng, đèn tín hiệu và thời hạn được tổng hợp.'],['3','So sánh','Quốc gia gốc, quốc gia đích và không gian pháp lý được so sánh theo vụ việc.'],['4','Chuẩn bị','Bước tiếp theo và thư được chuẩn bị bằng ngôn ngữ đã chọn.'],['5','Kiểm tra & phê duyệt','Kiểm tra bản xem trước, phê duyệt rõ ràng, sau đó xuất hoặc chuyển tiếp.']],features:[['📄','Tài liệu & hình ảnh','Tải lên, cấu trúc, gán và phân tích trong bối cảnh vụ việc.'],['🎙️','Nhập bằng giọng nói','Đưa sự việc từ micro vào cùng quy trình.'],['🚦','Phân tích đèn tín hiệu','Mỗi đánh giá có 🟢, 🟡 hoặc 🔴 cùng lý do.'],['🧩','Bằng chứng & thiếu sót','Hiển thị thông tin, tài liệu còn thiếu và mâu thuẫn.'],['⏱️','Thời hạn & tiến độ','Gộp thời hạn, phản ứng cần thiết, trạng thái và dòng thời gian.'],['⚖️','So sánh pháp lý','So sánh quốc gia và không gian pháp lý kèm nguồn và ghi chú cần kiểm tra.'],['🌍','11 ngôn ngữ','Tách ngôn ngữ giao diện và đầu ra; RTL cho tiếng Ả Rập và Ba Tư.'],['✉️','Thư song ngữ','Tạo hai phiên bản bằng hai ngôn ngữ tự chọn.'],['👁️','Xem trước & phê duyệt','Kiểm tra nội dung trước khi chuyển tiếp và phê duyệt rõ ràng.'],['📤','PDF & Word','Tạo đầu ra có phân tích, đèn tín hiệu, thời hạn và thư.'],['📚','Hồ sơ bàn giao','Cấu trúc vụ việc, tài liệu, đánh giá, nguồn, phê duyệt và bước tiếp theo.'],['🔒','Kiểm soát & truy vết','Giữ dữ liệu, phê duyệt, xuất và hành động quan trọng có thể truy vết.']]}
 }
 
-const uxStyles=`
-.heroV131{padding:72px 0 58px}.heroV131 .heroLayout{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(280px,.55fr);gap:46px;align-items:center}.heroV131 h1{max-width:860px;font-size:clamp(38px,6vw,68px);letter-spacing:-.035em}.heroPrimaryActions{margin-top:24px}.heroMainCta{min-width:180px;padding:13px 20px}.heroStatusCard{background:#fff;border:1px solid #e3e5e9;border-radius:20px;padding:24px;box-shadow:0 18px 45px #11182712}.heroStatusCard ol{margin:18px 0 0;padding-left:22px;display:grid;gap:12px;line-height:1.5}.heroMore{margin-top:18px;max-width:760px;border-top:1px solid #e7e0d1;padding-top:14px}.heroMore summary{cursor:pointer;font-weight:750;color:#6b5420}.heroMore[open] summary{margin-bottom:14px}.v131ReleaseBand{margin-top:-18px;position:relative;z-index:3}.v131ReleaseInner{background:linear-gradient(135deg,#2b2519 0%,#5f4a1d 58%,#8f6e25 100%);color:#fff;border-radius:24px;padding:24px;box-shadow:0 18px 48px #33270f2b}.v131ReleaseHead{display:flex;justify-content:space-between;gap:22px;align-items:flex-start}.v131ReleaseHead h2{margin:5px 0 7px;font-size:clamp(23px,3vw,32px)}.v131ReleaseHead p{margin:0;color:#f5ecd4;max-width:880px;line-height:1.5}.v131ReleaseActions{display:flex;gap:10px;flex-wrap:wrap}.v131ReleaseActions .primary{background:#fff;color:#4e3c16}.v131ProofGrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-top:20px}.v131Proof{padding:12px;border:1px solid #ffffff26;border-radius:14px;background:#ffffff0d;display:grid;gap:3px;min-width:0}.v131Proof span{font-size:18px}.v131Proof b{font-size:12px;color:#f4e6bf}.v131Proof strong{font-size:14px;overflow-wrap:anywhere}.v131Journey{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:28px;position:relative;z-index:2}.journeyCard{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:18px;display:grid;grid-template-columns:36px 1fr;gap:10px;box-shadow:0 10px 30px #1118270d}.journeyNumber{width:34px;height:34px;border-radius:999px;background:#8f6e25;color:#fff;display:grid;place-items:center;font-weight:850}.journeyCard h2{font-size:17px;margin:2px 0 7px}.journeyCard p{margin:0;color:#65707d;line-height:1.48}.v131FeatureSection{padding:64px 0 52px}.v131FeatureSection>h2{font-size:clamp(28px,4vw,42px);max-width:820px;margin:10px 0 26px}.featureGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}.featureCard{background:#fff;border:1px solid #e3e5e9;border-radius:18px;padding:20px;min-height:180px}.featureCard h3{margin:12px 0 8px;font-size:18px}.featureCard p{margin:0;color:#65707d;line-height:1.5}.featureIcon{font-size:26px}.freeHint{margin-top:12px}
-@media(max-width:1100px){.v131Journey{grid-template-columns:repeat(3,1fr)}.v131ProofGrid{grid-template-columns:repeat(3,1fr)}}
-@media(max-width:900px){.heroV131 .heroLayout{grid-template-columns:1fr}.heroStatusCard{max-width:620px}.v131Journey,.featureGrid{grid-template-columns:1fr 1fr}.v131ReleaseHead{display:grid}.v131ReleaseActions{width:100%}.v131ReleaseActions .btn{width:100%;text-align:center}}
-@media(max-width:620px){.heroV131{padding-top:48px}.heroV131 h1{font-size:40px}.heroPrimaryActions{display:grid}.heroPrimaryActions .btn{width:100%;text-align:center}.v131ReleaseBand{margin-top:-8px}.v131ReleaseInner{border-radius:18px;padding:18px}.v131ProofGrid{grid-template-columns:1fr 1fr}.v131Journey,.featureGrid{grid-template-columns:1fr}.v131Journey{margin-top:18px}.journeyCard,.featureCard{min-height:0}.v131FeatureSection{padding-top:48px}}
-`
-
 export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,cd,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
   const hero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
-  const outputLanguageLabel=supportedLanguages.find(item=>item.key===outputLanguage)?.label||'Deutsch'
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
   const backCopy=publicBackCopy[language]||publicBackCopy.de
   const pc=productCopy[language]||productCopy.de
+  const c=publicExperienceCopy(language)
+  const w=workspaceOverviewCopy(language)
 
   function returnToPublicStart(){
     const cleanUrl=`${window.location.pathname}${window.location.search}`
@@ -72,62 +68,44 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
     window.scrollTo({top:0,left:0,behavior:reducedMotion?'auto':'smooth'})
   }
 
-  return <>
-    <style>{uxStyles}</style>
-    <PublicHeader t={t} caseNavLabel={cd.nav} language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onScreenChange={setScreen} onPlayExplainer={()=>setExplainerSignal(value=>value+1)}/>
+  return <div className="publicProductPage" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'}>
+    <PublicHeader t={t} c={c} caseNavLabel={cd.nav} language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onScreenChange={setScreen} onPlayExplainer={()=>setExplainerSignal(value=>value+1)}/>
     <button className="publicPageBackButton" data-persistent-back type="button" onClick={returnToPublicStart} aria-label={backCopy.aria}>{backCopy.label}</button>
     <main>
-      <div className="legalMarketBar"><div className="wrap"><b>{t.legal}</b><span>{t.marketNote}</span><strong className="legalChip" data-output-language-status aria-live="polite">{t.outputLanguage}: {outputLanguageLabel}</strong></div></div>
-
-      <section className="hero heroV131">
-        <div className="wrap heroLayout">
+      <section className="publicProductHero">
+        <div className="wrap publicProductHeroGrid">
           <div>
-            <div className="eyebrow">{pc.eyebrow}</div>
-            <h1>{hero.title}</h1>
-            <p className="lead">{hero.lead}</p>
-            <div className="actions heroPrimaryActions">
-              <button className="primary btn heroMainCta" onClick={()=>setScreen('register')}>{pc.cta}</button>
-              <button className="secondary btn" onClick={()=>setExplainerSignal(value=>value+1)}>{pc.explainer}</button>
-            </div>
-            <p className="freeHint">✓ {cd.freeHint}</p>
-            <details className="heroMore"><summary>{pc.more}</summary><ProductIntroCompact language={language}/><ProblemNavigator outputLanguage={outputLanguage} language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/></details>
-            <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
+            <h1>{c.headline}</h1>
+            <p className="lead">{c.lead}</p>
+            <div className="actions"><button type="button" className="primary btn" onClick={()=>setScreen('register')}>{c.start}</button><a className="secondary btn" href="#funktionen">{c.preview}</a></div>
+            <p className="freeHint">{cd.freeHint}</p>
+            <button type="button" className="publicVideoLink" onClick={()=>setExplainerSignal(value=>value+1)}>{pc.explainer}</button>
           </div>
-          <aside className="heroOutcome heroStatusCard" aria-label={cd.result}>
-            <span className="modeBadge">{pc.result}</span>
-            <ol>{cd.results.slice(0,3).map(item=><li key={item}>{item}</li>)}</ol>
+          <aside className="publicWorkspacePreview" aria-label={c.example}>
+            <span className="publicPreviewLabel">{c.example}</span>
+            <h2>{w.title}</h2>
+            <div className="publicPreviewTask"><span>{w.next}</span><h3>{w.read}</h3><p>Dokument.pdf</p><a href="#funktionen">{c.preview} →</a></div>
+            <div className="publicPreviewAreas"><span>{c.cases}</span><span>{w.documents}</span><span>{w.approvals}</span><span>{w.deadlines}</span></div>
           </aside>
         </div>
+        <div className="wrap publicInstallRow"><InstallAppButton language={language} surface="public"/></div>
       </section>
-
-      <section className="wrap v131ReleaseBand" aria-labelledby="v131-capabilities-title">
-        <div className="v131ReleaseInner">
-          <div className="v131ReleaseHead">
-            <div><span className="eyebrow">ASH Workspace Gold · {APP_VERSION}</span><h2 id="v131-capabilities-title">{pc.capTitle}</h2><p>{pc.capLead}</p></div>
-            <div className="v131ReleaseActions"><button className="primary btn" type="button" onClick={()=>setScreen('register')}>{pc.cta}</button></div>
-          </div>
-          <div className="v131ProofGrid">{pc.proof.map(([icon,label,value])=><div className="v131Proof" key={label}><span aria-hidden="true">{icon}</span><b>{label}</b><strong>{value}</strong></div>)}</div>
+      <PublicProductTour pc={pc} c={c} onRegister={()=>setScreen('register')}/>
+      <section id="ablauf" className="section publicHow">
+        <div className="wrap">
+          <h2>{c.how}</h2>
+          <div className="publicHowSteps">{[pc.journey[0],pc.journey[1],pc.journey[4]].map(([key,title,body],index)=><article key={key}><span>{index+1}</span><h3>{title}</h3><p>{body}</p></article>)}</div>
+          <details className="publicHelp"><summary>{c.help}</summary><ProductIntroCompact language={language}/><ProblemNavigator outputLanguage={outputLanguage} language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/></details>
+          <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
         </div>
       </section>
-
-      <section className="wrap v131Journey" aria-label={pc.featureTitle}>
-        {pc.journey.map(([step,title,body])=><article className="journeyCard" key={step}><span className="journeyNumber">{step}</span><div><h2>{title}</h2><p>{body}</p></div></article>)}
-      </section>
-
-      <section className="wrap" id="v131-funktionen" aria-labelledby="v131-title">
-        <div className="v131FeatureSection">
-          <div className="eyebrow">{pc.featureEyebrow}</div>
-          <h2 id="v131-title">{pc.featureTitle}</h2>
-          <div className="featureGrid">
-            {pc.features.map(([icon,title,body])=><article className="featureCard" key={title}><div className="featureIcon" aria-hidden="true">{icon}</div><h3>{title}</h3><p>{body}</p></article>)}
-          </div>
-        </div>
-      </section>
-
       <PublicCaseDiscoverySection cd={cd} pa={pa} audience={audience} orderedPublicCases={orderedPublicCases} activePublicCase={activePublicCase} onSelectCase={setSelectedPublicCase} onRegister={()=>setScreen('register')}/>
-      <PublicTrustSections tt={tt} cd={cd} a={a}/>
-      <PublicPricingSection a={a} payment={payment} paymentConfig={paymentConfig} jl={jl} localizedPlans={localizedPlans} rt={rt} selectedGoal={selectedGoal} onGoalChange={value=>{setSelectedGoal(value);setShowRecommendation(true)}} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} recommendedTier={recommendedTier} eur={eur} period={period} terms={terms} monthsLabel={monthsLabel} onRegister={()=>setScreen('register')}/>
+      <section className="publicControl section"><div className="wrap"><h2>{c.control}</h2><p className="lead">{c.controlBody}</p><p className="publicLegalContext"><b>{t.legal}</b><br/>{t.marketNote}</p></div></section>
+      <PublicPricingSection a={a} c={c} payment={payment} paymentConfig={paymentConfig} jl={jl} localizedPlans={localizedPlans} rt={rt} selectedGoal={selectedGoal} onGoalChange={value=>{setSelectedGoal(value);setShowRecommendation(true)}} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} recommendedTier={recommendedTier} eur={eur} period={period} terms={terms} monthsLabel={monthsLabel} onRegister={()=>setScreen('register')}/>
+      <PublicTrustSections tt={tt} cd={cd} a={a} compact/>
+      <section id="fragen" className="section publicQuestions"><div className="wrap"><h2>{c.questions}</h2>{[[hero.title,hero.lead],[c.question1,c.answer1],[c.question2,c.answer2],[c.question3,c.answer3]].map(([question,answer])=><details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div></section>
+      <section className="publicFinalAction"><div className="wrap"><h2>{c.ready}</h2><button type="button" className="primary btn" onClick={()=>setScreen('register')}>{c.start}</button><button type="button" className="secondary btn" onClick={()=>setScreen('login')}>{t.login}</button></div></section>
     </main>
     <LegalFooter language={language}/>
-  </>
+  </div>
 }

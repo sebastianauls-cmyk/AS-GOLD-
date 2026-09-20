@@ -41,7 +41,7 @@ const persistentLanguageBackStyles=`
 }
 `
 
-export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer}){
+export function PublicLanguageModules({language,onLanguageChange,outputLanguage,onOutputLanguageChange,onPlayExplainer,compact=false}){
   const [presenter,setPresenter]=useState('female')
   const text=copy[language]||copy.de
   const outputName=(outputLanguageNames[language]||outputLanguageNames.de)?.[outputLanguage]||outputLanguage
@@ -68,20 +68,20 @@ export function PublicLanguageModules({language,onLanguageChange,outputLanguage,
 
   return <section className="publicLanguageModules" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} aria-label={`${text.interfaceTitle}; ${text.outputTitle}`}>
     <style>{persistentLanguageBackStyles}</style>
-    <p className="publicWelcome"><span aria-hidden="true">👋</span> {warmWelcome[language]||warmWelcome.de}</p>
-    <InstallAppButton language={language} surface="public"/>
+    {!compact&&<p className="publicWelcome"><span aria-hidden="true">👋</span> {warmWelcome[language]||warmWelcome.de}</p>}
+    {!compact&&<InstallAppButton language={language} surface="public"/>}
     {(language!=='de'||outputLanguage!=='de')&&<button type="button" className="publicBackButton" dir="ltr" onClick={returnToGerman} aria-label="Back to German – Oberfläche und Kundensprache auf Deutsch zurückstellen">← 🇩🇪 Back to German / Zurück zu Deutsch</button>}
     <div className="publicLanguageModule interfaceModule">
       <strong className="publicLanguageTitle">{text.interfaceTitle}</strong>
       <div className="publicLanguageMainRow">
         <LanguageSwitcher value={language} onChange={onLanguageChange} label={text.interfaceLabel}/>
       </div>
-      <span className="publicPresenterLabel">{text.presenter}</span>
+      {!compact&&<><span className="publicPresenterLabel">{text.presenter}</span>
       <div className="publicPresenterRow" role="group" aria-label={text.presenter}>
         <button type="button" className={presenter==='female'?'active':''} aria-pressed={presenter==='female'} onClick={()=>choosePresenter('female')}>👩 {text.female}</button>
         <button type="button" className={presenter==='male'?'active':''} aria-pressed={presenter==='male'} onClick={()=>choosePresenter('male')}>👨 {text.male}</button>
         <button type="button" className="publicVideoButton" onClick={playVideo}>▶ {text.play}</button>
-      </div>
+      </div></>}
     </div>
     <div className="publicLanguageModule outputModule">
       <strong className="publicLanguageTitle">{text.outputTitle}</strong>

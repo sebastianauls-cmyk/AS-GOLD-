@@ -1,6 +1,6 @@
 'use client'
 
-export function PublicTrustSections({tt,cd,a}){
+export function PublicTrustSections({tt,cd,a,compact=false}){
   return <>
     <section className="transparencyHero">
       <div className="wrap">
@@ -12,8 +12,8 @@ export function PublicTrustSections({tt,cd,a}){
       </div>
     </section>
 
-    <section className="section">
+    {!compact&&<section className="section">
       <div className="wrap"><h2>{a.whatDoes}</h2><div className="capGrid">{a.caps.map(([title,description])=><article className="capCard" key={title}><h3>{title}</h3><p>{description}</p></article>)}</div></div>
-    </section>
+    </section>}
   </>
 }

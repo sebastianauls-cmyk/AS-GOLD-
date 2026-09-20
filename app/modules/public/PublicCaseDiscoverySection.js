@@ -14,11 +14,6 @@ export function PublicCaseDiscoverySection({
   return <section id="fallarten" className="caseDiscovery section">
     <div className="wrap">
       <div className="caseIntro"><div className="eyebrow">{cd.eyebrow}</div><h2>{cd.title}</h2><p className="lead">{cd.lead}</p></div>
-      <section id="asgold-user-audience" style={{margin:'0 0 34px',padding:'24px',border:'1px solid #e2d6b7',borderRadius:'20px',background:'linear-gradient(135deg,#fffaf0,#fff)'}}>
-        <h2 style={{margin:'8px 0 8px',fontSize:'clamp(1.7rem,5vw,2.5rem)'}}>{audience.title}</h2><p style={{margin:'0 0 18px',color:'#5f6976',lineHeight:1.5}}>{audience.lead}</p>
-        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(210px,1fr))',gap:'12px'}}>{audience.items.map(([title,text])=><article key={title} style={{background:'#fff',border:'1px solid #e3e5e9',borderRadius:'14px',padding:'16px'}}><b style={{display:'block',marginBottom:'7px',color:'#5e4818'}}>{title}</b><span style={{color:'#626c78',lineHeight:1.45}}>{text}</span></article>)}</div>
-      </section>
-      <div className="audienceStrip" aria-label={pa.label}><b>{pa.label}</b><div>{pa.items.map(item=><span key={item}>✓ {item}</span>)}</div></div>
       <div className="caseChooser" aria-label={cd.title}>
         {orderedPublicCases.map((item,index)=><button type="button" aria-pressed={activePublicCase.key===item.key} className={`caseChoice ${activePublicCase.key===item.key?'active':''}`} onClick={()=>{onSelectCase(item.key);jumpToPublicCaseResult()}} key={item.key}><span>{String(index+1).padStart(2,'0')}</span><b>{item.title}</b><small>{item.short}</small></button>)}
       </div>
@@ -33,10 +28,7 @@ export function PublicCaseDiscoverySection({
         <p className="scopeNote">{pa.scope}</p>
       </article>
 
-      <div className="processBlock">
-        <h3>{cd.stepsTitle}</h3>
-        <div className="processSteps">{cd.steps.map(([number,title,description])=><article key={number}><span>{number}</span><div><b>{title}</b><p>{description}</p></div></article>)}</div>
-      </div>
+      <details id="asgold-user-audience" className="publicAudience"><summary>{audience.title}</summary><p>{audience.lead}</p><div className="publicAudienceGrid">{audience.items.map(([title,text])=><article key={title}><h3>{title}</h3><p>{text}</p></article>)}</div></details>
     </div>
   </section>
 }
