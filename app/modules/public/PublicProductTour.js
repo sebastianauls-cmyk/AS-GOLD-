@@ -16,7 +16,7 @@ export function PublicTourChoices({areas,selected,c,onSelect}){
   return <div className="publicTourChoices" role="group" aria-label={c.features}>{areas.map(item=><button type="button" id={`public-tour-${item.key}`} key={item.key} aria-pressed={selected===item.key} aria-controls="public-tour-panel" onClick={()=>onSelect(item.key)}><span aria-hidden="true">{item.icon}</span><b>{item.title}</b></button>)}</div>
 }
 
-export function PublicProductTour({pc,c,onRegister}){
+export function PublicProductTour({pc,c,onRegister,compact=false}){
   const [selected,setSelected]=useState('overview')
   const panelRef=useRef(null)
   const areas=publicTourAreas(pc,c)
@@ -30,13 +30,16 @@ export function PublicProductTour({pc,c,onRegister}){
   }
   return <section className="publicFeatureTour section" id="funktionen" aria-labelledby="public-tour-title">
     <div className="wrap">
-      <h2 id="public-tour-title">{c.tour}</h2>
+      <details className="publicTourDetails" open={compact?undefined:true}>
+      <summary id="public-tour-title">{c.allFeatures||c.tour}</summary>
+      <h2>{c.tour}</h2>
       <p className="lead">{c.tourLead}</p>
       <div className="publicTourLayout">
         <PublicTourChoices areas={areas} selected={selected} c={c} onSelect={selectArea}/>
         <PublicTourPanel area={area} c={c} onRegister={onRegister} panelRef={panelRef}/>
       </div>
       <p className="publicAvailability">{c.availability} <a href="#preise">{c.details} →</a></p>
+      </details>
     </div>
   </section>
 }

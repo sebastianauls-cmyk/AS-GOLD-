@@ -4,6 +4,7 @@ import {transformSync} from 'next/dist/build/swc/index.js'
 import * as research from '../supabase/functions/_shared/verifiedResearch.mjs'
 import * as quality from '../supabase/functions/_shared/modelQuality.mjs'
 import * as checkpoints from '../supabase/functions/_shared/modelCheckpoint.mjs'
+import {normalizeCaseLegalComparisonRecord} from '../app/modules/country/caseLegalComparison.mjs'
 const owner='11111111-1111-4111-8111-111111111111',caseId='22222222-2222-4222-8222-222222222222'
 const urls=['https://verwaltung.bund.de/leistungsverzeichnis/de/rechte-und-pflichten/102837988','https://entreprendre.service-public.gouv.fr/vosdroits/F38586']
 const candidate={title:'Synthetic official comparison',overall_status:'yellow',overall_summary:'A comparison of two official information pages.',applicable_law:{status:'unclear',explanation:'No concrete case supplied.',missing_factors:[],source_urls:[]},rows:[{issue:'Scope',difference_status:'same',home:{explanation:'German authority information.',source_urls:[urls[0]]},target:{explanation:'French authority information.',source_urls:[urls[1]]},practical_meaning:'Read each page within its scope.',confidence:'medium'}],open_questions:[],next_steps:[],customer_explanation:'Both pages are authority information.',sources:urls.map((url,index)=>({url,title:'Official source',publisher:'Official authority',country:index?'FR':'DE',source_type:'authority'})),professional_review_required:true}
@@ -48,6 +49,22 @@ try{
   assert.equal(positive.body.comparison.sources.length,2)
   assert.ok(positive.body.comparison.sources.every(source=>source.source_text&&source.content_sha256))
   assert.equal(positive.body.comparison.result.source_verification.review_passed,true)
+  const displayed=normalizeCaseLegalComparisonRecord(positive.body.comparison)
+  assert.equal(displayed.needs_source_refresh,false,'current server verification must be accepted by the customer display')
+  assert.equal(displayed.rows.length,1)
+  assert.equal(displayed.rows[0].home.explanation,candidate.rows[0].home.explanation)
+  assert.equal(displayed.rows[0].target.explanation,candidate.rows[0].target.explanation)
+  assert.equal(displayed.customer_explanation,candidate.customer_explanation)
+  for(const version of ['unrecognized','',null]){
+    const changed=structuredClone(positive.body.comparison)
+    changed.result.source_verification.version=version
+    const hidden=normalizeCaseLegalComparisonRecord(changed)
+    assert.equal(hidden.rows.length,0);assert.equal(hidden.customer_explanation,'');assert.equal(hidden.needs_source_refresh,true)
+  }
+  const missingEvidence=structuredClone(positive.body.comparison)
+  missingEvidence.sources=[];missingEvidence.result.sources=[]
+  const noClaims=normalizeCaseLegalComparisonRecord(missingEvidence)
+  assert.equal(noClaims.overall_summary,'');assert.equal(noClaims.customer_explanation,'')
   reset();state.readable=false;const unavailable=await call();assert.equal(unavailable.status,422);assert.equal(unavailable.body.code,'no_verified_sources');assert.equal(state.saved.length,0);assert.equal(state.reviews,0)
   reset();state.issues=[{code:'meaning',location:'rows[0]',reason:'Controlled unsupported assertion.'}];const rejected=await call();assert.equal(rejected.status,422);assert.equal(rejected.body.code,'source_review_unresolved');assert.equal(state.saved.length,0)
   reset();state.searchCompleted=false;assert.equal((await call()).status,502);assert.equal(state.fetched.length,0);assert.equal(state.saved.length,0)

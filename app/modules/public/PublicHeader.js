@@ -17,12 +17,6 @@ export function PublicHeader({
   return <header className="publicTop">
     <div className="wrap nav publicHeader">
       <ProductBrand showDescriptor className="publicBrand" language={language}/>
-      <nav className="publicActions publicNavActions" aria-label={c.features}>
-        <a href="#funktionen">{c.features}</a>
-        <a href="#ablauf">{c.how}</a>
-        <a href="#fallarten">{caseNavLabel}</a>
-        <a href="#preise">{t.prices}</a>
-      </nav>
       <button type="button" className="secondary publicSignIn" onClick={()=>onScreenChange('login')}>{t.login}</button>
       <PublicLanguageModules
         compact

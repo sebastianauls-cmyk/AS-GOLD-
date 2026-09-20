@@ -1,5 +1,7 @@
 import fs from 'node:fs'
 import assert from 'node:assert/strict'
+import {OUTPUT_LANGUAGES,outputLanguageLabels,normalizeOutputLanguage} from '../app/modules/language/outputLanguage.js'
+import {LANGUAGE_CATALOG} from '../app/modules/language/languageRegistry.mjs'
 
 const module=fs.readFileSync('app/modules/language/outputLanguage.js','utf8')
 const registry=fs.readFileSync('app/modules/language/languageRegistry.mjs','utf8')
@@ -15,9 +17,12 @@ const languages=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
 assert.match(module,/OUTPUT_LANGUAGE_STORAGE_KEY='asgold-output-language'/)
 assert.match(module,/normalizeOutputLanguage/)
 for(const language of languages){
-  assert.match(module,new RegExp(`['\"]${language}['\"]`),`output language registry missing ${language}`)
+  assert.ok(OUTPUT_LANGUAGES.includes(language),`output language registry missing ${language}`)
+  assert.equal(normalizeOutputLanguage(language),language)
+  assert.ok(outputLanguageLabels[language])
   assert.match(fn,new RegExp(`['\"]${language}['\"]`),`analysis backend missing ${language}`)
 }
+assert.deepEqual(OUTPUT_LANGUAGES,LANGUAGE_CATALOG.map(item=>item.key),'output choices must inherit new registered language modules')
 assert.match(service,/gold-document-analysis/)
 assert.match(service,/output_language:outputLanguage/)
 assert.match(workspace,/createDocumentWorkflowActions/)

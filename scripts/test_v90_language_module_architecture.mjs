@@ -3,6 +3,7 @@ import { LANGUAGE_CATALOG } from '../app/modules/language/languageRegistry.mjs'
 import { COUNTRY_CATALOG } from '../app/modules/country/countryRegistry.mjs'
 import {
   LANGUAGE_MODULES,
+  buildLanguageModules,
   LANGUAGE_ENRICHMENT_TOPICS,
   createLanguageModuleContext,
   languageCountryEnrichmentPlan,
@@ -12,6 +13,17 @@ import {
 } from '../app/modules/language/languageModuleRegistry.mjs'
 
 assert.equal(LANGUAGE_MODULES.length,LANGUAGE_CATALOG.length)
+// A future language inherits every configured jurisdiction without changing country selection.
+const extended=buildLanguageModules([...LANGUAGE_CATALOG,{key:'es',label:'Español',locale:'es-ES',rtl:false,countryCodes:['ES']}])
+const added=extended.find(module=>module.key==='es')
+assert.equal(extended.length,LANGUAGE_CATALOG.length+1)
+assert.deepEqual(added.available_country_codes,COUNTRY_CATALOG.map(country=>country.key))
+assert.equal(added.may_change_home_country,false)
+assert.equal(added.may_change_target_country,false)
+assert.ok(!added.available_country_codes.includes('ES'),'a language cannot invent an unconfigured jurisdiction')
+assert.equal(LANGUAGE_MODULES.length,LANGUAGE_CATALOG.length,'the extension fixture must not alter the live catalog')
+assert.throws(()=>buildLanguageModules([...LANGUAGE_CATALOG,LANGUAGE_CATALOG[0]]),/Duplicate/)
+assert.throws(()=>buildLanguageModules([{key:'es'}]),/Incomplete/)
 assert.deepEqual(LANGUAGE_MODULES.map(item=>item.key),LANGUAGE_CATALOG.map(item=>item.key))
 for(const module of LANGUAGE_MODULES){
   assert.equal(module.independent_from_country,true)

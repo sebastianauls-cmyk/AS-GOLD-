@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {roadmapProgressLabel} from '../cases/lib/roadmapDisplay.mjs'
 import { localizedCountryName } from './countryLabels.mjs'
-import { countryByKey } from './countryRegistry.mjs'
+import { COUNTRY_CATALOG, countryByKey } from './countryRegistry.mjs'
 import { CASE_LEGAL_COMPARISON_LIGHTS, CASE_LEGAL_COMPARISON_TOPICS, normalizeCaseLegalComparisonRecord } from './caseLegalComparison.mjs'
+import { LANGUAGE_CATALOG, outputLanguageNames } from '../language/languageRegistry.mjs'
+import { legalComparisonPresentation } from './legalComparisonPresentation.mjs'
 import { legalComparisonTopicLabels, legalComparisonUi } from './legalComparisonCopy.mjs'
 import { authorizeLegalComparison, invokeCaseLegalComparison, legalComparisonErrorMessage, listCaseLegalComparisons } from '../services/legalComparison'
 
@@ -27,13 +29,15 @@ function CitationLinks({urls=[],sources=[],label='Sources'}){
   return <span className="legalComparisonCitations" aria-label={label}>{cited.map(item=><a href={item.url} target="_blank" rel="noreferrer" key={item.url}>[{item.index+1}]</a>)}</span>
 }
 
-function listBlock(title,items=[]){
+function listBlock(title,items=[],textProps={}){
   if(!items.length)return null
-  return <section className="legalComparisonList"><h4>{title}</h4><ul>{items.map((item,index)=><li key={`${index}-${item}`}>{item}</li>)}</ul></section>
+  return <section className="legalComparisonList"><h4>{title}</h4><ul>{items.map((item,index)=><li {...textProps} key={`${index}-${item}`}>{item}</li>)}</ul></section>
 }
 
 export function LegalComparisonPanel({supabase,ownerId,language='de',outputLanguage='de',item,workspaceCopy,onPrivacyUpdate}){
   const ui=legalComparisonUi(language)
+  const brief=legalComparisonPresentation(language)
+  const supportedPair=[item?.home_country||'DE',item?.target_country||'DE'].every(code=>COUNTRY_CATALOG.some(country=>country.key===String(code).toUpperCase()))
   const topicLabels=legalComparisonTopicLabels(language)
   const homeCountry=countryByKey(item?.home_country||'DE')
   const home={...homeCountry,label:localizedCountryName(homeCountry.key,language)}
@@ -62,6 +66,7 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
     setShowForm(true)
     setError('')
     setLoading(true)
+    if(!supportedPair){setLoading(false);return}
     listCaseLegalComparisons(supabase,{caseId:item.id,homeCountry:home.key,targetCountry:target.key}).then(({data,error:loadError})=>{
       if(cancelled)return
       if(loadError){setError(ui.loadFailed);setRecords([]);setActiveId('');setShowForm(true)}
@@ -74,15 +79,19 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
       setLoading(false)
     })
     return ()=>{cancelled=true}
-  },[supabase,item.id,home.key,target.key,ui.loadFailed])
+  },[supabase,item.id,home.key,target.key,supportedPair,ui.loadFailed])
 
   const activeRecord=useMemo(()=>{const matching=records.filter(record=>record.case_id===item.id&&record.home_country===home.key&&record.target_country===target.key);return matching.find(record=>record.id===activeId)||matching[0]||null},[records,activeId,item.id,home.key,target.key])
   const comparison=useMemo(()=>activeRecord?normalizeCaseLegalComparisonRecord(activeRecord):null,[activeRecord])
   const sources=comparison?.sources||[]
+  const resultLanguage=LANGUAGE_CATALOG.find(entry=>entry.key===activeRecord?.output_language)
+  const resultDirection=resultLanguage?.rtl?'rtl':'ltr'
+  const resultTextProps={lang:resultLanguage?.key,dir:resultDirection}
+  const resultLanguageName=(outputLanguageNames[language]||outputLanguageNames.de)?.[resultLanguage?.key]||resultLanguage?.label||activeRecord?.output_language||'—'
 
   async function createComparison(event){
     event.preventDefault()
-    if(busyRef.current)return
+    if(busyRef.current||!supportedPair)return
     setError('')
     const cleanQuestion=question.trim()
     if(cleanQuestion.length<12){setError(ui.questionRequired);return}
@@ -105,6 +114,8 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
       setConfirmed(false)
     }catch(error){if(currentScope.current===creatingScope)setError(await legalComparisonErrorMessage(error,ui.createFailed,language))}finally{busyRef.current=false;setBusy(false);setProcessingStage('')}
   }
+
+  if(!supportedPair)return <section className="legalComparisonPanel"><h3>{ui.title}</h3><p role="status">{brief.unsupported}</p></section>
 
   return <section className="legalComparisonPanel" aria-labelledby={`legal-comparison-${item.id}`}>
     <header className="legalComparisonHead">
@@ -138,23 +149,25 @@ export function LegalComparisonPanel({supabase,ownerId,language='de',outputLangu
       {loading?<div className="legalComparisonLoading">{ui.creating}</div>:!activeRecord&&!showForm?<div className="emptyState legalComparisonEmpty">{ui.noResults}</div>:null}
 
       {activeRecord&&comparison&&!showForm&&<article className="legalComparisonResult">
+        <p className="legalResultLanguage" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'}>{brief.resultLanguage}: <b>{resultLanguageName}</b></p>
         {comparison.needs_source_refresh&&<p className="attentionBox" role="status">⚪ {ui.sourceRefresh}</p>}
-        <div className="legalComparisonResultHead"><div><span className={`comparisonLight ${comparison.light.key}`}>{comparison.light.symbol} {ui.result}</span><h4>{comparison.title||topicLabels[activeRecord.topic]||ui.result}</h4><p className="legalComparisonAsked"><b>{ui.requestedQuestion}:</b> {activeRecord.question}</p><p>{comparison.overall_summary||'—'}</p></div><small>{ui.sourceChecked}: {formatDate(comparison.source_checked_at,language)}</small></div>
+        <div className="legalComparisonResultHead"><div><span className={`comparisonLight ${comparison.light.key}`}>{comparison.light.symbol} {ui.result}</span><h4 {...resultTextProps}>{comparison.title||topicLabels[activeRecord.topic]||ui.result}</h4><p className="legalComparisonAsked"><b>{ui.requestedQuestion}:</b> {activeRecord.question}</p><p {...resultTextProps}>{comparison.overall_summary||'—'}</p></div><small>{ui.sourceChecked}: {formatDate(comparison.source_checked_at,language)}</small></div>
+
+        {comparison.customer_explanation&&<section className="legalCustomerExplanation"><h4>{ui.customerExplanation}</h4><p {...resultTextProps}>{comparison.customer_explanation}</p></section>}
 
         <section className="applicableLawCard">
           <div><h4>{ui.applicableLaw}</h4><span className={`comparisonStatus ${comparison.applicable_law.status}`}>{ui[comparison.applicable_law.status]||ui.unclear}</span></div>
-          <p>{comparison.applicable_law.explanation||ui.noSources}<CitationLinks urls={comparison.applicable_law.source_urls} sources={sources} label={ui.sources}/></p>
-          {listBlock(ui.missingFactors,comparison.applicable_law.missing_factors)}
+          <p {...resultTextProps}>{comparison.applicable_law.explanation||ui.noSources}<CitationLinks urls={comparison.applicable_law.source_urls} sources={sources} label={ui.sources}/></p>
+          {listBlock(ui.missingFactors,comparison.applicable_law.missing_factors,resultTextProps)}
         </section>
 
         <section className="legalComparisonRows"><h4>{ui.comparisonPoints}</h4>{comparison.rows.map((row,index)=><article className={`legalComparisonRow ${row.difference_status}`} key={`${index}-${row.issue}`}>
-          <header><span>{lightSymbol(row.difference_status==='same'?'green':row.difference_status==='different'?'yellow':row.difference_status==='risk'?'red':'white')}</span><div><h5>{row.issue||'—'}</h5><small>{ui[row.difference_status]||ui.unclear} · {ui.confidence}: {ui[row.confidence]||row.confidence}</small></div></header>
-          <div className="legalComparisonSides"><section><b>{workspaceCopy.homeCountry}: {home.flag} {home.label}</b><p>{row.home.explanation||ui.noSources}<CitationLinks urls={row.home.source_urls} sources={sources} label={ui.sources}/></p></section><section><b>{workspaceCopy.targetCountry}: {target.flag} {target.label}</b><p>{row.target.explanation||ui.noSources}<CitationLinks urls={row.target.source_urls} sources={sources} label={ui.sources}/></p></section></div>
-          <p className="legalComparisonMeaning"><b>{ui.practicalMeaning}:</b> {row.practical_meaning||ui.noSources}</p>
+          <header><span>{lightSymbol(row.difference_status==='same'?'green':row.difference_status==='different'?'yellow':row.difference_status==='risk'?'red':'white')}</span><div><h5 {...resultTextProps}>{row.issue||'—'}</h5><small>{ui[row.difference_status]||ui.unclear} · {ui.confidence}: {ui[row.confidence]||row.confidence}</small></div></header>
+          <div className="legalComparisonSides"><section><b>{brief.here} {home.flag} {home.label}</b><p {...resultTextProps}>{row.home.explanation||ui.noSources}<CitationLinks urls={row.home.source_urls} sources={sources} label={ui.sources}/></p></section><section><b>{brief.there} {target.flag} {target.label}</b><p {...resultTextProps}>{row.target.explanation||ui.noSources}<CitationLinks urls={row.target.source_urls} sources={sources} label={ui.sources}/></p></section></div>
+          <p className="legalComparisonMeaning"><b>{brief.meaning}</b> <span {...resultTextProps}>{row.practical_meaning||ui.noSources}</span></p>
         </article>)}</section>
 
-        {comparison.customer_explanation&&<section className="legalCustomerExplanation"><h4>{ui.customerExplanation}</h4><p>{comparison.customer_explanation}</p></section>}
-        <div className="legalComparisonLists">{listBlock(ui.openQuestions,comparison.open_questions)}{listBlock(ui.nextSteps,comparison.next_steps)}</div>
+        <div className="legalComparisonLists">{listBlock(ui.openQuestions,comparison.open_questions,resultTextProps)}{listBlock(ui.nextSteps,comparison.next_steps,resultTextProps)}</div>
         <section className="legalComparisonSources"><h4>{ui.sources}</h4>{sources.length?<ol>{sources.map((source,index)=>{const metadata=[source.publisher,source.country,ui[`sourceType_${source.source_type}`]||ui.sourceType_other].filter(Boolean).join(' · ');return <li key={source.url}><a href={source.url} target="_blank" rel="noreferrer">{sourceLabel(source,index)}</a>{metadata&&<small>{metadata}</small>}</li>})}</ol>:<p>{ui.noSources}</p>}</section>
         <p className="legalReviewRequired">⚪ {ui.reviewRequired}</p>
       </article>}

@@ -3,6 +3,8 @@ import {LANGUAGE_CATALOG} from '../../../app/modules/language/languageRegistry.m
 import {publicExperienceCopy} from '../../../app/modules/public/publicExperienceCopy.mjs'
 import {publicLanguageCountryCopy} from '../../../app/modules/public/publicLanguageCountryCopy.mjs'
 import {publicCaseStartCopy} from '../../../app/modules/public/publicCaseStartCopy.mjs'
+import {publicEntryCopy,publicExampleOriginals} from '../../../app/modules/public/publicEntryCopy.mjs'
+import {legalComparisonPresentation} from '../../../app/modules/country/legalComparisonPresentation.mjs'
 
 const diagnostics=new WeakMap()
 test.beforeEach(async({page})=>{
@@ -47,9 +49,13 @@ for(const {key:language,label,rtl} of LANGUAGE_CATALOG){
     await expect(page.locator('.publicTop button[aria-haspopup="listbox"]')).toHaveCount(2)
     await expect(page.locator('#sprachen-rechtsraeume select')).toHaveCount(3)
     await expect(page.locator('.publicLanguageCountryStart button')).toHaveCount(2)
+    await expect(page.locator('.publicLegalBrief')).toContainText(legalComparisonPresentation(language).meaning)
+    await page.locator('.publicExtraHelp > summary').click()
     const installationTextWidth=await page.locator('.publicInstallRow .installAppText').evaluate(element=>element.getBoundingClientRect().width)
     expect(installationTextWidth,'installation copy must remain readable beside its icon and actions').toBeGreaterThan(160)
+    await page.locator('.publicExtraHelp > summary').click()
     await noHorizontalOverflow(page)
+    await page.evaluate(()=>window.scrollTo(0,0))
     if(['de','pl','ar'].includes(language)){
       await capture(page,testInfo,`initial-${language}`)
       await capture(page,testInfo,`product-explanation-${language}`,page.locator('.publicProductHero'))
@@ -57,8 +63,32 @@ for(const {key:language,label,rtl} of LANGUAGE_CATALOG){
   })
 }
 
+test('the first action shows an example and translates private and business results independently',async({page},testInfo)=>{
+  await openPublic(page)
+  const requests=[]
+  page.on('request',request=>{if(/\/functions\/v1\//.test(request.url()))requests.push(request.url())})
+  const entry=page.locator('.publicProductEntry a.primary')
+  await expect(entry).toBeInViewport()
+  await expect(entry).toHaveText(publicEntryCopy('de').previewAction)
+  await entry.click()
+  await expect(page.locator('#beispiel')).toBeInViewport()
+  await expect(page.locator('.publicExampleSource blockquote')).toHaveText(publicExampleOriginals.private.text)
+  await page.getByRole('button',{name:publicEntryCopy('de').business,exact:true}).click()
+  await expect(page.locator('.publicExampleSource blockquote')).toHaveText(publicExampleOriginals.business.text)
+  await page.locator('.publicTop .outputModule button[aria-haspopup="listbox"]').click()
+  await page.locator('.publicTop .outputModule').getByRole('option',{name:'فارسی',exact:true}).click()
+  await expect(page.locator('html')).toHaveAttribute('lang','de')
+  await expect(page.locator('.publicExampleResult dd').first()).toHaveText(publicEntryCopy('fa').businessText[0])
+  await expect(page.locator('.publicExampleResult dd').first()).toHaveAttribute('dir','rtl')
+  await expect(page.locator('.publicExampleNote')).toHaveText(publicEntryCopy('de').exampleNote)
+  expect(requests,'the public example must not send customer data or call the AI').toEqual([])
+  await noHorizontalOverflow(page)
+  await capture(page,testInfo,'translated-business-example',page.locator('#beispiel'))
+})
+
 test('customers can explore every feature and the plans without signing in',async({page},testInfo)=>{
   await openPublic(page)
+  await page.locator('.publicTourDetails > summary').click()
   const choices=page.locator('.publicTourChoices button')
   await expect(choices).toHaveCount(8)
   for(let index=0;index<8;index++){
@@ -68,7 +98,7 @@ test('customers can explore every feature and the plans without signing in',asyn
     await expect(button).toHaveAttribute('aria-pressed','true')
     await expect(page.locator('#public-tour-panel h3')).toHaveText(title)
   }
-  await page.locator('.publicTop a[href="#preise"]').click()
+  await page.locator('.freeHint a[href="#preise"]').click()
   await expect(page.locator('#preise')).toBeInViewport()
   const details=page.locator('#preise details.publicPlanDetails')
   expect(await details.count()).toBeGreaterThan(0)
@@ -91,7 +121,7 @@ test('the permanent explanation is public and keeps the normal registration hand
   expect(accountRequests).toEqual([])
   await noHorizontalOverflow(page)
   await capture(page,testInfo,'permanent-public-explanation',page.locator('.publicProductHero'))
-  await page.locator('.publicProductEntry .primary').click()
+  await page.locator('.publicProductEntry .publicRegister').click()
   await expect(page).toHaveURL(/\/\?start=register&lang=de$/)
   await expect(page.locator('#register-password')).toBeVisible()
   await expect(page.locator('.authCard form .primary.full')).toBeDisabled()
@@ -99,6 +129,7 @@ test('the permanent explanation is public and keeps the normal registration hand
 
 test('interface, output and country-example choices remain independent',async({page},testInfo)=>{
   await openPublic(page)
+  await page.locator('.publicCountryDetails > summary').click()
   const selects=page.locator('#sprachen-rechtsraeume select')
   await selects.nth(0).selectOption('VN')
   await selects.nth(1).selectOption('DE')
@@ -122,6 +153,7 @@ test('interface, output and country-example choices remain independent',async({p
 
 test('explicit country choices survive the sign-in entry and reload, then cancel cleanly',async({page},testInfo)=>{
   await openPublic(page)
+  await page.locator('.publicCountryDetails > summary').click()
   const selects=page.locator('#sprachen-rechtsraeume select')
   await selects.nth(0).selectOption('PL')
   await selects.nth(1).selectOption('DE')

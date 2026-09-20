@@ -67,12 +67,12 @@ for(const {key:language,rtl} of LANGUAGE_CATALOG){
   assert.ok(html.includes('data-explainer-video-section'),'video remains available')
   assert.ok(html.includes('id="asgold-problem-navigator-react"'),'input and microphone remain reachable')
   for(const id of ['funktionen','ablauf','fallarten','preise']){
-    assert.ok(header.includes(`href="#${id}"`));assert.ok(html.includes(`id="${id}"`))
+    assert.ok(html.includes(`id="${id}"`))
   }
-  assert.ok(html.indexOf('id="funktionen"')<html.indexOf('id="preise"'),'understand the product before choosing a plan')
+  assert.ok(html.indexOf('id="beispiel"')<html.indexOf('id="preise"'),'see a result before choosing a plan')
   assert.ok(html.includes('href="#sprachen-rechtsraeume"'),'translation and legal comparison are visible from the introduction')
-  assert.ok(html.indexOf('id="funktionen"')<html.indexOf('id="sprachen-rechtsraeume"'),'general capabilities for domestic and business cases precede the optional language/country explanation')
-  assert.ok(html.includes(cross.quote),'Poland/Germany example is visible initially')
+  assert.ok(html.indexOf('id="beispiel"')<html.indexOf('id="sprachen-rechtsraeume"'),'private and business examples precede the optional country choices')
+  assert.ok(html.includes(cross.quote),'Poland/Germany example remains available')
   assert.ok(html.includes(start.start),'the example offers a direct start')
   for(let index=0;index<COUNTRY_CATALOG.length;index++){
     const example={home:COUNTRY_CATALOG[index].key,target:COUNTRY_CATALOG[(index+5)%COUNTRY_CATALOG.length].key,output:language}
