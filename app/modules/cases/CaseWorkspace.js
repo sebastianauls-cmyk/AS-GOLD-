@@ -230,7 +230,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
     {originalUrl&&<a className="secondary" href={originalUrl} target="_blank" rel="noopener noreferrer">{evidenceCopy.openFallback}</a>}
     <DeadlineWarningCard language={language} text={draft.extracted_text} mode="document" result={deadlineResult}/>
     <DocumentAutoAssessment language={language} text={draft.extracted_text} deadlineResult={deadlineResult}/>
-    <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:(analysis?.notStarted||on.noExtraction)}</p></div>
+    <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:analysisPhase==='failed'?(analysis?.analysisFailed||analysis?.failed):(analysis?.notStarted||on.noExtraction)}</p></div>
     <section className="actionCard coreForm documentLanguagePair">
       <label htmlFor={fieldId(item.id,'reference-copy-language')}>{letterUi.referenceLanguage}<select id={fieldId(item.id,'reference-copy-language')} value={draft.reference_copy_language} onChange={event=>setDraft({...draft,reference_copy_language:event.target.value})} required>{OUTPUT_LANGUAGES.map(key=><option value={key} key={key}>{outputLanguageLabels[key]}</option>)}</select></label>
       <label htmlFor={fieldId(item.id,'customer-copy-language')}>{letterUi.customerLanguage}<select id={fieldId(item.id,'customer-copy-language')} value={draft.customer_copy_language} onChange={event=>setDraft({...draft,customer_copy_language:event.target.value})} required>{OUTPUT_LANGUAGES.map(key=><option value={key} key={key}>{outputLanguageLabels[key]}</option>)}</select></label>

@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { componentTranslations } from '../lib/v30ComponentTranslations.mjs'
 import { APP_VERSION } from '../release/appRelease.mjs'
+import { documentAnalysisProgressCopy, documentAnalysisProgressLabel, documentReviewAreas } from './documentAnalysisProgress.mjs'
 
 const confidenceLabels=(high,medium,low)=>({hoch:high,high,mittel:medium,medium,mid:medium,niedrig:low,low})
 
@@ -28,7 +29,7 @@ const analysisFilePattern=/\.(pdf|jpe?g|png|webp|gif|txt|csv|rtf|docx|xlsx|pptx|
 
 export function getV26AnalysisCopy(language){
   const translated=componentTranslations.analysisCopy?.[language]||componentTranslations.analysisCopy?.de||{}
-  return {...fallback,...translated,...(currentOverrides[language]||currentOverrides.de),badge:`${APP_VERSION} · ${(currentOverrides[language]||currentOverrides.de).badge}`}
+  return {...fallback,...translated,...(currentOverrides[language]||currentOverrides.de),...documentAnalysisProgressCopy(language),badge:`${APP_VERSION} · ${(currentOverrides[language]||currentOverrides.de).badge}`}
 }
 
 function factValue(value){
@@ -41,29 +42,35 @@ export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyz
   const [confirmed,setConfirmed]=useState(false)
   const [busy,setBusy]=useState(false)
   const [facts,setFacts]=useState(null)
+  const [progress,setProgress]=useState(null)
+  const [reviewAreas,setReviewAreas]=useState([])
   const analyzable=analysisFilePattern.test(item.title||item.file_path||'')
-  const status=phase==='draft'?on.draft:phase==='saved'?on.saved:on.uploaded
+  const progressLabel=documentAnalysisProgressLabel(on,progress)||on.analyzing
+  const status=busy?progressLabel:phase==='failed'?(on.analysisFailed||on.failed):phase==='draft'?on.draft:phase==='saved'?on.saved:on.uploaded
 
   async function analyze(){
     if(!confirmed||!analyzable||!analysisAllowed||busy) return
     setBusy(true)
+    setProgress({stage:'generation',attempt:1})
+    setReviewAreas([])
     try{
-      const result=await onAnalyze({...item,reference_copy_language:draft.reference_copy_language||'de',customer_copy_language:draft.customer_copy_language})
+      const result=await onAnalyze({...item,reference_copy_language:draft.reference_copy_language||'de',customer_copy_language:draft.customer_copy_language},{onProgress:setProgress,onReviewIssues:issues=>setReviewAreas(documentReviewAreas(issues,on.areas||documentAnalysisProgressCopy().areas))})
       if(result){
         const fields=result.fields||{}
         onChange({...draft,extracted_text:fields.extracted_text||draft.extracted_text,document_type:fields.document_type||draft.document_type,document_date:fields.document_date||draft.document_date,case_id:fields.case_id||draft.case_id,analysis_summary:fields.analysis_summary||draft.analysis_summary,analysis_next_step:fields.analysis_next_step||draft.analysis_next_step,reference_copy:fields.reference_copy??draft.reference_copy,reference_copy_language:fields.reference_copy_language||draft.reference_copy_language,customer_copy:fields.customer_copy??draft.customer_copy,customer_copy_language:fields.customer_copy_language||draft.customer_copy_language,response_recipient:fields.response_recipient??'',response_subject:fields.response_subject??'',analysis_traffic_light:fields.analysis_traffic_light||draft.analysis_traffic_light,analysis_reasoning:fields.analysis_reasoning||draft.analysis_reasoning,analysis_confidence:fields.analysis_confidence||draft.analysis_confidence,analysis_generated:true})
         setFacts(result.facts)
         setConfirmed(false)
         onPhase('draft')
-      }
-    }finally{setBusy(false)}
+      }else onPhase('failed')
+    }catch{onPhase('failed')}finally{setBusy(false)}
   }
 
   const factRows=facts?[[on.sender,factValue(facts.sender_or_author)],[on.recipient,factValue(facts.recipient)],[on.references,factValue(facts.reference_numbers)],[on.deadlines,factValue(facts.deadlines)],[on.amounts,factValue(facts.monetary_amounts)],[on.confidence,on.confidenceValues?.[facts.confidence]||factValue(facts.confidence)]]:[]
 
   return <section className="controlledAnalysis" aria-live="polite">
     <div className="analysisHead"><div><span className="modeBadge">{on.badge}</span><h3>{on.title}</h3><p>{on.lead}</p></div><span className={`analysisStatus analysis-${phase}`}>{status}</span></div>
-    <div className="analysisConsent"><div><b>{on.privacyTitle}</b><p>{on.privacyText}</p><a href="/ki-transparenz" target="_blank" rel="noreferrer">{on.details||'KI-Transparenz'} →</a></div><button type="button" className="primary" disabled={!confirmed||!analyzable||!analysisAllowed||busy} onClick={analyze}>{busy?on.analyzing:on.start}</button><label><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)} disabled={!analysisAllowed}/><span>{on.confirm}</span></label><small>{on.limit}</small>{!analysisAllowed&&<small className="analysisUnsupported">{classificationMessage}</small>}{!analyzable&&<small className="analysisUnsupported">{on.unsupported}</small>}</div>
+    <div className="analysisConsent"><div><b>{on.privacyTitle}</b><p>{on.privacyText}</p><a href="/ki-transparenz" target="_blank" rel="noreferrer">{on.details||'KI-Transparenz'} →</a></div><button type="button" className="primary" disabled={!confirmed||!analyzable||!analysisAllowed||busy} onClick={analyze}>{busy?progressLabel:on.start}</button><label><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)} disabled={!analysisAllowed||busy}/><span>{on.confirm}</span></label><small>{on.limit}</small>{!analysisAllowed&&<small className="analysisUnsupported">{classificationMessage}</small>}{!analyzable&&<small className="analysisUnsupported">{on.unsupported}</small>}</div>
+    {phase==='failed'&&reviewAreas.length>0&&<div role="alert"><b>{on.reviewAreas}</b><ul>{reviewAreas.map(area=><li key={area}>{area}</li>)}</ul></div>}
     {factRows.length>0&&<div className="analysisFacts"><b>{on.facts}</b><div>{factRows.map(([label,value])=><span key={label}><small>{label}</small><strong>{value||on.none}</strong></span>)}</div></div>}
     <p className="analysisManualNote">{on.manual}</p>
   </section>

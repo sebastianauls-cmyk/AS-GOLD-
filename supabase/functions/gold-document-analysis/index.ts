@@ -1,7 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2.57.4";
 import { CASE_EVIDENCE_RULES } from '../_shared/caseEvidenceRules.mjs';
-import { originalPlainText, finalizeDocumentResult, runReviewedModel, MODEL_QUALITY_VERSION, ModelWorkflowError } from '../_shared/modelQuality.mjs';
+import { originalPlainText, finalizeDocumentResult, runReviewedModel, advanceReviewedModel, MODEL_QUALITY_VERSION, ModelWorkflowError } from '../_shared/modelQuality.mjs';
+import { sealModelCheckpoint, openModelCheckpoint } from '../_shared/modelCheckpoint.mjs';
+import { documentCheckpointBinding } from '../_shared/documentCheckpoint.mjs';
 
 const PRIVACY_NOTICE_VERSION='2026-08-30-v1';
 const TERMS_VERSION='2026-08-30-test-v1';
@@ -33,7 +35,9 @@ Deno.serve(async(req:Request)=>{
   const {data:userData,error:userError}=await client.auth.getUser();const user=userData?.user;if(userError||!user) return reply(req,{error:'Sitzung ungültig'},401);
   log('info','authenticated');
 
-  const body=await req.json().catch(()=>({}));const filePath=body?.file_path,documentId=body?.document_id;
+  const body=await req.json().catch(()=>null);
+  if(!body||JSON.stringify(body).length>800000||JSON.stringify({...body,checkpoint:undefined}).length>10000||body.checkpoint&&body.staged!==true) return reply(req,{error:'Ungültige Anfrage'},400);
+  const filePath=body?.file_path,documentId=body?.document_id;
   const requestedOutputLanguage=typeof body?.output_language==='string'&&OUTPUT_LANGUAGES.has(body.output_language)?body.output_language:'de';
   const requestedReferenceLanguage=typeof body?.reference_language==='string'&&OUTPUT_LANGUAGES.has(body.reference_language)?body.reference_language:'de';
   const outputLanguageName=OUTPUT_LANGUAGE_NAMES[requestedOutputLanguage]||'Deutsch';
@@ -46,11 +50,12 @@ Deno.serve(async(req:Request)=>{
 
   const [{data:settings,error:settingsError},{data:document,error:documentError}]=await Promise.all([
     client.from('account_privacy_settings').select('privacy_notice_version,privacy_notice_acknowledged_at,terms_version,terms_acknowledged_at,ai_processing_enabled').eq('owner_id',user.id).maybeSingle(),
-    client.from('documents').select('id,file_path,data_classification,privacy_notice_version,ai_processing_allowed,source_language,voice_context,voice_language').eq('id',documentId).eq('owner_id',user.id).maybeSingle()
+    client.from('documents').select('id,file_path,data_classification,privacy_notice_version,ai_processing_allowed,source_language,voice_context,voice_language,updated_at').eq('id',documentId).eq('owner_id',user.id).maybeSingle()
   ]);
   if(settingsError||documentError) return reply(req,{error:'Datenschutzstatus konnte nicht geprüft werden'},503);
   if(!settings||settings.privacy_notice_version!==PRIVACY_NOTICE_VERSION||!settings.privacy_notice_acknowledged_at||settings.terms_version!==TERMS_VERSION||!settings.terms_acknowledged_at||!settings.ai_processing_enabled) return reply(req,{error:'Aktueller Datenschutzstatus oder KI-Freigabe fehlt'},412);
   if(!document||document.file_path!==filePath) return reply(req,{error:'Dokument nicht gefunden'},404);
+  if(!['synthetic','anonymized'].includes(document.data_classification)) return reply(req,{error:'Im Testbetrieb sind nur synthetische oder wirksam anonymisierte Unterlagen erlaubt.'},412);
   if(!document.ai_processing_allowed||document.privacy_notice_version!==PRIVACY_NOTICE_VERSION) return reply(req,{error:'Dokument ist nicht für KI-Verarbeitung freigegeben'},403);
 
   const providerKey=Deno.env.get('OPENAI_API_KEY');
@@ -63,6 +68,10 @@ Deno.serve(async(req:Request)=>{
   const voiceContext=typeof document.voice_context==='string'&&document.voice_context.trim()?document.voice_context.trim().slice(0,4000):null;
   const voiceLanguage=typeof document.voice_language==='string'&&document.voice_language.trim()?document.voice_language.trim():null;
   try {
+  const secret=Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+  if(body.staged===true&&!secret)throw new ModelWorkflowError('Die sichere Fortsetzung ist nicht eingerichtet.',503);
+  const binding=await documentCheckpointBinding({ownerId:user.id,document,bytes,outputLanguage:requestedOutputLanguage,referenceLanguage:requestedReferenceLanguage,country:requestedCountry});
+  const checkpoint=body.checkpoint?await openModelCheckpoint({token:body.checkpoint,binding,secret}):null;
   // MODEL_WORKFLOW_START: shared production/evaluation boundary, after authenticated file loading.
   const originalText=originalPlainText(bytes,fileMime);
   const dataUrl=`data:${fileMime};base64,${base64(bytes)}`;
@@ -75,6 +84,10 @@ Deno.serve(async(req:Request)=>{
   const instructions=`Du verarbeitest ein Dokument für ASH Workspace Gold in einem kontrollierten Arbeitsablauf. Referenzsprache des Antwortschreibens: ${referenceLanguageName}. Kundensprache/Ausgabesprache: ${outputLanguageName}. Gewählter Länder-/Rechtsraum-Kontext: ${countryContextName}. Sprache und Land sind getrennte Parameter. Referenzsprache, Kundensprache und Land müssen unabhängig voneinander behandelt werden. Das Land bestimmt nur den Kontext, in dem landesspezifische Begriffe, Behörden, Fristen oder organisatorische Besonderheiten vorsichtig eingeordnet werden sollen. Diese Dokumentanalyse führt keine externe Recherche durch. Rechtsbehauptungen aus der Unterlage nur als deren Aussagen wiedergeben; keine Rechtslage aus Modellwissen ergänzen. Wo ein externer Nachweis fehlt, benenne die konkrete Recherchefrage und die offene Grundlage.
 
 Lies das Original vollständig und sachlich. Beziehe Lücken ausdrücklich auf den vorgelegten Text: „im vorliegenden Text nicht genannt“ bedeutet nicht, dass die Information oder ein Dokument anderswo nicht existiert. Wenn eine Notiz ein Angebot oder einen Bescheid nur beschreibt, klassifiziere die vorliegende Notiz nicht als dieses vollständige Angebot oder diesen Bescheid. Erfinde keine Tatsachen, Namen, Aktenzeichen, Fristen, Beträge oder Rechtspositionen. Wenn Angaben für ein Antwortschreiben fehlen, verwende neutrale Platzhalter in eckigen Klammern statt zu raten.
+
+Halte in ALLEN Feldern den dokumentierten Stand jeder Angabe und Anlage getrennt fest: bereits angegeben, ausdrücklich beigefügt, erwähnt aber hier nicht vollständig abgedruckt, oder ausdrücklich noch fehlend. „Hier nicht vollständig abgedruckt“ bedeutet nicht „nicht vorhanden“. Stelle ausdrücklich beigefügte Unterlagen nicht erneut unter die Bedingung „falls vorhanden“. Wenn eine Liste vorhandene und noch fehlende Unterlagen umfasst, bilde getrennte Sätze mit jeweils passendem Status. Benenne Lücken präzise mit dem tatsächlich fehlenden Beleg oder Detail. Pauschale Aussagen wie „Einzelheiten fehlen“ sind falsch, wenn der Text bereits einzelne Beträge, Termine oder andere Einzelheiten nennt; benenne dann ausschließlich die noch fehlenden Einzelheiten. Prüfe insbesondere next_step und assessment_reasoning auf solche zu weit gefassten Aussagen.
+
+Bei ausdrücklich synthetischen oder anonymisierten Testunterlagen prüfst du den Sachverhalt INNERHALB des vorgegebenen Szenarios. Die Testkennzeichnung ist keine fehlende Fallgrundlage und für sich allein kein Grund für eine weiße Ampel. Benenne nur tatsächlich im Szenario offene Punkte und daraus folgende organisatorische Schritte. Verlange weder die Umwandlung in einen echten Fall noch echte personenbezogene Originale als Voraussetzung für die Auswertung oder einen sonst belegten Entwurf. „Keine Versendung“ verbietet eine tatsächliche externe Handlung; es verhindert keinen internen Prüf- oder Briefentwurf. Diese Regel erlaubt keine Tatsachen außerhalb des Szenarios und keine ungeklärte Absenderrolle.
 
 Erzeuge GENAU diese getrennten Ergebnisse:
 0. source_language: erkannte Originalsprache des Dokuments als kurzer Sprachcode, bevorzugt ISO-639-1 wie de, pl, en, tr, ru, ar, fa, fr, ro, bg, vi. Wenn das Dokument mehrsprachig ist, nenne die dominante Sprache.
@@ -94,20 +107,39 @@ Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar a
 
   const request={model:'gpt-5.6-luna',store:false,reasoning:{effort:'medium'},instructions,input:[{role:'user',content:[{type:'input_text',text:`Verarbeite dieses Dokument vollständig. Referenzsprache: ${referenceLanguageName}. Kundensprache: ${outputLanguageName}. Länder-/Rechtsraum-Kontext: ${countryContextName}. Gib ausschließlich das strukturierte Ergebnis zurück.`},filePart]}],text:{format:{type:'json_schema',name:'as_workspace_gold_document_workflow_v123',strict:true,schema}},max_output_tokens:12000};
   const reviewContent=[{type:'input_text',text:JSON.stringify({review_date:new Date().toISOString().slice(0,10),kind:'document',country_context:countryContextName,reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,voice_context:voiceContext,scope:'Original document analysis only; no external research was performed.'})},filePart];
-  const analysis=await runReviewedModel({providerKey,request,reviewContent,validate:raw=>finalizeDocumentResult(raw,{schema,originalText,referenceLanguage:requestedReferenceLanguage,outputLanguage:requestedOutputLanguage})});
+  const validate=raw=>finalizeDocumentResult(raw,{schema,originalText,referenceLanguage:requestedReferenceLanguage,outputLanguage:requestedOutputLanguage});
+  // MODEL_CONFIGURATION_END
+  const onResponse=({stage,attempt,response_id,status}:any)=>log('info','model_stage',{model_stage:stage,attempt,response_id,status});
+  const analysis=body.staged===true
+    ?await advanceReviewedModel({providerKey,request,reviewContent,validate,state:checkpoint?.state,onResponse})
+    :await runReviewedModel({providerKey,request,reviewContent,validate,onResponse});
+  if(analysis.status==='processing') {
+    const token=await sealModelCheckpoint({state:analysis.state,binding,secret,runId:checkpoint?.runId,issuedAt:checkpoint?.issuedAt});
+    return reply(req,{status:'processing',checkpoint:token,stage:analysis.state.stage==='generation'?'correction':'review',attempt:analysis.state.attempt,attempt_id:attemptId},202);
+  }
   const parsed=analysis.result;
   // MODEL_WORKFLOW_END
 
+  // Re-check revocation and source changes before releasing the reviewed draft.
+  const [{data:freshSettings,error:freshSettingsError},{data:freshFile,error:freshFileError}]=await Promise.all([
+    client.from('account_privacy_settings').select('privacy_notice_version,privacy_notice_acknowledged_at,terms_version,terms_acknowledged_at,ai_processing_enabled').eq('owner_id',user.id).maybeSingle(),
+    client.storage.from('goldstandard-private').download(filePath)
+  ]);
+  if(freshSettingsError||freshFileError||!freshFile)return reply(req,{error:'Die aktuelle Freigabe oder Originaldatei konnte nicht erneut geprüft werden.'},503);
+  if(!freshSettings?.ai_processing_enabled||freshSettings.privacy_notice_version!==PRIVACY_NOTICE_VERSION||!freshSettings.privacy_notice_acknowledged_at||freshSettings.terms_version!==TERMS_VERSION||!freshSettings.terms_acknowledged_at)return reply(req,{error:'Die KI-Freigabe wurde während der Prüfung geändert.'},412);
+  if(freshFile.size>MAX_BYTES)return reply(req,{error:'Die Originaldatei wurde während der Prüfung geändert.'},409);
+  const freshBinding=await documentCheckpointBinding({ownerId:user.id,document,bytes:new Uint8Array(await freshFile.arrayBuffer()),outputLanguage:requestedOutputLanguage,referenceLanguage:requestedReferenceLanguage,country:requestedCountry});
+  if(freshBinding.file_hash!==binding.file_hash)return reply(req,{error:'Die Originaldatei wurde während der Prüfung geändert. Bitte neu analysieren.'},409);
   const processedAt=new Date().toISOString();
   const detectedSourceLanguage=typeof parsed?.source_language==='string'&&parsed.source_language.trim()?parsed.source_language.trim().toLowerCase().slice(0,16):(document.source_language||null);
-  const {data:consumed,error:consumeError}=await client.from('documents').update({ai_processing_allowed:false,ai_last_processed_at:processedAt,ai_notice_version:PRIVACY_NOTICE_VERSION,ai_provider:'openai',source_language:detectedSourceLanguage,updated_at:processedAt}).eq('id',documentId).eq('owner_id',user.id).eq('ai_processing_allowed',true).select('id').maybeSingle();
+  const {data:consumed,error:consumeError}=await client.from('documents').update({ai_processing_allowed:false,ai_last_processed_at:processedAt,ai_notice_version:PRIVACY_NOTICE_VERSION,ai_provider:'openai',source_language:detectedSourceLanguage,updated_at:processedAt}).eq('id',documentId).eq('owner_id',user.id).eq('ai_processing_allowed',true).eq('updated_at',document.updated_at).select('id').maybeSingle();
   if(consumeError) return reply(req,{error:'Analyse war erfolgreich, konnte aber nicht sicher abgeschlossen werden'},503);
-  if(!consumed) return reply(req,{error:'Die Analysefreigabe wurde zwischenzeitlich bereits verwendet. Bitte erneut bestätigen.'},409);
+  if(!consumed) return reply(req,{error:'Dokument oder Analysefreigabe wurden zwischenzeitlich geändert. Bitte den aktuellen Stand erneut bestätigen.'},409);
 
   log('info','completed',{reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,target_country:requestedCountry});
   return reply(req,{status:'completed',message:'Dokument wurde mit erkannter Originalsprache, frei gewähltem Sprachpaar, Ampel und Länder-/Rechtsraum-Kontext verarbeitet. Bitte alles prüfen und bewusst freigeben.',release:MODEL_QUALITY_VERSION,attempt_id:attemptId,reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,target_country:requestedCountry,target_country_label:countryContextName,suggested_case_id:null,case_match_reason:null,...parsed,source_language:detectedSourceLanguage});
   } catch(error) {
-    log('error','quality_or_provider_failed',{status:error instanceof ModelWorkflowError?error.status:502});
-    return reply(req,{error:error instanceof ModelWorkflowError?error.message:'Die Dokumentprüfung konnte nicht abgeschlossen werden.',attempt_id:attemptId},error instanceof ModelWorkflowError?error.status:502);
+    log('error','quality_or_provider_failed',{status:error instanceof ModelWorkflowError?error.status:502,code:error instanceof ModelWorkflowError?error.code:'request_failed',issues:error instanceof ModelWorkflowError?error.issues.map(({code,location})=>({code,location})):[]});
+    return reply(req,{error:error instanceof ModelWorkflowError?error.message:'Die Dokumentprüfung konnte nicht abgeschlossen werden.',code:error instanceof ModelWorkflowError?error.code:'request_failed',...(error instanceof ModelWorkflowError&&error.issues.length?{issues:error.issues}:{}),attempt_id:attemptId},error instanceof ModelWorkflowError?error.status:502);
   }
 });

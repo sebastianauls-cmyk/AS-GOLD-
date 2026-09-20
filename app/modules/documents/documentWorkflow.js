@@ -11,16 +11,16 @@ import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../compliance/PrivacyCont
 import { mapDocumentLanguageWorkflowResult } from '../language/documentLanguageWorkflow.mjs'
 import { normalizeOutputLanguage } from '../language/outputLanguage'
 import { documentUploadReadinessMessage, parseIntakeQuality, validateDocumentUploadReadiness } from './documentUploadReadiness.mjs'
+import { workflowErrorMessage } from '../services/workflowError.mjs'
 
-async function functionErrorMessage(error,fallback){
-  if(!error) return fallback
+async function documentErrorDetails(error,fallback,language){
+  let payload=error
   try{
     if(typeof error.context?.json==='function'){
-      const payload=await error.context.json()
-      return payload?.error||payload?.message||payload?.detail||error.message||fallback
+      payload=await error.context.json()
     }
   }catch{}
-  return error.message||fallback
+  return {message:workflowErrorMessage(payload,fallback,language),issues:Array.isArray(payload?.issues)?payload.issues:[]}
 }
 
 export function createDocumentWorkflowActions({
@@ -47,7 +47,7 @@ export function createDocumentWorkflowActions({
   recordLocalAction,
   recordServerAudit
 }){
-  async function analyzeDocument(document){
+  async function analyzeDocument(document,{onProgress,onReviewIssues}={}){
     if(!document?.file_path) return false
     setMessage('')
     if(!privacyCurrent){setMessage(privacyCopy.required);return false}
@@ -59,8 +59,11 @@ export function createDocumentWorkflowActions({
     const linkedCase=data.cases.find(item=>item.id===document.case_id)
     const referenceLanguage=normalizeOutputLanguage(document.reference_copy_language||'de')
     const customerLanguage=normalizeOutputLanguage(document.customer_copy_language||outputLanguage)
-    const {data:result,error}=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage:customerLanguage,referenceLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,countryContext:linkedCase?.target_country})
-    if(error){setMessage(await functionErrorMessage(error,analysisCopy.failed));return false}
+    let response
+    try {response=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage:customerLanguage,referenceLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,countryContext:linkedCase?.target_country,onProgress})}
+    catch {setMessage(analysisCopy.failed);return false}
+    const {data:result,error}=response
+    if(error){const details=await documentErrorDetails(error,analysisCopy.failed,language);setMessage(details.message);onReviewIssues?.(details.issues);return false}
     if(result?.status==='configuration_required'){setMessage(result.message||analysisCopy.failed);return false}
     const suggestedCase=data.cases.some(item=>item.id===result?.suggested_case_id)?result.suggested_case_id:null
     const generated=mapDocumentLanguageWorkflowResult(result,document,result?.output_language||customerLanguage,result?.reference_language||referenceLanguage)
