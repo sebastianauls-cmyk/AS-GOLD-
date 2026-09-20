@@ -1,5 +1,5 @@
 // Server-only generation and review. Nothing is persisted before both checks pass.
-export const MODEL_QUALITY_VERSION = 'v146'
+export const MODEL_QUALITY_VERSION = 'v148'
 export class ModelWorkflowError extends Error {
   constructor(message,status=422,code='model_workflow_failed',issues=[]) { super(message); this.name='ModelWorkflowError'; this.status=status; this.code=code; this.issues=issues.slice(0,8).map(({code,location,reason})=>({code,location:String(location||'').slice(0,120),reason:String(reason||'').slice(0,700)})) }
 }
@@ -69,7 +69,7 @@ An original demand explicitly addressed to a named customer establishes that cus
 9. For a roadmap with supplied output_language and reference_language, check the requested language contract as a meaning issue: all customer prose including the main title must use output_language; original quotations, proper names and document navigation titles remain unchanged. Formal letter subjects and bodies use reference_language. When the two languages differ, each customer_translation must be a complete, accurate translation of its letter into output_language, preserving figures, status and requests. Do not accept a missing translation or an untranslated title merely because the surrounding prose is correct.`
 
 export function validateQualityReview(value) {
-  if(!value||!Array.isArray(value.issues)||Object.keys(value).some(key=>key!=='issues')||value.issues.length>30||value.issues.some(issue=>!issue||!issueCodes.includes(issue.code)||!present(issue.location)||!present(issue.reason))) throw new ModelWorkflowError('Die inhaltliche Gegenprüfung konnte nicht sicher abgeschlossen werden.',502)
+  if(!value||!Array.isArray(value.issues)||Object.keys(value).some(key=>key!=='issues')||value.issues.length>30||value.issues.some(issue=>!issue||!issueCodes.includes(issue.code)||!present(issue.location)||!present(issue.reason))) throw new ModelWorkflowError('Die inhaltliche Gegenprüfung konnte nicht sicher abgeschlossen werden.',502,'review_invalid')
   return value.issues
 }
 
@@ -78,20 +78,29 @@ function providerText(response) {
 }
 async function callModel(providerKey,request,{deadline,fetchImpl,onResponse,stage,attempt,callTimeoutMs=90000}) {
   const remaining=deadline-Date.now()
-  if(remaining<1000) throw new ModelWorkflowError('Die Prüfung hat zu lange gedauert. Es wurde kein ungeprüftes Ergebnis gespeichert.',502)
+  if(remaining<1000) throw new ModelWorkflowError('Die Prüfung hat zu lange gedauert. Es wurde kein ungeprüftes Ergebnis gespeichert.',502,'provider_timeout')
   let http,response
+  const signal=AbortSignal.timeout(Math.min(remaining,callTimeoutMs))
   try {
-    http=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',signal:AbortSignal.timeout(Math.min(remaining,callTimeoutMs)),headers:{Authorization:`Bearer ${providerKey}`,'Content-Type':'application/json'},body:JSON.stringify({...request,store:false})})
-    response=await http.json()
+    http=await fetchImpl('https://api.openai.com/v1/responses',{method:'POST',signal,headers:{Authorization:`Bearer ${providerKey}`,'Content-Type':'application/json'},body:JSON.stringify({...request,store:false})})
   } catch(error) {
-    const timedOut=['TimeoutError','AbortError'].includes(error?.name)
+    const timedOut=signal.aborted||['TimeoutError','AbortError'].includes(error?.name)
     throw new ModelWorkflowError(timedOut?'Die aktuelle Prüfung hat ihr Zeitlimit erreicht. Es wurde kein ungeprüftes Ergebnis gespeichert.':'Der KI-Dienst konnte nicht erreicht werden. Bitte erneut versuchen.',502,timedOut?'provider_timeout':'provider_network')
   }
-  if(!http.ok) throw new ModelWorkflowError('Der KI-Dienst konnte die Anfrage nicht verarbeiten.',502)
+  if(!http.ok) {
+    const code=http.status===429?'provider_rate_limit':[401,403].includes(http.status)?'provider_auth':'provider_http'
+    throw Object.assign(new ModelWorkflowError('Der KI-Dienst konnte die Anfrage nicht verarbeiten.',502,code),{provider_status:http.status})
+  }
+  try {response=await http.json()}
+  catch(error){
+    const timedOut=signal.aborted||['TimeoutError','AbortError'].includes(error?.name)
+    throw new ModelWorkflowError(timedOut?'Die aktuelle Prüfung hat ihr Zeitlimit erreicht.':'Die KI-Antwort hatte kein auswertbares Format.',502,timedOut?'provider_timeout':'provider_invalid_json')
+  }
+  if(!response||typeof response!=='object')throw new ModelWorkflowError('Die KI-Antwort hatte kein auswertbares Format.',502,'provider_invalid_json')
   if(onResponse) onResponse({stage,attempt,reasoning_effort:request.reasoning?.effort,response_id:response.id,model:response.model,status:response.status,usage:response.usage,output:providerText(response)??null})
-  if(response.status!=='completed') throw new ModelWorkflowError('Die KI-Ausgabe war unvollständig. Es wurde kein ungeprüftes Ergebnis gespeichert.',502)
+  if(response.status!=='completed') throw new ModelWorkflowError('Die KI-Ausgabe war unvollständig. Es wurde kein ungeprüftes Ergebnis gespeichert.',502,response.incomplete_details?.reason==='max_output_tokens'?'provider_token_limit':'provider_incomplete')
   let parsed
-  try { parsed=JSON.parse(providerText(response)) } catch { throw new ModelWorkflowError('Die KI-Ausgabe hatte kein auswertbares Format.',502) }
+  try { parsed=JSON.parse(providerText(response)) } catch { throw new ModelWorkflowError('Die KI-Ausgabe hatte kein auswertbares Format.',502,'provider_invalid_json') }
   return {parsed,response_id:response.id,model:response.model}
 }
 

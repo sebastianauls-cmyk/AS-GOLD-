@@ -47,6 +47,7 @@ export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyz
   const [progress,setProgress]=useState(null)
   const [recovering,setRecovering]=useState(false)
   const [reviewAreas,setReviewAreas]=useState([])
+  const [failure,setFailure]=useState(null)
   const recoverable=useRef(canRecover)
   recoverable.current=canRecover
   const analyzable=analysisFilePattern.test(item.title||item.file_path||'')
@@ -58,8 +59,9 @@ export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyz
     setBusy(true)
     setProgress({stage:'generation',attempt:1})
     setReviewAreas([])
+    setFailure(null)
     try{
-      const result=await onAnalyze({...item,reference_copy_language:draft.reference_copy_language||'de',customer_copy_language:draft.customer_copy_language},{onProgress:setProgress,onReviewIssues:issues=>setReviewAreas(documentReviewAreas(issues,on.areas||documentAnalysisProgressCopy().areas))})
+      const result=await onAnalyze({...item,reference_copy_language:draft.reference_copy_language||'de',customer_copy_language:draft.customer_copy_language},{onProgress:setProgress,onFailure:setFailure,onReviewIssues:issues=>setReviewAreas(documentReviewAreas(issues,on.areas||documentAnalysisProgressCopy().areas))})
       if(result){
         onChange(current=>applyDocumentAnalysis(current,result))
         setFacts(result.facts)
@@ -91,6 +93,7 @@ export function ControlledDocumentAnalysis({copy:on,item,draft,onChange,onAnalyz
     <div className="analysisHead"><div><span className="modeBadge">{on.badge}</span><h3>{on.title}</h3><p>{on.lead}</p></div><span className={`analysisStatus analysis-${phase}`}>{status}</span></div>
     <div className="analysisConsent"><div><b>{on.privacyTitle}</b><p>{on.privacyText}</p><a href="/ki-transparenz" target="_blank" rel="noreferrer">{on.details||'KI-Transparenz'} →</a></div><button type="button" className="primary" disabled={!confirmed||!analyzable||!analysisAllowed||busy} onClick={analyze}>{busy?(recovering?on.restoring:progressLabel):on.start}</button><label><input type="checkbox" checked={confirmed} onChange={event=>setConfirmed(event.target.checked)} disabled={!analysisAllowed||busy}/><span>{on.confirm}</span></label><small>{on.limit}</small>{!analysisAllowed&&<small className="analysisUnsupported">{classificationMessage}</small>}{!analyzable&&<small className="analysisUnsupported">{on.unsupported}</small>}</div>
     {phase==='failed'&&reviewAreas.length>0&&<div role="alert"><b>{on.reviewAreas}</b><ul>{reviewAreas.map(area=><li key={area}>{area}</li>)}</ul></div>}
+    {phase==='failed'&&failure&&<div role="alert"><p>{failure.message}</p>{failure.stageLabel&&<p>{failure.stageLabel}</p>}<details><summary>{failure.detailsLabel}</summary><p style={{overflowWrap:'anywhere'}}>{failure.technical}</p></details></div>}
     {factRows.length>0&&<div className="analysisFacts"><b>{on.facts}</b><div>{factRows.map(([label,value])=><span key={label}><small>{label}</small><strong>{value||on.none}</strong></span>)}</div></div>}
     {onRecover&&<button type="button" className="secondary" disabled={busy||!canRecover} onClick={recover}>{recovering?on.restoring:on.restore}</button>}
     <p className="analysisManualNote">{on.manual}</p>

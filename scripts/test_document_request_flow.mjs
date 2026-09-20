@@ -33,6 +33,7 @@ class Query {
 }
 const createClient=()=>({
   auth:{getUser:async()=>({data:{user:state.user},error:null})},
+  rpc:(name,params)=>({abortSignal:async()=>{assert.equal(name,'record_gold_document_analysis_failure');(state.failures||=[]).push(params.p_metadata);return {error:null}}}),
   from:table=>new Query(table),
   storage:{from:bucket=>{
     assert.equal(bucket,'goldstandard-private')
@@ -108,6 +109,9 @@ try {
     reset();step=await begin();state.hook=hook;assert.equal((await call(step)).status,status);assert.equal(state.updates,0)
   }
   reset();state.failModel=true;const timeout=await call();assert.equal(timeout.status,502);assert.equal(timeout.data.code,'provider_timeout');assert.equal(state.updates,0)
+  assert.equal(state.failures[0].code,'provider_timeout');assert.equal(state.failures[0].stage,'generation')
+  reset();step=await begin();state.failModel=true;const reviewTimeout=await call({...step,request_id:'44444444-4444-4444-8444-444444444444'})
+  assert.equal(reviewTimeout.data.stage,'review');assert.equal(state.failures[0].request_id,'44444444-4444-4444-8444-444444444444');assert.equal(state.updates,0)
   reset();const legacy=await call({...baseBody,staged:false});assert.equal(legacy.status,200,'old clients remain compatible for rollout')
 
   reset();const progress=[]
