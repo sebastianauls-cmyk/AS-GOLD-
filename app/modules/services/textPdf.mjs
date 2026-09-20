@@ -55,7 +55,9 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
     const inset=block.light?15:block.kind==='bullet'?10:0
     font(size,heading)
     const lines=pdf.splitTextToSize((block.kind==='bullet'?'• ':'')+block.text,contentWidth-inset)
-    if(heading&&y+lineHeight*(Math.min(lines.length,3)+1)>maxY)page()
+    // Reserve the heading's top/bottom spacing as well as the first body line.
+    // Otherwise a heading can fit while its entire paragraph moves off-page.
+    if(heading&&y+5+lineHeight*Math.min(lines.length,3)+10+17*1.45>maxY)page()
     if(heading)y+=5
     for(let index=0;index<lines.length;index++) {
       if(y+lineHeight>maxY)page()
