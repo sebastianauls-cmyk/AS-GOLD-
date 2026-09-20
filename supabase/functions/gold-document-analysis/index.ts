@@ -25,7 +25,8 @@ function mime(path:string,type?:string){
 
 Deno.serve(async(req:Request)=>{
   const attemptId=crypto.randomUUID();
-  const log=(level:'info'|'error',stage:string,details:Record<string,unknown>={})=>console[level]('[gold-document-analysis]',{attempt_id:attemptId,stage,...details});
+  let requestId:string|undefined,modelStage='request',modelAttempt=1;
+  const log=(level:'info'|'error',stage:string,details:Record<string,unknown>={})=>console[level]('[gold-document-analysis]',{attempt_id:attemptId,request_id:requestId,stage,...details});
   if(req.method==='OPTIONS') return allowedOrigin(req.headers.get('Origin'))?new Response(null,{status:204,headers:headersFor(req)}):reply(req,{error:'Origin not allowed'},403);
   if(req.method!=='POST') return reply(req,{error:'Method not allowed'},405);
   if(req.headers.get('Origin')&&!allowedOrigin(req.headers.get('Origin'))) return reply(req,{error:'Origin not allowed'},403);
@@ -37,6 +38,7 @@ Deno.serve(async(req:Request)=>{
 
   const body=await req.json().catch(()=>null);
   if(!body||JSON.stringify(body).length>800000||JSON.stringify({...body,checkpoint:undefined}).length>10000||body.checkpoint&&body.staged!==true) return reply(req,{error:'Ungültige Anfrage'},400);
+  requestId=typeof body.request_id==='string'&&UUID.test(body.request_id)?body.request_id:undefined;
   const filePath=body?.file_path,documentId=body?.document_id;
   const requestedOutputLanguage=typeof body?.output_language==='string'&&OUTPUT_LANGUAGES.has(body.output_language)?body.output_language:'de';
   const requestedReferenceLanguage=typeof body?.reference_language==='string'&&OUTPUT_LANGUAGES.has(body.reference_language)?body.reference_language:'de';
@@ -72,6 +74,9 @@ Deno.serve(async(req:Request)=>{
   if(body.staged===true&&!secret)throw new ModelWorkflowError('Die sichere Fortsetzung ist nicht eingerichtet.',503);
   const binding=await documentCheckpointBinding({ownerId:user.id,document,bytes,outputLanguage:requestedOutputLanguage,referenceLanguage:requestedReferenceLanguage,country:requestedCountry});
   const checkpoint=body.checkpoint?await openModelCheckpoint({token:body.checkpoint,binding,secret}):null;
+  modelStage=checkpoint?.state?.stage==='review'?'review':checkpoint?.state?.attempt===2?'correction':'generation';
+  modelAttempt=checkpoint?.state?.attempt===2?2:1;
+  log('info','model_request',{model_stage:modelStage,attempt:modelAttempt});
   // MODEL_WORKFLOW_START: shared production/evaluation boundary, after authenticated file loading.
   const originalText=originalPlainText(bytes,fileMime);
   const dataUrl=`data:${fileMime};base64,${base64(bytes)}`;
@@ -143,7 +148,15 @@ Fristen nur nennen, wenn sie ausdrücklich im Dokument stehen oder unmittelbar a
   log('info','completed',{reference_language:requestedReferenceLanguage,output_language:requestedOutputLanguage,target_country:requestedCountry});
   return reply(req,result);
   } catch(error) {
-    log('error','quality_or_provider_failed',{status:error instanceof ModelWorkflowError?error.status:502,code:error instanceof ModelWorkflowError?error.code:'request_failed',issues:error instanceof ModelWorkflowError?error.issues.map(({code,location})=>({code,location})):[]});
-    return reply(req,{error:error instanceof ModelWorkflowError?error.message:'Die Dokumentprüfung konnte nicht abgeschlossen werden.',code:error instanceof ModelWorkflowError?error.code:'request_failed',...(error instanceof ModelWorkflowError&&error.issues.length?{issues:error.issues}:{}),attempt_id:attemptId},error instanceof ModelWorkflowError?error.status:502);
+    const status=error instanceof ModelWorkflowError?error.status:502;
+    const code=error instanceof ModelWorkflowError?error.code:'request_failed';
+    const providerStatus=Number.isInteger(error?.provider_status)&&error.provider_status>=100&&error.provider_status<=599?error.provider_status:undefined;
+    const diagnostic={code,stage:modelStage,attempt:modelAttempt,http_status:status,...(providerStatus?{provider_status:providerStatus}:{}),...(requestId?{request_id:requestId}:{}),attempt_id:attemptId};
+    log('error','quality_or_provider_failed',diagnostic);
+    try {
+      const {error:auditError}=await client.rpc('record_gold_document_analysis_failure',{p_document_id:documentId,p_metadata:diagnostic}).abortSignal(AbortSignal.timeout(1500));
+      if(auditError)log('error','failure_audit_unavailable');
+    } catch {log('error','failure_audit_unavailable');}
+    return reply(req,{error:error instanceof ModelWorkflowError?error.message:'Die Dokumentprüfung konnte nicht abgeschlossen werden.',...diagnostic,...(error instanceof ModelWorkflowError&&error.issues.length?{issues:error.issues}:{})},status);
   }
 });

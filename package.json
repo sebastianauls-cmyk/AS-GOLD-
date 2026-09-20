@@ -116,7 +116,7 @@
     "test:password-recovery": "node scripts/test_password_recovery_routing.mjs",
     "test:password-reset-limits": "node scripts/test_password_reset_limits.mjs",
     "test:workspace-recovery": "node scripts/test_workspace_session_recovery.mjs",
-    "test:document-analysis": "node scripts/test_document_request_flow.mjs && node scripts/test_document_recovery.mjs"
+    "test:document-analysis": "node scripts/test_document_request_flow.mjs && node scripts/test_document_recovery.mjs && node scripts/test_document_failure.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.57.4",

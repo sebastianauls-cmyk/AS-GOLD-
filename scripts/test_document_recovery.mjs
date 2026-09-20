@@ -11,6 +11,7 @@ import * as recovery from '../app/modules/documents/documentAnalysisRecovery.mjs
 import {documentAnalysisRecoveryCopy} from '../app/modules/documents/documentAnalysisRecoveryCopy.mjs'
 import {mapDocumentLanguageWorkflowResult} from '../app/modules/language/documentLanguageWorkflow.mjs'
 import {updateDocumentRecord} from '../app/modules/services/documentRepository.js'
+import {readDocumentAnalysisError,recordDocumentAnalysisFailure} from '../app/modules/documents/documentAnalysisError.mjs'
 
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222'
 const at='2026-09-20T17:40:00.000Z'
@@ -27,7 +28,7 @@ function workflow({delivery='lost',stored=retained,audit='ok',localFailure=false
     PRIVACY_NOTICE_VERSION:'test',TERMS_VERSION:'test',
     authorizeDocumentAnalysis:async()=>{state.authorizations++;return {privacy:{},document:item}},
     invokeDocumentAnalysis:async()=>{state.invocations++;return delivery==='lost'?{error:{name:'FunctionsFetchError'}}:{data:delivery==='empty'?{}:result}},
-    workflowErrorMessage:()=> 'Delivery failed',console:{warn(){}}
+    readDocumentAnalysisError,recordDocumentAnalysisFailure,console:{warn(){}}
   }
   vm.createContext(context)
   const source=fs.readFileSync('app/modules/documents/documentWorkflow.js','utf8').replace(/^import .*$/gm,'').replace('export function ','function ')
@@ -57,9 +58,10 @@ for(const audit of ['pending','failed']){
 for(const stored of [null,item,{...retained,updated_at:'2026-09-20T18:00:00Z'}]){
   const {actions,state}=workflow({stored})
   assert.equal(await actions.analyzeDocument(item),false)
-  assert.equal(state.messages.at(-1),'Delivery failed')
+  assert.match(state.messages.at(-1),/Verbindung wurde unterbrochen/)
 }
-assert.equal(await workflow({delivery:'empty'}).actions.analyzeDocument(item),false,'empty success responses cannot become a blank successful editor')
+assert.equal(await workflow({delivery:'empty',stored:null}).actions.analyzeDocument(item),false,'empty success responses cannot become a blank successful editor')
+assert.equal((await workflow({delivery:'empty'}).actions.analyzeDocument(item)).fields.extracted_text,result.extracted_text,'a malformed HTTP reply can still recover the exact reviewed server draft')
 
 // Real additive migration, existing ownership RLS, and deliberate save lifecycle.
 const db=await PGlite.create()
