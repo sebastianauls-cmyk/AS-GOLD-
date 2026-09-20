@@ -6,6 +6,7 @@ import React from 'react'
 import {renderToStaticMarkup} from 'react-dom/server'
 import {transformSync} from 'next/dist/build/swc/index.js'
 import {publicExperienceCopy,publicTourAreas} from '../app/modules/public/publicExperienceCopy.mjs'
+import {publicLanguageCountryCopy} from '../app/modules/public/publicLanguageCountryCopy.mjs'
 
 const require=createRequire(import.meta.url),cache=new Map()
 function load(file){
@@ -28,6 +29,8 @@ const {PublicHeader}=load('app/modules/public/PublicHeader.js')
 const {PublicLanguageModules}=load('app/modules/public/PublicLanguageModules.js')
 const {PublicTourPanel,PublicTourChoices}=load('app/modules/public/PublicProductTour.js')
 const {PublicPricingSection}=load('app/modules/public/PublicPricingSection.js')
+const {PublicLanguageCountryView}=load('app/modules/public/PublicLanguageCountryModule.js')
+const {COUNTRY_CATALOG}=load('app/modules/country/countryRegistry.mjs')
 const {LANGUAGE_CATALOG,pageTranslations}=load('app/modules/language/languageRegistry.mjs')
 const catalogs={...load('app/modules/public/catalog.js'),...load('app/modules/public/publicUi.js'),...load('app/modules/workspace/workspaceText.js'),...load('app/modules/pricing/catalog.js')}
 for(const [key,translations] of Object.entries(pageTranslations))if(catalogs[key])Object.assign(catalogs[key],translations)
@@ -38,6 +41,8 @@ const callbacks={setLanguage:value=>events.push(['language',value]),setOutputLan
 const serialize=element=>renderToStaticMarkup(element)
 for(const {key:language,rtl} of LANGUAGE_CATALOG){
   const c=publicExperienceCopy(language),pc=productCopy[language]
+  const cross=publicLanguageCountryCopy(language)
+  assert.deepEqual(Object.keys(cross).sort(),Object.keys(publicLanguageCountryCopy('de')).sort(),`${language}: language/country module fully translated`)
   assert.deepEqual(Object.keys(c).sort(),Object.keys(publicExperienceCopy('de')).sort(),`${language}: complete copy`)
   if(language!=='de')assert.notEqual(c.headline,publicExperienceCopy('de').headline)
   const localizedPlans=catalogs.plans.map((plan,index)=>{
@@ -61,6 +66,28 @@ for(const {key:language,rtl} of LANGUAGE_CATALOG){
     assert.ok(header.includes(`href="#${id}"`));assert.ok(html.includes(`id="${id}"`))
   }
   assert.ok(html.indexOf('id="funktionen"')<html.indexOf('id="preise"'),'understand the product before choosing a plan')
+  assert.ok(html.includes('href="#sprachen-rechtsraeume"'),'translation and legal comparison are visible from the introduction')
+  assert.ok(html.indexOf('id="sprachen-rechtsraeume"')<html.indexOf('id="funktionen"'),'dedicated language/country explanation precedes the general tour')
+  assert.ok(html.includes(cross.quote),'Poland/Germany example is visible initially')
+  for(let index=0;index<COUNTRY_CATALOG.length;index++){
+    const example={home:COUNTRY_CATALOG[index].key,target:COUNTRY_CATALOG[(index+5)%COUNTRY_CATALOG.length].key,output:language}
+    const changes=[]
+    const view=PublicLanguageCountryView({language,example,onChange:(key,value)=>changes.push([key,value]),idPrefix:'country-test'})
+    const controls=nodes(view).filter(node=>node.type==='select')
+    assert.equal(controls.length,3)
+    assert.deepEqual(controls.slice(0,2).map(node=>node.props.children.map(option=>option.props.value)),[COUNTRY_CATALOG.map(item=>item.key),COUNTRY_CATALOG.map(item=>item.key)])
+    assert.deepEqual(controls[2].props.children.map(option=>option.props.value),LANGUAGE_CATALOG.map(item=>item.key))
+    controls[0].props.onChange({target:{value:'TR'}})
+    controls[1].props.onChange({target:{value:'US'}})
+    controls[2].props.onChange({target:{value:'fa'}})
+    assert.deepEqual(changes,[['home','TR'],['target','US'],['output','fa']],'the three choices emit independent changes')
+    assert.equal(example.output,language,'preview interactions never mutate caller or account settings')
+    const preview=serialize(view)
+    assert.ok(preview.includes(cross.translate));assert.ok(preview.includes(cross.explain));assert.ok(preview.includes(cross.compare));assert.ok(preview.includes(cross.note))
+    assert.doesNotMatch(preview,/\{(?:home|target|language|languages|countries)\}/,'all dynamic labels are replaced')
+  }
+  const same=serialize(PublicLanguageCountryView({language,example:{home:'DE',target:'DE',output:language},onChange(){},idPrefix:'same-country'}))
+  assert.ok(same.includes(cross.same),'same-country preview does not invent a difference')
   assert.equal((html.match(/id="plan-/g)||[]).length,localizedPlans.length)
   assert.equal((html.match(/<details class="publicPlanDetails">/g)||[]).length,localizedPlans.length)
   assert.doesNotMatch(html,/v131ReleaseBand|v131Journey|featureGrid|processBlock|class="capGrid"/,'duplicate product lists removed')
@@ -89,5 +116,5 @@ for(const {key:language,rtl} of LANGUAGE_CATALOG){
   assert.equal(registerButtons.length,localizedPlans.length)
   registerButtons.forEach(button=>{button.props.onClick();assert.deepEqual(events.pop(),['screen','register'])})
 }
-for(const file of ['PublicProductTour.js','publicExperienceCopy.mjs'])assert.doesNotMatch(fs.readFileSync(`app/modules/public/${file}`,'utf8'),/supabase|fetch\(|axios/,'the public preview must never fetch private case records or trigger AI')
-console.log('Public product journey passed: 11 languages, separate visible language controls, 8 tour areas and their real callbacks, full existing capability coverage, registration/login links, all tariff details, video and single installation entry. Browser layout acceptance remains separate.')
+for(const file of ['PublicProductTour.js','publicExperienceCopy.mjs','PublicLanguageCountryModule.js','publicLanguageCountryCopy.mjs'])assert.doesNotMatch(fs.readFileSync(`app/modules/public/${file}`,'utf8'),/supabase|fetch\(|axios/,'the public preview must never fetch private case records or trigger AI')
+console.log('Public product journey passed: 11 languages, 14 countries in independent origin/target selectors, plain explanation and translation preview, same-country handling, 8 tour areas and their callbacks, registration/login, tariffs, video and one installation entry. Browser layout acceptance remains separate.')

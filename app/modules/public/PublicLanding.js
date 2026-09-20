@@ -14,6 +14,8 @@ import { PublicTrustSections } from './PublicTrustSections'
 import { PublicPricingSection } from './PublicPricingSection'
 import { publicExperienceCopy } from './publicExperienceCopy.mjs'
 import { PublicProductTour } from './PublicProductTour'
+import { PublicLanguageCountryModule } from './PublicLanguageCountryModule'
+import { publicLanguageCountryCopy } from './publicLanguageCountryCopy.mjs'
 import { InstallAppButton } from './InstallAppButton'
 import { workspaceOverviewCopy } from '../workspace/workspaceOverviewCopy.mjs'
 
@@ -60,6 +62,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
   const pc=productCopy[language]||productCopy.de
   const c=publicExperienceCopy(language)
   const w=workspaceOverviewCopy(language)
+  const crossBorder=publicLanguageCountryCopy(language)
 
   function returnToPublicStart(){
     const cleanUrl=`${window.location.pathname}${window.location.search}`
@@ -77,6 +80,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
           <div>
             <h1>{c.headline}</h1>
             <p className="lead">{c.lead}</p>
+            <a className="publicLanguageCountryHeroLink" href="#sprachen-rechtsraeume">{crossBorder.nav} →</a>
             <div className="actions"><button type="button" className="primary btn" onClick={()=>setScreen('register')}>{c.start}</button><a className="secondary btn" href="#funktionen">{c.preview}</a></div>
             <p className="freeHint">{cd.freeHint}</p>
             <button type="button" className="publicVideoLink" onClick={()=>setExplainerSignal(value=>value+1)}>{pc.explainer}</button>
@@ -90,6 +94,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
         </div>
         <div className="wrap publicInstallRow"><InstallAppButton language={language} surface="public"/></div>
       </section>
+      <PublicLanguageCountryModule language={language}/>
       <PublicProductTour pc={pc} c={c} onRegister={()=>setScreen('register')}/>
       <section id="ablauf" className="section publicHow">
         <div className="wrap">
