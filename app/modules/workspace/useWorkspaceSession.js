@@ -23,7 +23,7 @@ function requestedPublicScreen(){
   return 'public'
 }
 
-export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecovery,onPasswordRecoveryError,onSignedOut}){
+export function useWorkspaceSession({supabase,publicOnly=false,loadApp,setScreen,onPasswordRecovery,onPasswordRecoveryError,onSignedOut}){
   const loadAppRef=useRef(loadApp)
   const recoveryRef=useRef(onPasswordRecovery)
   const recoveryErrorRef=useRef(onPasswordRecoveryError)
@@ -35,6 +35,9 @@ export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecove
   useEffect(()=>{signedOutRef.current=onSignedOut},[onSignedOut])
 
   useEffect(()=>{
+    // The public explanation has no need to load or redirect an existing account.
+    // Authentication still happens through the normal root entry when requested.
+    if(publicOnly)return
     let alive=true
     let guestExpiryTimer=null
     let guestAccessCheckTimer=null
@@ -134,5 +137,5 @@ export function useWorkspaceSession({supabase,loadApp,setScreen,onPasswordRecove
       clearGuestExpiryGuards()
       subscription.unsubscribe()
     }
-  },[supabase,setScreen])
+  },[supabase,setScreen,publicOnly])
 }

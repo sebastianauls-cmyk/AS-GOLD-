@@ -79,8 +79,8 @@ for(const [catalogName,translations] of Object.entries(pageTranslations)){
   Object.assign(pageCatalogs[catalogName],translations)
 }
 
-export default function WorkspaceController(){
-  const [screen,setScreen]=useState('loading')
+export default function WorkspaceController({publicOnly=false}={}){
+  const [screen,setScreen]=useState(publicOnly?'public':'loading')
   const [email,setEmail]=useState('')
   const [password,setPassword]=useState('')
   const [password2,setPassword2]=useState('')
@@ -218,6 +218,11 @@ export default function WorkspaceController(){
   const publicMonthsLabel=value=>publicA.months.replace('{n}',value).replace('{plural}',value>1?(publicLanguage==='de'?'e':publicLanguage==='en'?'s':''):'')
   const navigateToScreen=nextScreen=>{
     if(nextScreen==='public')publicCaseStart.current.cancel()
+    if(publicOnly&&nextScreen!=='public'){
+      const entry=new URLSearchParams({start:nextScreen,lang:language})
+      window.location.assign(`/?${entry}`)
+      return
+    }
     setMessage('')
     setScreen(nextScreen)
   }
@@ -300,6 +305,7 @@ export default function WorkspaceController(){
 
   useWorkspaceSession({
     supabase,
+    publicOnly,
     loadApp,
     setScreen,
     onPasswordRecovery:session=>{setEmail(session.user.email||'');setMessage('');setScreen('recovery')},

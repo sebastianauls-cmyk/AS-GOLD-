@@ -42,10 +42,13 @@ for(const {key:language,label,rtl} of LANGUAGE_CATALOG){
     const copy=publicExperienceCopy(language)
     await expect(page.getByRole('heading',{level:1})).toHaveText(copy.headline)
     await expect(page.locator('.publicProductHero .lead')).toHaveText(copy.lead)
+    await expect(page.locator('.publicCapabilitySummary li')).toHaveCount(3)
     await expect(page.locator('html')).toHaveAttribute('dir',rtl?'rtl':'ltr')
     await expect(page.locator('.publicTop button[aria-haspopup="listbox"]')).toHaveCount(2)
     await expect(page.locator('#sprachen-rechtsraeume select')).toHaveCount(3)
     await expect(page.locator('.publicLanguageCountryStart button')).toHaveCount(2)
+    const installationTextWidth=await page.locator('.publicInstallRow .installAppText').evaluate(element=>element.getBoundingClientRect().width)
+    expect(installationTextWidth,'installation copy must remain readable beside its icon and actions').toBeGreaterThan(160)
     await noHorizontalOverflow(page)
     if(['de','pl','ar'].includes(language)){
       await capture(page,testInfo,`initial-${language}`)
@@ -73,6 +76,25 @@ test('customers can explore every feature and the plans without signing in',asyn
   await expect(details.first()).toHaveAttribute('open','')
   await noHorizontalOverflow(page)
   await capture(page,testInfo,'public-plans')
+})
+
+test('the permanent explanation is public and keeps the normal registration handoff',async({page},testInfo)=>{
+  const accountRequests=[]
+  page.on('request',request=>{if(/\/rest\/v1\/(?:cases|documents|clients|approvals)(?:\?|$)/.test(request.url()))accountRequests.push(request.url())})
+  const response=await page.goto('/entdecken?lang=de',{waitUntil:'domcontentloaded'})
+  expect(response?.status()).toBe(200)
+  await expect(page.getByRole('heading',{level:1})).toHaveText(publicExperienceCopy('de').headline)
+  await expect(page.locator('.publicCapabilitySummary li')).toHaveCount(3)
+  await expect(page.locator('#public-summary-title')).toHaveText('Was ASH für Sie tun kann')
+  await page.reload({waitUntil:'domcontentloaded'})
+  await expect(page.locator('.publicCapabilitySummary')).toBeVisible()
+  expect(accountRequests).toEqual([])
+  await noHorizontalOverflow(page)
+  await capture(page,testInfo,'permanent-public-explanation',page.locator('.publicProductHero'))
+  await page.locator('.publicProductEntry .primary').click()
+  await expect(page).toHaveURL(/\/\?start=register&lang=de$/)
+  await expect(page.locator('#register-password')).toBeVisible()
+  await expect(page.locator('.authCard form .primary.full')).toBeDisabled()
 })
 
 test('interface, output and country-example choices remain independent',async({page},testInfo)=>{

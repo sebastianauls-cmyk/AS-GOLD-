@@ -17,7 +17,6 @@ import { PublicProductTour } from './PublicProductTour'
 import { PublicLanguageCountryModule } from './PublicLanguageCountryModule'
 import { publicLanguageCountryCopy } from './publicLanguageCountryCopy.mjs'
 import { InstallAppButton } from './InstallAppButton'
-import { workspaceOverviewCopy } from '../workspace/workspaceOverviewCopy.mjs'
 
 const publicBackCopy={
   de:{label:'← Zurück',aria:'Zurück zum Anfang der Seite'},
@@ -61,7 +60,6 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
   const backCopy=publicBackCopy[language]||publicBackCopy.de
   const pc=productCopy[language]||productCopy.de
   const c=publicExperienceCopy(language)
-  const w=workspaceOverviewCopy(language)
   const crossBorder=publicLanguageCountryCopy(language)
 
   function returnToPublicStart(){
@@ -77,20 +75,21 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
     <main>
       <section className="publicProductHero">
         <div className="wrap publicProductHeroGrid">
-          <div>
+          <div className="publicProductIntro">
+            <p className="publicSummaryLabel">{c.summaryLabel}</p>
             <h1>{c.headline}</h1>
             <p className="lead">{c.lead}</p>
+          </div>
+          <section className="publicCapabilitySummary" aria-labelledby="public-summary-title">
+            <h2 id="public-summary-title">{c.summaryTitle}</h2>
+            <ol>{c.summaryItems.map(([title,body],index)=><li key={title}><span aria-hidden="true">{String(index+1).padStart(2,'0')}</span><div><h3>{title}</h3><p>{body}</p></div></li>)}</ol>
+          </section>
+          <div className="publicProductEntry">
             <a className="publicLanguageCountryHeroLink" href="#sprachen-rechtsraeume">{crossBorder.nav} →</a>
             <div className="actions"><button type="button" className="primary btn" onClick={()=>setScreen('register')}>{c.start}</button><a className="secondary btn" href="#funktionen">{c.preview}</a></div>
             <p className="freeHint">{cd.freeHint}</p>
             <button type="button" className="publicVideoLink" onClick={()=>setExplainerSignal(value=>value+1)}>{pc.explainer}</button>
           </div>
-          <aside className="publicWorkspacePreview" aria-label={c.example}>
-            <span className="publicPreviewLabel">{c.example}</span>
-            <h2>{w.title}</h2>
-            <div className="publicPreviewTask"><span>{w.next}</span><h3>{w.read}</h3><p>Dokument.pdf</p><a href="#funktionen">{c.preview} →</a></div>
-            <div className="publicPreviewAreas"><span>{c.cases}</span><span>{w.documents}</span><span>{w.approvals}</span><span>{w.deadlines}</span></div>
-          </aside>
         </div>
         <div className="wrap publicInstallRow"><InstallAppButton language={language} surface="public"/></div>
       </section>

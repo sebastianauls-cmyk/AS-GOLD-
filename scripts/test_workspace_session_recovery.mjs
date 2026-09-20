@@ -4,6 +4,7 @@ import vm from 'node:vm'
 import { retrySessionClock, loadWorkspaceBundle } from '../app/modules/services/workspaceRepository.js'
 import { createClient } from '@supabase/supabase-js'
 import { getWorkspaceConnectionCopy } from '../app/modules/auth/workspaceConnectionCopy.mjs'
+import { resolveWorkspaceEntry } from '../app/modules/workspace/sessionEntry.mjs'
 
 const clockError={code:'PGRST303',message:'JWT issued at future'}
 const member={user:{id:'synthetic-member',email:'member@example.invalid'},access_token:'synthetic-session-only'}
@@ -162,4 +163,25 @@ for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
   for(const key of ['title','connecting','unavailable','retry','signOut'])assert.ok(text[key],`${language}.${key}`)
   if(language!=='de')assert.notEqual(text.unavailable,getWorkspaceConnectionCopy('de').unavailable)
 }
-console.log('Workspace recovery passed: bounded SDK read retries, preserved session, retry after failure, no approval bypass, no partial success, concurrent sign-in deduplication, logout/recovery races and 11 languages.')
+// A signed-in visitor can inspect the permanent public page without an account
+// load or a SIGNED_IN listener immediately replacing it with the dashboard.
+for(const publicOnly of [true,false]){
+  const effects=[],calls={session:0,watch:0,workspace:0,screen:0}
+  const sessionSource=fs.readFileSync('app/modules/workspace/useWorkspaceSession.js','utf8').replace(/^import .*$/gm,'').replace('export function ','function ')
+  const context={
+    window:{location:{search:''}},URLSearchParams,
+    useRef:value=>({current:value}),useEffect:effect=>effects.push(effect),
+    getAuthSession:async()=>{calls.session++;return {data:{session:member}}},
+    watchAuthState:()=>{calls.watch++;return {unsubscribe(){}}},
+    capturePasswordRecovery(){},clearGuestTestRequest(){},
+    isPasswordRecoveryActive:()=>false,isPasswordRecoveryLocation:()=>false,
+    isAnonymousTestSession:()=>false,resolveWorkspaceEntry
+  }
+  vm.createContext(context)
+  vm.runInContext(`${sessionSource}\nthis.useSession=useWorkspaceSession`,context)
+  context.useSession({supabase:{},publicOnly,loadApp:()=>calls.workspace++,setScreen:()=>calls.screen++})
+  effects.forEach(effect=>effect())
+  await Promise.resolve();await Promise.resolve()
+  assert.deepEqual(calls,publicOnly?{session:0,watch:0,workspace:0,screen:0}:{session:1,watch:1,workspace:1,screen:0})
+}
+console.log('Workspace recovery passed: bounded SDK read retries, preserved session, retry after failure, no approval bypass, no partial success, concurrent sign-in deduplication, logout/recovery races, public explanation with an existing session and 11 languages.')
