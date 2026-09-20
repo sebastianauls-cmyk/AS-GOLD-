@@ -59,8 +59,13 @@ export async function POST(request){
   })
   const {error}=await authClient.auth.resetPasswordForEmail(email,{redirectTo:AUTH_REDIRECT_URL})
   if(error){
-    const limited=['over_email_send_rate_limit','over_request_rate_limit','too_many_requests'].includes(error.code)
-    return new Response(JSON.stringify({ok:false,code:limited?'too_many_requests':'reset_delivery_failed'}),{status:limited?429:503,headers})
+    const limitCodes=['over_email_send_rate_limit','over_request_rate_limit','too_many_requests']
+    const limited=error.status===429||limitCodes.includes(error.code)
+    const code=limitCodes.includes(error.code)?error.code:limited?'too_many_requests':'reset_delivery_failed'
+    const status=limited?429:503
+    // Record only an allowlisted category. Never log the email, provider message or tokens.
+    console.warn('[auth/password-reset]',{code,status})
+    return new Response(JSON.stringify({ok:false,code}),{status,headers})
   }
 
   return new Response(JSON.stringify({ok:true}),{status:200,headers})
