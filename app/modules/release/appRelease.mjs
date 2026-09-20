@@ -1,6 +1,6 @@
 export const APP_RELEASE=Object.freeze({
-  number:146,
-  version:'V146',
+  number:147,
+  version:'V147',
   updated:'20. September 2026'
 })
 
