@@ -1,0 +1,13 @@
+{
+  "name": "ash-public-browser-check",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "list": "playwright test --list"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0"
+  }
+}
