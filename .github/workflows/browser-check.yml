@@ -1,0 +1,54 @@
+name: ASH Public Browser Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/browser-check.yml'
+      - 'tests/browser/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/browser-check.yml'
+      - 'tests/browser/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ash-public-browser-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  public-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: tests/browser
+    env:
+      ASH_BROWSER_BASE_URL: https://app-gold-workspace.vercel.app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: tests/browser/package-lock.json
+      - name: Install isolated browser test dependencies
+        run: npm ci
+      - name: Install independent Chromium and WebKit browsers
+        run: npx playwright install --with-deps chromium webkit
+      - name: Check the currently published public application
+        run: npm test
+      - name: Save screenshots and browser reports
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ASH-public-browser-${{ github.run_id }}
+          path: |
+            tests/browser/playwright-report/
+            tests/browser/test-results/
+          if-no-files-found: warn
+          retention-days: 14
