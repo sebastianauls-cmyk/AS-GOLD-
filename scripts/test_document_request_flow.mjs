@@ -7,6 +7,7 @@ import * as documentCheckpoints from '../supabase/functions/_shared/documentChec
 import * as evidence from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {runDocumentAnalysisContinuation} from '../app/modules/services/documentAnalysisContinuation.mjs'
 import {documentAnalysisProgressCopy,documentAnalysisProgressLabel,documentReviewAreas} from '../app/modules/documents/documentAnalysisProgress.mjs'
+import {restoreDocumentAnalysis,initializeDocumentReview} from '../app/modules/documents/documentAnalysisRecovery.mjs'
 
 // Real handler, schema, review gates and sealed checkpoints; synthetic transports.
 const ownerId='11111111-1111-4111-8111-111111111111',documentId='22222222-2222-4222-8222-222222222222'
@@ -61,6 +62,15 @@ try {
   assert.equal(complete.status,200);assert.equal(complete.data.extracted_text,original);assert.equal(state.modelCalls,2);assert.equal(state.updates,1)
   assert.equal(state.document.ai_processing_allowed,false)
   assert.equal(state.document.extracted_text,undefined,'reviewed draft still requires deliberate user saving')
+  assert.deepEqual(state.document.analysis_draft.result,complete.data,'the exact completed response survives a lost HTTP reply')
+  assert.equal(restoreDocumentAnalysis(state.document).fields.extracted_text,original)
+  const reopened=initializeDocumentReview(state.document)
+  assert.equal(reopened.recovered,true)
+  assert.equal(reopened.baseline.extracted_text,'','recovery does not mark the document saved')
+  assert.equal(reopened.draft.extracted_text,original)
+  assert.equal(reopened.draft.analysis_generated,true)
+  for(const change of [{updated_at:'2026-09-20T15:00:00Z'},{file_path:'changed.txt'},{data_classification:'personal'},{voice_context:'Changed input'}])assert.equal(restoreDocumentAnalysis({...state.document,...change}),null,'changed sources cannot revive an old draft')
+  for(const context of [{outputLanguage:'pl'},{referenceLanguage:'en'},{country:'FR'}])assert.equal(restoreDocumentAnalysis(state.document,context),null,'language and country changes cannot revive an old draft')
   assert.equal((await call(next)).status,403,'consumed document consent must not be reused')
 
   reset()
@@ -80,6 +90,7 @@ try {
   const rejected=await call(step)
   assert.equal(rejected.status,422);assert.equal(rejected.data.code,'review_unresolved');assert.deepEqual(rejected.data.issues,[defect]);assert.equal(state.updates,0)
   assert.equal(state.document.ai_processing_allowed,true,'rejection never marks an analysis complete')
+  assert.equal(state.document.analysis_draft,undefined,'unresolved output is never retained as a completed draft')
 
   for(const change of [()=>{state.file+=' Geändert.'},()=>{state.document.voice_context='Neue Rolle'},()=>{state.document.updated_at='2026-09-20T12:10:00Z'}]) {
     reset();step=await begin();change();assert.equal((await call(step)).status,409);assert.equal(state.modelCalls,1);assert.equal(state.updates,0)

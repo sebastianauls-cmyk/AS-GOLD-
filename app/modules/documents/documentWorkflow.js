@@ -12,6 +12,8 @@ import { mapDocumentLanguageWorkflowResult } from '../language/documentLanguageW
 import { normalizeOutputLanguage } from '../language/outputLanguage'
 import { documentUploadReadinessMessage, parseIntakeQuality, validateDocumentUploadReadiness } from './documentUploadReadiness.mjs'
 import { workflowErrorMessage } from '../services/workflowError.mjs'
+import { completedDocumentAnalysis, restoreDocumentAnalysis } from './documentAnalysisRecovery.mjs'
+import { readCountryContext } from '../country/countryRegistry.mjs'
 
 async function documentErrorDetails(error,fallback,language){
   let payload=error
@@ -47,6 +49,32 @@ export function createDocumentWorkflowActions({
   recordLocalAction,
   recordServerAudit
 }){
+  function presentAnalysis(generated,document){
+    try{recordLocalAction('document_analysis_generated')}catch{}
+    setMessage(analysisCopy.ready)
+    // Audit availability must not hold the reviewed draft outside the editor.
+    Promise.resolve().then(()=>recordServerAudit('document_analysis_generated',{status:'provisional'},'document',document.id)).then(saved=>{
+      if(!saved)setMessage(current=>current===analysisCopy.ready?`${analysisCopy.ready} · ${serverCopy.auditFailed}`:current)
+    }).catch(()=>console.warn('document_analysis_audit_unavailable'))
+    return generated
+  }
+
+  async function recoverDocumentAnalysis(document,{quiet=false}={}){
+    try{
+      const {data:fresh,error}=await supabase.from('documents').select('*').eq('id',document.id).eq('owner_id',ownerId).maybeSingle()
+      if(error)throw error
+      const linkedCase=data.cases.find(item=>item.id===document.case_id)
+      const generated=restoreDocumentAnalysis(fresh,{
+        outputLanguage:normalizeOutputLanguage(document.customer_copy_language||outputLanguage),
+        referenceLanguage:normalizeOutputLanguage(document.reference_copy_language||'de'),
+        country:linkedCase?.target_country||readCountryContext()
+      })
+      if(generated)return presentAnalysis(generated,document)
+      if(!quiet)setMessage(analysisCopy.noDraft)
+    }catch{if(!quiet)setMessage(analysisCopy.recoveryFailed)}
+    return false
+  }
+
   async function analyzeDocument(document,{onProgress,onReviewIssues}={}){
     if(!document?.file_path) return false
     setMessage('')
@@ -61,17 +89,23 @@ export function createDocumentWorkflowActions({
     const customerLanguage=normalizeOutputLanguage(document.customer_copy_language||outputLanguage)
     let response
     try {response=await invokeDocumentAnalysis({supabase,documentId:document.id,filePath:document.file_path,outputLanguage:customerLanguage,referenceLanguage,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,countryContext:linkedCase?.target_country,onProgress})}
-    catch {setMessage(analysisCopy.failed);return false}
+    catch {
+      const recovered=await recoverDocumentAnalysis(document,{quiet:true})
+      if(recovered)return recovered
+      setMessage(analysisCopy.failed);return false
+    }
     const {data:result,error}=response
-    if(error){const details=await documentErrorDetails(error,analysisCopy.failed,language);setMessage(details.message);onReviewIssues?.(details.issues);return false}
+    if(error){
+      const recovered=await recoverDocumentAnalysis(document,{quiet:true})
+      if(recovered)return recovered
+      const details=await documentErrorDetails(error,analysisCopy.failed,language);setMessage(details.message);onReviewIssues?.(details.issues);return false
+    }
     if(result?.status==='configuration_required'){setMessage(result.message||analysisCopy.failed);return false}
+    if(!completedDocumentAnalysis(result)){setMessage(analysisCopy.failed);return false}
     const suggestedCase=data.cases.some(item=>item.id===result?.suggested_case_id)?result.suggested_case_id:null
     const generated=mapDocumentLanguageWorkflowResult(result,document,result?.output_language||customerLanguage,result?.reference_language||referenceLanguage)
     generated.fields.case_id=suggestedCase||document.case_id||''
-    recordLocalAction('document_analysis_generated')
-    const auditSaved=await recordServerAudit('document_analysis_generated',{status:'provisional'},'document',document.id)
-    setMessage(auditSaved?analysisCopy.ready:`${analysisCopy.ready} · ${serverCopy.auditFailed}`)
-    return generated
+    return presentAnalysis(generated,document)
   }
 
   async function updateDocument(documentId,draft){
@@ -177,5 +211,5 @@ export function createDocumentWorkflowActions({
     }catch(error){setMessage(error.message);return false}
   }
 
-  return {analyzeDocument,updateDocument,uploadDocument,openDocument}
+  return {analyzeDocument,recoverDocumentAnalysis,updateDocument,uploadDocument,openDocument}
 }

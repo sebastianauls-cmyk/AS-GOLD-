@@ -64,7 +64,7 @@ export function createWorkspaceAuthActions({
     const interrupted=()=>isPasswordRecoveryActive()||passwordRecoveryRevision()!==recoveryAtStart||(sessionLoadRef&&sessionLoadRef.current!==request)
     if(interrupted())return false
     setMessage('')
-    setScreen('workspace-connecting')
+    if(!request.background)setScreen('workspace-connecting')
     const accessSnapshot=await getWorkspaceAccess(supabase)
     if(interrupted())return false
     if(accessSnapshot.error){setMessage(getWorkspaceConnectionCopy(language).unavailable);setScreen('workspace-unavailable');return false}
@@ -100,7 +100,10 @@ export function createWorkspaceAuthActions({
     const key=`${session?.user?.id||''}:${session?.access_token||''}`
     const active=sessionLoadRef?.current
     if(key&&active?.key===key&&active.promise)return active.promise
-    const request={key,promise:null,recoveryRevision:passwordRecoveryRevision()}
+    // A refreshed token for the same signed-in person must not unmount editors.
+    // Access is still checked; a denied or failed check keeps its existing gate.
+    const ownerId=session?.user?.id
+    const request={key,ownerId,promise:null,loaded:false,background:!!(active?.loaded&&active.ownerId===ownerId),recoveryRevision:passwordRecoveryRevision()}
     if(sessionLoadRef)sessionLoadRef.current=request
     const promise=Promise.resolve().then(()=>performLoadApp(session,request)).catch(()=>{
       if(isPasswordRecoveryActive()||passwordRecoveryRevision()!==request.recoveryRevision||(sessionLoadRef&&sessionLoadRef.current!==request))return false
@@ -108,6 +111,7 @@ export function createWorkspaceAuthActions({
       setScreen('workspace-unavailable')
       return false
     }).then(loaded=>{
+      request.loaded=loaded
       // Failed requests must not poison later attempts with the same valid token.
       if(!loaded&&sessionLoadRef?.current===request)sessionLoadRef.current={key:null,promise:null}
       return loaded
