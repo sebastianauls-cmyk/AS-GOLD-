@@ -47,6 +47,8 @@ for(const {key:language,label,rtl} of LANGUAGE_CATALOG){
     await expect(page.locator('.publicTop button[aria-haspopup="listbox"]')).toHaveCount(2)
     await expect(page.locator('#sprachen-rechtsraeume select')).toHaveCount(3)
     await expect(page.locator('.publicLanguageCountryStart button')).toHaveCount(2)
+    const installationTextWidth=await page.locator('.publicInstallRow .installAppText').evaluate(element=>element.getBoundingClientRect().width)
+    expect(installationTextWidth,'installation copy must remain readable beside its icon and actions').toBeGreaterThan(160)
     await noHorizontalOverflow(page)
     if(['de','pl','ar'].includes(language)){
       await capture(page,testInfo,`initial-${language}`)

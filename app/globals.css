@@ -539,7 +539,8 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 .publicPreviewAreas span{padding:12px 0;border-bottom:1px solid #e6e9ec;font-size:.875rem;font-weight:650;overflow-wrap:anywhere}
 .publicInstallRow{margin-top:28px!important}
 .publicProductPage .publicInstallRow .installAppControl{max-width:680px;margin:0}
-.publicProductPage .publicInstallRow .installAppPanel{box-shadow:none;background:transparent}
+.publicProductPage .publicInstallRow .installAppPanel{box-shadow:none;background:transparent;grid-template-columns:auto minmax(0,1fr)}
+.publicProductPage .publicInstallRow .installAppActions{grid-column:1/-1;justify-content:flex-start;flex-wrap:wrap}
 .publicFeatureTour{border-top:1px solid #e4e7eb}
 .publicTourLayout{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:28px;margin-top:32px;align-items:start}
 .publicTourChoices{display:grid;grid-template-columns:1fr 1fr;gap:10px}
