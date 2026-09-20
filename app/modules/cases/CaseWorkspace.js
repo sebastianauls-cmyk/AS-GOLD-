@@ -99,7 +99,7 @@ export function CaseSection({copy:on, language='de', clients, cases, newCase, se
       <label htmlFor={fieldId('new-case','reference')}>{on.reference}<input id={fieldId('new-case','reference')} value={newCase.reference_no} onChange={event=>setNewCase({...newCase,reference_no:event.target.value})}/></label>
       <label htmlFor={fieldId('new-case','goal')}>{on.goal}<textarea id={fieldId('new-case','goal')} value={newCase.goal} onChange={event=>setNewCase({...newCase,goal:event.target.value})} required/></label>
       <label htmlFor={fieldId('new-case','summary')}>{on.summary}<textarea id={fieldId('new-case','summary')} value={newCase.summary} onChange={event=>setNewCase({...newCase,summary:event.target.value})}/></label>
-      <label htmlFor={fieldId('new-case','deadline')}>{on.deadline}<input id={fieldId('new-case','deadline')} type="datetime-local" value={newCase.deadline_at} onChange={event=>setNewCase({...newCase,deadline_at:event.target.value})}/></label>
+      <label htmlFor={fieldId('new-case','deadline')}>{on.deadline}<input id={fieldId('new-case','deadline')} type="datetime-local" value={newCase.deadline_at} onInput={event=>setNewCase({...newCase,deadline_at:event.target.value})} onChange={event=>setNewCase({...newCase,deadline_at:event.target.value})}/></label>
       <label htmlFor={fieldId('new-case','next')}>{on.nextAction}<textarea id={fieldId('new-case','next')} value={newCase.next_action} onChange={event=>setNewCase({...newCase,next_action:event.target.value})}/></label>
       <button className="primary full">{on.createCase}</button>
     </form>}
@@ -150,7 +150,7 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
       <label htmlFor={fieldId(item.id,'reference')}>{on.reference}<input id={fieldId(item.id,'reference')} value={draft.reference_no} onChange={event=>setDraft({...draft,reference_no:event.target.value})}/></label>
       <label htmlFor={fieldId(item.id,'goal')}>{on.goal}<textarea id={fieldId(item.id,'goal')} value={draft.goal} onChange={event=>setDraft({...draft,goal:event.target.value})}/></label>
       <label htmlFor={fieldId(item.id,'summary')}>{on.summary}<textarea id={fieldId(item.id,'summary')} value={draft.summary} onChange={event=>setDraft({...draft,summary:event.target.value})}/></label>
-      <label htmlFor={fieldId(item.id,'deadline')}>{on.deadline}<input id={fieldId(item.id,'deadline')} type="datetime-local" value={draft.deadline_at} onChange={event=>setDraft({...draft,deadline_at:event.target.value})}/></label>
+      <label htmlFor={fieldId(item.id,'deadline')}>{on.deadline}<input id={fieldId(item.id,'deadline')} type="datetime-local" value={draft.deadline_at} onInput={event=>setDraft({...draft,deadline_at:event.target.value})} onChange={event=>setDraft({...draft,deadline_at:event.target.value})}/></label>
       <label htmlFor={fieldId(item.id,'next')}>{on.nextAction}<textarea id={fieldId(item.id,'next')} value={draft.next_action} onChange={event=>setDraft({...draft,next_action:event.target.value})}/></label>
       <button className="primary full">{on.saveChanges}</button>
     </form>}

@@ -21,6 +21,18 @@ export function searchRetrievedSources(raw,domains) {
   return found
 }
 
+// Discovery is not verification. A proposed official URL may be fetched even
+// when the search response only reports opening another page. It supports no
+// statement until readable text was fetched and the content review passed.
+export function researchSourceCandidates(proposed,searched,domains) {
+  const candidates=new Map(searched)
+  for(const source of Array.isArray(proposed)?proposed:[]) {
+    const url=officialUrl(source?.url,domains)
+    if(url&&!candidates.has(url))candidates.set(url,{url,title:String(source.title||url).slice(0,260)})
+  }
+  return candidates
+}
+
 const entities={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' ',auml:'ä',ouml:'ö',uuml:'ü',Auml:'Ä',Ouml:'Ö',Uuml:'Ü',szlig:'ß',sect:'§',ndash:'–',mdash:'—'}
 export function readableSourceText(body,type) {
   let source=body

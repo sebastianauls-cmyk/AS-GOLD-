@@ -1,4 +1,6 @@
 import { PRIVACY_NOTICE_VERSION, TERMS_VERSION } from '../compliance/PrivacyControls'
+import { runRoadmapContinuation } from './roadmapContinuation.mjs'
+export { readWorkflowError as legalComparisonErrorMessage } from './workflowError.mjs'
 
 export async function listCaseLegalComparisons(supabase,{caseId,homeCountry,targetCountry}){
   return supabase
@@ -22,9 +24,8 @@ export async function authorizeLegalComparison(supabase,{ownerId}){
     .single()
 }
 
-export function invokeCaseLegalComparison(supabase,{caseId,topic,question,outputLanguage,dataClassification}){
-  return supabase.functions.invoke('gold-legal-comparison',{
-    body:{
+export function invokeCaseLegalComparison(supabase,{caseId,topic,question,outputLanguage,dataClassification,onProgress}){
+  return runRoadmapContinuation(options=>supabase.functions.invoke('gold-legal-comparison',options),{
       case_id:caseId,
       topic,
       question,
@@ -33,19 +34,5 @@ export function invokeCaseLegalComparison(supabase,{caseId,topic,question,output
       acknowledged:true,
       privacy_notice_version:PRIVACY_NOTICE_VERSION,
       terms_version:TERMS_VERSION
-    }
-  })
-}
-
-export async function legalComparisonErrorMessage(error,fallback){
-  if(!error)return fallback
-  try{
-    if(typeof error.context?.json==='function'){
-      const payload=await error.context.json()
-      const message=payload?.error||payload?.message||payload?.detail||error.message||fallback
-      const issues=Array.isArray(payload?.issues)?payload.issues.slice(0,3).map(issue=>String(issue.reason||'').slice(0,700)).filter(Boolean):[]
-      return issues.length?message+'\n\n'+issues.map((reason,index)=>`${index+1}. ${reason}`).join('\n\n'):message
-    }
-  }catch{}
-  return error.message||fallback
+  },{resultKey:'comparison',onProgress})
 }

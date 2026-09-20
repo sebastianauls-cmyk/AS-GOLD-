@@ -63,7 +63,7 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
       <ol className="roadmapStepList">{steps.map((step,index)=><li key={step.id} className="roadmapStep" data-step-id={step.id} tabIndex={-1} ref={element=>{if(element)stepRefs.current.set(step.id,element);else stepRefs.current.delete(step.id)}}>
         <div className="roadmapStepHead"><h4>{index+1}. {step.title}</h4><Dot light={step.light} label={ui[step.light]}/></div>
         <p className="roadmapPhase">{ui[step.phase]}</p>
-        <dl>{[['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]].filter(([,value])=>value).map(([key,value])=><div key={key}><dt>{ui[key]}</dt><dd>{readableStepText(value,result.steps)}</dd></div>)}</dl>
+        <dl>{[['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]].filter(([,value])=>value).map(([key,value])=><div key={key}><dt>{ui[key]}</dt><dd>{readableStepText(value,result.steps,result.letters)}</dd></div>)}</dl>
         {step.depends_on.length>0&&<p className="roadmapMeta">{ui.prerequisites}: {step.depends_on.map(id=>roadmapStepReference(id,steps)).join(' · ')}</p>}
         <Evidence items={step.evidence} documents={documents} ui={ui} onOpenDocument={onOpenDocument}/>
         {!step.done&&step.update?.reopened_by_step&&<p className="roadmapMeta">{ui.reopenedAfter}: {roadmapStepReference(step.update.reopened_by_step,steps)}</p>}
@@ -130,13 +130,13 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     const creatingCaseId=item.id
     return run(async()=>{
       setProcessingStage('generation')
-      validateRoadmapInput(source)
+      try{validateRoadmapInput(source)}catch(error){throw new Error(await roadmapErrorMessage(error,ui.error,language))}
       const authorization=await authorizeRoadmap(supabase,{ownerId})
       if(authorization.error)throw new Error(ui.error)
       if(activeCaseRef.current!==creatingCaseId)return false
       onPrivacyUpdate?.(authorization.data)
       const {data,error}=await generateCustomerRoadmap(supabase,{caseId:item.id,style,outputLanguage,referenceLanguage,onProgress:({stage})=>{if(activeCaseRef.current!==creatingCaseId)throw new Error(ui.stale);setProcessingStage(stage)}})
-      if(error)throw new Error(await roadmapErrorMessage(error,ui.error))
+      if(error)throw new Error(await roadmapErrorMessage(error,ui.error,language))
       if(!data?.roadmap)throw new Error(ui.error)
       if(activeCaseRef.current!==creatingCaseId)return false
       setRecords(previous=>[data.roadmap,...previous]);setActiveId(data.roadmap.id);setShowForm(false);setFull(false);setConfirmed(false)
@@ -146,7 +146,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   async function progress(stepId,done,note) {
     return run(async()=>{
       const {data,error}=await saveRoadmapProgress(supabase,{caseId:item.id,roadmapId:record.id,stepId,done,note})
-      if(error)throw new Error(await roadmapErrorMessage(error,ui.error))
+      if(error)throw new Error(await roadmapErrorMessage(error,ui.error,language))
       if(!data?.roadmap)throw new Error(ui.error)
       setRecords(previous=>previous.map(entry=>entry.id===record.id?data.roadmap:entry));return true
     })

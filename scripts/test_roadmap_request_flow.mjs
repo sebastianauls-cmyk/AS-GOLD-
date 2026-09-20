@@ -167,5 +167,21 @@ try {
   let initialCalls=0
   await runRoadmapContinuation(async()=>{initialCalls++;return {error:{name:'FunctionsFetchError'}}},{})
   assert.equal(initialCalls,1,'an initial request without a checkpoint is not repeated automatically')
+  reset()
+  const progressRun=await begin()
+  const progressCreated=await call(progressRun)
+  const progressBody={action:'progress',case_id:baseBody.case_id,roadmap_id:progressCreated.data.roadmap.id}
+  for(const step of roadmapTestResult.steps){
+    const saved=await call({...progressBody,step_id:step.id,done:true,note:'Synthetischer Abschluss mit überprüftem Testbeleg.'})
+    assert.equal(saved.status,200)
+    assert.equal(saved.data.roadmap.progress[step.id].done,true)
+  }
+  const reload=await createClient('',env.SUPABASE_ANON_KEY).from('case_roadmaps').select('*').eq('id',progressBody.roadmap_id).single()
+  assert.ok(roadmap.roadmapSteps(reload.data).every(step=>step.done),'a fresh read restores all saved confirmations')
+  const reopened=await call({...progressBody,step_id:roadmapTestResult.steps[0].id,done:false,note:'Testbeleg geändert; Voraussetzungen erneut prüfen.'})
+  assert.equal(reopened.status,200)
+  assert.ok(roadmap.roadmapSteps(reopened.data.roadmap).some(step=>step.blocked),'reopening persists dependent steps as blocked')
+  state.active=false
+  assert.equal((await call({...progressBody,step_id:roadmapTestResult.steps[0].id,done:true,note:'Abgelaufener Testzugang darf nichts mehr ändern.'})).status,404)
   console.log('Roadmap HTTP handler: duplicate/concurrent completion, quota, live access/privacy/source rechecks and failed-review persistence guard passed. Identity, database transport and model responses are synthetic; no authenticated browser acceptance claimed.')
 } finally {globalThis.fetch=originalFetch}
