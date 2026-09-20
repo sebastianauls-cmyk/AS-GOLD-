@@ -50,4 +50,28 @@ It does not establish a higher factual accuracy rate than another AI product.
 The production model prompts, backend functions, access controls and database
 schema are unchanged by this repair.
 
-Browser acceptance of the new revision is recorded below after deployment.
+## Deployed browser acceptance
+
+Verified on 2026-09-20 against commit
+`b62d98e4a6c5ad816571cc870a17256a91e82229`, whose tree
+`74dd140d35cdb401758ed9613a84b7f60b2a34c8` is identical to the local
+build-tested tree. Preview deployment: `dpl_7E2VN77KghXxz6Ymq8rKv74sw9V3`.
+
+`https://app-gold-workspace-aqthisixu-auls.vercel.app/vorschau/v136?frame=1`
+
+| Interaction | Observed result |
+| --- | --- |
+| Open the initial suggested step | Step 1 opens and receives keyboard focus; 0 / 4 confirmed. |
+| Confirm step 1 with a synthetic receipt note | Summary advances to step 2; 1 / 4 confirmed; the original assessment is folded and labelled. The direct action focuses step 2. |
+| Confirm both requests were sent | Waiting state; 2 / 4 confirmed; expected documents and follow-up shown. |
+| Confirm the replies were checked | Summary advances to step 4. |
+| Confirm the final check | 4 / 4 confirmed; completion and document-retention advice; no active-step shortcut. |
+| Reopen step 2 with a correction reason | Summary returns to step 2; 1 / 4 confirmed; dependent steps 3 and 4 reopen and are blocked. Their prior notes and reopening reasons remain visible. |
+| Download Word and PDF in that reopened state | Both real browser downloads contain step 2, 1 / 4, the labelled original assessment, unchanged source quotations and the correction reason. The initial next-step instruction is absent. Verified through Word XML and Poppler PDF text. |
+| Simulate a changed document | Stale state; reread/regenerate instruction; no current-step shortcut; all Word/PDF buttons disabled. |
+| Restore current sources and select the free plan | The new direct-step shortcut is absent; the existing upgrade explanation remains. |
+| Use the 390 px phone preview | Text and controls wrap within the phone frame. The direct action opens the correct detailed step with visible focus. |
+
+Both GitHub checks (`verify`, `synthetic-testers`) and the Vercel deployment
+status passed for the tested commit. The only change after that code revision
+is this acceptance record; no application code changed during acceptance.
