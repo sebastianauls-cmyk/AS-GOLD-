@@ -7,6 +7,8 @@ import {renderToStaticMarkup} from 'react-dom/server'
 import {transformSync} from 'next/dist/build/swc/index.js'
 import {publicExperienceCopy,publicTourAreas} from '../app/modules/public/publicExperienceCopy.mjs'
 import {publicLanguageCountryCopy} from '../app/modules/public/publicLanguageCountryCopy.mjs'
+import {publicCaseStartCopy} from '../app/modules/public/publicCaseStartCopy.mjs'
+import {createPublicCaseStart} from '../app/modules/public/publicCaseStart.mjs'
 
 const require=createRequire(import.meta.url),cache=new Map()
 function load(file){
@@ -37,11 +39,13 @@ for(const [key,translations] of Object.entries(pageTranslations))if(catalogs[key
 const {paymentTranslations}=load('app/modules/payments/paymentTranslations.mjs')
 const nodes=element=>Array.isArray(element)?element.flatMap(nodes):!React.isValidElement(element)?[]:[element,...nodes(element.props.children)]
 const events=[]
-const callbacks={setLanguage:value=>events.push(['language',value]),setOutputLanguage:value=>events.push(['output',value]),setScreen:value=>events.push(['screen',value]),setSelectedPublicCase(){},setSelectedGoal(){},setShowRecommendation(){}}
+const callbacks={setLanguage:value=>events.push(['language',value]),setOutputLanguage:value=>events.push(['output',value]),setScreen:value=>events.push(['screen',value]),onStartLanguageCase(){},setSelectedPublicCase(){},setSelectedGoal(){},setShowRecommendation(){}}
 const serialize=element=>renderToStaticMarkup(element)
 for(const {key:language,rtl} of LANGUAGE_CATALOG){
   const c=publicExperienceCopy(language),pc=productCopy[language]
   const cross=publicLanguageCountryCopy(language)
+  const start=publicCaseStartCopy(language)
+  assert.deepEqual(Object.keys(start).sort(),Object.keys(publicCaseStartCopy('de')).sort())
   assert.deepEqual(Object.keys(cross).sort(),Object.keys(publicLanguageCountryCopy('de')).sort(),`${language}: language/country module fully translated`)
   assert.deepEqual(Object.keys(c).sort(),Object.keys(publicExperienceCopy('de')).sort(),`${language}: complete copy`)
   if(language!=='de')assert.notEqual(c.headline,publicExperienceCopy('de').headline)
@@ -67,8 +71,9 @@ for(const {key:language,rtl} of LANGUAGE_CATALOG){
   }
   assert.ok(html.indexOf('id="funktionen"')<html.indexOf('id="preise"'),'understand the product before choosing a plan')
   assert.ok(html.includes('href="#sprachen-rechtsraeume"'),'translation and legal comparison are visible from the introduction')
-  assert.ok(html.indexOf('id="sprachen-rechtsraeume"')<html.indexOf('id="funktionen"'),'dedicated language/country explanation precedes the general tour')
+  assert.ok(html.indexOf('id="funktionen"')<html.indexOf('id="sprachen-rechtsraeume"'),'general capabilities for domestic and business cases precede the optional language/country explanation')
   assert.ok(html.includes(cross.quote),'Poland/Germany example is visible initially')
+  assert.ok(html.includes(start.start),'the example offers a direct start')
   for(let index=0;index<COUNTRY_CATALOG.length;index++){
     const example={home:COUNTRY_CATALOG[index].key,target:COUNTRY_CATALOG[(index+5)%COUNTRY_CATALOG.length].key,output:language}
     const changes=[]
@@ -88,6 +93,18 @@ for(const {key:language,rtl} of LANGUAGE_CATALOG){
   }
   const same=serialize(PublicLanguageCountryView({language,example:{home:'DE',target:'DE',output:language},onChange(){},idPrefix:'same-country'}))
   assert.ok(same.includes(cross.same),'same-country preview does not invent a difference')
+  const selection={home:'PL',target:'DE',output:language}
+  const entry=createPublicCaseStart({storage:()=>null})
+  const entryView=PublicLanguageCountryView({language,example:selection,onChange(){},idPrefix:'entry',onStart:(value,screen)=>{entry.stage(value);events.push(['entry',screen])}})
+  const startButtons=nodes(entryView).filter(node=>node.type==='button')
+  assert.equal(startButtons.length,2)
+  for(const [index,screen] of ['register','login'].entries()){
+    startButtons[index].props.onClick()
+    assert.deepEqual(events.pop(),['entry',screen])
+    let continued=null
+    assert.equal(entry.resume({screen:'app',userId:'synthetic-user',privacyCurrent:true,onContinue:value=>{continued=value}}),true)
+    assert.deepEqual(continued,selection,'both actual buttons retain all three independent choices')
+  }
   assert.equal((html.match(/id="plan-/g)||[]).length,localizedPlans.length)
   assert.equal((html.match(/<details class="publicPlanDetails">/g)||[]).length,localizedPlans.length)
   assert.doesNotMatch(html,/v131ReleaseBand|v131Journey|featureGrid|processBlock|class="capGrid"/,'duplicate product lists removed')

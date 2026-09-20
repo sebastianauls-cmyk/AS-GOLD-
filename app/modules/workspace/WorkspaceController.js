@@ -14,6 +14,8 @@ import { LoadingSurface } from './LoadingSurface'
 import { WorkspaceConnectionSurface } from '../auth/WorkspaceConnectionSurface'
 import { AuthSurface } from '../auth/AuthSurface'
 import { PublicLanding } from '../public/PublicLanding'
+import { createPublicCaseStart } from '../public/publicCaseStart.mjs'
+import { publicCaseStartCopy } from '../public/publicCaseStartCopy.mjs'
 import { CasesSurface, ClientDetailSurface, ClientsSurface, DeadlinesSurface } from '../cases/WorkspaceCaseSurfaces'
 import { DocumentsSurface } from '../documents/DocumentsSurface'
 import { ApprovalsSurface } from '../cases/ApprovalsSurface'
@@ -127,6 +129,8 @@ export default function WorkspaceController(){
   const guestStartAttempted=useRef(false)
   const checkoutReturnHandled=useRef(false)
   const sessionLoadRef=useRef({key:null,promise:null})
+  const publicCaseStart=useRef(null)
+  if(!publicCaseStart.current)publicCaseStart.current=createPublicCaseStart()
 
   const t=ui[language]||ui.de
   const a=appText[language]||appText.de
@@ -212,7 +216,32 @@ export default function WorkspaceController(){
   const publicActivePublicCase=publicOrderedPublicCases.find(item=>item.key===selectedPublicCase)||publicOrderedPublicCases[0]
   const publicRecommendedPlan=publicLocalizedPlans.find(plan=>plan.key===recommendedTier)||publicLocalizedPlans[0]
   const publicMonthsLabel=value=>publicA.months.replace('{n}',value).replace('{plural}',value>1?(publicLanguage==='de'?'e':publicLanguage==='en'?'s':''):'')
-  const navigateToScreen=nextScreen=>{setMessage('');setScreen(nextScreen)}
+  const navigateToScreen=nextScreen=>{
+    if(nextScreen==='public')publicCaseStart.current.cancel()
+    setMessage('')
+    setScreen(nextScreen)
+  }
+
+  function startLanguageCase(selection,nextScreen){
+    if(!publicCaseStart.current.stage(selection))return
+    navigateToScreen(user?.id&&access?.active&&access?.status==='approved'?'app':nextScreen==='login'?'login':'register')
+  }
+
+  useEffect(()=>{
+    publicCaseStart.current.resume({screen,userId:user?.id,privacyCurrent,onContinue:selection=>{
+      setSelectedCase(null)
+      setSelectedClient(null)
+      setSelectedDocument(null)
+      setSelectedApproval(null)
+      // Preserve any ordinary unfinished draft; a synthetic test remains separate.
+      setNewCase(draft=>({...(draft.test_case_id?emptyCase:draft),home_country:selection.home,target_country:selection.target}))
+      setOutputLanguage(selection.output)
+      broadcastCountryContext(selection.target)
+      setShowCaseForm(true)
+      setSection('cases')
+      setMessage(publicCaseStartCopy(language).ready)
+    }})
+  },[screen,user?.id,privacyCurrent])
 
   const {createClient,updateClient,createCase,updateCase,createAssessment}=createCaseWorkflowActions({
     supabase,ownerId:user?.id,data,newClient,newCase,setData,setMessage,setNewClient,setShowClientForm,setSection,setNewCase,setShowCaseForm,setSelectedCase,setSelectedClient,recordLocalAction,recordServerAudit
@@ -276,6 +305,9 @@ export default function WorkspaceController(){
     onPasswordRecovery:session=>{setEmail(session.user.email||'');setMessage('');setScreen('recovery')},
     onPasswordRecoveryError:()=>{setPassword('');setPassword2('');setMessage(recoveryCopy.invalid);setScreen('request-reset')},
     onSignedOut:()=>{
+      publicCaseStart.current.cancel()
+      setNewCase(emptyCase)
+      setShowCaseForm(false)
       sessionLoadRef.current={key:null,promise:null}
       setUser(null)
       setAccess(null)
@@ -383,5 +415,5 @@ export default function WorkspaceController(){
     return protectedWorkspace(<ClientsSurface a={a} showClientForm={showClientForm} setShowClientForm={setShowClientForm} createClient={createClient} newClient={newClient} setNewClient={setNewClient} clients={data.clients} setSelectedClient={setSelectedClient} onBack={()=>setSection('dashboard')}/>)
   }
 
-  return <PublicLanding t={publicT} a={publicA} payment={payment} paymentConfig={paymentConfig} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={navigateToScreen} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
+  return <PublicLanding t={publicT} a={publicA} payment={payment} paymentConfig={paymentConfig} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={navigateToScreen} onStartLanguageCase={startLanguageCase} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
 }

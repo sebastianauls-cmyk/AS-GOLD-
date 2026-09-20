@@ -5,9 +5,11 @@ import { COUNTRY_CATALOG } from '../country/countryRegistry.mjs'
 import { localizedCountryName } from '../country/countryLabels.mjs'
 import { LANGUAGE_CATALOG, outputLanguageNames } from '../language/languageRegistry.mjs'
 import { fillLanguageCountryText, publicLanguageCountryCopy } from './publicLanguageCountryCopy.mjs'
+import { publicCaseStartCopy } from './publicCaseStartCopy.mjs'
 
-export function PublicLanguageCountryView({language='de',example,onChange,idPrefix}){
+export function PublicLanguageCountryView({language='de',example,onChange,onStart,idPrefix}){
   const c=publicLanguageCountryCopy(language)
+  const start=publicCaseStartCopy(language)
   const countries=COUNTRY_CATALOG.map(country=>({...country,name:localizedCountryName(country.key,language)}))
   const home=countries.find(country=>country.key===example.home)||countries[0]
   const target=countries.find(country=>country.key===example.target)||countries[0]
@@ -30,15 +32,19 @@ export function PublicLanguageCountryView({language='de',example,onChange,idPref
       </div>
       <div className="publicLanguageCountryLetter"><h3>{c.letter}</h3><p>{c.letterBody}</p></div>
       <p className="publicLanguageCountryBasis">{c.basis}</p>
+      {onStart&&<div className="publicLanguageCountryStart">
+        <p id={`${idPrefix}-start-hint`}>{start.hint}</p>
+        <div className="actions"><button type="button" className="primary btn" aria-describedby={`${idPrefix}-start-hint`} onClick={()=>onStart({...example},'register')}>{start.start}</button><button type="button" className="secondary btn" aria-describedby={`${idPrefix}-start-hint`} onClick={()=>onStart({...example},'login')}>{start.login}</button></div>
+      </div>}
       <div className="publicLanguageCountryNext"><p>{c.note}</p><a href="#preise">{c.plans} →</a></div>
     </div>
   </section>
 }
 
-export function PublicLanguageCountryModule({language='de'}){
+export function PublicLanguageCountryModule({language='de',onStart}){
   const idPrefix=useId()
   // These are illustrative choices, independent of the visitor's saved settings
   // and of any real case. Changing interface language preserves all three.
   const [example,setExample]=useState({home:'PL',target:'DE',output:'pl'})
-  return <PublicLanguageCountryView language={language} example={example} onChange={(key,value)=>setExample(current=>({...current,[key]:value}))} idPrefix={idPrefix}/>
+  return <PublicLanguageCountryView language={language} example={example} onChange={(key,value)=>setExample(current=>({...current,[key]:value}))} onStart={onStart} idPrefix={idPrefix}/>
 }

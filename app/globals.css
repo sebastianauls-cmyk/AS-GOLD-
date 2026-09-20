@@ -644,5 +644,8 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 .publicLanguageCountryNext{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-top:18px;font-size:.95rem;line-height:1.6}
 .publicLanguageCountryNext p{margin:0;color:#536174;max-width:680px}
 .publicLanguageCountryNext a{display:inline-flex;align-items:center;min-height:44px;color:#725719;font-weight:750;text-underline-offset:4px}
+.publicLanguageCountryStart{margin-top:26px}
+.publicLanguageCountryStart>p{max-width:760px;line-height:1.65;color:#475568}
+.publicLanguageCountryStart .actions{flex-wrap:wrap}
 @media(max-width:800px){.publicLanguageCountryControls{grid-template-columns:1fr 1fr}.publicLanguageCountryControls label:last-child{grid-column:1/-1}.publicLanguageCountryResults{grid-template-columns:1fr;gap:24px}.publicLanguageCountryResults article{display:grid;grid-template-columns:32px minmax(0,1fr);gap:8px 14px}.publicLanguageCountryResults h3{margin:2px 0 0}.publicLanguageCountryResults p{grid-column:2}.publicLanguageCountryNext{display:grid;gap:8px}}
 @media(max-width:480px){.publicLanguageCountryExample{padding:20px}.publicLanguageCountryControls,.publicLanguageCountryLetter{grid-template-columns:1fr}.publicLanguageCountryControls label:last-child{grid-column:auto}.publicLanguageCountryLetter{padding:0;gap:10px}.publicLanguageCountryBasis{padding:18px}.publicLanguageCountry blockquote{padding-inline-start:14px}}
