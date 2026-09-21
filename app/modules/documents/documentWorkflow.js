@@ -39,17 +39,17 @@ export function createDocumentWorkflowActions({
   recordLocalAction,
   recordServerAudit
 }){
-  function presentAnalysis(generated,document){
+  function presentAnalysis(generated,document,silent=false){
     try{recordLocalAction('document_analysis_generated')}catch{}
-    setMessage(analysisCopy.ready)
+    if(!silent)setMessage(analysisCopy.ready)
     // Audit availability must not hold the reviewed draft outside the editor.
     Promise.resolve().then(()=>recordServerAudit('document_analysis_generated',{status:'provisional'},'document',document.id)).then(saved=>{
-      if(!saved)setMessage(current=>current===analysisCopy.ready?`${analysisCopy.ready} · ${serverCopy.auditFailed}`:current)
+      if(!saved&&!silent)setMessage(current=>current===analysisCopy.ready?`${analysisCopy.ready} · ${serverCopy.auditFailed}`:current)
     }).catch(()=>console.warn('document_analysis_audit_unavailable'))
     return generated
   }
 
-  async function recoverDocumentAnalysis(document,{quiet=false,includeDocument=false}={}){
+  async function recoverDocumentAnalysis(document,{quiet=false,includeDocument=false,silent=false}={}){
     try{
       const {data:fresh,error}=await supabase.from('documents').select('*').eq('id',document.id).eq('owner_id',ownerId).maybeSingle()
       if(error)throw error
@@ -59,29 +59,29 @@ export function createDocumentWorkflowActions({
         referenceLanguage:normalizeOutputLanguage(document.reference_copy_language||'de'),
         country:linkedCase?.target_country||readCountryContext()
       })
-      if(generated)return includeDocument?{generated,document:fresh}:presentAnalysis(generated,document)
+      if(generated)return includeDocument?{generated,document:fresh}:presentAnalysis(generated,document,silent)
       if(!quiet)setMessage(analysisCopy.noDraft)
     }catch{if(!quiet)setMessage(analysisCopy.recoveryFailed)}
     return false
   }
 
-  async function analyzeDocument(document,{onProgress,onReviewIssues,onFailure}={}){
+  async function analyzeDocument(document,{onProgress,onReviewIssues,onFailure,silent=false}={}){
     if(!document?.file_path) return false
     setMessage('')
-    if(!privacyCurrent){setMessage(privacyCopy.required);return false}
-    if(!['synthetic','anonymized'].includes(document.data_classification)){setMessage(privacyCopy.uploadRequired);return false}
+    if(!privacyCurrent){if(!silent)setMessage(privacyCopy.required);return false}
+    if(!['synthetic','anonymized'].includes(document.data_classification)){if(!silent)setMessage(privacyCopy.uploadRequired);return false}
     const authorization=await authorizeDocumentAnalysis(supabase,{ownerId,documentId:document.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
-    if(authorization.error){setMessage(authorization.error.message);return false}
+    if(authorization.error){if(!silent)setMessage(authorization.error.message);return false}
     setPrivacySettings(authorization.privacy)
     await recordServerAudit('document_ai_transfer_authorized',{classification:document.data_classification},'document',document.id)
     const linkedCase=data.cases.find(item=>item.id===document.case_id)
     const referenceLanguage=normalizeOutputLanguage(document.reference_copy_language||'de')
     const customerLanguage=normalizeOutputLanguage(document.customer_copy_language||outputLanguage)
     async function failed(error,context){
-      const recovered=await recoverDocumentAnalysis(document,{quiet:true})
+      const recovered=await recoverDocumentAnalysis(document,{quiet:true,silent})
       if(recovered)return recovered
       const details=await readDocumentAnalysisError(error,analysisCopy.failed,language,context)
-      setMessage(details.message)
+      if(!silent)setMessage(details.message)
       onFailure?.(details)
       onReviewIssues?.(details.issues)
       recordDocumentAnalysisFailure(supabase,document.id,details.metadata)
@@ -97,7 +97,7 @@ export function createDocumentWorkflowActions({
     const suggestedCase=data.cases.some(item=>item.id===result?.suggested_case_id)?result.suggested_case_id:null
     const generated=mapDocumentLanguageWorkflowResult(result,document,result?.output_language||customerLanguage,result?.reference_language||referenceLanguage)
     generated.fields.case_id=suggestedCase||document.case_id||''
-    return presentAnalysis(generated,document)
+    return presentAnalysis(generated,document,silent)
   }
 
   async function updateDocument(documentId,draft,{stayInCase=false,expectedUpdatedAt,expectedCaseId}={}){
@@ -107,7 +107,7 @@ export function createDocumentWorkflowActions({
     if(!['synthetic','anonymized'].includes(classification)){setMessage(privacyCopy.uploadRequired);return false}
     if(classification!==current?.data_classification&&!draft.test_data_confirmed){setMessage(privacyCopy.uploadRequired);return false}
     const {data:updated,error}=await updateDocumentRecord(supabase,{ownerId,documentId,draft,expectedUpdatedAt,expectedCaseId})
-    if(error){setMessage(error.message);return false}
+    if(error){if(!stayInCase)setMessage(error.message);return false}
     const eventType=draft.analysis_generated?'document_analysis_saved':'document_reviewed'
     recordLocalAction(eventType)
     const auditSaved=await recordServerAudit(eventType,{status:'saved'},'document',updated.id)

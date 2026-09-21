@@ -36,7 +36,7 @@ export async function prepareCaseDocuments({item,documents,outputLanguage,refere
     let retained=await onRecover(requested,{quiet:true,includeDocument:true})
     if(!isCurrent())throw preparationError('changed')
     if(!retained) {
-      const generated=await onAnalyze(requested)
+      const generated=await onAnalyze(requested,{silent:true})
       if(!isCurrent())throw preparationError('changed')
       if(!generated)throw preparationError('reading_failed',original)
       retained=await onRecover(requested,{quiet:true,includeDocument:true})
