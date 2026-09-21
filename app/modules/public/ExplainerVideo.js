@@ -54,8 +54,8 @@ export function ExplainerVideo({language='de',openSignal=0}){
   const rtl=language==='ar'||language==='fa'
   const selectedVideo=getExplainerVideo(videoLanguage,presenter)
   const buttonStyle=active=>({flex:'1 1 150px',minHeight:46,padding:'10px 14px',border:active?'2px solid #8f6e25':'1px solid #d8d1bd',borderRadius:12,background:active?'#fff6d8':'#fff',color:'#4d3b14',fontWeight:900,cursor:'pointer'})
-  return (<section ref={sectionRef} data-explainer-video-section dir={rtl?'rtl':'ltr'} style={{margin:'12px 0 10px',padding:open?16:10,border:'1px solid #d9c792',borderRadius:16,background:'#fff'}}>
-    {!open?<button type='button' onClick={()=>setOpen(true)} aria-expanded='false' style={{width:'100%',padding:'12px 14px',border:0,borderRadius:11,background:'#fff8df',color:'#5b4618',fontWeight:900,fontSize:'1rem',cursor:'pointer'}}>{c.show}</button>:<>
+  return (<section ref={sectionRef} data-explainer-video-section dir={rtl?'rtl':'ltr'} className={`publicExplainer${open?' isOpen':''}`}>
+    {!open?<button type='button' className='publicExplainerTrigger' onClick={()=>setOpen(true)} aria-expanded='false'>{c.show}</button>:<>
       <div className='explainerVideoHeader'><strong>{c.title}</strong><button type='button' onClick={()=>{videoRef.current?.pause();setOpen(false)}} aria-label={c.hide} aria-expanded='true'>×</button></div>
       <div className='explainerVideoControls'>
         <label className='explainerVideoLanguage'>{c.language}<select value={videoLanguage} onChange={e=>setVideoLanguage(e.target.value)}>{languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}</select></label>
