@@ -53,6 +53,8 @@ export function createDocumentWorkflowActions({
     try{
       const {data:fresh,error}=await supabase.from('documents').select('*').eq('id',document.id).eq('owner_id',ownerId).maybeSingle()
       if(error)throw error
+      if(!fresh||fresh.owner_id!==ownerId||fresh.file_path!==document.file_path||
+        fresh.data_classification!==document.data_classification||(fresh.case_id||'')!==(document.case_id||''))return false
       const linkedCase=data.cases.find(item=>item.id===document.case_id)
       const generated=restoreDocumentAnalysis(fresh,{
         outputLanguage:normalizeOutputLanguage(document.customer_copy_language||outputLanguage),
@@ -70,6 +72,10 @@ export function createDocumentWorkflowActions({
     setMessage('')
     if(!privacyCurrent){if(!silent)setMessage(privacyCopy.required);return false}
     if(!['synthetic','anonymized'].includes(document.data_classification)){if(!silent)setMessage(privacyCopy.uploadRequired);return false}
+    // A repeated click after reconnecting must first recover the already-finished
+    // result. It must not authorize another transfer or clear the recovery copy.
+    const recovered=await recoverDocumentAnalysis(document,{quiet:true,includeDocument:true,silent:true})
+    if(recovered)return presentAnalysis(recovered.generated,recovered.document,silent)
     const authorization=await authorizeDocumentAnalysis(supabase,{ownerId,documentId:document.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
     if(authorization.error){if(!silent)setMessage(authorization.error.message);return false}
     setPrivacySettings(authorization.privacy)
