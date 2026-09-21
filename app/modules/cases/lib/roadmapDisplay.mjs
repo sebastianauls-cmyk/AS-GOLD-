@@ -1,3 +1,4 @@
+import { completeAnalysisCopy } from './completeAnalysisDisplay.mjs'
 export function roadmapStepReference(id,steps=[]) {
   const index=steps.findIndex(step=>step.id===id)
   return index<0?String(id||''):`${index+1}. ${steps[index].title}`
@@ -30,4 +31,4 @@ const progress={
  bg:['Създаване на плана …','Проверка на твърденията спрямо оригиналите …','Коригиране на забележките и след това повторна проверка …'],
  vi:['Đang tạo lộ trình …','Đang đối chiếu các nhận định với bản gốc …','Đang sửa các điểm được đánh dấu, sau đó kiểm tra lại …']
 }
-export function roadmapProgressLabel(language,stage='generation') {return (progress[language]||progress.de)[stage==='review'?1:stage==='correction'?2:0]}
+export function roadmapProgressLabel(language,stage='generation') {if(['planning','research'].includes(stage))return completeAnalysisCopy(language)[stage];return (progress[language]||progress.de)[stage==='review'?1:stage==='correction'?2:0]}

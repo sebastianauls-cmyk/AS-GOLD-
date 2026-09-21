@@ -34,6 +34,8 @@ if(process.env.NODE_ENV==='production'){
 /** @type {import('next').NextConfig} */
 const nextConfig={
   poweredByHeader:false,
+  // Isolated, authenticated acceptance test; never selected in production.
+  env:{NEXT_PUBLIC_ASH_REVIEW_PREVIEW:process.env.VERCEL_ENV==='preview'&&process.env.VERCEL_GIT_COMMIT_REF==='fix/sarah-complete-review'?'v157':''},
   async headers(){
     const rules=[{source:'/:path*',headers:securityHeaders}]
     // Only the synthetic preview may be framed by its own origin, so its

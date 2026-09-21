@@ -1,0 +1,29 @@
+name: Refresh public primary texts
+on:
+  schedule:
+    - cron: '15 4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: primary-text-refresh
+  cancel-in-progress: false
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 scripts/refresh_primary_sources.py
+      - name: Commit only successfully fetched public source snapshots
+        run: |
+          git config user.name 'ASH source refresh'
+          git config user.email 'source-refresh@users.noreply.github.com'
+          git add supabase/functions/_shared/primarySourceCache.mjs supabase/functions/_shared/primarySourceCache.json
+          if ! git diff --cached --quiet; then
+            git commit -m 'Refresh verified public primary texts'
+            git push
+          fi

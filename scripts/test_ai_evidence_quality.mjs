@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import {originalPlainText,finalizeDocumentResult,runReviewedModel,validateQualityReview} from '../supabase/functions/_shared/modelQuality.mjs'
+import {originalPlainText,finalizeDocumentResult,runReviewedModel,validateQualityReview,callModel} from '../supabase/functions/_shared/modelQuality.mjs'
 import {searchRetrievedSources,retrieveOfficialEvidence,officialUrl,readableSourceText} from '../supabase/functions/_shared/verifiedResearch.mjs'
 import {historyCaseCorpus} from '../app/modules/testing/historyCaseCorpus.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
