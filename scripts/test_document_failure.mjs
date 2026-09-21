@@ -21,6 +21,13 @@ for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
 }
 const malicious=await readDocumentAnalysisError(http(502,JSON.stringify({code:'SECRET',error:'SECRET',provider_status:'SECRET',attempt_id:'SECRET'})),'FALLBACK','de',{stage:'SECRET',request_id:'SECRET'})
 assert.doesNotMatch(JSON.stringify(malicious),/SECRET/)
+for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
+  const quota=await readDocumentAnalysisError(http(502,JSON.stringify({code:'provider_quota',error:'SECRET',provider_status:429})),'FALLBACK',language,progress)
+  const temporary=await readDocumentAnalysisError(http(502,JSON.stringify({code:'provider_rate_limit',error:'SECRET',provider_status:429})),'FALLBACK',language,progress)
+  assert.equal(quota.metadata.code,'provider_quota')
+  assert.notEqual(quota.message,temporary.message,'exhausted credits and transient throttling have different remedies')
+  assert.doesNotMatch(quota.message+temporary.message,/SECRET|FALLBACK/)
+}
 
 let calls=0
 const interrupted=await runDocumentAnalysisContinuation(async({body})=>{
@@ -60,6 +67,7 @@ try{
     create policy audit_owner on audit_events to authenticated using(owner_id=auth.uid());
     grant select on audit_events to authenticated;`)
   await db.exec(fs.readFileSync('supabase/migrations/20260920184000_v148_document_analysis_diagnostics.sql','utf8'))
+  await db.exec(fs.readFileSync('supabase/migrations/20260921120854_v159_provider_quota_diagnostics.sql','utf8'))
   await db.query('insert into documents(id,owner_id) values($1,$2)',[document,owner])
   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[owner]);await db.exec('set role authenticated')
   const record=metadata=>db.query('select public.record_gold_document_analysis_failure($1,$2)',[document,JSON.stringify(metadata)])

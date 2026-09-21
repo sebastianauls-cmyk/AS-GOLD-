@@ -88,8 +88,13 @@ async function callModel(providerKey,request,{deadline,fetchImpl,onResponse,stag
     throw new ModelWorkflowError(timedOut?'Die aktuelle Prüfung hat ihr Zeitlimit erreicht. Es wurde kein ungeprüftes Ergebnis gespeichert.':'Der KI-Dienst konnte nicht erreicht werden. Bitte erneut versuchen.',502,timedOut?'provider_timeout':'provider_network')
   }
   if(!http.ok) {
-    const code=http.status===429?'provider_rate_limit':[401,403].includes(http.status)?'provider_auth':'provider_http'
-    throw Object.assign(new ModelWorkflowError('Der KI-Dienst konnte die Anfrage nicht verarbeiten.',502,code),{provider_status:http.status})
+    let detail;try{detail=await http.json()}catch{}
+    const providerCode=String(detail?.error?.code||'').match(/^[a-z_]{1,60}$/)?.[0]||null
+    const retryAfter=Number(http.headers.get('retry-after'))||null
+    const code=http.status===429?(['insufficient_quota','credit_balance_exhausted'].includes(providerCode)?'provider_quota':'provider_rate_limit'):[401,403].includes(http.status)?'provider_auth':'provider_http'
+    onResponse?.({stage:'provider_error',provider_status:http.status,provider_error_code:providerCode,retry_after:retryAfter})
+    const message=code==='provider_quota'?'Der KI-Dienst meldet ein ausgeschöpftes API-Kontingent.':code==='provider_rate_limit'?'Der KI-Dienst ist vorübergehend ausgelastet. Bitte kurz warten und erneut versuchen.':'Der KI-Dienst konnte die Anfrage nicht verarbeiten.'
+    throw Object.assign(new ModelWorkflowError(message,502,code),{provider_status:http.status})
   }
   try {response=await http.json()}
   catch(error){

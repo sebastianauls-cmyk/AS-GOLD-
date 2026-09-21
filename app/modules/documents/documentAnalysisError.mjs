@@ -1,7 +1,7 @@
 import {workflowErrorMessage} from '../services/workflowError.mjs'
 import {documentAnalysisProgressCopy,documentAnalysisProgressLabel} from './documentAnalysisProgress.mjs'
 
-export const documentFailureCodes=new Set(['provider_timeout','provider_network','provider_http','provider_rate_limit','provider_auth','provider_token_limit','provider_incomplete','provider_invalid_json','review_invalid','model_workflow_failed','request_failed','function_timeout','function_resources','function_http','function_relay','network_error','session_expired','invalid_response','review_unresolved','source_unresolved','configuration_required'])
+export const documentFailureCodes=new Set(['provider_timeout','provider_network','provider_http','provider_rate_limit','provider_quota','provider_auth','provider_token_limit','provider_incomplete','provider_invalid_json','review_invalid','model_workflow_failed','request_failed','function_timeout','function_resources','function_http','function_relay','network_error','session_expired','invalid_response','review_unresolved','source_unresolved','configuration_required'])
 const uuid=/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const copy={
   de:['Die Verbindung wurde unterbrochen. Ein abgeschlossenes Ergebnis wurde nicht wiederhergestellt.','Die Analyse wurde wegen eines Zeitlimits abgebrochen. Ein abgeschlossenes Ergebnis wurde nicht wiederhergestellt.','Der Analysedienst konnte die Anfrage nicht verarbeiten. Es liegt kein vollständig geprüftes Ergebnis vor.','Der Analysedienst lieferte eine unvollständige oder nicht auswertbare Antwort. Es liegt kein vollständig geprüftes Ergebnis vor.','Die Sitzung ist abgelaufen. Bitte erneut anmelden.','Fehlerdetails','Prüfschritt'],

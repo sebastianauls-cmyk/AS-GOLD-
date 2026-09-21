@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict'
-import {prepareCaseDocuments,savePreparedCaseDocuments,preparationContext} from '../app/modules/cases/lib/casePreparation.mjs'
+import {prepareCaseDocuments,savePreparedCaseDocuments,preparationContext,preparationFailureMessage} from '../app/modules/cases/lib/casePreparation.mjs'
 import {simpleCaseCopy} from '../app/modules/cases/lib/simpleCaseCopy.mjs'
 import {updateDocumentRecord} from '../app/modules/services/documentRepository.js'
 import {initializeDocumentReview} from '../app/modules/documents/documentAnalysisRecovery.mjs'
+import {readDocumentAnalysisError} from '../app/modules/documents/documentAnalysisError.mjs'
 
 const item={id:'case',owner_id:'owner',home_country:'DE',target_country:'DE'}
 const base={owner_id:'owner',case_id:'case',data_classification:'synthetic',updated_at:'2026-09-21T00:00:00Z'}
@@ -39,6 +40,17 @@ assert.deepEqual(attempted,['a'],'no later writes or generation after an unsucce
 let retried=0
 await assert.rejects(prepareCaseDocuments({...options,onRecover:async()=>false,onAnalyze:async()=>{retried++;return false}}),{code:'reading_failed'})
 assert.equal(retried,1,'uncertain AI calls are not silently retried')
+for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
+  const failure=await readDocumentAnalysisError({code:'provider_quota',error:'PRIVATE PROVIDER BODY'},'FALLBACK',language)
+  let blockedCalls=0
+  const blocked=await prepareCaseDocuments({...options,onRecover:async()=>false,onAnalyze:async(_doc,{onFailure})=>{blockedCalls++;onFailure(failure);return false}}).catch(error=>error)
+  assert.equal(blocked.document.id,'a')
+  assert.equal(blockedCalls,1,'quota failure stops before later documents')
+  const message=preparationFailureMessage(blocked,simpleCaseCopy(language),'FALLBACK')
+  assert.equal(message,failure.message,'the case screen retains the localized document failure')
+  assert.notEqual(message,simpleCaseCopy(language).failed,'provider failure is not replaced with a generic retry instruction')
+  assert.doesNotMatch(message,/PRIVATE|FALLBACK/)
+}
 assert.notEqual(preparationContext(item,docs,'en','de'),preparationContext(item,docs.slice(1),'en','de'))
 assert.notEqual(preparationContext(item,docs,'en','de'),preparationContext(item,docs,'fa','de'))
 const filters=[]

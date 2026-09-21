@@ -8,6 +8,7 @@ import {getV26AnalysisCopy} from '../modules/documents/DocumentAnalysis'
 import {emptyCase} from '../modules/workspace/stateConfig'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestRecord} from '../modules/testing/customerRoadmapFixture.mjs'
 import {roadmapFingerprint,roadmapSource} from '../../supabase/functions/_shared/customerRoadmap.mjs'
+import {workflowErrorMessage} from '../modules/services/workflowError.mjs'
 
 export default function Fixture(){
   const [draft,setDraft]=useState({...emptyCase}),[started,setStarted]=useState(false),[language,setLanguage]=useState('de')
@@ -28,9 +29,10 @@ export default function Fixture(){
       return {data:{status:'completed',roadmap},error:null}
     }}
   }),[])
-  async function analyze(document){
+  async function analyze(document,{onFailure}={}){
     setStats(value=>({...value,read:value.read+1}))
     await new Promise(resolve=>setTimeout(resolve,120))
+    if(fail.current==='quota'){fail.current=false;onFailure?.({message:workflowErrorMessage({code:'provider_quota'},'Fallback',language)});return false}
     if(fail.current&&document.id===roadmapTestDocuments[1].id){fail.current=false;return false}
     const fresh={...document,updated_at:'2026-09-21T01:00:00Z'}
     const generated={fields:{extracted_text:roadmapTestDocuments.find(doc=>doc.id===document.id).extracted_text,analysis_summary:'Erfundene Testantwort.',analysis_next_step:'Fehlende Angaben klären.',analysis_reasoning:'Vorläufig.',customer_copy_language:document.customer_copy_language,reference_copy_language:document.reference_copy_language}}
@@ -49,6 +51,7 @@ export default function Fixture(){
     <p>Prüfansicht · erfundene Daten · simulierte Antworten</p>
     <label>Test language<select aria-label="Test language" value={language} onChange={event=>setLanguage(event.target.value)}>{['de','en','fa'].map(key=><option key={key}>{key}</option>)}</select></label>
     <button onClick={()=>{fail.current=true}}>Simulate one failed read</button>
+    <button onClick={()=>{fail.current='quota'}}>Simulate exhausted provider credits</button>
     {!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>setStarted(false)} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} continuation={{canContinue:true}}/>}
     <output data-testid="stats">{JSON.stringify(stats)}</output><output>{opened}</output>
   </main>
