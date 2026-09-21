@@ -34,7 +34,7 @@ test('failed document is recoverable without re-reading successful documents',as
   await page.getByRole('button',{name:'Simulate one failed read'}).click()
   await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
   await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
-  await expect(page.getByRole('alert')).toContainText('Bereits gelesene Unterlagen bleiben erhalten')
+  await expect(page.locator('.roadmapError[role=alert]')).toContainText('Bereits gelesene Unterlagen bleiben erhalten')
   await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:0,generated:0,sent:0}))
   await page.getByRole('button',{name:'Erneut versuchen',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
