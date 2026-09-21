@@ -13,7 +13,13 @@ const labels={
 }
 const keys=['analysis','calculations','conditions','limitations','sources','formula','assumption','answered','conditional','open','planning','research','legacy']
 export function completeAnalysisCopy(language='de'){return Object.fromEntries(keys.map((key,index)=>[key,(labels[language]||labels.de)[index]]))}
-const number=(value,language)=>new Intl.NumberFormat(language,{minimumFractionDigits:(String(value).split('.')[1]||'').length,maximumFractionDigits:8}).format(Number(value))
+const number=(value,language)=>{
+  const text=String(value),[whole,fraction]=text.split('.'),format=new Intl.NumberFormat(language)
+  const integer=BigInt(whole),formatted=integer===0n&&text.startsWith('-')?format.format(-0):format.format(integer)
+  if(!fraction)return formatted
+  const decimal=format.formatToParts(1.1).find(part=>part.type==='decimal').value
+  return formatted+decimal+[...fraction].map(digit=>format.format(Number(digit))).join('')
+}
 // Shared semantic blocks keep the visible full analysis and Word/PDF identical.
 export function completeAnalysisBlocks(analysis,language='de'){
   if(!analysis)return []

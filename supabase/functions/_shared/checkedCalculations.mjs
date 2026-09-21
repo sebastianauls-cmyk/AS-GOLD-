@@ -55,7 +55,7 @@ export function quoteContainsNumber(quote,value){
   const expected=decimal(value)
   // Statutes commonly spell a small factor out ("ein Fünftel", "fünffach").
   // This verifies the value only; its role in the formula still needs review.
-  const words={2:['zwei','zweifach','halb','hälfte','halftig','hälftig','two','half'],3:['drei','dreifach','drittel','three','third'],4:['vier','vierfach','viertel','four','quarter'],5:['fünf','fünffach','fünftel','fünffache','fünffachen','five','fifth'],6:['sechs','six'],12:['zwölf','twelve'],100:['hundert','hundred']}
+  const words={2:['zwei','zweifach','halb','hälfte','halftig','hälftig','two','half'],3:['drei','dreifach','drittel','three','third'],4:['vier','vierfach','viertel','four','quarter'],5:['fünf','fünffach','fünftel','fünftels','fünffache','fünffachen','five','fifth'],6:['sechs','six'],12:['zwölf','twelve'],100:['hundert','hundred']}
   for(const [number,names] of Object.entries(words))if(compare(decimal(number),expected)===0n&&new RegExp(`(?<![\\p{L}\\p{N}])(?:${names.join('|')})(?![\\p{L}\\p{N}])`,'iu').test(String(quote)))return true
   const parts=String(quote).match(/(?<![\p{L}\p{N}])[-−]?\d(?:[\d.,’'\u00a0\u202f ]*\d)?(?![\p{L}\p{N}])/gu)||[]
   return parts.some(part=>{

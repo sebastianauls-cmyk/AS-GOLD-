@@ -105,10 +105,10 @@ export async function callModel(providerKey,request,{deadline,fetchImpl,onRespon
   return {parsed,response_id:response.id,model:response.model,response}
 }
 
-export async function reviewModelCandidate({providerKey,candidate,reviewContent,deadline=Date.now()+45000,fetchImpl=fetch,onResponse,attempt=1,callTimeoutMs=90000}) {
+export async function reviewModelCandidate({providerKey,candidate,reviewContent,deadline=Date.now()+45000,fetchImpl=fetch,onResponse,attempt=1,callTimeoutMs=90000,reviewModel='gpt-5.6-luna'}) {
   // Live negative controls require the full reasoning review. Do not downgrade
   // the evidence gate to fit a slow request; the common deadline still fails closed.
-  const review=await callModel(providerKey,{model:'gpt-5.6-luna',reasoning:{effort:'high'},instructions:REVIEW_INSTRUCTIONS,input:[{role:'user',content:[...reviewContent,{type:'input_text',text:JSON.stringify({candidate})}]}],text:{format:{type:'json_schema',name:'ash_evidence_review_v139',strict:true,schema:REVIEW_SCHEMA}},max_output_tokens:10000},{deadline,fetchImpl,onResponse,stage:'review',attempt,callTimeoutMs})
+  const review=await callModel(providerKey,{model:reviewModel,reasoning:{effort:'high'},instructions:REVIEW_INSTRUCTIONS,input:[{role:'user',content:[...reviewContent,{type:'input_text',text:JSON.stringify({candidate})}]}],text:{format:{type:'json_schema',name:'ash_evidence_review_v139',strict:true,schema:REVIEW_SCHEMA}},max_output_tokens:10000},{deadline,fetchImpl,onResponse,stage:'review',attempt,callTimeoutMs})
   return {issues:validateQualityReview(review.parsed),response_id:review.response_id}
 }
 
@@ -140,7 +140,7 @@ export async function runReviewedModel({providerKey,request,validate,reviewConte
 // Each authenticated continuation performs exactly one provider call. This keeps
 // the full review and the single repair while avoiding a shared request timeout.
 // The caller must authenticate, re-load originals, and verify the sealed state.
-export async function advanceReviewedModel({providerKey,request,validate,reviewContent,state=null,fetchImpl=fetch,onResponse,budgetMs=140000}) {
+export async function advanceReviewedModel({providerKey,request,validate,reviewContent,state=null,fetchImpl=fetch,onResponse,budgetMs=140000,reviewModel='gpt-5.6-luna'}) {
   const current=state||{stage:'generation',attempt:1,feedback:[],previous:null}
   if(!['generation','review'].includes(current.stage)||![1,2].includes(current.attempt))throw new ModelWorkflowError('Ungültiger Prüfablauf.',409)
   const deadline=Date.now()+Math.min(budgetMs,140000),attempt=current.attempt,callTimeoutMs=135000
@@ -161,7 +161,7 @@ export async function advanceReviewedModel({providerKey,request,validate,reviewC
   catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=[{code:'source',location:'output',reason:error.message}]}
   // Collect semantic defects even when a quote/translation is invalid, so the
   // one permitted correction receives all known issues. Nothing is approved.
-  const review=await reviewModelCandidate({providerKey,candidate,reviewContent,deadline,fetchImpl,onResponse,attempt,callTimeoutMs})
+  const review=await reviewModelCandidate({providerKey,candidate,reviewContent,deadline,fetchImpl,onResponse,attempt,callTimeoutMs,reviewModel})
   const feedback=[...structuralFeedback,...review.issues]
   if(!feedback.length)return {status:'completed',result:candidate,attempts:attempt,model:current.model,response_id:current.response_id,review_response_id:review.response_id}
   if(attempt===2)throw new ModelWorkflowError('Das Ergebnis konnte noch nicht freigegeben werden. Es wurde kein neues Ergebnis gespeichert.',422,'review_unresolved',feedback)

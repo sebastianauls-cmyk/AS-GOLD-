@@ -5,6 +5,27 @@ import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult,roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/lib/completeAnalysisDisplay.mjs'
 import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport.mjs'
+import {quotationIndex,resolveQuotationIds} from '../supabase/functions/_shared/quotationIndex.mjs'
+import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
+
+const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
+const quoteMap=quotationIndex({documents:[{id:'original',extracted_text:original}]},[])
+assert.equal([...quoteMap.values()].map(item=>item.quote).join(' '),original,'indexing never drops long tokens or short final passages')
+assert.equal(resolveQuotationIds({document_id:'original',quote:'@d0_0'},quoteMap).quote,[...quoteMap.values()][0].quote)
+assert.throws(()=>resolveQuotationIds({document_id:'different',quote:'@d0_0'},quoteMap),/anderen Quelle/)
+assert.throws(()=>resolveQuotationIds({document_id:'original',quote:'@d0_99'},quoteMap),/Unbekannter/)
+
+const cachedText='An original public statutory text containing conditions and limitations, retrieved from its official publisher. Amount: 1250 EUR.'
+const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(cachedText))),b=>b.toString(16).padStart(2,'0')).join('')
+const snapshot={url:'https://authority.example/provision',title:'Public provision',source_text:cachedText,checked_at:new Date().toISOString(),content_sha256:digest,retrieval_mode:'verified_snapshot'}
+const cacheFetch=record=>async url=>String(url).startsWith('https://raw.githubusercontent.com/')?new Response(JSON.stringify([record])):new Response('Unavailable',{status:503})
+let cacheTransport=cacheFetch(snapshot)
+assert((await loadPrimarySources(cacheTransport)).some(item=>item.url===snapshot.url))
+assert.equal((await retrieveOfficialEvidence([snapshot],['authority.example'],{fetchImpl:cacheTransport,snapshotRecords:await loadPrimarySources(cacheTransport)})).get(snapshot.url).source_text,cachedText,'fallback uses actual recently fetched text when direct retrieval fails')
+assert.equal((await retrieveOfficialEvidence([snapshot],['authority.example'],{fetchImpl:cacheFetch(snapshot),snapshotRecords:[{...snapshot,content_sha256:'a'.repeat(64)}]})).size,0,'tampered text is rejected')
+const stale={...snapshot,checked_at:new Date(Date.now()-3*86400000).toISOString()}
+assert.equal(primarySourceCatalogue(['authority.example'],Date.now(),[stale]).length,0)
+assert.equal((await retrieveOfficialEvidence([snapshot],['authority.example'],{fetchImpl:cacheFetch(stale),snapshotRecords:[stale]})).size,0,'failed refresh cannot silently renew old legal text')
 
 assert.equal(calculateExpression('a+b',{a:'0.1',b:'0.2'}),'0.30')
 assert.equal(calculateExpression('a',{a:'1.005'}),'1.01')
@@ -36,6 +57,7 @@ let calls=0
 const fetchImpl=async(url,options)=>{
   assert.equal(url,'https://api.openai.com/v1/responses');const request=JSON.parse(options.body);calls++
   const name=request.text.format.name
+  assert.equal(request.model,'gpt-5.6-sol','complete planning, generation and independent review use the higher-capability model')
   if(name==='ash_complete_case_v157')assert(!request.instructions.includes('No external research has been performed in this workflow.'))
   const output=name==='ash_case_scope'?scope:name==='ash_complete_case_v157'?candidate:{issues:[]}
   return new Response(JSON.stringify({status:'completed',id:'mock-'+calls,model:'mock-model',output_text:JSON.stringify(output)}))
@@ -48,5 +70,7 @@ assert.equal(calls,3,'no external research is claimed for an arithmetic-only cas
 const record=roadmapTestRecord();record.result=flow.result
 const blocks=completeAnalysisBlocks(flow.result.analysis,'de'),exported=roadmapExportBlocks(record)
 for(const block of blocks)assert(exported.some(item=>item.text===block.text),'visible analysis must also appear in Word/PDF')
+const large=structuredClone(flow.result.analysis);large.calculations[0].result='9999999999999999.99'
+assert(completeAnalysisBlocks(large,'de').some(block=>block.text.includes('9.999.999.999.999.999,99')),'display/export cannot lose exact cents through floating-point conversion')
 for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])for(const value of Object.values(completeAnalysisCopy(lang)))assert(value.trim())
 console.log('Complete analysis: exact arithmetic, source-bound inputs, incomplete coverage rejection, untranslated-source integrity, staged review, domestic research configuration and display/export parity passed (provider mocked).')

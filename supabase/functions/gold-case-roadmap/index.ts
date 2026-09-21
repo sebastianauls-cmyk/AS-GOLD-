@@ -123,7 +123,7 @@ ${permissions.draft_letters===true?'Create separate formal draft letters for eac
     // MODEL_WORKFLOW_END
     const fresh=await loadSource(client,body.case_id,user.id);
     if(!fresh||await roadmapFingerprint(fresh)!==fingerprint) return reply(req,{error:'Während der Erstellung wurden Unterlagen geändert. Bitte den aktuellen Stand neu erstellen.'},409);
-    const {data:record,error:saveError}=await admin.from('case_roadmaps').insert({owner_id:user.id,id:runId,case_id:body.case_id,output_language:outputLanguage,reference_language:referenceLanguage,style,result,source_fingerprint:fingerprint,source_documents:source.documents.map((doc:any)=>({id:doc.id,title:doc.title,updated_at:doc.updated_at})),model:'gpt-5.6-luna',workflow_version:MODEL_QUALITY_VERSION}).select().single();
+    const {data:record,error:saveError}=await admin.from('case_roadmaps').insert({owner_id:user.id,id:runId,case_id:body.case_id,output_language:outputLanguage,reference_language:referenceLanguage,style,result,source_fingerprint:fingerprint,source_documents:source.documents.map((doc:any)=>({id:doc.id,title:doc.title,updated_at:doc.updated_at})),model:analysis.model||request.model,workflow_version:MODEL_QUALITY_VERSION}).select().single();
     // Concurrent completions can race after the lookup. The existing primary
     // key permits one insert only; never overwrite its result or progress.
     if(saveError?.code==='23505'&&checkpoint) {
