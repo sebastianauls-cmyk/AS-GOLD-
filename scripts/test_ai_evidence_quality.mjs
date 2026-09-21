@@ -1,12 +1,17 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import {originalPlainText,finalizeDocumentResult,runReviewedModel,validateQualityReview} from '../supabase/functions/_shared/modelQuality.mjs'
+import {originalPlainText,finalizeDocumentResult,runReviewedModel,validateQualityReview,callModel} from '../supabase/functions/_shared/modelQuality.mjs'
 import {searchRetrievedSources,retrieveOfficialEvidence,officialUrl,readableSourceText} from '../supabase/functions/_shared/verifiedResearch.mjs'
 import {historyCaseCorpus} from '../app/modules/testing/historyCaseCorpus.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {roadmapSource,validateRoadmapResult} from '../supabase/functions/_shared/customerRoadmap.mjs'
 
 const encode=value=>new TextEncoder().encode(value)
+for(const [providerCode,expected] of [['credit_balance_exhausted','provider_quota'],['insufficient_quota','provider_quota'],['rate_limit_exceeded','provider_rate_limit']]){
+  const events=[]
+  await assert.rejects(callModel('synthetic',{}, {deadline:Date.now()+5000,stage:'test',attempt:1,onResponse:event=>events.push(event),fetchImpl:async()=>new Response(JSON.stringify({error:{code:providerCode,message:'private diagnostic not for logs'}}),{status:429})}),error=>error.code===expected)
+  assert.equal(events[0].provider_error_code,providerCode);assert(!JSON.stringify(events).includes('private diagnostic'),'provider error messages never leak to logs')
+}
 const docCode=fs.readFileSync('supabase/functions/gold-document-analysis/index.ts','utf8')
 const schemaLiteral=docCode.slice(docCode.indexOf('const schema=')+13,docCode.indexOf(';\n\n  const spokenContextInstruction'))
 const schema=Function('return ('+schemaLiteral+')')()
