@@ -67,6 +67,25 @@ let flow=await advanceCompleteAnalysis(args);assert.equal(flow.state.stage,'anal
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
 assert.equal(calls,3,'no external research is claimed for an arithmetic-only case')
+const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}
+const official='https://www.gesetze-im-internet.de/estg/__34.html'
+const batchFetch=async(url,options)=>{
+  if(String(url).startsWith('https://raw.githubusercontent.com/'))return new Response('',{status:404})
+  if(url===official)return new Response('<html><title>Official provision</title><main>'+cachedText+'</main></html>',{headers:{'Content-Type':'text/html'}})
+  const request=JSON.parse(options.body),name=request.text.format.name
+  let output=batchedScope,search=[]
+  if(name==='ash_case_research'){
+    const input=JSON.parse(request.input);assert.equal(input.research_topics.length,2)
+    assert(!request.input.includes(source.documents[0].id),'public research receives no document identifiers')
+    researchedTopics.push(...input.research_topics)
+    output={sources:[{url:official,title:'Official provision'}],gaps:[]}
+    search=[{type:'web_search_call',status:'completed',action:{sources:[{url:official}]}}]
+  }
+  return new Response(JSON.stringify({status:'completed',id:'batch',model:request.model,output_text:JSON.stringify(output),output:search}))
+}
+let batched=await advanceCompleteAnalysis({...args,fetchImpl:batchFetch})
+for(let i=0;i<4;i++)batched=await advanceCompleteAnalysis({...args,fetchImpl:batchFetch,state:batched.state})
+assert.equal(batched.state.stage,'analysis');assert.deepEqual(researchedTopics,batchedScope.research_topics,'every planned topic is researched exactly once in bounded batches')
 const record=roadmapTestRecord();record.result=flow.result
 const blocks=completeAnalysisBlocks(flow.result.analysis,'de'),exported=roadmapExportBlocks(record)
 for(const block of blocks)assert(exported.some(item=>item.text===block.text),'visible analysis must also appear in Word/PDF')

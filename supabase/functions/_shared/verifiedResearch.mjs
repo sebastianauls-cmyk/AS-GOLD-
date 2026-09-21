@@ -73,6 +73,16 @@ async function cachedSource(url,domains,maxChars,records){
   return {...item,source_text,truncated:source_text.length<item.source_text.length,content_sha256:await hash(source_text)}
 }
 
+// A selected provision often needs its statute's tariff, eligibility or procedure
+// to be useful. Supply the small independently refreshed set from that SAME act,
+// never facts or a reference answer from the customer's case.
+export async function supportingPrimaryEvidence(selectedUrls,domains,records){
+  const act=url=>{try{const parsed=new URL(url);return parsed.hostname==='www.gesetze-im-internet.de'?/^\/([a-z0-9_]+)\/__[a-z0-9]+\.html$/.exec(parsed.pathname)?.[1]:null}catch{return null}}
+  const acts=new Set(selectedUrls.map(act).filter(Boolean))
+  const relevant=primarySourceCatalogue(domains,Date.now(),records).filter(item=>acts.has(act(item.url)))
+  return (await Promise.all(relevant.map(item=>cachedSource(item.url,domains,22000,records)))).filter(Boolean)
+}
+
 const entities={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' ',auml:'ä',ouml:'ö',uuml:'ü',Auml:'Ä',Ouml:'Ö',Uuml:'Ü',szlig:'ß',sect:'§',ndash:'–',mdash:'—'}
 export function readableSourceText(body,type) {
   let source=body
