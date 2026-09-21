@@ -9,11 +9,20 @@ export function preparationContext(item,documents,outputLanguage,referenceLangua
     caseDocuments(item,documents).map(doc=>[doc.id,doc.file_path,doc.updated_at,doc.data_classification,doc.extracted_text])])
 }
 
-export function preparationError(code,document) {
+export function preparationError(code,document,failure=null) {
   const error=new Error(code)
   error.code=code
   error.document=document
+  // The document workflow already removes raw provider text and localizes this
+  // message. Retain it when the same workflow is used from the case screen.
+  if(failure?.message)error.failureMessage=failure.message
   return error
+}
+
+export function preparationFailureMessage(error,copy,fallback) {
+  if(error.code==='changed')return copy.changed
+  if(error.code==='reading_failed'&&error.failureMessage)return error.failureMessage
+  return error.code?copy.failed:error?.message||fallback
 }
 
 // One explicitly consented case pass. Existing originals are reused. Completed
@@ -36,9 +45,10 @@ export async function prepareCaseDocuments({item,documents,outputLanguage,refere
     let retained=await onRecover(requested,{quiet:true,includeDocument:true})
     if(!isCurrent())throw preparationError('changed')
     if(!retained) {
-      const generated=await onAnalyze(requested,{silent:true})
+      let failure=null
+      const generated=await onAnalyze(requested,{silent:true,onFailure:details=>{failure=details}})
       if(!isCurrent())throw preparationError('changed')
-      if(!generated)throw preparationError('reading_failed',original)
+      if(!generated)throw preparationError('reading_failed',original,failure)
       retained=await onRecover(requested,{quiet:true,includeDocument:true})
     }
     if(!isCurrent())throw preparationError('changed')

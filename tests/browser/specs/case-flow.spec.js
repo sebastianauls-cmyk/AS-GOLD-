@@ -41,6 +41,19 @@ test('failed document is recoverable without re-reading successful documents',as
   await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:3,saved:2,generated:1,sent:0}))
 })
 
+test('provider credit failure keeps its concrete remedy in the case screen',async({page})=>{
+  await begin(page)
+  await page.getByRole('button',{name:'Simulate exhausted provider credits'}).click()
+  await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
+  await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
+  await expect(page.locator('.roadmapError[role=alert]')).toContainText('ausgeschöpften Guthabens')
+  await expect(page.locator('.roadmapError[role=alert]')).toContainText('ASH-Betreiber')
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:1,saved:0,generated:0,sent:0}))
+  await page.getByRole('button',{name:'Erneut versuchen',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:3,saved:2,generated:1,sent:0}))
+})
+
 test('translated entry supports English and right-to-left Persian',async({page})=>{
   await page.goto('/qa-case-flow')
   await page.getByLabel('Test language').selectOption('en')

@@ -12,6 +12,19 @@ const messages={
   bg:['Влезте отново. Сесията или тестовият достъп е изтекъл.','Тази функция не е включена във вашия достъп. Проверете наличните услуги.','Проверете актуалното потвърждение за поверителност и разрешението за обработка с ИИ.','Достигнат е дневният лимит. Опитайте по-късно.','Не са потвърдени четими официални източници. Не е записано сравнение. Уточнете правния въпрос и потърсете отново.','Някои твърдения още са неподкрепени или противоречиви. Не е записан нов резултат. Проверете оригиналите и връзките им, след това генерирайте отново.','Времето за проверка изтече. Не е записан непроверен резултат. Опитайте отново.','Документите или записаният напредък са променени. Презаредете и създайте нов план при промяна на документите.','Проверете въведените данни, пълното прочитане на документите и необходимите предходни стъпки.'],
   vi:['Đăng nhập lại. Phiên làm việc hoặc quyền dùng thử đã hết hạn.','Quyền truy cập của bạn không bao gồm tính năng này. Hãy kiểm tra các dịch vụ có sẵn.','Kiểm tra xác nhận quyền riêng tư hiện hành và quyền xử lý bằng AI.','Đã đạt giới hạn hằng ngày. Vui lòng thử lại sau.','Chưa xác minh được nguồn chính thức có thể đọc. Chưa lưu bản so sánh. Hãy thu hẹp câu hỏi pháp lý và tìm lại.','Một số nhận định vẫn thiếu căn cứ hoặc mâu thuẫn. Chưa lưu kết quả mới. Kiểm tra bản gốc và cách liên kết, rồi tạo lại.','Quá thời gian kiểm tra. Chưa lưu kết quả chưa kiểm chứng. Vui lòng thử lại.','Tài liệu hoặc tiến độ đã lưu đã thay đổi. Tải lại và tạo lộ trình mới nếu tài liệu thay đổi.','Kiểm tra dữ liệu nhập, việc đọc đầy đủ tài liệu và các bước trước cần hoàn thành.']
 }
+const providerMessages={
+  de:['Die KI-Verarbeitung ist wegen ausgeschöpften Guthabens beim Anbieter nicht verfügbar. Der ASH-Betreiber muss den KI-Zugang wieder freischalten. Ihre Unterlagen bleiben gespeichert.','Der KI-Dienst ist vorübergehend ausgelastet. Bitte später erneut versuchen. Ihre Unterlagen bleiben gespeichert.'],
+  en:['AI processing is unavailable because the provider credits are exhausted. The ASH operator must restore AI access. Your documents remain saved.','The AI service is temporarily busy. Please try again later. Your documents remain saved.'],
+  fr:['Le traitement IA est indisponible car les crédits du fournisseur sont épuisés. L’exploitant d’ASH doit rétablir l’accès à l’IA. Vos documents restent enregistrés.','Le service IA est temporairement surchargé. Réessayez plus tard. Vos documents restent enregistrés.'],
+  tr:['Sağlayıcı kredileri tükendiği için yapay zekâ işlemesi kullanılamıyor. ASH işletmecisi yapay zekâ erişimini yeniden sağlamalıdır. Belgeleriniz kayıtlı kalır.','Yapay zekâ hizmeti geçici olarak yoğun. Daha sonra tekrar deneyin. Belgeleriniz kayıtlı kalır.'],
+  pl:['Przetwarzanie AI jest niedostępne, ponieważ środki u dostawcy zostały wyczerpane. Operator ASH musi przywrócić dostęp do AI. Dokumenty pozostają zapisane.','Usługa AI jest chwilowo przeciążona. Spróbuj później. Dokumenty pozostają zapisane.'],
+  ru:['Обработка ИИ недоступна: средства у поставщика исчерпаны. Оператор ASH должен восстановить доступ к ИИ. Ваши документы остаются сохранёнными.','Сервис ИИ временно перегружен. Повторите попытку позже. Ваши документы остаются сохранёнными.'],
+  ar:['معالجة الذكاء الاصطناعي غير متاحة لنفاد الرصيد لدى المزوّد. يجب على مشغّل ASH استعادة الوصول إلى الخدمة. تبقى مستنداتك محفوظة.','خدمة الذكاء الاصطناعي مشغولة مؤقتاً. حاول لاحقاً. تبقى مستنداتك محفوظة.'],
+  fa:['پردازش هوش مصنوعی به دلیل تمام شدن اعتبار نزد ارائه‌دهنده در دسترس نیست. گرداننده ASH باید دسترسی را دوباره برقرار کند. اسناد شما ذخیره می‌مانند.','سرویس هوش مصنوعی موقتاً شلوغ است. بعداً دوباره تلاش کنید. اسناد شما ذخیره می‌مانند.'],
+  ro:['Procesarea AI nu este disponibilă deoarece creditul la furnizor s-a epuizat. Operatorul ASH trebuie să restabilească accesul AI. Documentele rămân salvate.','Serviciul AI este temporar suprasolicitat. Încercați mai târziu. Documentele rămân salvate.'],
+  bg:['Обработката с ИИ е недостъпна поради изчерпан кредит при доставчика. Операторът на ASH трябва да възстанови достъпа до ИИ. Документите ви остават запазени.','Услугата с ИИ е временно претоварена. Опитайте по-късно. Документите ви остават запазени.'],
+  vi:['Không thể xử lý bằng AI vì tín dụng tại nhà cung cấp đã hết. Đơn vị vận hành ASH cần khôi phục quyền truy cập AI. Tài liệu của bạn vẫn được lưu.','Dịch vụ AI tạm thời quá tải. Vui lòng thử lại sau. Tài liệu của bạn vẫn được lưu.']
+}
 const groups={no_verified_sources:'sources',source_review_unresolved:'review',review_unresolved:'review',source_unresolved:'review',provider_timeout:'timeout'}
 // Older deployed handlers use German messages. Keep their concrete failure
 // categories understandable while new handlers return stable machine codes.
@@ -25,6 +38,7 @@ const legacy=[
   ['input',/Bitte zuerst|Bitte den Briefkopf|Bitte die Erledigung|Testbetrieb erlaubt|Dieser Fall ist.*groß/u]
 ]
 export function workflowErrorMessage(payload,fallback,language='de') {
+  if(['provider_quota','provider_rate_limit'].includes(payload?.code))return (providerMessages[language]||providerMessages.de)[payload.code==='provider_quota'?0:1]
   const detail=payload?.error||payload?.message||payload?.detail||''
   const group=groups[payload?.code]||legacy.find(([,pattern])=>pattern.test(detail))?.[0]
   if(group)return (messages[language]||messages.de)[keys.indexOf(group)]

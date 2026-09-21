@@ -11,7 +11,7 @@ import { createRoadmapExport } from '../services/customerRoadmapExport.mjs'
 import { downloadExportArtifact } from '../services/exportService'
 import { ResultContinuation } from './ResultContinuation'
 import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
-import { caseDocuments, preparationContext, prepareCaseDocuments, savePreparedCaseDocuments } from './lib/casePreparation.mjs'
+import { caseDocuments, preparationContext, prepareCaseDocuments, savePreparedCaseDocuments, preparationFailureMessage } from './lib/casePreparation.mjs'
 import './customerRoadmap.css'
 
 function Dot({light,label}) {return <span className="roadmapLight"><span aria-hidden="true" style={{backgroundColor:ROADMAP_COLORS[light]}}/>{label}</span>}
@@ -138,7 +138,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     if(busyRef.current)return false
     busyRef.current=true;setBusy(true);setError('');setFailedDocument(null)
     try{return await task()}catch(error){
-      if(mountedRef.current){setError(error.code==='changed'?simple.changed:error.code?simple.failed:error?.message||ui.error);setFailedDocument(error.document||null)}
+      if(mountedRef.current){setError(preparationFailureMessage(error,simple,ui.error));setFailedDocument(error.document||null)}
       return false
     }finally{busyRef.current=false;if(mountedRef.current){setBusy(false);setProcessingStage('');setDocumentProgress(null)}}
   }
