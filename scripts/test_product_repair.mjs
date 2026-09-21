@@ -31,6 +31,11 @@ assert.ok(mock.requests.every(value=>value.reasoning.effort==='high'),'full revi
 for(const changed of [{...binding,owner_id:'owner-b'},{...binding,case_id:'case-b'},{...binding,fingerprint:'source-v2'},{...binding,language:'en'},{...binding,workflow:'different'}])await assert.rejects(openModelCheckpoint({token,binding:changed,secret}),/ungültig/)
 await assert.rejects(openModelCheckpoint({token:token.slice(0,-8)+'abcdabcd',binding,secret}),/ungültig/)
 await assert.rejects(openModelCheckpoint({token,binding,secret,now:issuedAt+16*60*1000}),/abgelaufen/)
+const completeBinding={...binding,workflow:'complete-case-v157'}
+const completeToken=await sealModelCheckpoint({state:{stage:'research'},binding:completeBinding,secret,issuedAt})
+assert.equal((await openModelCheckpoint({token:completeToken,binding:completeBinding,secret,now:issuedAt+29*60*1000})).issuedAt,issuedAt,'longer complete workflows never renew the original issue time')
+await assert.rejects(openModelCheckpoint({token:completeToken,binding:completeBinding,secret,now:issuedAt+31*60*1000}),/abgelaufen/)
+await assert.rejects(openModelCheckpoint({token:completeToken,binding:{...completeBinding,owner_id:'other'},secret}),/ungültig/)
 await assert.rejects(openModelCheckpoint({token,binding,secret:'different-test-key-not-a-real-secret'}),/ungültig/)
 
 mock=provider([roadmapTestResult,defect,roadmapTestResult,defect]);state=null

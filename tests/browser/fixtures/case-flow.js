@@ -15,17 +15,21 @@ export default function Fixture(){
   const [documents,setDocuments]=useState(()=>roadmapTestDocuments.map((doc,i)=>({...doc,title:`${i+1}.pdf`,file_path:`fixture/${i+1}.pdf`,extracted_text:null})))
   const [stats,setStats]=useState({read:0,saved:0,generated:0,sent:0})
   const [opened,setOpened]=useState('')
-  const current=useRef({}),cache=useRef(new Map()),fail=useRef(false)
+  const current=useRef({}),cache=useRef(new Map()),fail=useRef(false),reviewFailure=useRef(false)
   const item={...roadmapTestCase,title:draft.title||'Ich verstehe meine Briefe nicht.',goal:draft.goal||roadmapTestCase.goal}
   current.current={item,documents}
   const supabase=useMemo(()=>({
     from(){const query={select(){return this},eq(){return this},order(){return this},update(){return this},limit:async()=>({data:[],error:null}),single:async()=>({data:{},error:null}),then(resolve,reject){return Promise.resolve({data:[],error:null}).then(resolve,reject)}};return query},
     functions:{invoke:async(name,{body})=>{
       if(name!=='gold-case-roadmap')return {data:null,error:null}
-      if(body.action!=='generate')throw new Error('Unexpected action')
+      if(body.action!=='generate'||body.analysis_mode!=='complete')throw new Error('Complete analysis was not requested')
       if(current.current.documents.some(doc=>!doc.extracted_text))throw new Error('Generation started before all originals were stored')
-      setStats(value=>({...value,generated:value.generated+1}))
+      if(!body.checkpoint)setStats(value=>({...value,generated:value.generated+1}))
+      const stage=Number(body.checkpoint||0)
+      if(stage<5)return {data:{status:'processing',checkpoint:String(stage+1),stage:['research','generation','review','correction','review'][stage]},error:null}
+      if(reviewFailure.current)return {data:null,error:{context:new Response(JSON.stringify({code:'review_unresolved',issues:[{code:'source',location:'analysis.calculations',reason:'Die Berechnung passt nicht zum angegebenen Original.'},{code:'sender_role',location:'letters',reason:'Das Schreiben setzt eine unbelegte Vollmacht voraus.'}]}),{status:422,headers:{'Content-Type':'application/json'}})}}
       const roadmap={...roadmapTestRecord(),source_fingerprint:await roadmapFingerprint(roadmapSource(current.current.item,current.current.documents,[]))}
+      roadmap.result.analysis={topics:[{id:'difference',title:'Zusammensetzung der Abzüge',status:'open',conclusion:'Die Differenz ist berechnet. Wofür sie abgezogen wurde, ist noch offen.',conditions:'Die Abrechnung muss den Abzug erklären.',sources:[],step_ids:['anfragen']}],calculations:[{id:'net',title:'Brutto minus netto',inputs:[{label:'Brutto',value:'18000',kind:'document',quote:'Die einmalige Kapitalzahlung beträgt 18.000 EUR brutto und 17.000 EUR netto.'},{label:'Netto',value:'17000',kind:'document',quote:''}],expression:'gross-net',result:'1000.00',unit:'EUR',conditions:'Die Art der Abzüge ist ungeklärt.',explanation:'18.000 EUR abzüglich 17.000 EUR ergibt 1.000 EUR.'}],limitations:['Die Berechnungsanlage fehlt.'],research_sources:[]}
       return {data:{status:'completed',roadmap},error:null}
     }}
   }),[])
@@ -52,6 +56,7 @@ export default function Fixture(){
     <label>Test language<select aria-label="Test language" value={language} onChange={event=>setLanguage(event.target.value)}>{['de','en','fa'].map(key=><option key={key}>{key}</option>)}</select></label>
     <button onClick={()=>{fail.current=true}}>Simulate one failed read</button>
     <button onClick={()=>{fail.current='quota'}}>Simulate exhausted provider credits</button>
+    <button onClick={()=>{reviewFailure.current=true}}>Simulate unresolved content review</button>
     {!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>setStarted(false)} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} continuation={{canContinue:true}}/>}
     <output data-testid="stats">{JSON.stringify(stats)}</output><output>{opened}</output>
   </main>

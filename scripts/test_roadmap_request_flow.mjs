@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import {transformSync} from 'next/dist/build/swc/index.js'
 import * as checkpoints from '../supabase/functions/_shared/modelCheckpoint.mjs'
 import * as evidence from '../supabase/functions/_shared/caseEvidenceRules.mjs'
+import * as complete from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import * as quality from '../supabase/functions/_shared/modelQuality.mjs'
 import * as roadmap from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
@@ -55,7 +56,7 @@ const createClient=(_url,key)=>({
   rpc:async name=>{assert.equal(name,'current_gold_access');return {data:[{permissions:state.permissions}],error:null}}
 })
 const env={SUPABASE_URL:'https://synthetic.invalid',SUPABASE_ANON_KEY:'synthetic-publishable-key',SUPABASE_SERVICE_ROLE_KEY:secret,OPENAI_API_KEY:'synthetic-model-key'}
-const dependencies={...checkpoints,...evidence,...quality,...roadmap}
+const dependencies={...checkpoints,...evidence,...quality,...roadmap,...complete}
 const source=fs.readFileSync('supabase/functions/gold-case-roadmap/index.ts','utf8')
 const code=transformSync(source.replace(/^import [^\n]+\n/gm,''),{filename:'roadmap-handler.ts',jsc:{parser:{syntax:'typescript'},target:'es2022'},module:{type:'es6'}}).code
 new Function('Deno','createClient',...Object.keys(dependencies),code)({env:{get:name=>env[name]},serve:value=>{handler=value}},createClient,...Object.values(dependencies))
@@ -65,9 +66,12 @@ globalThis.fetch=async(url,options)=>{
   assert.equal(url,'https://api.openai.com/v1/responses','unexpected external request')
   state.modelCalls++
   const request=JSON.parse(options.body)
-  const generation=request.text.format.name==='ash_customer_roadmap_v136'
+  const generation=['ash_customer_roadmap_v136','ash_complete_numbers_v157','ash_complete_plan_v157'].includes(request.text.format.name)
+  if(request.text.format.name==='ash_case_scope')return new Response(JSON.stringify({id:'scope-test',status:'completed',output_text:JSON.stringify({issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:false}],research_topics:[]})}))
   if(!generation&&state.reviewGate)await state.reviewGate()
-  return new Response(JSON.stringify({id:'synthetic-'+state.modelCalls,status:'completed',output_text:JSON.stringify(generation?roadmapTestResult:{issues:state.issues})}))
+  const analysis={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Anlage fehlt.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],calculations:[],limitations:[]}
+  const output=request.text.format.name==='ash_complete_numbers_v157'?analysis:request.text.format.name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:generation?roadmapTestResult:{issues:state.issues}
+  return new Response(JSON.stringify({id:'synthetic-'+state.modelCalls,status:'completed',output_text:JSON.stringify(output)}))
 }
 async function call(body=baseBody){
   const response=await handler(new Request('https://synthetic.invalid/roadmap',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer synthetic-session','Origin':'https://app-gold-workspace.vercel.app'},body:JSON.stringify(body)}))
@@ -76,6 +80,23 @@ async function call(body=baseBody){
 async function begin(){const result=await call();assert.equal(result.status,202);assert.equal(result.data.roadmap,undefined);assert.equal(state.case_roadmaps.length,0);return {...baseBody,checkpoint:result.data.checkpoint}}
 
 try {
+  const fullBody={...baseBody,analysis_mode:'complete'}
+  const planned=await call(fullBody);assert.equal(planned.status,202);assert.equal(state.case_roadmaps.length,0)
+  const crossMode=await call({...baseBody,checkpoint:planned.data.checkpoint});assert.equal(crossMode.status,409,'checkpoint must bind full/source-only mode')
+  state.permissions.full_analysis=false;assert.equal((await call({...fullBody,checkpoint:planned.data.checkpoint})).status,403)
+  state.permissions.full_analysis=true
+  const generated=await call({...fullBody,checkpoint:planned.data.checkpoint});assert.equal(generated.status,202);assert.equal(state.case_roadmaps.length,0)
+  const assembled=await call({...fullBody,checkpoint:generated.data.checkpoint});assert.equal(assembled.status,202);assert.equal(state.case_roadmaps.length,0,'partial calculations and plan are never saved before full review')
+  let reviewing=assembled
+  for(let part=0;part<2;part++){reviewing=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(reviewing.status,202);assert.equal(state.case_roadmaps.length,0)}
+  const accepted=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(accepted.status,200);assert(accepted.data.roadmap.result.analysis.verification.review_response_id);assert.equal(state.case_roadmaps.length,1)
+  reset();state.issues=[{code:'meaning',location:'analysis',reason:'Synthetic negative control: material unsupported conclusion.'}]
+  let incomplete=await call(fullBody)
+  for(let part=0;part<9;part++){assert.equal(incomplete.status,202);assert.equal(state.case_roadmaps.length,0);incomplete=await call({...fullBody,checkpoint:incomplete.data.checkpoint})}
+  assert.equal(incomplete.status,202)
+  const denied=await call({...fullBody,checkpoint:incomplete.data.checkpoint})
+  assert.equal(denied.status,422);assert.equal(state.case_roadmaps.length,0,'two assembled candidates failing full review never save partial results');assert.equal(state.modelCalls,11,'one bounded correction of both components and final independent review')
+  reset()
   const continuation=await begin()
   const completed=await call(continuation)
   assert.equal(completed.status,200);assert.equal(state.case_roadmaps.length,1);assert.equal(state.modelCalls,2)
