@@ -28,10 +28,25 @@ const currentOverrides={
 }
 
 const analysisFilePattern=/\.(pdf|jpe?g|png|webp|gif|txt|csv|rtf|docx|xlsx|pptx|odt|ods|odp|eml)$/i
+// Stored extraction is not evidence that a person checked the source. This also
+// covers documents prepared automatically by the consented whole-case flow.
+const storedCopy={
+  de:'Dokumentangaben gespeichert · fachliche Prüfung bleibt erforderlich',
+  en:'Document details saved · professional review is still required',
+  fr:'Informations enregistrées · vérification professionnelle encore nécessaire',
+  tr:'Belge bilgileri kaydedildi · uzman incelemesi hâlâ gerekli',
+  pl:'Dane dokumentu zapisane · nadal wymagana weryfikacja merytoryczna',
+  ru:'Данные документа сохранены · профессиональная проверка ещё необходима',
+  ar:'تم حفظ بيانات المستند · لا تزال المراجعة المتخصصة مطلوبة',
+  fa:'اطلاعات سند ذخیره شد · بررسی تخصصی همچنان لازم است',
+  ro:'Datele documentului sunt salvate · verificarea de specialitate rămâne necesară',
+  bg:'Данните са запазени · все още е необходима професионална проверка',
+  vi:'Đã lưu thông tin tài liệu · vẫn cần kiểm tra chuyên môn'
+}
 
 export function getV26AnalysisCopy(language){
   const translated=componentTranslations.analysisCopy?.[language]||componentTranslations.analysisCopy?.de||{}
-  return {...fallback,...translated,...(currentOverrides[language]||currentOverrides.de),...documentAnalysisProgressCopy(language),...documentAnalysisRecoveryCopy(language),badge:`${APP_VERSION} · ${(currentOverrides[language]||currentOverrides.de).badge}`}
+  return {...fallback,...translated,...(currentOverrides[language]||currentOverrides.de),...documentAnalysisProgressCopy(language),...documentAnalysisRecoveryCopy(language),saved:storedCopy[language]||storedCopy.de,badge:`${APP_VERSION} · ${(currentOverrides[language]||currentOverrides.de).badge}`}
 }
 
 function factValue(value){
