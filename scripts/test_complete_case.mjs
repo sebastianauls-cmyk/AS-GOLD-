@@ -58,15 +58,18 @@ const fetchImpl=async(url,options)=>{
   assert.equal(url,'https://api.openai.com/v1/responses');const request=JSON.parse(options.body);calls++
   const name=request.text.format.name
   assert.equal(request.model,'gpt-5.6-sol','complete planning, generation and independent review use the higher-capability model')
-  if(name==='ash_complete_case_v157')assert(!request.instructions.includes('No external research has been performed in this workflow.'))
-  const output=name==='ash_case_scope'?scope:name==='ash_complete_case_v157'?candidate:{issues:[]}
+  if(name==='ash_evidence_review_v139')assert.equal(request.reasoning.effort,'high','the complete assembled result retains the full independent review')
+  if(name.startsWith('ash_complete_'))assert(!request.instructions.includes('No external research has been performed in this workflow.'))
+  const {analysis,...plan}=candidate
+  const output=name==='ash_case_scope'?scope:name==='ash_complete_numbers_v157'?analysis:name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
   return new Response(JSON.stringify({status:'completed',id:'mock-'+calls,model:'mock-model',output_text:JSON.stringify(output)}))
 }
 const args={providerKey:'synthetic',source,style:{},outputLanguage:'de',referenceLanguage:'de',baseRequest:{model:'mock-model',instructions:'No external research has been performed in this workflow. Do not invent.\nUse original quotes.',input:[]},baseReviewContent:[],fetchImpl}
 let flow=await advanceCompleteAnalysis(args);assert.equal(flow.state.stage,'analysis');assert(!flow.result)
+flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
-assert.equal(calls,3,'no external research is claimed for an arithmetic-only case')
+assert.equal(calls,4,'no external research is claimed for an arithmetic-only case')
 const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}
 const official='https://www.gesetze-im-internet.de/estg/__34.html'
 const batchFetch=async(url,options)=>{
