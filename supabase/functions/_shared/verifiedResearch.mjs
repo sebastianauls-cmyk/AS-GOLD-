@@ -1,3 +1,27 @@
+import { PRIMARY_SOURCE_CACHE } from './primarySourceCache.mjs'
+const SNAPSHOT_URL='https://raw.githubusercontent.com/sebastianauls-cmyk/AS-GOLD-/main/supabase/functions/_shared/primarySourceCache.json'
+const snapshots=new WeakMap()
+// The daily refresh updates this public JSON independently of edge deployments.
+// A failed read can use the bundled snapshot only while its observed date is fresh.
+export async function loadPrimarySources(fetchImpl=fetch){
+  const previous=snapshots.get(fetchImpl)
+  if(previous&&Date.now()-previous.at<60000)return previous.promise
+  const promise=(async()=>{
+    try{
+      const response=await fetchImpl(SNAPSHOT_URL,{redirect:'error',signal:AbortSignal.timeout(5000),headers:{Accept:'application/json'}})
+      if(!response.ok||Number(response.headers.get('content-length'))>300000){await response.body?.cancel();return PRIMARY_SOURCE_CACHE}
+      const reader=response.body?.getReader();if(!reader)return PRIMARY_SOURCE_CACHE
+      const parts=[];let length=0
+      while(true){const {value,done}=await reader.read();if(done)break;length+=value.byteLength;if(length>300000){await reader.cancel();return PRIMARY_SOURCE_CACHE}parts.push(value)}
+      const bytes=new Uint8Array(length);let offset=0;for(const part of parts){bytes.set(part,offset);offset+=part.byteLength}
+      const data=JSON.parse(new TextDecoder().decode(bytes))
+      if(!Array.isArray(data)||data.length>60)return PRIMARY_SOURCE_CACHE
+      const valid=data.filter(item=>item&&typeof item.url==='string'&&typeof item.title==='string'&&typeof item.source_text==='string'&&item.source_text.length>=100&&item.source_text.length<=64000&&typeof item.checked_at==='string'&&/^\d{4}-\d{2}-\d{2}T/.test(item.checked_at)&&/^[a-f0-9]{64}$/.test(item.content_sha256)&&item.retrieval_mode==='verified_snapshot')
+      return [...new Map([...PRIMARY_SOURCE_CACHE,...valid].map(item=>[item.url,item])).values()]
+    }catch{return PRIMARY_SOURCE_CACHE}
+  })()
+  snapshots.set(fetchImpl,{at:Date.now(),promise});return promise
+}
 // A model-supplied URL or citation is not evidence that a source was retrieved.
 export function officialUrl(value,domains) {
   try {
@@ -33,10 +57,44 @@ export function researchSourceCandidates(proposed,searched,domains) {
   return candidates
 }
 
+export function primarySourceCatalogue(domains,now=Date.now(),records=PRIMARY_SOURCE_CACHE) {
+  // Compare UTC dates because the refresh runner and edge clocks can differ.
+  // A failed scheduled refresh never renews a source's observed date.
+  const today=Date.parse(new Date(now).toISOString().slice(0,10))
+  return records.filter(item=>{const day=Date.parse(item.checked_at.slice(0,10));return officialUrl(item.url,domains)&&day<=today&&today-day<=86400000})
+    .map(({url,title,checked_at})=>({url,title,checked_at}))
+}
+async function cachedSource(url,domains,maxChars,records){
+  if(!primarySourceCatalogue(domains,Date.now(),records).some(item=>item.url===url))return null
+  const item=records.find(item=>item.url===url)
+  const hash=async value=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value))),b=>b.toString(16).padStart(2,'0')).join('')
+  if(await hash(item.source_text)!==item.content_sha256)return null
+  const source_text=item.source_text.slice(0,maxChars)
+  return {...item,source_text,truncated:source_text.length<item.source_text.length,content_sha256:await hash(source_text)}
+}
+
+// A selected provision often needs its statute's tariff, eligibility or procedure
+// to be useful. Supply the small independently refreshed set from that SAME act,
+// never facts or a reference answer from the customer's case.
+export async function supportingPrimaryEvidence(selectedUrls,domains,records){
+  const act=url=>{try{const parsed=new URL(url);return parsed.hostname==='www.gesetze-im-internet.de'?/^\/([a-z0-9_]+)\/__[a-z0-9]+\.html$/.exec(parsed.pathname)?.[1]:null}catch{return null}}
+  const acts=new Set(selectedUrls.map(act).filter(Boolean))
+  const relevant=primarySourceCatalogue(domains,Date.now(),records).filter(item=>acts.has(act(item.url)))
+  return (await Promise.all(relevant.map(item=>cachedSource(item.url,domains,22000,records)))).filter(Boolean)
+}
+
 const entities={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' ',auml:'ä',ouml:'ö',uuml:'ü',Auml:'Ä',Ouml:'Ö',Uuml:'Ü',szlig:'ß',sect:'§',ndash:'–',mdash:'—'}
 export function readableSourceText(body,type) {
   let source=body
-  if(type!=='text/plain') source=source.replace(/<!--[\s\S]*?-->/g,' ').replace(/<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/giu,' ').replace(/<[^>]+>/gu,' ')
+  if(type!=='text/plain') {
+    source=source.replace(/<!--[\s\S]*?-->/g,' ').replace(/<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/giu,' ')
+    // Keep substantive text ahead of large government navigation trees. The
+    // source hash refers to precisely this extracted, possibly truncated text.
+    source=/<main\b[^>]*>([\s\S]*?)<\/main\s*>/iu.exec(source)?.[1]||source
+    const contentStart=/<(?:div|section)\b[^>]*\bid=["'](?:content|main-content|mainContent)["'][^>]*>/iu.exec(source)
+    if(contentStart)source=source.slice(contentStart.index)
+    source=source.replace(/<(nav|header|footer)\b[^>]*>[\s\S]*?<\/\1\s*>/giu,' ').replace(/<[^>]+>/gu,' ')
+  }
   return source.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/giu,(whole,entity)=>{
     if(entity[0]!=='#') return entities[entity]??whole
     const code=entity[1].toLowerCase()==='x'?parseInt(entity.slice(2),16):parseInt(entity.slice(1),10)
@@ -44,7 +102,7 @@ export function readableSourceText(body,type) {
   }).replace(/\s+/gu,' ').trim()
 }
 
-async function fetchOfficialSource(item,domains,fetchImpl) {
+async function fetchOfficialSource(item,domains,fetchImpl,maxChars=48000) {
   const original=officialUrl(item.url,domains)
   if(!original) return null
   const signal=AbortSignal.timeout(8000)
@@ -75,16 +133,16 @@ async function fetchOfficialSource(item,domains,fetchImpl) {
       ||/<\?xml\b[^>]*encoding\s*=\s*["']([\w-]+)/i.exec(head)?.[1]||'utf-8'
     const markup=new TextDecoder(charset,{fatal:true}).decode(bytes)
     const fullText=readableSourceText(markup,type)
-    if(fullText.length<100) return null
-    const retrievedText=fullText.slice(0,48000)
+    if(fullText.length<100||/verifying your browser|radware page|security check|access denied/iu.test(fullText.slice(0,250))) return null
+    const retrievedText=fullText.slice(0,maxChars)
     const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(retrievedText))
     const title=type==='text/plain'?new URL(current).hostname:readableSourceText(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/iu.exec(markup)?.[1]||'','text/html').slice(0,260)||new URL(current).hostname
     return {url:original,final_url:current,title,source_text:retrievedText,truncated:fullText.length>retrievedText.length,checked_at:new Date().toISOString(),content_sha256:Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')}
   } catch {return null}
 }
 
-export async function retrieveOfficialEvidence(items,domains,{fetchImpl=fetch}={}) {
-  const unique=[...new Map(items.map(item=>[item.url,item])).values()].slice(0,8)
-  const fetched=await Promise.all(unique.map(item=>fetchOfficialSource(item,domains,fetchImpl)))
+export async function retrieveOfficialEvidence(items,domains,{fetchImpl=fetch,maxSources=8,maxChars=48000,snapshotRecords=[]}={}) {
+  const unique=[...new Map(items.map(item=>[item.url,item])).values()].slice(0,Math.min(maxSources,20))
+  const fetched=await Promise.all(unique.map(async item=>await fetchOfficialSource(item,domains,fetchImpl,Math.min(maxChars,48000))||await cachedSource(item.url,domains,Math.min(maxChars,48000),snapshotRecords)))
   return new Map(fetched.filter(Boolean).map(item=>[item.url,item]))
 }
