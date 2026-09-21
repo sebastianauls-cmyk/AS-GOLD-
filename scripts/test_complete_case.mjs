@@ -52,6 +52,22 @@ let bad=structuredClone(candidate);bad.analysis.calculations[0].inputs[0].value=
 bad=structuredClone(candidate);bad.analysis.topics=[];assert.throws(()=>validateCompleteAnalysis(bad,source,options),/ausgelassen/)
 bad=structuredClone(candidate);bad.analysis.topics[0].sources=[{url:'https://gesetze-im-internet.de/made-up',quote:'This source was never fetched.'}];assert.throws(()=>validateCompleteAnalysis(bad,source,options),/beleg/i)
 bad=structuredClone(candidate);bad.analysis.calculations[0].inputs[0]={...value('gross','19000'),kind:'assumption'};assert.throws(()=>validateCompleteAnalysis(bad,source,options),/annahme/i)
+bad=structuredClone(candidate)
+bad.analysis.topics[0].sources=[{url:'https://authority.example/not-retrieved',quote:'This text was not supplied as research.'}]
+bad.analysis.calculations[0].inputs[0].value='19000'
+bad.analysis.calculations[0].inputs[1].quote='A different amount: 17.000 EUR.'
+assert.throws(()=>validateCompleteAnalysis(bad,source,options),error=>{
+  assert.deepEqual(error.analysisIssues.map(issue=>issue.location),['analysis.topics[0].sources[0].quote','analysis.calculations[0].inputs[0].value','analysis.calculations[0].inputs[1].quote'])
+  return true
+},'unfetched sources, unsupported numbers and altered original quotes are reported together')
+const linked=structuredClone(candidate)
+linked.analysis.calculations.push({...structuredClone(candidate.analysis.calculations[0]),id:'twice',inputs:[{name:'prior',label:'Vorherige Differenz',value:'1000.00',kind:'calculation',calculation_id:'difference'}],expression:'prior+prior'})
+assert.equal(validateCompleteAnalysis(linked,source,options).analysis.calculations[1].result,'2000.00')
+linked.analysis.calculations[1].inputs[0].value='999.00'
+assert.throws(()=>validateCompleteAnalysis(linked,source,options),/weiterverwendetes/,'derived values must still equal the checked prior result')
+linked.analysis.calculations[1].inputs[0].value='1000.00'
+linked.analysis.calculations.reverse()
+assert.throws(()=>validateCompleteAnalysis(linked,source,options),/weiterverwendetes/,'forward references remain invalid')
 
 let calls=0
 const fetchImpl=async(url,options)=>{
@@ -99,7 +115,7 @@ for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])for(c
 
 // Wrong source numbers are repaired before generating a plan. This remains
 // bounded by the existing two attempts and never skips the three reviews.
-for(const repairSucceeds of [true,false]){
+for(const repairOutcome of ['complete','partial','none']){
   const stages=[]
   let analysisCalls=0
   const repairFetch=async(url,options)=>{
@@ -110,8 +126,14 @@ for(const repairSucceeds of [true,false]){
     else if(name==='ash_complete_numbers_v157'){
       analysisCalls++
       output=structuredClone(candidate.analysis)
-      if(analysisCalls===1||!repairSucceeds)output.calculations[0].inputs[0].value='19000'
-      if(analysisCalls===2)assert(request.input.some(item=>JSON.stringify(item).includes('steht nicht im angegebenen Beleg')),'correction receives the actual failed source check')
+      if(analysisCalls===1||repairOutcome==='none')output.calculations[0].inputs[0].value='19000'
+      if(analysisCalls===1||repairOutcome!=='complete')output.calculations[0].inputs[1].value='16000'
+      if(analysisCalls===2){
+        const feedback=JSON.parse(request.input.at(-1).content[0].text).correction.issues
+        assert.equal(feedback.length,2,'the one correction receives every invalid number, not only the first')
+        assert.deepEqual(feedback.map(issue=>issue.location),['analysis.calculations[0].inputs[0].value','analysis.calculations[0].inputs[1].value'])
+        assert(feedback.every(issue=>issue.reason.includes('steht nicht im angegebenen Beleg')))
+      }
     }else if(name==='ash_complete_plan_v157'){
       const component=JSON.parse(request.input.at(-1).content[0].text)
       assert.equal(component.analysis.calculations[0].result,'1000.00','plan receives only successfully checked arithmetic')
@@ -124,8 +146,9 @@ for(const repairSucceeds of [true,false]){
   repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
   assert.equal(repairFlow.state.draftAnalysis,null)
   assert.equal(repairFlow.state.modelState.attempt,2)
-  if(!repairSucceeds){
-    await assert.rejects(advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state}),error=>error.code==='source_unresolved')
+  assert.equal(repairFlow.state.modelState.feedback.length,2,'both wrong source amounts must reach the single correction')
+  if(repairOutcome!=='complete'){
+    await assert.rejects(advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state}),error=>error.code==='source_unresolved'&&error.issues.length===(repairOutcome==='partial'?1:2))
     assert.equal(stages.length,3,'a second bad number stops before any plan or reviews')
     continue
   }

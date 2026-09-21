@@ -33,6 +33,7 @@ export const COMPLETE_ANALYSIS_SCHEMA=object({...ROADMAP_SCHEMA.properties,analy
 const PLAN_SCHEMA=object({...ROADMAP_SCHEMA.properties,topic_steps:array(object({id:str,step_ids:strings}))})
 const normalized=value=>String(value||'').replace(/\s+/gu,' ').trim()
 const fail=message=>{throw new Error(message)}
+const validationFeedback=(error,location)=>error.analysisIssues||[{code:'source',location,reason:error.message}]
 
 export function completeResearchScope(source){
   const codes=[...new Set([source.case.home_country,source.case.target_country].filter(Boolean))]
@@ -49,38 +50,56 @@ function validateAnalysisContent(analysis,source,{scope,research,stepIds=null}){
   if(!analysis||!Array.isArray(analysis.topics)||!Array.isArray(analysis.calculations)||analysis.calculations.length>24||!Array.isArray(analysis.limitations))fail('Die vollständige Fallauswertung fehlt.')
   const docs=new Map(source.documents.map(doc=>[doc.id,doc.extracted_text]))
   const sources=new Map(research.map(item=>[item.url,item]))
-  const seen=new Set()
-  function exactQuote(original,quote){if(normalized(quote).length<8||!original||!normalized(original).includes(normalized(quote)))fail('Auswertungsbeleg ist keine unveränderte Stelle der übergebenen Quelle: '+String(quote).slice(0,160))}
-  for(const topic of analysis.topics){
+  const seen=new Set(),sourceIssues=[]
+  function exactQuote(original,quote,location){
+    if(normalized(quote).length<8||!original||!normalized(original).includes(normalized(quote))){
+      sourceIssues.push({code:'source',location,reason:'Auswertungsbeleg ist keine unveränderte Stelle der übergebenen Quelle: '+String(quote).slice(0,160)})
+      return false
+    }
+    return true
+  }
+  for(const [topicIndex,topic] of analysis.topics.entries()){
     if(!scope.issues.some(issue=>issue.id===topic.id)||seen.has(topic.id))fail('Die Fallfragen müssen eindeutig mit dem Prüfauftrag übereinstimmen.')
     seen.add(topic.id)
     if(!normalized(topic.title)||!normalized(topic.conclusion)||!['answered','conditional','open'].includes(topic.status)||!Array.isArray(topic.step_ids)||stepIds&&topic.step_ids.some(id=>!stepIds.has(id)))fail('Eine Fallfrage ist unvollständig beantwortet.')
     if(topic.status!=='answered'&&(!normalized(topic.conditions)||stepIds&&!topic.step_ids.length))fail('Offene oder bedingte Ergebnisse brauchen die konkrete Voraussetzung und einen nächsten Schritt.')
     if(!Array.isArray(topic.sources))fail('Quellenangaben fehlen.')
-    for(const item of topic.sources)exactQuote(sources.get(item.url)?.source_text,item.quote)
+    for(const [sourceIndex,item] of topic.sources.entries())exactQuote(sources.get(item.url)?.source_text,item.quote,`analysis.topics[${topicIndex}].sources[${sourceIndex}].quote`)
   }
   if(scope.issues.some(issue=>!seen.has(issue.id)))fail('Eine wesentliche Fallfrage aus dem Prüfauftrag wurde ausgelassen.')
-  const calculated=new Map()
-  const calculations=analysis.calculations.map(calculation=>{
-    if(!/^[a-zA-Z][a-zA-Z0-9_-]{0,49}$/.test(calculation.id)||calculated.has(calculation.id)||!normalized(calculation.title)||!normalized(calculation.explanation))fail('Ungültige Berechnung.')
+  const calculationIds=new Set()
+  const prepared=analysis.calculations.map((calculation,calculationIndex)=>{
+    if(!/^[a-zA-Z][a-zA-Z0-9_-]{0,49}$/.test(calculation.id)||calculationIds.has(calculation.id)||!normalized(calculation.title)||!normalized(calculation.explanation))fail('Ungültige Berechnung.')
+    calculationIds.add(calculation.id)
     if(!Array.isArray(calculation.topic_ids)||!calculation.topic_ids.length||calculation.topic_ids.some(id=>!seen.has(id)))fail('Berechnung ohne zugeordnete Fallfrage.')
     if(!Array.isArray(calculation.inputs)||calculation.inputs.length<1||calculation.inputs.length>24)fail('Rechenwerte fehlen oder sind zu umfangreich.')
     const values={}
-    for(const input of calculation.inputs){
+    for(const [inputIndex,input] of calculation.inputs.entries()){
       if(!/^[a-zA-Z][a-zA-Z0-9_]{0,39}$/.test(input.name)||['min','max','round','floor'].includes(input.name)||Object.hasOwn(values,input.name))fail('Rechenwerte müssen eindeutig benannt sein.')
       if(!normalized(input.label))fail('Rechenwert ohne Erklärung.')
       if(input.kind==='document'||input.kind==='source'){
-        exactQuote(input.kind==='document'?docs.get(input.document_id):sources.get(input.url)?.source_text,input.quote)
-        if(!quoteContainsNumber(input.quote,input.value))fail(`Rechenwert ${input.name}=${input.value} steht nicht im angegebenen Beleg.`)
+        const location=`analysis.calculations[${calculationIndex}].inputs[${inputIndex}]`
+        const quoted=exactQuote(input.kind==='document'?docs.get(input.document_id):sources.get(input.url)?.source_text,input.quote,location+'.quote')
+        if(quoted&&!quoteContainsNumber(input.quote,input.value))sourceIssues.push({code:'source',location:location+'.value',reason:`Rechenwert ${input.name}=${input.value} steht nicht im angegebenen Beleg.`})
       }else if(input.kind==='calculation'){
-        const previous=calculated.get(input.calculation_id)
-        if(!previous||calculateExpression('x',{x:input.value},8)!==calculateExpression('x',{x:previous.result},8))fail('Ein weiterverwendetes Rechenergebnis stimmt nicht mit der vorherigen Berechnung überein.')
+        // Check references only after all original/source values are verified.
       }else if(input.kind==='assumption'){
         if(!normalized(input.explanation)||!normalized(calculation.conditions))fail('Eine Rechenannahme muss ausdrücklich erklärt und das Ergebnis bedingt sein.')
       }else fail('Unbekannte Herkunft eines Rechenwerts.')
       values[input.name]=input.value
     }
     if(!Number.isInteger(calculation.decimal_places)||calculation.decimal_places<0||calculation.decimal_places>4)fail('Rundungsangabe fehlt.')
+    return {calculation,values}
+  })
+  // Give the one correction all independent source defects at once. No
+  // calculation, plan or review may consume values that failed this gate.
+  if(sourceIssues.length)throw Object.assign(new Error(sourceIssues.map(issue=>issue.reason).join('\n')),{analysisIssues:sourceIssues})
+  const calculated=new Map()
+  const calculations=prepared.map(({calculation,values})=>{
+    for(const input of calculation.inputs.filter(item=>item.kind==='calculation')){
+      const previous=calculated.get(input.calculation_id)
+      if(!previous||calculateExpression('x',{x:input.value},8)!==calculateExpression('x',{x:previous.result},8))fail('Ein weiterverwendetes Rechenergebnis stimmt nicht mit der vorherigen Berechnung überein.')
+    }
     const computed={...calculation,result:calculateExpression(calculation.expression,values,calculation.decimal_places)}
     calculated.set(calculation.id,computed);return computed
   })
@@ -153,7 +172,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
       let draftAnalysis=generated.parsed,draftFeedback=[]
       try{draftAnalysis=validateAnalysisContent(resolveQuotationIds(draftAnalysis,quotes),source,{scope:current.scope,research:current.research})}
       catch(error){
-        const feedback=[{code:'source',location:'analysis',reason:error.message}]
+        const feedback=validationFeedback(error,'analysis')
         // A plan cannot repair inputs in the separate analysis component.
         // Use the existing single correction before spending calls on a plan
         // and its reviews. A valid candidate still needs all three reviews.
@@ -169,14 +188,14 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     try{
       if(!Array.isArray(topic_steps)||links.size!==topic_steps.length||links.size!==current.scope.issues.length||[...links.keys()].some(id=>!current.scope.issues.some(issue=>issue.id===id)))throw Error('Fallfragen sind nicht vollständig mit den nächsten Schritten verbunden.')
       candidate=validate(combined,validationContext)
-    }catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=[{code:'source',location:'output',reason:error.message}]}
+    }catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=validationFeedback(error,'output')}
     return {status:'processing',state:{...current,draftAnalysis:null,draftFeedback:[],modelState:{stage:'review',attempt,candidate,structuralFeedback,validationContext,model:generated.model,response_id:generated.response_id}}}
   }
   const partIndex=current.reviewIndex||0
   if(!Number.isInteger(partIndex)||partIndex<0||partIndex>2)throw new ModelWorkflowError('Ungültiger Prüfabschnitt.',409)
   let candidate=current.modelState.candidate,validationContext=current.modelState.validationContext
   let structuralFeedback=current.modelState.structuralFeedback||[]
-  try{candidate=validate(candidate,validationContext)}catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=[{code:'source',location:'output',reason:error.message}]}
+  try{candidate=validate(candidate,validationContext)}catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=validationFeedback(error,'output')}
   const {analysis,...plan}=candidate
   const related={topics:analysis?.topics?.map(({id,title,conclusion,conditions,step_ids})=>({id,title,conclusion,conditions,step_ids})),calculations:analysis?.calculations?.map(({id,title,result,unit,conditions,topic_ids})=>({id,title,result,unit,conditions,topic_ids})),steps:plan.steps?.map(({id,action,done_when})=>({id,action,done_when}))}
   const part=partIndex===0?{analysis:{topics:analysis?.topics,limitations:analysis?.limitations}}:partIndex===1?{analysis:{calculations:analysis?.calculations}}:plan
