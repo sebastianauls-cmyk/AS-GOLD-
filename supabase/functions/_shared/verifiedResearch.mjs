@@ -36,7 +36,13 @@ export function researchSourceCandidates(proposed,searched,domains) {
 const entities={amp:'&',lt:'<',gt:'>',quot:'"',apos:"'",nbsp:' ',auml:'ä',ouml:'ö',uuml:'ü',Auml:'Ä',Ouml:'Ö',Uuml:'Ü',szlig:'ß',sect:'§',ndash:'–',mdash:'—'}
 export function readableSourceText(body,type) {
   let source=body
-  if(type!=='text/plain') source=source.replace(/<!--[\s\S]*?-->/g,' ').replace(/<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/giu,' ').replace(/<[^>]+>/gu,' ')
+  if(type!=='text/plain') {
+    source=source.replace(/<!--[\s\S]*?-->/g,' ').replace(/<(script|style|noscript|template|svg)\b[^>]*>[\s\S]*?<\/\1\s*>/giu,' ')
+    // Keep substantive text ahead of large government navigation trees. The
+    // source hash refers to precisely this extracted, possibly truncated text.
+    source=/<main\b[^>]*>([\s\S]*?)<\/main\s*>/iu.exec(source)?.[1]||source
+    source=source.replace(/<(nav|header|footer)\b[^>]*>[\s\S]*?<\/\1\s*>/giu,' ').replace(/<[^>]+>/gu,' ')
+  }
   return source.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/giu,(whole,entity)=>{
     if(entity[0]!=='#') return entities[entity]??whole
     const code=entity[1].toLowerCase()==='x'?parseInt(entity.slice(2),16):parseInt(entity.slice(1),10)
