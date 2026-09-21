@@ -95,18 +95,19 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
       <section className="publicProductHero">
         <div className="wrap publicProductHeroGrid">
           <div className="publicProductIntro">
+            <p className="publicWorkspaceEyebrow">{c.eyebrow}</p>
             <h1>{c.headline}</h1>
             <p className="lead">{c.lead}</p>
+            <section className="publicCapabilitySummary" aria-labelledby="public-summary-title">
+              <h2 id="public-summary-title" className="publicVisuallyHidden">{c.summaryTitle}</h2>
+              <ul>{c.benefits.map(title=><li key={title}><span aria-hidden="true">✓</span>{title}</li>)}</ul>
+            </section>
             <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
           </div>
           <PublicResultExample language={language} outputLanguage={outputLanguage}/>
           <div className="publicProductEntry">
             <div className="actions"><a className="primary btn" href="#beispiel">{c.previewAction}</a><button type="button" className="secondary btn publicRegister" onClick={()=>setScreen('register')}>{c.start}</button></div>
             <p className="freeHint">{c.entryNote} · <a href="#preise">{t.prices}</a></p>
-            <section className="publicCapabilitySummary" aria-labelledby="public-summary-title">
-              <h2 id="public-summary-title" className="publicVisuallyHidden">{c.summaryTitle}</h2>
-              <ul>{c.benefits.map(title=><li key={title}><span aria-hidden="true">✓</span>{title}</li>)}</ul>
-            </section>
             <a className="publicLanguageCountryHeroLink" href="#sprachen-rechtsraeume">{crossBorder.nav} →</a>
           </div>
         </div>
@@ -118,8 +119,8 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
         </div>
       </section>
       <PublicLanguageCountryModule language={language} onStart={onStartLanguageCase} compact/>
-      <PublicPricingSection a={a} c={c} payment={payment} paymentConfig={paymentConfig} jl={jl} localizedPlans={localizedPlans} rt={rt} selectedGoal={selectedGoal} onGoalChange={value=>{setSelectedGoal(value);setShowRecommendation(true)}} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} recommendedTier={recommendedTier} eur={eur} period={period} terms={terms} monthsLabel={monthsLabel} onRegister={()=>setScreen('register')}/>
       <PublicProductTour pc={pc} c={c} onRegister={()=>setScreen('register')} compact/>
+      <PublicPricingSection a={a} c={c} payment={payment} paymentConfig={paymentConfig} jl={jl} localizedPlans={localizedPlans} rt={rt} selectedGoal={selectedGoal} onGoalChange={value=>{setSelectedGoal(value);setShowRecommendation(true)}} showRecommendation={showRecommendation} recommendedPlan={recommendedPlan} recommendedTier={recommendedTier} eur={eur} period={period} terms={terms} monthsLabel={monthsLabel} onRegister={()=>setScreen('register')}/>
       <PublicCaseDiscoverySection cd={cd} pa={pa} audience={audience} orderedPublicCases={orderedPublicCases} activePublicCase={activePublicCase} onSelectCase={setSelectedPublicCase} onRegister={()=>setScreen('register')} compact summaryLabel={c.moreCases}/>
       <section className="publicControl section"><div className="wrap"><h2>{c.control}</h2><p className="lead">{c.controlBody}</p>
         <details className="publicExtraHelp"><summary>{c.extraHelp}</summary>

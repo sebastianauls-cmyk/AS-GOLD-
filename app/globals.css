@@ -688,9 +688,21 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 .publicProductHero .actions a.primary:hover{background:#5d4510}
 .publicProductHero .freeHint{margin:0;font-size:.875rem;line-height:1.55}
 .publicProductHero .freeHint a{color:#634b18;text-underline-offset:3px}
+.publicWorkspaceEyebrow{margin:0 0 12px;color:#765916;font-size:.9rem;font-weight:750;line-height:1.5}
+.publicExplainer{margin:12px 0 10px;padding:10px;border:1px solid #d9c792;border-radius:16px;background:#fff}
+.publicExplainer.isOpen{padding:16px}
+.publicExplainerTrigger{width:100%;padding:12px 14px;border:0;border-radius:11px;background:#fff8df;color:#5b4618;font-weight:800;font-size:1rem;line-height:1.4;cursor:pointer}
+.explainerVideoHeader{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px;color:#4d3b14;font-size:1.05rem;line-height:1.4}
+.explainerVideoHeader button{flex:0 0 44px;width:44px;min-height:44px;border:1px solid #d8d1bd;background:#fff;border-radius:10px;color:#4d3b14;font-size:1.5rem;cursor:pointer}
+.explainerVideoControls{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:14px;color:#5d4a1e;font-size:.9rem}
+.explainerVideoLanguage{display:grid;gap:5px;font-weight:750;min-width:0}
+.explainerVideoLanguage select{width:100%;min-height:44px;padding:8px 10px;border:1px solid #d8d1bd;border-radius:10px;background:#fff;font:inherit;color:#26313b}
+.explainerVideoPresenters>b{display:block;margin-bottom:5px}
+.explainerVideoPresenters [role=group]{display:flex;gap:8px;flex-wrap:wrap}
+.explainerVideoPresenters button{font:inherit}
 .publicCapabilitySummary{background:transparent;color:#28313d;padding:22px 0 12px;border-radius:0}
-.publicCapabilitySummary ul{list-style:none;margin:0;padding:0;display:grid;gap:10px}
-.publicCapabilitySummary li{display:flex;gap:10px;padding:0;border:0;font-size:.98rem;line-height:1.5}
+.publicCapabilitySummary ul{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px}
+.publicCapabilitySummary li{display:flex;align-items:baseline;gap:8px;padding:0;border:0;font-size:.9rem;line-height:1.45;font-weight:650;overflow-wrap:anywhere}
 .publicCapabilitySummary li:last-child{padding:0}
 .publicCapabilitySummary li>span{color:#476847;font-size:1rem;line-height:1.5;flex:0 0 auto}
 .publicVisuallyHidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important}
@@ -722,15 +734,19 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 .publicProductPage .termPublic .publicTermGrid{margin-top:20px}
 .publicProductPage .publicExtraHelp .wrap{width:100%}
 @media(max-width:700px){
- .publicProductPage .publicTop .nav{grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 0}
+ .publicProductPage .publicTop .nav{grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:8px 0}
  .publicProductPage .publicLanguageModules{grid-row:2;max-width:none;gap:10px}
  .publicProductPage .publicLanguageTitle{min-height:0;font-size:.875rem}
- .publicProductHero{padding:28px 0 32px}
- .publicProductHeroGrid{grid-template-columns:minmax(0,1fr);grid-template-areas:'intro' 'entry' 'example';gap:20px}
+ .publicProductHero{padding:16px 0 32px}
+ .publicProductHeroGrid{grid-template-columns:minmax(0,1fr);grid-template-areas:'intro' 'entry' 'example';gap:12px}
+ .publicWorkspaceEyebrow{margin-bottom:8px}
+ .publicExplainer:not(.isOpen){padding:0;border:0;margin:8px 0 0;background:transparent}
+ .publicProductPage .publicExplainerTrigger{min-height:44px;padding:8px 10px;font-size:.875rem}
  .publicProductHero h1{font-size:clamp(2rem,8vw,2.6rem);line-height:1.12;margin-bottom:16px}
  .publicProductIntro .lead{font-size:1rem;line-height:1.6}
- .publicCapabilitySummary{padding:18px 0 8px}
- .publicCapabilitySummary li{font-size:.95rem}
+ .publicCapabilitySummary{padding:12px 0 8px}
+ .publicCapabilitySummary ul{gap:8px 12px}
+ .publicCapabilitySummary li{font-size:.875rem}
  .publicResultExample{padding:20px;margin-top:8px}
  .publicExampleChoices button{font-size:.94rem;padding:10px 8px}
  .publicProductPage .section{padding:38px 0}
