@@ -1,3 +1,4 @@
+import { completeAnalysisBlocks } from '../cases/lib/completeAnalysisDisplay.mjs'
 import { readableStepText, roadmapStepReference } from '../cases/lib/roadmapDisplay.mjs'
 import { createTextPdf } from './textPdf.mjs'
 import { roadmapSteps, ROADMAP_COLORS } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
@@ -44,6 +45,7 @@ export function roadmapExportBlocks(record,{letterId}={}) {
     add(ui.questions,'heading')
     for(const question of record.result.open_questions) add(`${question.question}\n${ui.owner}: ${question.who}\n${ui.reason}: ${question.why}`)
   }
+  blocks.push(...completeAnalysisBlocks(record.result.analysis,record.output_language))
   roadmapSteps(record).forEach((step,index)=>{
     add(`${index+1}. ${step.title}`,'step',step.light)
     add(`${ui[step.phase]} · ${ui[step.light]}`,'meta')

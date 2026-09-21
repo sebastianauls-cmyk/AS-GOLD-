@@ -65,3 +65,19 @@ test('speaking fills the same human question without a second form',async({page}
   await page.getByRole('button',{name:'Aufnahme beenden',exact:true}).click()
   await expect(page.getByRole('button',{name:'Weiter',exact:true})).toBeEnabled()
 })
+
+
+test('complete analysis shows checked amounts and conditions behind the short answer',async({page},testInfo)=>{
+  await begin(page)
+  await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
+  await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
+  await expect(page.locator('.roadmapCompleteAnalysis')).toHaveCount(0)
+  await page.getByRole('button',{name:'Nächste Schritte anzeigen',exact:true}).click()
+  await expect(page.locator('.roadmapCompleteAnalysis')).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Brutto minus netto: 1.000,00 EUR'})).toBeVisible()
+  await expect(page.getByText('Voraussetzungen: Die Art der Abzüge ist ungeklärt.',{exact:true})).toBeVisible()
+  await expect(page.locator('.roadmapActions').getByRole('button',{name:'PDF',exact:true}).first()).toBeEnabled()
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
+  await page.screenshot({path:testInfo.outputPath('complete-analysis.png'),fullPage:true})
+})

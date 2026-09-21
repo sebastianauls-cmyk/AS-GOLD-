@@ -44,7 +44,7 @@ export function readableSourceText(body,type) {
   }).replace(/\s+/gu,' ').trim()
 }
 
-async function fetchOfficialSource(item,domains,fetchImpl) {
+async function fetchOfficialSource(item,domains,fetchImpl,maxChars=48000) {
   const original=officialUrl(item.url,domains)
   if(!original) return null
   const signal=AbortSignal.timeout(8000)
@@ -76,15 +76,15 @@ async function fetchOfficialSource(item,domains,fetchImpl) {
     const markup=new TextDecoder(charset,{fatal:true}).decode(bytes)
     const fullText=readableSourceText(markup,type)
     if(fullText.length<100) return null
-    const retrievedText=fullText.slice(0,48000)
+    const retrievedText=fullText.slice(0,maxChars)
     const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(retrievedText))
     const title=type==='text/plain'?new URL(current).hostname:readableSourceText(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/iu.exec(markup)?.[1]||'','text/html').slice(0,260)||new URL(current).hostname
     return {url:original,final_url:current,title,source_text:retrievedText,truncated:fullText.length>retrievedText.length,checked_at:new Date().toISOString(),content_sha256:Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')}
   } catch {return null}
 }
 
-export async function retrieveOfficialEvidence(items,domains,{fetchImpl=fetch}={}) {
-  const unique=[...new Map(items.map(item=>[item.url,item])).values()].slice(0,8)
-  const fetched=await Promise.all(unique.map(item=>fetchOfficialSource(item,domains,fetchImpl)))
+export async function retrieveOfficialEvidence(items,domains,{fetchImpl=fetch,maxSources=8,maxChars=48000}={}) {
+  const unique=[...new Map(items.map(item=>[item.url,item])).values()].slice(0,Math.min(maxSources,14))
+  const fetched=await Promise.all(unique.map(item=>fetchOfficialSource(item,domains,fetchImpl,Math.min(maxChars,48000))))
   return new Map(fetched.filter(Boolean).map(item=>[item.url,item]))
 }

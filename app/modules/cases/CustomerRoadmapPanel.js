@@ -12,6 +12,7 @@ import { downloadExportArtifact } from '../services/exportService'
 import { ResultContinuation } from './ResultContinuation'
 import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
 import { caseDocuments, preparationContext, prepareCaseDocuments, savePreparedCaseDocuments } from './lib/casePreparation.mjs'
+import { completeAnalysisBlocks, completeAnalysisCopy } from './lib/completeAnalysisDisplay.mjs'
 import './customerRoadmap.css'
 
 function Dot({light,label}) {return <span className="roadmapLight"><span aria-hidden="true" style={{backgroundColor:ROADMAP_COLORS[light]}}/>{label}</span>}
@@ -56,11 +57,13 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
       <div><b>{ui.action}</b><p>{current.action}</p>{current.step&&<p className="roadmapMeta">{ui.owner}: {current.step.owner}</p>}</div>
     </div>
     <ResultContinuation {...continuation} language={language} onContinue={openCurrentStep}/>
+    {!result.analysis&&<p className="roadmapMeta">{completeAnalysisCopy(record.output_language).legacy}</p>}
     {full&&<>
       <div className="roadmapLegend">{['green','yellow','red','white'].map(light=><Dot key={light} light={light} label={ui[light]}/>)}</div>
       <div className="roadmapActions"><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('docx')}>Word</button><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('pdf')}>PDF</button></div>
       {result.facts.length>0&&<section><h4>{ui.facts}</h4>{result.facts.map((fact,index)=><div key={index}><p>{fact.text}</p><Evidence items={fact.evidence} documents={documents} ui={ui} onOpenDocument={onOpenDocument}/></div>)}</section>}
       {result.open_questions.length>0&&<section><h4>{ui.questions}</h4><ul>{result.open_questions.map((question,index)=><li key={index}><b>{question.question}</b><p>{ui.owner}: {question.who}<br/>{ui.reason}: {question.why}</p></li>)}</ul></section>}
+      {result.analysis&&<section className="roadmapCompleteAnalysis">{completeAnalysisBlocks(result.analysis,record.output_language).map((block,index)=>block.kind==='heading'?<h4 key={index}>{block.text}</h4>:<p key={index} className={block.kind==='meta'?'roadmapMeta':undefined} style={{whiteSpace:'pre-line'}}>{block.url?<a href={block.url} target="_blank" rel="noopener noreferrer">{block.text}</a>:block.text}</p>)}</section>}
       <h4>{ui.steps}</h4>
       <ol className="roadmapStepList">{steps.map((step,index)=><li key={step.id} className="roadmapStep" data-step-id={step.id} tabIndex={-1} ref={element=>{if(element)stepRefs.current.set(step.id,element);else stepRefs.current.delete(step.id)}}>
         <div className="roadmapStepHead"><h4>{index+1}. {step.title}</h4><Dot light={step.light} label={ui[step.light]}/></div>
@@ -190,7 +193,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   return <section className="customerRoadmapPanel" id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>
     <header className="roadmapPanelHead"><div><h3 id={`roadmap-title-${item.id}`}>{simple.title}</h3><p>{simple.intro}</p></div>{record&&canCreate&&<button type="button" className="secondary" disabled={busy} onClick={expandForm}>{ui.refresh}</button>}</header>
     {loading&&<p role="status">{ui.loading}</p>}
-    {busy&&processingStage&&<div className="caseReadingProgress" role="status" aria-live="polite"><b>{processingStage==='documents'?simple.reading:simple.saving}{documentProgress?` · ${documentProgress.index} / ${documentProgress.total}`:' …'}</b>{documentProgress&&<p>{documentProgress.document.title}</p>}<p>{simple.working}</p><details><summary>{simple.details}</summary>{roadmapProgressLabel(language,processingStage)}</details></div>}
+    {busy&&processingStage&&<div className="caseReadingProgress" role="status" aria-live="polite"><b>{processingStage==='documents'?simple.reading:processingStage==='saving'?simple.saving:roadmapProgressLabel(language,processingStage)}{documentProgress?` · ${documentProgress.index} / ${documentProgress.total}`:' …'}</b>{documentProgress&&<p>{documentProgress.document.title}</p>}<p>{simple.working}</p><details><summary>{simple.details}</summary>{roadmapProgressLabel(language,processingStage)}</details></div>}
     {error&&<p className="roadmapError" role="alert">{error}</p>}
     {failedDocument&&<button type="button" className="secondary" onClick={()=>onOpenDocument?.(failedDocument)}>{ui.newDocument}: {failedDocument.title}</button>}
     {stale&&<p className="roadmapStale" role="status">{ui.stale}</p>}
