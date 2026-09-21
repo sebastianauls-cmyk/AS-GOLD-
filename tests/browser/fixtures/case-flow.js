@@ -14,23 +14,30 @@ export default function Fixture(){
   const [draft,setDraft]=useState({...emptyCase}),[started,setStarted]=useState(false),[language,setLanguage]=useState('de')
   const [documents,setDocuments]=useState(()=>roadmapTestDocuments.map((doc,i)=>({...doc,title:`${i+1}.pdf`,file_path:`fixture/${i+1}.pdf`,extracted_text:null})))
   const [stats,setStats]=useState({read:0,saved:0,generated:0,sent:0})
-  const [opened,setOpened]=useState('')
-  const current=useRef({}),cache=useRef(new Map()),fail=useRef(false),reviewFailure=useRef(false)
+  const [opened,setOpened]=useState(''),[caseVisible,setCaseVisible]=useState(true)
+  const current=useRef({}),cache=useRef(new Map()),fail=useRef(false),reviewFailure=useRef(false),savedJob=useRef(null),savedRoadmap=useRef(null),holdJob=useRef(false)
   const item={...roadmapTestCase,title:draft.title||'Ich verstehe meine Briefe nicht.',goal:draft.goal||roadmapTestCase.goal}
   current.current={item,documents}
-  const supabase=useMemo(()=>({
-    from(){const query={select(){return this},eq(){return this},order(){return this},update(){return this},limit:async()=>({data:[],error:null}),single:async()=>({data:{},error:null}),then(resolve,reject){return Promise.resolve({data:[],error:null}).then(resolve,reject)}};return query},
-    functions:{invoke:async(name,{body})=>{
-      if(name!=='gold-case-roadmap')return {data:null,error:null}
-      if(body.action!=='generate'||body.analysis_mode!=='complete')throw new Error('Complete analysis was not requested')
-      if(current.current.documents.some(doc=>!doc.extracted_text))throw new Error('Generation started before all originals were stored')
-      if(!body.checkpoint)setStats(value=>({...value,generated:value.generated+1}))
-      const stage=Number(body.checkpoint||0)
-      if(stage<5)return {data:{status:'processing',checkpoint:String(stage+1),stage:['research','generation','review','correction','review'][stage]},error:null}
-      if(reviewFailure.current)return {data:null,error:{context:new Response(JSON.stringify({code:'review_unresolved',issues:[{code:'source',location:'analysis.calculations',reason:'Die Berechnung passt nicht zum angegebenen Original.'},{code:'sender_role',location:'letters',reason:'Das Schreiben setzt eine unbelegte Vollmacht voraus.'}]}),{status:422,headers:{'Content-Type':'application/json'}})}}
+  async function finishBackground(){
+    if(!savedJob.current||!['queued','running'].includes(savedJob.current.status))return
+    if(reviewFailure.current){savedJob.current={...savedJob.current,status:'failed',error_code:'review_unresolved',issues:[{code:'source',location:'analysis.calculations',reason:'Die Berechnung passt nicht zum angegebenen Original.'},{code:'sender_role',location:'letters',reason:'Das Schreiben setzt eine unbelegte Vollmacht voraus.'}]};return}
       const roadmap={...roadmapTestRecord(),source_fingerprint:await roadmapFingerprint(roadmapSource(current.current.item,current.current.documents,[]))}
       roadmap.result.analysis={topics:[{id:'difference',title:'Zusammensetzung der Abzüge',status:'open',conclusion:'Die Differenz ist berechnet. Wofür sie abgezogen wurde, ist noch offen.',conditions:'Die Abrechnung muss den Abzug erklären.',sources:[],step_ids:['anfragen']}],calculations:[{id:'net',title:'Brutto minus netto',inputs:[{label:'Brutto',value:'18000',kind:'document',quote:'Die einmalige Kapitalzahlung beträgt 18.000 EUR brutto und 17.000 EUR netto.'},{label:'Netto',value:'17000',kind:'document',quote:''}],expression:'gross-net',result:'1000.00',unit:'EUR',conditions:'Die Art der Abzüge ist ungeklärt.',explanation:'18.000 EUR abzüglich 17.000 EUR ergibt 1.000 EUR.'}],limitations:['Die Berechnungsanlage fehlt.'],research_sources:[]}
-      return {data:{status:'completed',roadmap},error:null}
+    savedRoadmap.current=roadmap
+    savedJob.current={...savedJob.current,status:'completed',roadmap_id:roadmap.id}
+  }
+  const supabase=useMemo(()=>({
+    from(table){const query={select(){return this},eq(){return this},order(){return this},update(){return this},limit:async()=>({data:structuredClone(table==='case_analysis_jobs'&&savedJob.current?[savedJob.current]:table==='case_roadmaps'&&savedRoadmap.current?[savedRoadmap.current]:[]),error:null}),single:async()=>({data:{},error:null}),then(resolve,reject){return Promise.resolve({data:[],error:null}).then(resolve,reject)}};return query},
+    functions:{invoke:async(name,{body})=>{
+      if(name!=='gold-case-roadmap')return {data:null,error:null}
+      if(body.action==='cancel'){savedJob.current={...savedJob.current,status:'cancelled'};return {data:{job:structuredClone(savedJob.current)},error:null}}
+      if(body.action!=='enqueue'||body.analysis_mode!=='complete')throw new Error('Durable complete analysis was not requested')
+      if(current.current.documents.some(doc=>!doc.extracted_text))throw new Error('Generation started before all originals were stored')
+      if(savedJob.current&&['queued','running'].includes(savedJob.current.status))return {data:{job:structuredClone(savedJob.current)},error:null}
+      setStats(value=>({...value,generated:value.generated+1}))
+      savedJob.current={id:crypto.randomUUID(),case_id:current.current.item.id,status:'queued',stage:'planning',created_at:new Date().toISOString()}
+      if(!holdJob.current)setTimeout(()=>finishBackground(),120)
+      return {data:{status:'queued',job:structuredClone(savedJob.current)},error:null}
     }}
   }),[])
   async function analyze(document,{onFailure}={}){
@@ -57,7 +64,10 @@ export default function Fixture(){
     <button onClick={()=>{fail.current=true}}>Simulate one failed read</button>
     <button onClick={()=>{fail.current='quota'}}>Simulate exhausted provider credits</button>
     <button onClick={()=>{reviewFailure.current=true}}>Simulate unresolved content review</button>
-    {!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>setStarted(false)} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} continuation={{canContinue:true}}/>}
+    <button onClick={()=>{holdJob.current=true}}>Hold background job</button>
+    <button onClick={()=>setCaseVisible(value=>!value)}>{caseVisible?'Leave case page':'Return to case page'}</button>
+    <button onClick={finishBackground}>Finish background job</button>
+    {caseVisible&&(!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>setStarted(false)} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} continuation={{canContinue:true}}/>)}
     <output data-testid="stats">{JSON.stringify(stats)}</output><output>{opened}</output>
   </main>
 }

@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import {transformSync} from 'next/dist/build/swc/index.js'
 import * as checkpoints from '../supabase/functions/_shared/modelCheckpoint.mjs'
 import * as evidence from '../supabase/functions/_shared/caseEvidenceRules.mjs'
+import * as modelContext from '../supabase/functions/_shared/roadmapModelContext.mjs'
 import * as complete from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import * as quality from '../supabase/functions/_shared/modelQuality.mjs'
 import * as roadmap from '../supabase/functions/_shared/customerRoadmap.mjs'
@@ -16,7 +17,7 @@ const secret='synthetic-request-flow-secret-never-a-real-key'
 const ownerId=roadmapTestCase.owner_id
 const baseBody={action:'generate',case_id:roadmapTestCase.id,staged:true,style:{customer_name:'Nora Muster'},output_language:'de',reference_language:'de',acknowledged:true,privacy_notice_version:'2026-08-30-v1',terms_version:'2026-08-30-test-v1'}
 let state,handler
-function reset(){state={user:{id:ownerId,is_anonymous:false},active:true,permissions:{full_analysis:true,draft_letters:true},ai:true,cases:[structuredClone(roadmapTestCase)],documents:structuredClone(roadmapTestDocuments),assessments:[],case_roadmaps:[],modelCalls:0,extraCount:0,issues:[],reviewGate:null}}
+function reset(){state={user:{id:ownerId,is_anonymous:false},active:true,permissions:{full_analysis:true,draft_letters:true},ai:true,cases:[structuredClone(roadmapTestCase)],documents:structuredClone(roadmapTestDocuments),assessments:[],case_roadmaps:[],modelCalls:0,extraCount:0,issues:[],reviewGate:null,enqueued:[]}}
 reset()
 
 class Query {
@@ -53,10 +54,17 @@ class Query {
 const createClient=(_url,key)=>({
   auth:{getUser:async()=>({data:{user:state.user},error:null})},
   from:table=>new Query(table,key===secret),
-  rpc:async name=>{assert.equal(name,'current_gold_access');return {data:[{permissions:state.permissions}],error:null}}
+  rpc:async(name,args)=>{
+    if(name==='enqueue_case_analysis_job'){
+      assert.equal(key,secret);assert.equal(args.p_owner_id,state.user.id)
+      state.enqueued.push(args)
+      return {data:{id:crypto.randomUUID(),case_id:args.p_case_id,status:'queued',stage:'planning'},error:null}
+    }
+    assert.equal(name,'current_gold_access');return {data:[{permissions:state.permissions}],error:null}
+  }
 })
 const env={SUPABASE_URL:'https://synthetic.invalid',SUPABASE_ANON_KEY:'synthetic-publishable-key',SUPABASE_SERVICE_ROLE_KEY:secret,OPENAI_API_KEY:'synthetic-model-key'}
-const dependencies={...checkpoints,...evidence,...quality,...roadmap,...complete}
+const dependencies={...checkpoints,...evidence,...quality,...roadmap,...complete,...modelContext,loadSource:modelContext.loadRoadmapSource}
 const source=fs.readFileSync('supabase/functions/gold-case-roadmap/index.ts','utf8')
 const code=transformSync(source.replace(/^import [^\n]+\n/gm,''),{filename:'roadmap-handler.ts',jsc:{parser:{syntax:'typescript'},target:'es2022'},module:{type:'es6'}}).code
 new Function('Deno','createClient',...Object.keys(dependencies),code)({env:{get:name=>env[name]},serve:value=>{handler=value}},createClient,...Object.values(dependencies))
@@ -80,6 +88,16 @@ async function call(body=baseBody){
 async function begin(){const result=await call();assert.equal(result.status,202);assert.equal(result.data.roadmap,undefined);assert.equal(state.case_roadmaps.length,0);return {...baseBody,checkpoint:result.data.checkpoint}}
 
 try {
+  const queued=await call({...baseBody,action:'enqueue',analysis_mode:'complete',owner_id:'77777777-7777-4777-8777-777777777777'})
+  assert.equal(queued.status,202);assert.equal(queued.data.job.status,'queued');assert.equal(state.modelCalls,0)
+  assert.equal(state.enqueued[0].p_owner_id,ownerId,'queued owner comes from verified authentication, never request identity')
+  assert.equal(state.enqueued[0].p_request.acknowledged,true)
+  assert.equal(state.enqueued[0].p_request.draft_letters,true)
+  state.ai=false;assert.equal((await call({...baseBody,action:'enqueue'})).status,412)
+  state.ai=true;assert.equal((await call({...baseBody,action:'enqueue',acknowledged:false})).status,412)
+  state.permissions.full_analysis=false;assert.equal((await call({...baseBody,action:'enqueue'})).status,403)
+  assert.equal(state.enqueued.length,1,'unapproved jobs never reach the background dispatcher')
+  reset()
   const fullBody={...baseBody,analysis_mode:'complete'}
   const planned=await call(fullBody);assert.equal(planned.status,202);assert.equal(state.case_roadmaps.length,0)
   const crossMode=await call({...baseBody,checkpoint:planned.data.checkpoint});assert.equal(crossMode.status,409,'checkpoint must bind full/source-only mode')
