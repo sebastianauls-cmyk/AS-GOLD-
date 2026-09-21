@@ -171,7 +171,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
       if(!isCurrent())return false
       onPrivacyUpdate?.(authorization.data)
       const {data,error}=await generateCustomerRoadmap(supabase,{caseId:item.id,style,outputLanguage,referenceLanguage,onProgress:({stage})=>{if(!isCurrent())throw new Error(ui.stale);setProcessingStage(stage)}})
-      if(error&&isCurrent()&&process.env.NEXT_PUBLIC_ASH_REVIEW_PREVIEW==='v157'){
+      if(error&&isCurrent()){
         try{
           const diagnostic=await error.context.clone().json()
           if(['source_unresolved','review_unresolved'].includes(diagnostic.code)&&Array.isArray(diagnostic.issues))setReviewIssues(diagnostic.issues.slice(0,8).map(issue=>String(issue.reason||'').slice(0,700)).filter(Boolean))

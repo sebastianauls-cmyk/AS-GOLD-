@@ -94,3 +94,17 @@ test('complete analysis shows checked amounts and conditions behind the short an
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
   await page.screenshot({path:testInfo.outputPath('complete-analysis.png'),fullPage:true})
 })
+
+test('a rejected case shows its concrete review findings without presenting a completed result',async({page})=>{
+  await begin(page)
+  await page.getByRole('button',{name:'Simulate unresolved content review'}).click()
+  await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
+  await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
+  await expect(page.locator('.roadmapError[role=alert]')).toContainText('Kein neues Ergebnis gespeichert')
+  const details=page.locator('.customerRoadmapPanel > details')
+  await details.locator('summary').click()
+  await expect(details).toContainText('Die Berechnung passt nicht zum angegebenen Original.')
+  await expect(details).toContainText('Das Schreiben setzt eine unbelegte Vollmacht voraus.')
+  await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toHaveCount(0)
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:2,generated:1,sent:0}))
+})
