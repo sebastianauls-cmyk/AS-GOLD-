@@ -734,12 +734,12 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
  .publicProductPage .publicTop .nav{grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:12px 0}
  .publicProductPage .publicLanguageModules{grid-row:2;max-width:none;gap:10px}
  .publicProductPage .publicLanguageTitle{min-height:0;font-size:.875rem}
- .publicProductHero{padding:28px 0 32px}
+ .publicProductHero{padding:22px 0 32px}
  .publicProductHeroGrid{grid-template-columns:minmax(0,1fr);grid-template-areas:'intro' 'entry' 'example';gap:20px}
  .publicProductHero h1{font-size:clamp(2rem,8vw,2.6rem);line-height:1.12;margin-bottom:16px}
  .publicProductIntro .lead{font-size:1rem;line-height:1.6}
- .publicCapabilitySummary{padding:18px 0 8px}
- .publicCapabilitySummary ul{gap:10px 12px}
+ .publicCapabilitySummary{padding:16px 0 8px}
+ .publicCapabilitySummary ul{gap:8px 12px}
  .publicCapabilitySummary li{font-size:.875rem}
  .publicResultExample{padding:20px;margin-top:8px}
  .publicExampleChoices button{font-size:.94rem;padding:10px 8px}
