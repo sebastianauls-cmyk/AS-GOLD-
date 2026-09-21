@@ -6,11 +6,13 @@ import { readableStepText, roadmapProgressLabel, roadmapStepReference } from './
 import { roadmapCurrentCopy, roadmapCurrentStatus } from './lib/roadmapCurrentStatus.mjs'
 import { roadmapUi } from './lib/customerRoadmapCopy.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage'
-import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, authorizeRoadmap, roadmapErrorMessage } from '../services/customerRoadmap'
+import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, authorizeRoadmap, roadmapErrorMessage, latestCustomerRoadmapJob, cancelCustomerRoadmapJob } from '../services/customerRoadmap'
+import { workflowErrorMessage } from '../services/workflowError.mjs'
 import { createRoadmapExport } from '../services/customerRoadmapExport.mjs'
 import { downloadExportArtifact } from '../services/exportService'
 import { ResultContinuation } from './ResultContinuation'
 import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
+import { backgroundCaseCopy } from './lib/backgroundCaseCopy.mjs'
 import { caseDocuments, preparationContext, prepareCaseDocuments, savePreparedCaseDocuments, preparationFailureMessage } from './lib/casePreparation.mjs'
 import { completeAnalysisBlocks, completeAnalysisCopy } from './lib/completeAnalysisDisplay.mjs'
 import './customerRoadmap.css'
@@ -95,6 +97,7 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
 export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,onAnalyzeDocument,onRecoverDocument,onSaveDocument,onAddDocument,continuation={}}) {
   const ui=roadmapUi(language)
   const simple=simpleCaseCopy(language)
+  const backgroundCopy=backgroundCaseCopy(language)
   const [records,setRecords]=useState([]),[activeId,setActiveId]=useState(''),[loading,setLoading]=useState(true)
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[full,setFull]=useState(false),[showForm,setShowForm]=useState(true)
   const [style,setStyle]=useState(()=>roadmapStyle({customer_name:client?.name||''}))
@@ -103,6 +106,9 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   const [documentProgress,setDocumentProgress]=useState(null)
   const [failedDocument,setFailedDocument]=useState(null)
   const [reviewIssues,setReviewIssues]=useState([])
+  const [savedJob,setSavedJob]=useState(null),[jobReadError,setJobReadError]=useState(false)
+  const job=savedJob?.case_id===item.id?savedJob:null
+  const backgroundBusy=!!job&&['queued','running'].includes(job.status)
   const mountedRef=useRef(true)
   useEffect(()=>{mountedRef.current=true;return ()=>{mountedRef.current=false}},[])
   const activeCaseRef=useRef(item.id)
@@ -138,6 +144,32 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     }).catch(()=>{if(!cancelled){setError(ui.error);setLoading(false)}})
     return ()=>{cancelled=true}
   },[supabase,item.id,ui.error])
+  useEffect(()=>{
+    let cancelled=false,timer
+    async function refreshJob(){
+      try{
+        const {data,error:readError}=await latestCustomerRoadmapJob(supabase,item.id)
+        if(cancelled)return
+        if(readError)throw readError
+        const latest=data?.[0]||null
+        setSavedJob(latest);setJobReadError(false)
+        if(latest?.status==='completed'){
+          const {data:roadmaps,error:resultError}=await listCustomerRoadmaps(supabase,item.id)
+          if(cancelled)return
+          if(resultError||!roadmaps?.some(record=>record.id===latest.roadmap_id))throw new Error('Saved result unavailable')
+          setRecords(roadmaps);setActiveId(latest.roadmap_id);setShowForm(false);setConfirmed(false);setError('');setReviewIssues([])
+        }else if(latest?.status==='failed'){
+          setError(workflowErrorMessage({code:latest.error_code,error:latest.error_message},ui.error,language))
+          setReviewIssues((latest.issues||[]).slice(0,8).map(issue=>String(issue.reason||'').slice(0,700)).filter(Boolean))
+        }
+        if(latest&&['queued','running'].includes(latest.status))timer=setTimeout(refreshJob,3000)
+      }catch{
+        if(!cancelled){setJobReadError(true);timer=setTimeout(refreshJob,5000)}
+      }
+    }
+    refreshJob()
+    return ()=>{cancelled=true;clearTimeout(timer)}
+  },[supabase,item.id,job?.id,backgroundBusy,ui.error,language])
   async function run(task) {
     if(busyRef.current)return false
     busyRef.current=true;setBusy(true);setError('');setFailedDocument(null);setReviewIssues([])
@@ -148,7 +180,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   }
   async function create(event) {
     event.preventDefault()
-    if(!confirmed||!canCreate||loading)return
+    if(!confirmed||!canCreate||loading||backgroundBusy)return
     const creatingCaseId=item.id
     const initialContext=context
     const initialScope=scope
@@ -178,6 +210,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
         }catch{}
       }
       if(error)throw new Error(await roadmapErrorMessage(error,ui.error,language))
+      if(data?.job){setSavedJob(data.job);setConfirmed(false);return true}
       if(!data?.roadmap)throw new Error(ui.error)
       if(!isCurrent())return false
       setRecords(previous=>[data.roadmap,...previous]);setActiveId(data.roadmap.id);setShowForm(false);setFull(false);setConfirmed(false)
@@ -192,6 +225,11 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
       setRecords(previous=>previous.map(entry=>entry.id===record.id?data.roadmap:entry));return true
     })
   }
+  const cancelJob=()=>run(async()=>{
+    const {data,error}=await cancelCustomerRoadmapJob(supabase,{caseId:item.id,jobId:job.id})
+    if(error||!data?.job)throw new Error(ui.error)
+    if(mountedRef.current&&activeCaseRef.current===item.id)setSavedJob(data.job)
+  })
   const exportFile=(type,letterId)=>run(async()=>{
     if(stale)throw new Error(ui.stale)
     downloadExportArtifact(await createRoadmapExport(record,type,{letterId}));return true
@@ -200,6 +238,9 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   return <section className="customerRoadmapPanel" id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>
     <header className="roadmapPanelHead"><div><h3 id={`roadmap-title-${item.id}`}>{simple.title}</h3><p>{simple.intro}</p></div>{record&&canCreate&&<button type="button" className="secondary" disabled={busy} onClick={expandForm}>{ui.refresh}</button>}</header>
     {loading&&<p role="status">{ui.loading}</p>}
+    {backgroundBusy&&<div className="caseReadingProgress" data-testid="background-case-job" role="status" aria-live="polite"><b>{backgroundCopy.title}</b><p>{backgroundCopy.working}</p><p>{roadmapProgressLabel(language,job.stage)}</p><button type="button" className="secondary" disabled={busy} onClick={cancelJob}>{ui.cancel}</button></div>}
+    {job?.status==='cancelled'&&<p role="status">{backgroundCopy.cancelled}</p>}
+    {jobReadError&&<p role="status">{backgroundCopy.statusUnavailable}</p>}
     {busy&&processingStage&&<div className="caseReadingProgress" role="status" aria-live="polite"><b>{processingStage==='documents'?simple.reading:processingStage==='saving'?simple.saving:roadmapProgressLabel(language,processingStage)}{documentProgress?` · ${documentProgress.index} / ${documentProgress.total}`:' …'}</b>{documentProgress&&<p>{documentProgress.document.title}</p>}<p>{simple.working}</p><details><summary>{simple.details}</summary>{roadmapProgressLabel(language,processingStage)}</details></div>}
     {error&&<p className="roadmapError" role="alert">{error}</p>}
     {error&&reviewIssues.length>0&&<details><summary>{simple.details}</summary><ul>{reviewIssues.map((reason,index)=><li key={index}>{reason}</li>)}</ul></details>}
@@ -211,9 +252,9 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     {showForm&&canCreate&&ownDocuments.length>0&&<form ref={formRef} className="roadmapSetup" onSubmit={create}>
       <p>{simple.files}: <b>{ownDocuments.length}</b> · {ui.output}: <b>{outputLanguageLabels[outputLanguage]}</b></p>
       <details className="caseFileList"><summary>{simple.files}</summary><ul>{ownDocuments.map(doc=><li key={doc.id}>{doc.title}</li>)}</ul></details>
-      <fieldset disabled={busy}>
+      <fieldset disabled={busy||backgroundBusy}>
       <label className="roadmapConsent"><input type="checkbox" required checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>{onAnalyzeDocument?simple.consent:ui.confirm}</span></label>
-      <button type="submit" className="primary" disabled={busy||!confirmed||loading}>{busy?simple.saving:error?simple.retry:simple.start}</button>
+      <button type="submit" className="primary" disabled={busy||backgroundBusy||!confirmed||loading}>{busy?simple.saving:error?simple.retry:simple.start}</button>
       {onAddDocument&&<button type="button" className="linkBtn" onClick={onAddDocument}>＋ {simple.add}</button>}
       <details className="caseMoreOptions"><summary>{simple.options}</summary>
       <label>{ui.reference}<select value={referenceLanguage} onChange={event=>{setReferenceLanguage(event.target.value);setConfirmed(false)}}>{OUTPUT_LANGUAGES.map(key=><option key={key} value={key}>{outputLanguageLabels[key]}</option>)}</select></label>
