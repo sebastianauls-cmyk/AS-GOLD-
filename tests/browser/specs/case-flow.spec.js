@@ -3,7 +3,7 @@ import {test,expect} from '@playwright/test'
 test.skip(process.env.ASH_BROWSER_LOCAL!=='true','Isolated component fixture is intentionally absent from production.')
 
 async function begin(page){
-  await page.goto('/__case-fixture')
+  await page.goto('/qa-case-flow')
   await page.getByRole('textbox',{name:'Wobei brauchen Sie Hilfe?'}).fill('Ich verstehe meine Briefe nicht.')
   await page.getByRole('button',{name:'Weiter',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Ihre Antwort',exact:true})).toBeVisible()
@@ -11,7 +11,7 @@ async function begin(page){
 
 test('one human question, one consent, all documents and one answer',async({page},testInfo)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
-  await page.goto('/__case-fixture')
+  await page.goto('/qa-case-flow')
   await expect(page.locator('textarea:visible')).toHaveCount(1)
   await expect(page.locator('.simpleCaseOptions')).not.toHaveAttribute('open')
   await page.screenshot({path:testInfo.outputPath('human-entry.png'),fullPage:true})
@@ -42,7 +42,7 @@ test('failed document is recoverable without re-reading successful documents',as
 })
 
 test('translated entry supports English and right-to-left Persian',async({page})=>{
-  await page.goto('/__case-fixture')
+  await page.goto('/qa-case-flow')
   await page.getByLabel('Test language').selectOption('en')
   await expect(page.getByRole('textbox',{name:'What do you need help with?'})).toBeVisible()
   await page.getByLabel('Test language').selectOption('fa')
@@ -59,7 +59,7 @@ test('speaking fills the same human question without a second form',async({page}
       abort(){}
     }
   })
-  await page.goto('/__case-fixture')
+  await page.goto('/qa-case-flow')
   await page.getByRole('button',{name:'Sprechen',exact:true}).click()
   await expect(page.getByRole('textbox',{name:'Wobei brauchen Sie Hilfe?'})).toHaveValue('Ich brauche Hilfe mit einem Brief.')
   await page.getByRole('button',{name:'Aufnahme beenden',exact:true}).click()
