@@ -1,11 +1,14 @@
 import { OUTPUT_LANGUAGES } from '../language/outputLanguage.js'
 
-export function updateDocumentRecord(supabase,{ownerId,documentId,draft}){
+export function updateDocumentRecord(supabase,{ownerId,documentId,draft,expectedUpdatedAt,expectedCaseId}){
   const customerCopyLanguage=OUTPUT_LANGUAGES.includes(draft.customer_copy_language)?draft.customer_copy_language:null
   const referenceCopyLanguage=OUTPUT_LANGUAGES.includes(draft.reference_copy_language)?draft.reference_copy_language:null
   const referenceCopy=String(draft.reference_copy||draft.response_letter_de||'').trim()||null
   const payload={analysis_draft:null,title:String(draft.title||'').trim(),case_id:draft.case_id||null,document_type:String(draft.document_type||'').trim()||null,document_date:draft.document_date||null,extracted_text:String(draft.extracted_text||'').trim()||null,analysis_summary:String(draft.analysis_summary||'').trim()||null,analysis_next_step:String(draft.analysis_next_step||'').trim()||null,reference_copy:referenceCopy,reference_copy_language:referenceCopyLanguage,response_letter_de:referenceCopyLanguage==='de'?referenceCopy:null,customer_copy:String(draft.customer_copy||'').trim()||null,customer_copy_language:customerCopyLanguage,response_recipient:String(draft.response_recipient||'').trim()||null,response_subject:String(draft.response_subject||'').trim()||null,analysis_traffic_light:['green','yellow','red','white'].includes(draft.analysis_traffic_light)?draft.analysis_traffic_light:null,analysis_reasoning:String(draft.analysis_reasoning||'').trim()||null,analysis_confidence:String(draft.analysis_confidence||'').trim()||null,data_classification:draft.data_classification,ai_processing_allowed:false,updated_at:new Date().toISOString()}
-  return supabase.from('documents').update(payload).eq('id',documentId).eq('owner_id',ownerId).select().single()
+  let query=supabase.from('documents').update(payload).eq('id',documentId).eq('owner_id',ownerId)
+  if(expectedUpdatedAt)query=query.eq('updated_at',expectedUpdatedAt)
+  if(expectedCaseId)query=query.eq('case_id',expectedCaseId)
+  return query.select().single()
 }
 
 function isUploadNetworkError(error){

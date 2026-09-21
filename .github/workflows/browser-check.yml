@@ -8,6 +8,11 @@ on:
       - 'tests/browser/**'
       - 'app/modules/public/**'
       - 'app/entdecken/**'
+      - 'app/modules/cases/**'
+      - 'app/modules/documents/**'
+      - 'app/modules/workspace/**'
+      - 'app/modules/services/**'
+      - 'app/globals.css'
   push:
     branches: [main]
     paths:
@@ -15,6 +20,11 @@ on:
       - 'tests/browser/**'
       - 'app/modules/public/**'
       - 'app/entdecken/**'
+      - 'app/modules/cases/**'
+      - 'app/modules/documents/**'
+      - 'app/modules/workspace/**'
+      - 'app/modules/services/**'
+      - 'app/globals.css'
   workflow_dispatch:
 
 permissions:
@@ -48,6 +58,7 @@ jobs:
         working-directory: .
         run: |
           npm ci
+          node tests/browser/create-case-fixture.mjs
           npm run build
       - name: Install independent Chromium and WebKit browsers
         run: npx playwright install --with-deps chromium webkit

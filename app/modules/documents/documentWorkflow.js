@@ -49,7 +49,7 @@ export function createDocumentWorkflowActions({
     return generated
   }
 
-  async function recoverDocumentAnalysis(document,{quiet=false}={}){
+  async function recoverDocumentAnalysis(document,{quiet=false,includeDocument=false}={}){
     try{
       const {data:fresh,error}=await supabase.from('documents').select('*').eq('id',document.id).eq('owner_id',ownerId).maybeSingle()
       if(error)throw error
@@ -59,7 +59,7 @@ export function createDocumentWorkflowActions({
         referenceLanguage:normalizeOutputLanguage(document.reference_copy_language||'de'),
         country:linkedCase?.target_country||readCountryContext()
       })
-      if(generated)return presentAnalysis(generated,document)
+      if(generated)return includeDocument?{generated,document:fresh}:presentAnalysis(generated,document)
       if(!quiet)setMessage(analysisCopy.noDraft)
     }catch{if(!quiet)setMessage(analysisCopy.recoveryFailed)}
     return false
@@ -100,13 +100,13 @@ export function createDocumentWorkflowActions({
     return presentAnalysis(generated,document)
   }
 
-  async function updateDocument(documentId,draft){
+  async function updateDocument(documentId,draft,{stayInCase=false,expectedUpdatedAt,expectedCaseId}={}){
     setMessage('')
     const current=data.documents.find(item=>item.id===documentId)
     const classification=String(draft.data_classification||'')
     if(!['synthetic','anonymized'].includes(classification)){setMessage(privacyCopy.uploadRequired);return false}
     if(classification!==current?.data_classification&&!draft.test_data_confirmed){setMessage(privacyCopy.uploadRequired);return false}
-    const {data:updated,error}=await updateDocumentRecord(supabase,{ownerId,documentId,draft})
+    const {data:updated,error}=await updateDocumentRecord(supabase,{ownerId,documentId,draft,expectedUpdatedAt,expectedCaseId})
     if(error){setMessage(error.message);return false}
     const eventType=draft.analysis_generated?'document_analysis_saved':'document_reviewed'
     recordLocalAction(eventType)
@@ -134,12 +134,14 @@ export function createDocumentWorkflowActions({
       sourceStatus:createdSource?[createdSource,...previous.sourceStatus]:previous.sourceStatus,
       cases:updatedCase?previous.cases.map(item=>item.id===updatedCase.id?updatedCase:item):previous.cases
     }))
-    setSelectedDocument(updated)
-    setMessage(assessmentFailed?caseGuidanceCopy(language).partialSave:auditSaved?(draft.analysis_generated?analysisCopy.savedMessage:`${caseCopy.documentReview} ✓`):serverCopy.auditFailed)
-    return true
+    if(!stayInCase){
+      setSelectedDocument(updated)
+      setMessage(assessmentFailed?caseGuidanceCopy(language).partialSave:auditSaved?(draft.analysis_generated?analysisCopy.savedMessage:`${caseCopy.documentReview} ✓`):serverCopy.auditFailed)
+    }else setMessage('')
+    return stayInCase?updated:true
   }
 
-  async function uploadDocument(event){
+  async function uploadDocument(event,{onUploaded}={}){
     event.preventDefault()
     if(uploadInFlight.current)return false
     uploadInFlight.current=true
@@ -180,8 +182,8 @@ export function createDocumentWorkflowActions({
       await recordServerAudit('document_uploaded',{classification:dataClassification},'document',created.id)
       setData(previous=>({...previous,documents:[created,...previous.documents]}))
       form.reset()
-      setSection('documents')
-      setSelectedDocument(created)
+      if(onUploaded)onUploaded(created)
+      else {setSection('documents');setSelectedDocument(created)}
       return true
     }catch(error){
       console.error('Document upload failed',error)

@@ -37,10 +37,10 @@ export function createCaseWorkflowActions({
     setSection('clients')
   }
 
-  async function createCase(event){
+  async function createCase(event,draft=newCase){
     event.preventDefault()
     setMessage('')
-    const {data:created,error}=await createCaseRecord(supabase,{ownerId,payload:normalizeCasePayload(newCase)})
+    const {data:created,error}=await createCaseRecord(supabase,{ownerId,payload:normalizeCasePayload(draft)})
     if(error){setMessage(error.message);return false}
     recordLocalAction('case_created')
     await recordServerAudit('case_created',{},'case',created.id)

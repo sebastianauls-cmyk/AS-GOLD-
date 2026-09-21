@@ -9,3 +9,6 @@ tests/browser/playwright-report/
 tests/browser/test-results/
 supabase/.temp/
 # Next.js 16 agent documentation is bundled in the ignored node_modules tree.
+
+# Local/CI-only interaction fixture; never part of a deployed app.
+/app/__case-fixture/

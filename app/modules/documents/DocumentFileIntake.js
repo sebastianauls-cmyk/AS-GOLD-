@@ -5,6 +5,7 @@ import { documentIntakeLanguages } from './documentIntakeLanguages.mjs'
 import { intakeCopy } from './documentIntakeCopy.mjs'
 import DocumentImageQualityCheck from './DocumentImageQualityCheck'
 import { isImageDocument } from './documentUploadReadiness.mjs'
+import { simpleCaseCopy } from '../cases/lib/simpleCaseCopy.mjs'
 
 function formatBytes(value){if(value<1024*1024)return `${Math.max(1,Math.round(value/1024))} KB`;return `${(value/1024/1024).toFixed(1)} MB`}
 
@@ -54,8 +55,9 @@ export default function DocumentFileIntake({language='de',documentMode='upload',
   return <section className="detailCard">
     <label htmlFor="document-file">{c.file}<input ref={inputRef} key={documentMode} id="document-file" name="file" type="file" accept={documentMode==='scan'?'image/*':allowedUploadAccept} capture={documentMode==='scan'?'environment':undefined} onChange={inspect} required={!sampleSelected}/></label>
     {documentMode==='upload'?<button type="button" className="secondary" onClick={selectSample}>{sampleLabels[language]||sampleLabels.de}</button>:null}
-    <label>{c.sourceLanguage}<select value={sourceLanguage} onChange={e=>setSourceLanguage(e.target.value)}><option value="">{c.auto}</option>{documentIntakeLanguages.map(item=><option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
+    <details><summary>{simpleCaseCopy(language).options}</summary><label>{c.sourceLanguage}<select value={sourceLanguage} onChange={e=>setSourceLanguage(e.target.value)}><option value="">{c.auto}</option>{documentIntakeLanguages.map(item=><option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
     {fileInfo&&<div className="analysisFacts"><b>{c.quality}</b><div><span><small>{c.size}</small><strong>{formatBytes(fileInfo.size)}</strong></span><span><small>{c.type}</small><strong>{fileInfo.type}</strong></span></div></div>}
+    </details>
     <DocumentImageQualityCheck file={file} language={language} onResult={onQualityResult}/>
     <input type="hidden" name="sample_document" value={sampleSelected?'synthetic-v29':''}/>
     <input type="hidden" name="source_language" value={sourceLanguage}/>
