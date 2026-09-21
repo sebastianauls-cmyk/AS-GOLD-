@@ -29,11 +29,12 @@ export function ExplainerVideo({language='de',openSignal=0}){
   const [open,setOpen]=useState(false)
   const sectionRef=useRef(null)
   const videoRef=useRef(null)
+  const videoLanguageChosen=useRef(false)
   useEffect(()=>{
     const savedPresenter=localStorage.getItem(VIDEO_PRESENTER_STORAGE_KEY)||localStorage.getItem(LEGACY_VIDEO_PRESENTER_STORAGE_KEY)
     if(savedPresenter==='male'||savedPresenter==='female') setPresenter(savedPresenter)
   },[])
-  useEffect(()=>{if(languages.some(([code])=>code===language))setVideoLanguage(language)},[language])
+  useEffect(()=>{if(!videoLanguageChosen.current&&languages.some(([code])=>code===language))setVideoLanguage(language)},[language])
   useEffect(()=>{localStorage.setItem(VIDEO_PRESENTER_STORAGE_KEY,presenter)},[presenter])
   useEffect(()=>{
     if(openSignal<=0)return
@@ -58,7 +59,7 @@ export function ExplainerVideo({language='de',openSignal=0}){
     {!open?<button type='button' className='publicExplainerTrigger' onClick={()=>setOpen(true)} aria-expanded='false'>{c.show}</button>:<>
       <div className='explainerVideoHeader'><strong>{c.title}</strong><button type='button' onClick={()=>{videoRef.current?.pause();setOpen(false)}} aria-label={c.hide} aria-expanded='true'>×</button></div>
       <div className='explainerVideoControls'>
-        <label className='explainerVideoLanguage'>{c.language}<select value={videoLanguage} onChange={e=>setVideoLanguage(e.target.value)}>{languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}</select></label>
+        <label className='explainerVideoLanguage'>{c.language}<select value={videoLanguage} onChange={e=>{videoLanguageChosen.current=true;setVideoLanguage(e.target.value)}}>{languages.map(([code,flag,label])=><option value={code} key={code}>{flag} {label}</option>)}</select></label>
         <div className='explainerVideoPresenters'><b>{c.voice}</b><div role='group' aria-label={c.voice}><button type='button' aria-pressed={presenter==='female'} onClick={()=>setPresenter('female')} style={buttonStyle(presenter==='female')}>👩 {c.female}</button><button type='button' aria-pressed={presenter==='male'} onClick={()=>setPresenter('male')} style={buttonStyle(presenter==='male')}>👨 {c.male}</button></div></div>
       </div>
       <video ref={videoRef} data-explainer-video key={`${videoLanguage}-${presenter}`} controls playsInline autoPlay={open} preload='metadata' style={{display:'block',width:'100%',borderRadius:14,background:'#151515',aspectRatio:'16 / 9'}}><source src={selectedVideo.src} type='video/mp4'/><track src={selectedVideo.captions} kind='subtitles' srcLang={videoLanguage} label={languages.find(([code])=>code===videoLanguage)?.[2]||videoLanguage} default/>{c.loading}</video>

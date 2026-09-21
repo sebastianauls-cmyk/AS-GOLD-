@@ -184,6 +184,10 @@ html[dir="rtl"] .priceHead strong,html[dir="rtl"] .upgradeTitle strong,html[dir=
 .flagLanguageMenu .flagLanguageMenuBack{position:sticky;top:0;z-index:3;justify-content:flex-start;border-color:#c9ad66;background:#2f291b;color:#fff;font-weight:900}
 .flagLanguageMenu .flagLanguageMenuBack:hover{border-color:#c9ad66;background:#453a20}
 .flagLanguageBackdrop{display:none}.flagLanguage.flagLanguageOpen{z-index:300}
+.flagLanguageOverlay{position:fixed;inset:0;z-index:600;isolation:isolate;font:inherit}
+.flagLanguageOverlay .flagLanguageMenu{position:absolute;inset:max(8px,env(safe-area-inset-top)) 12px max(8px,env(safe-area-inset-bottom));width:auto;max-width:none;max-height:none;align-content:start;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y}
+.flagLanguageOverlay .flagLanguageMenu button{font:inherit;font-size:1rem;touch-action:manipulation}
+.flagLanguageOverlay .flagLanguageMenuBack{font-weight:800}
 .flagLanguagePublicText{display:grid;text-align:left;line-height:1.15}
 .flagLanguagePublicText small{font-size:.68rem;color:#6b6250}
 .publicTop .nav{gap:18px;padding-top:10px;padding-bottom:10px}
