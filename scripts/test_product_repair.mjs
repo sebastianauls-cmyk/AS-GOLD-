@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import {advanceReviewedModel} from '../supabase/functions/_shared/modelQuality.mjs'
 import {sealModelCheckpoint,openModelCheckpoint} from '../supabase/functions/_shared/modelCheckpoint.mjs'
 import {runRoadmapContinuation} from '../app/modules/services/roadmapContinuation.mjs'
-import {roadmapSource,validateRoadmapResult} from '../supabase/functions/_shared/customerRoadmap.mjs'
+import {roadmapSource,validateRoadmapResult,splitVerbatimRoadmapEvidence} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {readableStepText,roadmapProgressLabel} from '../app/modules/cases/lib/roadmapDisplay.mjs'
 import {buildDeadlineOverview} from '../app/modules/cases/deadlineCases.mjs'
@@ -37,6 +37,27 @@ mock=provider([roadmapTestResult,defect,roadmapTestResult,defect]);state=null
 for(let step=0;step<3;step++)state=(await advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,state,fetchImpl:mock.fetchImpl})).state
 await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,state,fetchImpl:mock.fetchImpl}),error=>error.code==='review_unresolved'&&error.issues[0].reason===defect.issues[0].reason)
 assert.equal(mock.requests.length,4,'one bounded correction, no weakening of the evidence gate')
+// Observed live regression: a corrected candidate joined non-adjacent sentences.
+// Repair quotation structure only; every sentence must remain a literal source.
+const quoteSource={documents:[{id:'tk',extracted_text:'Beginn der Beitragspflicht: 1. September 2026. Im Bescheid genanntes Ende: 31. August 2036. Die erste Zahlung für September ist am 15. Oktober 2026 fällig.'}]}
+const first='Beginn der Beitragspflicht: 1. September 2026.',last='Die erste Zahlung für September ist am 15. Oktober 2026 fällig.'
+const joined=first+'\n'+last
+const quoteCandidate={opening:'Unchanged assertion',facts:[{text:'Unchanged fact',evidence:[{document_id:'tk',quote:joined}]}],steps:[{id:'one',action:'Unchanged action',deadline:{document_id:'tk',quote:joined,date:'2026-10-15'},evidence:[{document_id:'tk',quote:joined}]}],letters:[{body:'Unchanged letter'}]}
+const before=structuredClone(quoteCandidate)
+const split=splitVerbatimRoadmapEvidence(quoteCandidate,quoteSource)
+assert.deepEqual(quoteCandidate,before,'never mutate the raw provider output')
+assert.deepEqual(split.facts[0].evidence,[{document_id:'tk',quote:first},{document_id:'tk',quote:last}])
+assert.deepEqual(split.steps[0].evidence,split.facts[0].evidence)
+assert.deepEqual(split.steps[0].deadline,before.steps[0].deadline,'a deadline cannot be silently rewritten or split')
+assert.equal(split.opening,before.opening);assert.equal(split.facts[0].text,before.facts[0].text);assert.equal(split.steps[0].action,before.steps[0].action);assert.deepEqual(split.letters,before.letters)
+for(const evidence of [{document_id:'wrong',quote:joined},{document_id:'tk',quote:last+' '+first},{document_id:'tk',quote:first+' Die Zahlung beträgt 99 EUR.'},{document_id:'tk',quote:first}]){
+  const candidate={facts:[{text:'test',evidence:[evidence]}]}
+  assert.deepEqual(splitVerbatimRoadmapEvidence(candidate,quoteSource),candidate,'unknown IDs, reversed order, invented wording and already-valid quotes stay for the strict gate')
+}
+assert.deepEqual(splitVerbatimRoadmapEvidence(quoteCandidate,{documents:[{id:'tk',extracted_text:quoteSource.documents[0].extracted_text+' '+first}]}),quoteCandidate,'ambiguous repeated sentences must not be guessed')
+mock=provider([quoteCandidate,defect,quoteCandidate,defect]);state=null
+for(let step=0;step<3;step++)state=(await advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate:raw=>splitVerbatimRoadmapEvidence(raw,quoteSource),state,fetchImpl:mock.fetchImpl})).state
+await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate:raw=>splitVerbatimRoadmapEvidence(raw,quoteSource),state,fetchImpl:mock.fetchImpl}),error=>error.code==='review_unresolved','valid quotations never override a rejected meaning check')
 const multipleBadQuotes=structuredClone(roadmapTestResult)
 multipleBadQuotes.facts[0].evidence[0].quote='First invented quotation.'
 multipleBadQuotes.steps[0].evidence[0].quote='Second invented quotation.'

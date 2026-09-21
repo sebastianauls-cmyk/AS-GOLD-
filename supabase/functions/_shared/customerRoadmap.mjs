@@ -5,6 +5,16 @@ export const ROADMAP_PHASES = ['now','parallel','waiting','afterwards']
 export const ROADMAP_COLORS = {green:'#287b50',yellow:'#b77900',red:'#be3030',white:'#64748b'}
 const text = value => typeof value === 'string' ? value.trim() : ''
 const list = value => Array.isArray(value) ? value : []
+const namedMonths=[['januar','january'],['februar','february'],['märz','maerz','march'],['april'],['mai','may'],['juni','june'],['juli','july'],['august'],['september'],['oktober','october'],['november'],['dezember','december']]
+const monthNumbers=new Map(namedMonths.flatMap((names,index)=>names.map(name=>[name,String(index+1).padStart(2,'0')])))
+function namedDateTokens(original,date){
+  const names=[...monthNumbers.keys()].join('|'),boundary='[\\p{L}\\p{N}]'
+  const dayFirst=new RegExp(`(?<!${boundary})(\\d{1,2})\\.?\\s+(${names})\\s+(\\d{4})(?!${boundary})`,'giu')
+  const monthFirst=new RegExp(`(?<!${boundary})(${names})\\s+(\\d{1,2}),?\\s+(\\d{4})(?!${boundary})`,'giu')
+  const isDate=(y,m,d)=>`${y}-${monthNumbers.get(m.toLowerCase())}-${String(Number(d)).padStart(2,'0')}`===date
+  return [...original.matchAll(dayFirst)].filter(m=>isDate(m[3],m[2],m[1]))
+    .concat([...original.matchAll(monthFirst)].filter(m=>isDate(m[3],m[1],m[2])))
+}
 const strings = {type:'array',items:{type:'string'}}
 const object = properties => ({type:'object',additionalProperties:false,properties,required:Object.keys(properties)})
 const string = {type:'string'}
@@ -71,6 +81,40 @@ export function validateRoadmapInput(source) {
   if(source.documents.length>30 || JSON.stringify(source).length>200000) throw new Error('Dieser Fall ist für einen gemeinsamen Durchlauf zu groß. Bitte in sachlich getrennte Teilfälle aufteilen; es wurden keine Unterlagen stillschweigend ausgelassen.')
 }
 
+// A model sometimes joins separate verbatim sentences into one quotation. Split
+// only when EVERY resulting passage occurs uniquely, in order, in the claimed
+// original. No fuzzy matching, invented words, changed document IDs or assertions.
+// The strict validator and independent semantic review still run afterwards.
+export function splitVerbatimRoadmapEvidence(raw,source){
+  if(!raw||typeof raw!=='object')return raw
+  const normalized=value=>text(value).replace(/\s+/gu,' ')
+  const originals=new Map(source.documents.map(doc=>[doc.id,normalized(doc.extracted_text)]))
+  const split=items=>!Array.isArray(items)?items:items.flatMap(item=>{
+    const original=originals.get(item?.document_id),quote=normalized(item?.quote)
+    if(!original||!quote||original.includes(quote))return [item]
+    const fragments=quote.split(/(?<=[.!?])\s+(?=\p{Lu})/u),parts=[]
+    if(fragments.length>40)return [item]
+    // A dot may belong to a date or abbreviation. Keep adjacent fragments
+    // together whenever their complete wording is contiguous in the original.
+    for(const fragment of fragments){
+      const previous=parts.at(-1),joined=previous+' '+fragment
+      if(previous&&original.includes(joined))parts[parts.length-1]=joined
+      else parts.push(fragment)
+    }
+    if(parts.length<2||parts.length>6)return [item]
+    let end=0
+    for(const part of parts){
+      const at=original.indexOf(part)
+      if(part.length<8||at<end||at<0||original.indexOf(part,at+1)!==-1)return [item]
+      end=at+part.length
+    }
+    return parts.map(part=>({...item,quote:part}))
+  })
+  return {...raw,
+    ...(Array.isArray(raw.facts)?{facts:raw.facts.map(fact=>({...fact,evidence:split(fact.evidence)}))}:{}),
+    ...(Array.isArray(raw.steps)?{steps:raw.steps.map(step=>({...step,evidence:split(step.evidence)}))}:{})}
+}
+
 export function validateRoadmapResult(raw,source,{outputLanguage,referenceLanguage,requiredLetterIds=[]}={}) {
   if(!raw || !text(raw.title) || !text(raw.opening) || !text(raw.meaning) || !text(raw.next) || !text(raw.customer_action)) throw new Error('Der Kundenfahrplan ist unvollständig.')
   if(!Array.isArray(raw.key_points) || raw.key_points.length<1 || raw.key_points.length>3) throw new Error('Die Kurzfassung muss ein bis drei Kernpunkte enthalten.')
@@ -113,6 +157,7 @@ export function validateRoadmapResult(raw,source,{outputLanguage,referenceLangua
       const quotation=normalized(quote)
       const dates=[...original.matchAll(/(?<![\p{L}\p{N}])(?:\d{4}-\d{2}-\d{2}|\d{1,2}\.\d{1,2}\.\d{4})(?![\p{L}\p{N}])/gu)]
         .filter(match=>variants.includes(match[0]))
+        .concat(namedDateTokens(original,date))
       let quotationStart=original.indexOf(quotation),dateQuoted=false
       while(quotationStart!==-1&&!dateQuoted) {
         dateQuoted=dates.some(match=>match.index>=quotationStart&&match.index+match[0].length<=quotationStart+quotation.length)
