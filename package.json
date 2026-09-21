@@ -117,7 +117,7 @@
     "test:password-reset-limits": "node scripts/test_password_reset_limits.mjs",
     "test:workspace-recovery": "node scripts/test_workspace_session_recovery.mjs",
     "test:document-analysis": "node scripts/test_document_request_flow.mjs && node scripts/test_document_recovery.mjs && node scripts/test_document_failure.mjs",
-    "test:workspace-overview": "node scripts/test_workspace_overview.mjs",
+    "test:workspace-overview": "node scripts/test_workspace_overview.mjs && node scripts/test_simple_case_flow.mjs",
     "test:public-product-tour": "node scripts/test_public_product_tour.mjs && node scripts/test_public_case_start.mjs"
   },
   "dependencies": {

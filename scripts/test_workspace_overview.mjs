@@ -6,6 +6,7 @@ import React from 'react'
 import {renderToStaticMarkup} from 'react-dom/server'
 import {transformSync} from 'next/dist/build/swc/index.js'
 import {workspaceOverview} from '../app/modules/workspace/workspaceOverview.mjs'
+import {simpleCaseCopy} from '../app/modules/cases/lib/simpleCaseCopy.mjs'
 import {workspaceOverviewCopy} from '../app/modules/workspace/workspaceOverviewCopy.mjs'
 
 const now=new Date('2026-09-20T12:00:00Z')
@@ -60,7 +61,7 @@ for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
   const c=workspaceOverviewCopy(language)
   for(const value of Object.values(c))assert.ok(value)
   const html=renderToStaticMarkup(React.createElement(DashboardSurface,{...props,a:appText[language]}))
-  assert.ok(html.includes(c.title));assert.ok(html.includes(doc.title));assert.ok(html.includes(c.openDocument))
+  assert.ok(html.includes(c.title));assert.ok(html.includes(item.title));assert.ok(html.includes(simpleCaseCopy(language).continue))
   assert.match(html,/<details class="workspaceMore">/)
   assert.doesNotMatch(html,/dashboardGuideSecondary|Business-Steuerung|Kunden- und Fallbestand steuern|evidenceActionPanel|aliReferenceCase/)
   assert.ok(html.indexOf('workspaceNext')<html.indexOf('dashboardInsiderEntry'),'real task precedes internal controls')
@@ -73,7 +74,7 @@ for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
 }
 let tree=nodes(DashboardSurface(props))
 tree.find(node=>node.type==='button'&&node.props.className==='primary').props.onClick()
-assert.deepEqual(events.pop(),['document','doc'])
+assert.deepEqual(events.pop(),['quick','open-case',item],'linked documents continue through the whole case')
 tree.find(node=>node.type==='button'&&node.props.className==='workspaceOverviewCard').props.onClick()
 assert.deepEqual(events.pop(),['section','cases'])
 tree.find(node=>node.type==='button'&&node.props.className==='workspaceRecentCase').props.onClick()

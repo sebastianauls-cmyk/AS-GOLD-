@@ -124,5 +124,7 @@ for(const language of ['de','en','pl','tr','ru','ar','fr','fa','ro','bg','vi']){
   const rendered=renderToStaticMarkup(React.createElement(ControlledDocumentAnalysis,{copy,item,draft:{},onAnalyze:noop,onRecover:noop,phase:'failed'}))
   assert.ok(rendered.includes(copy.restore))
   assert.ok(rendered.includes(copy.analysisFailed))
+  const stored=renderToStaticMarkup(React.createElement(ControlledDocumentAnalysis,{copy,item,draft:{},onAnalyze:noop,phase:'saved'}))
+  assert.ok(stored.includes(copy.saved),'stored extraction never claims a completed professional review')
 }
 console.log('Document recovery passed: lost-response recovery without another AI request, ownership-scoped reads, source/language binding, non-blocking audit failures, real database RLS/deletion, deliberate saving, and actual React editor rendering in 11 languages. No browser acceptance claimed.')

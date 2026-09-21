@@ -2,6 +2,8 @@ import { SyntheticTesterPanel } from '../testing/SyntheticTesterPanel'
 import { appText } from './workspaceText'
 import { workspaceOverview } from './workspaceOverview.mjs'
 import { workspaceOverviewCopy } from './workspaceOverviewCopy.mjs'
+import { SimpleCaseStart } from '../cases/SimpleCaseStart'
+import { simpleCaseCopy } from '../cases/lib/simpleCaseCopy.mjs'
 
 const insiderEntryCopy={
   de:{label:'PASSWORT 1 · VOLLZUGRIFF AUF ALLES',title:'Gemeinsamer Team-Arbeitsbereich',lead:'Auf das gesamte ASH Workspace zugreifen und jede Änderung vorbereiten. Passwort 2 gibt die neue Live-Version frei.',action:'Änderungszentrale öffnen',landing:'Interne Startfläche'},
@@ -18,24 +20,26 @@ const insiderEntryCopy={
 }
 
 
-export function DashboardSurface({core,handleQuickAction,onOpenDocument,onOpenApproval,onStartSyntheticCase,onBack,a,user,currentTier,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
+export function DashboardSurface({caseStart,core,handleQuickAction,onOpenDocument,onOpenApproval,onStartSyntheticCase,onBack,a,user,currentTier,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
   const ux=workspaceOverviewCopy(language)
+  const simple=simpleCaseCopy(language)
   const overview=workspaceOverview(data)
   const {next}=overview
+  const linkedCase=['read','review'].includes(next.kind)?data.cases?.find(item=>item.id===next.item?.case_id):null
   const insiderText=insiderEntryCopy[language]||insiderEntryCopy.en
   const hasInsiderAccess=access?.app_role==='owner'||access?.permissions?.shared_team_access===true
   const guestAccess=access?.permissions?.guest_access===true
   const openDocument=item=>item&&onOpenDocument?onOpenDocument(item):setSection('documents')
   const openApproval=item=>item&&onOpenApproval?onOpenApproval(item):setSection('approvals')
   function openNext(){
-    if(next.kind==='read'||next.kind==='review')return openDocument(next.item)
+    if(next.kind==='read'||next.kind==='review')return linkedCase?handleQuickAction('open-case',linkedCase):openDocument(next.item)
     if(next.kind==='approval')return openApproval(next.item)
     if(next.kind==='deadline')return handleQuickAction('deadlines')
     if(next.kind==='case')return handleQuickAction('open-case',next.item)
     return handleQuickAction('case')
   }
-  const nextButton=next.kind==='read'||next.kind==='review'?ux.openDocument:next.kind==='approval'?ux.openApproval:next.kind==='deadline'?ux.openDeadlines:next.kind==='case'?ux.openCase:ux.create
+  const nextButton=linkedCase&&(next.kind==='read'||next.kind==='review')?simple.continue:next.kind==='read'||next.kind==='review'?ux.openDocument:next.kind==='approval'?ux.openApproval:next.kind==='deadline'?ux.openDeadlines:next.kind==='case'?ux.openCase:ux.create
   const cards=[
     {key:'cases',label:a.sections.cases,count:overview.cases.length,action:()=>setSection('cases')},
     {key:'documents',label:ux.documents,count:overview.reviewDocuments.length,action:()=>openDocument(overview.reviewDocuments[0])},
@@ -44,22 +48,14 @@ export function DashboardSurface({core,handleQuickAction,onOpenDocument,onOpenAp
   ]
   return <div className="workspaceOverview" dir={language==='ar'||language==='fa'?'rtl':'ltr'}>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backExplanation}</button>
-    <h1>{ux.title}</h1>
-    <section className="workspaceNext" aria-labelledby="workspace-next-title">
+    <h1 className={caseStart?'simpleCasePageTitle':undefined}>{ux.title}</h1>
+    {caseStart&&<SimpleCaseStart {...caseStart} language={language} copy={core}/>}
+    {(!caseStart||next.kind!=='create')&&<section className="workspaceNext" aria-labelledby="workspace-next-title">
       <span className="eyebrow">{ux.next}</span>
-      <h2 id="workspace-next-title">{ux[next.kind]}</h2>
-      <p className="workspaceNextSubject">{next.item?.title||next.item?.subject||ux.empty}</p>
+      <h2 id="workspace-next-title">{linkedCase&&(next.kind==='read'||next.kind==='review')?simple.continue:ux[next.kind]}</h2>
+      <p className="workspaceNextSubject">{linkedCase?.title||next.item?.title||next.item?.subject||ux.empty}</p>
       <button className="primary" type="button" onClick={openNext}>{nextButton} <span aria-hidden="true">→</span></button>
-    </section>
-    <nav className="workspaceOverviewGrid" aria-label={ux.title}>
-      {cards.map(card=><button type="button" className="workspaceOverviewCard" key={card.key} onClick={card.action}>
-        <span className="workspaceCardCount">{card.count}</span><span className="workspaceCardLabel">{card.label}</span>{card.detail&&<small>{card.detail}</small>}<span className="workspaceCardArrow" aria-hidden="true">→</span>
-      </button>)}
-    </nav>
-    <div className="workspaceCreateActions">
-      {next.kind!=='create'&&<button className="secondary" type="button" onClick={()=>handleQuickAction('case')}>＋ {ux.create}</button>}
-      <button className="secondary" type="button" onClick={()=>handleQuickAction('upload')}>＋ {ux.upload}</button>
-    </div>
+    </section>}
     {overview.recentCases.length>0&&<section className="workspaceRecent" aria-labelledby="workspace-recent-title">
       <div className="workspaceRecentHead"><h2 id="workspace-recent-title">{ux.recent}</h2><button type="button" className="linkBtn" onClick={()=>setSection('cases')}>{ux.allCases}</button></div>
       {overview.recentCases.map(item=><button type="button" className="workspaceRecentCase" key={item.id} onClick={()=>handleQuickAction('open-case',item)}><span>{item.title}</span><span aria-hidden="true">→</span></button>)}
@@ -67,6 +63,12 @@ export function DashboardSurface({core,handleQuickAction,onOpenDocument,onOpenAp
     <details className="workspaceMore">
       <summary>{ux.more}</summary>
       <div className="workspaceMoreContent">
+        <nav className="workspaceOverviewGrid" aria-label={ux.title}>
+          {cards.map(card=><button type="button" className="workspaceOverviewCard" key={card.key} onClick={card.action}>
+            <span className="workspaceCardCount">{card.count}</span><span className="workspaceCardLabel">{card.label}</span>{card.detail&&<small>{card.detail}</small>}<span className="workspaceCardArrow" aria-hidden="true">→</span>
+          </button>)}
+        </nav>
+        <button className="secondary" type="button" onClick={()=>handleQuickAction('upload')}>＋ {ux.upload}</button>
         <div className="workspaceSecondaryLinks">{['clients','documents','approvals','account'].map(key=><button type="button" className="secondary" key={key} onClick={()=>setSection(key)}>{a.sections[key]||lt.contract}</button>)}</div>
         <p className="muted">{a.signedInAs} {user?.email||guestCopy.displayName}</p>
         {guestAccess&&<p className="guestSessionNotice"><b>{guestCopy.active}</b><span>{guestCopy.scope}</span></p>}

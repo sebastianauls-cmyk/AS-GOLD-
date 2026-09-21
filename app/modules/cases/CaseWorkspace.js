@@ -24,6 +24,8 @@ import { analyzeCaseDeadlines } from './lib/caseDeadlineEvidence.mjs'
 import { caseStatusLabel } from './lib/caseStatus.mjs'
 import { DocumentDeadlineCandidates } from './DocumentDeadlineCandidates'
 import { CustomerRoadmapPanel } from './CustomerRoadmapPanel'
+import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
+import { SimpleCaseStart } from './SimpleCaseStart'
 import { ResultContinuation } from './ResultContinuation'
 import { documentDateLabel } from './lib/timelineDateCopy.mjs'
 
@@ -90,25 +92,13 @@ export function CaseSection({copy:on, language='de', clients, cases, newCase, se
   const draftTestId=syntheticCaseId(newCase)
   return <>
     <button className="primary actionBtn" type="button" onClick={()=>setShowForm(value=>!value)}>{showForm?on.cancel:`＋ ${on.newCase}`}</button>
-    {showForm&&<form className="actionCard coreForm" onSubmit={onSubmit}>
-      <div className="formIntro"><h3>{on.caseSetup}</h3><p>{on.caseSetupHelp}</p></div>
-      {draftTestId&&<div className="syntheticCaseNotice"><span aria-hidden="true">🧪</span><div><b>{on.syntheticCase}</b><p>{draftTestId}{newCase.test_case_expected_ampel?` · ${newCase.test_case_expected_ampel}`:''}{newCase.test_case_language?` · ${newCase.test_case_language.toUpperCase()}`:''}{newCase.test_case_home_country&&newCase.test_case_target_country?` · ${newCase.test_case_home_country} → ${newCase.test_case_target_country}`:''}</p></div></div>}
-      <label htmlFor={fieldId('new-case','title')}>{on.title}<input id={fieldId('new-case','title')} value={newCase.title} onChange={event=>setNewCase({...newCase,title:event.target.value})} required/></label>
-      <label htmlFor={fieldId('new-case','client')}>{on.client}<select id={fieldId('new-case','client')} value={newCase.client_id} onChange={event=>setNewCase({...newCase,client_id:event.target.value})}><option value="">{on.noClient}</option>{clients.map(client=><option value={client.id} key={client.id}>{client.name}</option>)}</select></label>
-      <label htmlFor={fieldId('new-case','home-country')}>{on.homeCountry}<select id={fieldId('new-case','home-country')} value={newCase.home_country||'DE'} onChange={event=>setNewCase({...newCase,home_country:event.target.value})}>{countryOptions()}</select></label>
-      <label htmlFor={fieldId('new-case','target-country')}>{on.targetCountry}<select id={fieldId('new-case','target-country')} value={newCase.target_country||'DE'} onChange={event=>setNewCase({...newCase,target_country:event.target.value})}>{countryOptions()}</select></label>
-      <label htmlFor={fieldId('new-case','reference')}>{on.reference}<input id={fieldId('new-case','reference')} value={newCase.reference_no} onChange={event=>setNewCase({...newCase,reference_no:event.target.value})}/></label>
-      <label htmlFor={fieldId('new-case','goal')}>{on.goal}<textarea id={fieldId('new-case','goal')} value={newCase.goal} onChange={event=>setNewCase({...newCase,goal:event.target.value})} required/></label>
-      <label htmlFor={fieldId('new-case','summary')}>{on.summary}<textarea id={fieldId('new-case','summary')} value={newCase.summary} onChange={event=>setNewCase({...newCase,summary:event.target.value})}/></label>
-      <label htmlFor={fieldId('new-case','deadline')}>{on.deadline}<input id={fieldId('new-case','deadline')} type="datetime-local" value={newCase.deadline_at} onInput={event=>setNewCase({...newCase,deadline_at:event.target.value})} onChange={event=>setNewCase({...newCase,deadline_at:event.target.value})}/></label>
-      <label htmlFor={fieldId('new-case','next')}>{on.nextAction}<textarea id={fieldId('new-case','next')} value={newCase.next_action} onChange={event=>setNewCase({...newCase,next_action:event.target.value})}/></label>
-      <button className="primary full">{on.createCase}</button>
-    </form>}
+    {showForm&&draftTestId&&<p className="syntheticCaseNotice">{on.syntheticCase} · {draftTestId}</p>}
+    {showForm&&<SimpleCaseStart language={language} copy={on} draft={newCase} setDraft={setNewCase} clients={clients} onSubmit={onSubmit}/>}
     {cases.length?<div className="itemList">{cases.map(item=>{const testId=syntheticCaseId(item);return <button className="itemRow buttonRow" type="button" onClick={()=>onSelect(item)} key={item.id}><div><b>{item.title}</b><div className="pills">{testId&&<span className="pill syntheticCasePill">🧪 {testId} · {on.syntheticCase}</span>}<span className="pill">{caseStatusLabel(language,item.status)}</span><span className={`pill ${item.traffic_light||'yellow'}`}>{trafficLightLabel(on,item.traffic_light)}</span>{item.deadline_at&&<span className="pill">{new Date(item.deadline_at).toLocaleDateString()}</span>}</div></div><span className="chev">›</span></button>})}</div>:null}
   </>
 }
 
-export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate, continuation}){
+export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate, onAnalyzeDocument, onRecoverDocument, onSaveDocument, continuation}){
   const [editing,setEditing]=useState(false)
   const [draft,setDraft]=useState({title:item.title||'',client_id:item.client_id||'',reference_no:item.reference_no||'',goal:item.goal||'',summary:item.summary||'',deadline_at:localDateTime(item.deadline_at),next_action:item.next_action||'',traffic_light:item.traffic_light||'yellow',status:item.status||'open',home_country:item.home_country||'DE',target_country:item.target_country||'DE',test_case_id:item.test_case_id||null,test_case_expected_ampel:item.test_case_expected_ampel||null,test_case_language:item.test_case_language||null})
   const [assessment,setAssessment]=useState(emptyAssessment)
@@ -116,9 +106,12 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
   const assessmentBusy=useRef(false)
   const [savingAssessment,setSavingAssessment]=useState(false)
   const evidenceCopy=caseGuidanceCopy(language)
+  const simple=simpleCaseCopy(language)
+  const moreRef=useRef(null)
   const evidenceState=caseEvidenceStatus(item,documents,assessments)
   const currentIds=new Set(evidenceState.current.map(entry=>entry.id))
   function reviewAssessment(entry,document){
+    if(moreRef.current)moreRef.current.open=true
     setAssessment({...emptyAssessment(),...(entry||{}),source_document_id:document?.id||entry?.source_document_id||'',source_reviewed:false,supersedes_assessment_id:entry?.id||null,title:entry?.title||document?.title||on.addAssessment})
     assessmentTitleRef.current?.focus()
     assessmentTitleRef.current?.scrollIntoView({behavior:'smooth',block:'center'})
@@ -142,7 +135,8 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
     <div className="caseTitleRow"><div><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2>{item.title}</h2><p>{client?.name||on.clientUnknown}{item.reference_no?` · ${item.reference_no}`:''}</p></div><button className="secondary" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button></div>
-    <PrimaryNextStepCard language={language} item={item} documents={documents} assessments={assessments} onAction={nextAction}/>
+    {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} continuation={continuation}/>}
+    <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>
     {editing&&<form className="actionCard coreForm" onSubmit={event=>{event.preventDefault();onSave(item.id,draft).then(saved=>{if(saved)setEditing(false)})}}>
       <label htmlFor={fieldId(item.id,'title')}>{on.title}<input id={fieldId(item.id,'title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
       <label htmlFor={fieldId(item.id,'client')}>{on.client}<select id={fieldId(item.id,'client')} value={draft.client_id} onChange={event=>setDraft({...draft,client_id:event.target.value})}><option value="">{on.noClient}</option>{clients.map(entry=><option value={entry.id} key={entry.id}>{entry.name}</option>)}</select></label>
@@ -155,10 +149,10 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
       <label htmlFor={fieldId(item.id,'next')}>{on.nextAction}<textarea id={fieldId(item.id,'next')} value={draft.next_action} onChange={event=>setDraft({...draft,next_action:event.target.value})}/></label>
       <button className="primary full">{on.saveChanges}</button>
     </form>}
+    <details ref={moreRef} className="simpleCaseMore"><summary>{simple.more}</summary>
+    <PrimaryNextStepCard language={language} item={item} documents={documents} assessments={assessments} onAction={nextAction}/>
     <section className="caseCoreGrid"><article><b>{on.homeCountry}</b><p>{localizedCountryName(item.home_country||'DE',language)}</p></article><article><b>{on.targetCountry}</b><p>{localizedCountryName(item.target_country||'DE',language)}</p></article><article><b>{on.goal}</b><p>{item.goal||'—'}</p></article><article><b>{on.summary}</b><p>{item.summary||'—'}</p></article><article><b>{on.deadline}</b><p>{item.deadline_at?new Date(item.deadline_at).toLocaleString():'—'}</p></article><article><b>{on.nextAction}</b><p>{item.next_action||'—'}</p></article></section>
-    {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} continuation={continuation}/>}
     {supabase&&ownerId&&<LegalComparisonPanel supabase={supabase} ownerId={ownerId} language={language} outputLanguage={outputLanguage} item={item} workspaceCopy={on} onPrivacyUpdate={onPrivacyUpdate}/>}
-    <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>
     <DocumentDeadlineCandidates item={item} documents={documents} language={language} onOpenDocument={onOpenDocument} onEdit={()=>setEditing(true)}/>
     <CaseTimeline language={language} caseDeadline={item.deadline_at||''} documents={documents}/>
     <CaseCompletionPanels language={language} outputLanguage={outputLanguage} item={item} documents={documents} assessments={assessments} onEdit={()=>setEditing(true)} onAddDocument={()=>onAddDocument(item.id)} onOpenDocument={onOpenDocument} onAssess={()=>reviewAssessment()}/>
@@ -167,6 +161,7 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
     <section className="detailCard"><h3>{on.currentAssessments}</h3>{assessments.length?<div className="assessmentList">{assessments.map(entry=><article className={`assessment ${entry.traffic_light}`} key={entry.id}><div><span>{trafficLightLabel(on,entry.traffic_light)}</span><b>{entry.title}</b></div>{!currentIds.has(entry.id)&&<p className="modeBadge">{evidenceCopy.history}</p>}<p>{entry.reasoning||'—'}</p><small>{on.nextAction}: {entry.next_step||'—'}</small><AssessmentExplainability language={language} reasoning={entry.reasoning} next={entry.next_step} assessment={entry} documents={documents} onOpenDocument={onOpenDocument} onReview={currentIds.has(entry.id)?reviewAssessment:undefined}/></article>)}</div>:<p>{on.noAssessment}</p>}
       <form className="inlineAssessment" onSubmit={saveAssessment}><h4>{on.addAssessment}</h4><label htmlFor={fieldId(item.id,'assessment-title')}>{on.assessmentTitle}<input ref={assessmentTitleRef} id={fieldId(item.id,'assessment-title')} value={assessment.title} onChange={event=>setAssessment({...assessment,title:event.target.value})} required/></label><label htmlFor={fieldId(item.id,'assessment-light')}>{on.trafficLight}<select id={fieldId(item.id,'assessment-light')} value={assessment.traffic_light} onChange={event=>setAssessment({...assessment,traffic_light:event.target.value})}><option value="green">🟢 {on.green}</option><option value="yellow">🟡 {on.yellow}</option><option value="red">🔴 {on.red}</option><option value="white">⚪ {on.white}</option></select></label><label htmlFor={fieldId(item.id,'assessment-reasoning')}>{on.reasoning}<textarea id={fieldId(item.id,'assessment-reasoning')} value={assessment.reasoning} onChange={event=>setAssessment({...assessment,reasoning:event.target.value})} required/></label><label htmlFor={fieldId(item.id,'assessment-next')}>{on.assessmentNext}<textarea id={fieldId(item.id,'assessment-next')} value={assessment.next_step} onChange={event=>setAssessment({...assessment,next_step:event.target.value})}/></label><AssessmentEvidenceFields language={language} caseId={item.id} documents={documents} assessment={assessment} setAssessment={setAssessment}/><button className="secondary full" type="submit" disabled={savingAssessment}>{on.saveAssessment}</button></form>
     </section>
+    </details>
   </>
 }
 

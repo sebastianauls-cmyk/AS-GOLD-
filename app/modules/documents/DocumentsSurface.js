@@ -5,6 +5,7 @@ import { APP_VERSION } from '../release/appRelease.mjs'
 import DocumentFileIntake from './DocumentFileIntake'
 import VoiceContextInput from './VoiceContextInput'
 import DeviceReadinessPanel from './DeviceReadinessPanel'
+import { simpleCaseCopy } from '../cases/lib/simpleCaseCopy.mjs'
 
 function useActiveInterfaceLanguage(fallback='de'){
   const [current,setCurrent]=useState(fallback)
@@ -20,6 +21,8 @@ function useActiveInterfaceLanguage(fallback='de'){
 
 export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode,setDocumentMode,uploadCaseId,uploadDocument,uploading,allowedUploadAccept,setSelectedDocument,onBack,language='de'}){
   const interfaceLanguage=useActiveInterfaceLanguage(language)
+  const simple=simpleCaseCopy(interfaceLanguage)
+  const linkedCase=cases.find(item=>item.id===uploadCaseId)
   const [intakeRevision,setIntakeRevision]=useState(0)
   async function submitDocument(event){
     const uploaded=await uploadDocument(event)
@@ -29,13 +32,15 @@ export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode
     <div className="sectionHead"><button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backOverview}</button><h2>{a.sections.documents}</h2></div>
     {access?.app_role!=='owner'&&Number(access?.permissions?.document_limit||0)>0&&<p className="muted">{a.used.replace('{used}',documents.length).replace('{limit}',access.permissions.document_limit)}</p>}
     <form className="actionCard coreForm" onSubmit={submitDocument}>
-      <div className="formIntro"><span className="modeBadge">{APP_VERSION} · Dokument-Eingang</span><h3>{core.documentUpload}</h3><div className="modeSwitch"><button type="button" className={documentMode==='upload'?'active':''} onClick={()=>setDocumentMode('upload')}>{core.uploadMode}</button><button type="button" className={documentMode==='scan'?'active':''} onClick={()=>setDocumentMode('scan')}>{core.scanMode}</button></div><p>{documentMode==='scan'?core.scanHelp:core.uploadHelp}</p></div>
-      <DeviceReadinessPanel language={interfaceLanguage}/>
+      <div className="formIntro"><h3>{simple.add}</h3>{linkedCase&&<p>{linkedCase.title}</p>}<div className="modeSwitch"><button type="button" className={documentMode==='upload'?'active':''} onClick={()=>setDocumentMode('upload')}>{core.uploadMode}</button><button type="button" className={documentMode==='scan'?'active':''} onClick={()=>setDocumentMode('scan')}>{core.scanMode}</button></div></div>
       <DocumentFileIntake key={`file-${documentMode}-${intakeRevision}`} language={interfaceLanguage} documentMode={documentMode} allowedUploadAccept={allowedUploadAccept}/>
+      {linkedCase?<input type="hidden" name="case_id" value={linkedCase.id}/>:<label htmlFor="document-case">{core.selectCase}<select id="document-case" name="case_id" defaultValue={uploadCaseId||''}><option value="">{core.withoutCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>}
+      <details className="simpleUploadOptions"><summary>{simple.options}</summary>
       <VoiceContextInput key={`voice-${intakeRevision}`} language={interfaceLanguage}/>
-      <label htmlFor="document-case">{core.selectCase}<select id="document-case" name="case_id" defaultValue={uploadCaseId||''}><option value="">{core.withoutCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>
       <label htmlFor="document-type">{core.documentType}<input id="document-type" name="document_type"/></label>
       <label htmlFor="document-date">{core.documentDate}<input id="document-date" name="document_date" type="date"/></label>
+      <DeviceReadinessPanel language={interfaceLanguage}/>
+      </details>
       <div className="documentPrivacyIntro"><b>{v28.classification}</b><p>{v28.uploadHelp}</p><a href="/datenschutz" target="_blank" rel="noreferrer">{v28.privacy} →</a></div>
       <label htmlFor="document-classification">{v28.classification}<select id="document-classification" name="data_classification" defaultValue="" required><option value="" disabled>—</option><option value="synthetic">{v28.synthetic}</option><option value="anonymized">{v28.anonymized}</option></select></label>
       <label className="documentPrivacyConfirm"><input name="test_data_confirmed" type="checkbox" required/><span>{v28.uploadConfirm}</span></label>

@@ -742,3 +742,15 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 }
 .publicLegalBrief{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:22px 0}.publicLegalBrief>div{border-inline-start:3px solid #b09246;padding-inline-start:14px}.publicLegalBrief h3{font-size:1rem;margin:0 0 6px}.publicLegalBrief p{font-size:.94rem;line-height:1.55;margin:0;color:#555b61}.legalResultLanguage{font-size:.9rem;color:#535b64}.legalCustomerExplanation{margin:16px 0}.legalComparisonResult [lang]{unicode-bidi:plaintext}
 @media(max-width:760px){.publicLegalBrief{grid-template-columns:1fr;gap:14px}}
+
+/* One question first; advanced case tools stay available on demand. */
+.simpleCaseStart{background:#fff;border:1px solid #e1dfd8;border-radius:20px;padding:clamp(20px,4vw,36px);margin:12px 0 26px;color:#202b3b}
+.simpleCaseStart h2{font-size:clamp(1.55rem,4vw,2rem);line-height:1.25;margin:0 0 12px}.simpleCaseStart p{font-size:1rem;line-height:1.6;max-width:60ch}
+.simpleCaseStart>textarea{width:100%;box-sizing:border-box;resize:vertical;padding:16px;border:1px solid #959da8;border-radius:12px;font:inherit;font-size:1rem;line-height:1.55;background:#fff;color:#202b3b;min-height:140px}
+.simpleCaseButtons{display:flex;justify-content:space-between;gap:12px;margin-top:14px}.simpleCaseButtons button{min-height:48px;min-width:110px;font-size:1rem}
+.simpleCaseStart summary,.simpleCaseMore>summary,.simpleUploadOptions>summary{padding:16px 0;cursor:pointer;font-size:1rem;line-height:1.5;font-weight:600}
+.simpleCaseOptions{margin-top:12px}.simpleCaseOptions .coreForm{padding-top:14px}.simpleCasePageTitle{font-size:1rem!important;color:#68707b;margin:16px 0 8px!important}
+.simpleCaseMore{margin:18px 0;border-top:1px solid #d6dee8}.simpleUploadOptions{grid-column:1/-1}.simpleUploadOptions>label{display:block;margin:16px 0}
+.roadmapSetup fieldset{min-width:0;border:0;margin:0;padding:0}.roadmapSetup fieldset>.linkBtn{margin-inline-start:16px}.caseMoreOptions{margin-top:20px}.caseReadingProgress{margin:20px 0;padding:18px;border-radius:12px;background:#edf3fa}.caseReadingProgress p{margin:8px 0}.caseReadingProgress summary{cursor:pointer}
+.caseFileList ul{padding-inline-start:20px}.simpleCaseEmpty{margin:20px 0}.simpleCaseEmpty p{max-width:55ch}
+@media(max-width:600px){.simpleCaseStart{padding:20px 16px}.simpleCaseButtons button{flex:1}.roadmapSetup fieldset>.linkBtn{display:block;margin:14px 0 0}.simpleCaseMore .caseCoreGrid{grid-template-columns:1fr}}

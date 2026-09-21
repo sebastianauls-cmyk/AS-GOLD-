@@ -10,6 +10,8 @@ import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, aut
 import { createRoadmapExport } from '../services/customerRoadmapExport.mjs'
 import { downloadExportArtifact } from '../services/exportService'
 import { ResultContinuation } from './ResultContinuation'
+import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
+import { caseDocuments, preparationContext, prepareCaseDocuments, savePreparedCaseDocuments } from './lib/casePreparation.mjs'
 import './customerRoadmap.css'
 
 function Dot({light,label}) {return <span className="roadmapLight"><span aria-hidden="true" style={{backgroundColor:ROADMAP_COLORS[light]}}/>{label}</span>}
@@ -43,7 +45,7 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   const rtl=['ar','fa'].includes(record.output_language)
   const safeExport=type=>onExport?.(type)
   const assessment=<><p className="roadmapOpening">{result.opening}</p><ul>{result.key_points.map((point,index)=><li key={index}>{point}</li>)}</ul><p><b>{ui.meaning}</b><br/>{result.meaning}</p></>
-  return <div className="customerRoadmapView" dir={rtl?'rtl':'ltr'}>
+  return <div className="customerRoadmapView" lang={record.output_language} dir={rtl?'rtl':'ltr'}>
     <div className="roadmapLetterhead">{record.style.letterhead||record.style.sender_name}</div>
     <h3>{result.title}</h3><p className="roadmapMeta">{ui.draft}</p>
     {record.style.salutation&&<p>{record.style.salutation}</p>}
@@ -87,13 +89,18 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   </div>
 }
 
-export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,continuation={}}) {
+export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,onAnalyzeDocument,onRecoverDocument,onSaveDocument,onAddDocument,continuation={}}) {
   const ui=roadmapUi(language)
+  const simple=simpleCaseCopy(language)
   const [records,setRecords]=useState([]),[activeId,setActiveId]=useState(''),[loading,setLoading]=useState(true)
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[full,setFull]=useState(false),[showForm,setShowForm]=useState(true)
   const [style,setStyle]=useState(()=>roadmapStyle({customer_name:client?.name||''}))
   const [referenceLanguage,setReferenceLanguage]=useState(outputLanguage),[confirmed,setConfirmed]=useState(false),[fingerprint,setFingerprint]=useState('')
   const [processingStage,setProcessingStage]=useState('')
+  const [documentProgress,setDocumentProgress]=useState(null)
+  const [failedDocument,setFailedDocument]=useState(null)
+  const mountedRef=useRef(true)
+  useEffect(()=>{mountedRef.current=true;return ()=>{mountedRef.current=false}},[])
   const activeCaseRef=useRef(item.id)
   activeCaseRef.current=item.id
   const busyRef=useRef(false)
@@ -103,6 +110,14 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   const record=caseRecords.find(entry=>entry.id===activeId)||caseRecords[0]
   const stale=!!record&&(!fingerprint||record.source_fingerprint!==fingerprint||record.id!==caseRecords[0]?.id)
   const canCreate=continuation.canContinue!==false
+  const ownDocuments=caseDocuments(item,documents)
+  const context=preparationContext(item,documents,outputLanguage,referenceLanguage)
+  const contextRef=useRef(context)
+  contextRef.current=context
+  const scope=JSON.stringify([item.id,item.home_country,item.target_country,outputLanguage,referenceLanguage,ownDocuments.map(doc=>[doc.id,doc.file_path,doc.data_classification])])
+  const scopeRef=useRef(scope)
+  scopeRef.current=scope
+  useEffect(()=>{if(!busyRef.current)setConfirmed(false)},[context])
   useEffect(()=>{
     let cancelled=false
     setFingerprint('')
@@ -121,24 +136,40 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   },[supabase,item.id,ui.error])
   async function run(task) {
     if(busyRef.current)return false
-    busyRef.current=true;setBusy(true);setError('')
-    try{return await task()}catch(error){setError(error?.message||ui.error);return false}finally{busyRef.current=false;setBusy(false);setProcessingStage('')}
+    busyRef.current=true;setBusy(true);setError('');setFailedDocument(null)
+    try{return await task()}catch(error){
+      if(mountedRef.current){setError(error.code==='changed'?simple.changed:error.code?simple.failed:error?.message||ui.error);setFailedDocument(error.document||null)}
+      return false
+    }finally{busyRef.current=false;if(mountedRef.current){setBusy(false);setProcessingStage('');setDocumentProgress(null)}}
   }
   async function create(event) {
     event.preventDefault()
-    if(!confirmed)return
+    if(!confirmed||!canCreate||loading)return
     const creatingCaseId=item.id
+    const initialContext=context
+    const initialScope=scope
     return run(async()=>{
+      let sourceDocuments=documents
+      const isCurrent=()=>mountedRef.current&&activeCaseRef.current===creatingCaseId&&scopeRef.current===initialScope
+      if(onAnalyzeDocument&&onRecoverDocument&&onSaveDocument){
+        setProcessingStage('documents')
+        const drafts=await prepareCaseDocuments({item,documents,outputLanguage,referenceLanguage,onAnalyze:onAnalyzeDocument,onRecover:onRecoverDocument,onProgress:setDocumentProgress,isCurrent:()=>isCurrent()&&contextRef.current===initialContext})
+        setProcessingStage('saving')
+        const saved=await savePreparedCaseDocuments({drafts,onSave:onSaveDocument,onProgress:setDocumentProgress,isCurrent})
+        sourceDocuments=documents.map(doc=>saved.find(entry=>entry.id===doc.id)||doc)
+      }
+      if(!isCurrent())return false
       setProcessingStage('generation')
-      try{validateRoadmapInput(source)}catch(error){throw new Error(await roadmapErrorMessage(error,ui.error,language))}
+      setDocumentProgress(null)
+      try{validateRoadmapInput(roadmapSource(item,sourceDocuments,assessments))}catch(error){throw new Error(await roadmapErrorMessage(error,ui.error,language))}
       const authorization=await authorizeRoadmap(supabase,{ownerId})
       if(authorization.error)throw new Error(ui.error)
-      if(activeCaseRef.current!==creatingCaseId)return false
+      if(!isCurrent())return false
       onPrivacyUpdate?.(authorization.data)
-      const {data,error}=await generateCustomerRoadmap(supabase,{caseId:item.id,style,outputLanguage,referenceLanguage,onProgress:({stage})=>{if(activeCaseRef.current!==creatingCaseId)throw new Error(ui.stale);setProcessingStage(stage)}})
+      const {data,error}=await generateCustomerRoadmap(supabase,{caseId:item.id,style,outputLanguage,referenceLanguage,onProgress:({stage})=>{if(!isCurrent())throw new Error(ui.stale);setProcessingStage(stage)}})
       if(error)throw new Error(await roadmapErrorMessage(error,ui.error,language))
       if(!data?.roadmap)throw new Error(ui.error)
-      if(activeCaseRef.current!==creatingCaseId)return false
+      if(!isCurrent())return false
       setRecords(previous=>[data.roadmap,...previous]);setActiveId(data.roadmap.id);setShowForm(false);setFull(false);setConfirmed(false)
       return true
     })
@@ -157,22 +188,28 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   })
   function expandForm() {setShowForm(true);requestAnimationFrame(()=>formRef.current?.scrollIntoView({behavior:'smooth',block:'start'}))}
   return <section className="customerRoadmapPanel" id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>
-    <header className="roadmapPanelHead"><div><h3 id={`roadmap-title-${item.id}`}>{ui.title}</h3><p>{ui.intro}</p></div>{record&&canCreate&&<button type="button" className="secondary" disabled={busy} onClick={expandForm}>{ui.refresh}</button>}</header>
+    <header className="roadmapPanelHead"><div><h3 id={`roadmap-title-${item.id}`}>{simple.title}</h3><p>{simple.intro}</p></div>{record&&canCreate&&<button type="button" className="secondary" disabled={busy} onClick={expandForm}>{ui.refresh}</button>}</header>
     {loading&&<p role="status">{ui.loading}</p>}
-    {busy&&processingStage&&<p role="status" aria-live="polite">{roadmapProgressLabel(language,processingStage)}</p>}
+    {busy&&processingStage&&<div className="caseReadingProgress" role="status" aria-live="polite"><b>{processingStage==='documents'?simple.reading:simple.saving}{documentProgress?` · ${documentProgress.index} / ${documentProgress.total}`:' …'}</b>{documentProgress&&<p>{documentProgress.document.title}</p>}<p>{simple.working}</p><details><summary>{simple.details}</summary>{roadmapProgressLabel(language,processingStage)}</details></div>}
     {error&&<p className="roadmapError" role="alert">{error}</p>}
+    {failedDocument&&<button type="button" className="secondary" onClick={()=>onOpenDocument?.(failedDocument)}>{ui.newDocument}: {failedDocument.title}</button>}
     {stale&&<p className="roadmapStale" role="status">{ui.stale}</p>}
     {caseRecords.length>1&&<label className="roadmapVersionSelect">{ui.history}<select value={activeId} onChange={event=>{setActiveId(event.target.value);setFull(false)}}>{caseRecords.map(entry=><option key={entry.id} value={entry.id}>{new Date(entry.created_at).toLocaleString(language)} · {outputLanguageLabels[entry.output_language]}</option>)}</select></label>}
     {!canCreate&&!record&&<ResultContinuation {...continuation} language={language}/>}
-    {showForm&&canCreate&&<form ref={formRef} className="roadmapSetup" onSubmit={create}>
-      <details><summary>{ui.style}</summary><div className="roadmapFields">
+    {showForm&&canCreate&&!ownDocuments.length&&<div className="simpleCaseEmpty"><p>{simple.noDocuments}</p>{onAddDocument&&<button className="primary" type="button" onClick={onAddDocument}>＋ {simple.add}</button>}</div>}
+    {showForm&&canCreate&&ownDocuments.length>0&&<form ref={formRef} className="roadmapSetup" onSubmit={create}>
+      <p>{simple.files}: <b>{ownDocuments.length}</b> · {ui.output}: <b>{outputLanguageLabels[outputLanguage]}</b></p>
+      <details className="caseFileList"><summary>{simple.files}</summary><ul>{ownDocuments.map(doc=><li key={doc.id}>{doc.title}</li>)}</ul></details>
+      <fieldset disabled={busy}>
+      <label className="roadmapConsent"><input type="checkbox" required checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>{onAnalyzeDocument?simple.consent:ui.confirm}</span></label>
+      <button type="submit" className="primary" disabled={busy||!confirmed||loading}>{busy?simple.saving:error?simple.retry:simple.start}</button>
+      {onAddDocument&&<button type="button" className="linkBtn" onClick={onAddDocument}>＋ {simple.add}</button>}
+      <details className="caseMoreOptions"><summary>{simple.options}</summary>
+      <label>{ui.reference}<select value={referenceLanguage} onChange={event=>{setReferenceLanguage(event.target.value);setConfirmed(false)}}>{OUTPUT_LANGUAGES.map(key=><option key={key} value={key}>{outputLanguageLabels[key]}</option>)}</select></label>
+      <h4>{ui.style}</h4><div className="roadmapFields">
         {['customer_name','salutation','sender_name','letterhead','closing'].map((key,index)=><label key={key}>{ui[['customer','salutation','sender','letterhead','closing'][index]]}{['letterhead','closing'].includes(key)?<textarea maxLength={600} value={style[key]} onChange={event=>setStyle({...style,[key]:event.target.value})}/>:<input maxLength={180} value={style[key]} onChange={event=>setStyle({...style,[key]:event.target.value})}/>}</label>)}
         <label>{ui.tone}<select value={style.tone} onChange={event=>setStyle({...style,tone:event.target.value})}><option value="personal">{ui.personal}</option><option value="formal">{ui.formal}</option></select></label>
-      </div></details>
-      <p>{ui.output}: <b>{outputLanguageLabels[outputLanguage]}</b></p>
-      <label>{ui.reference}<select value={referenceLanguage} onChange={event=>setReferenceLanguage(event.target.value)}>{OUTPUT_LANGUAGES.map(key=><option key={key} value={key}>{outputLanguageLabels[key]}</option>)}</select></label>
-      <label className="roadmapConsent"><input type="checkbox" required checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>{ui.confirm}</span></label>
-      <button type="submit" className="primary" disabled={busy||!confirmed||loading}>{busy?ui.creating:record?ui.refresh:ui.create}</button>
+      </div></details></fieldset>
     </form>}
     {busy&&!processingStage&&<p role="status" aria-live="polite">{ui.loading}</p>}
     {record&&<CustomerRoadmapView key={record.id} record={record} stale={stale} documents={documents} onOpenDocument={onOpenDocument} onProgress={progress} onExport={exportFile} busy={busy} full={full} onFull={()=>setFull(true)} continuation={continuation} language={language}/>}
