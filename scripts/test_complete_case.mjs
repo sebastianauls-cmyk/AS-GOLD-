@@ -68,8 +68,9 @@ const args={providerKey:'synthetic',source,style:{},outputLanguage:'de',referenc
 let flow=await advanceCompleteAnalysis(args);assert.equal(flow.state.stage,'analysis');assert(!flow.result)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
+for(let part=0;part<2;part++){flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result)}
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
-assert.equal(calls,4,'no external research is claimed for an arithmetic-only case')
+assert.equal(calls,6,'no external research is claimed for an arithmetic-only case')
 const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}
 const official='https://www.gesetze-im-internet.de/estg/__34.html'
 const batchFetch=async(url,options)=>{

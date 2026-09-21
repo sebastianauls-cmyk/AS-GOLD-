@@ -1,6 +1,6 @@
 import {quotationIndex,indexedModelData,resolveQuotationIds} from './quotationIndex.mjs'
 import { ROADMAP_SCHEMA, roadmapModelSource, splitVerbatimRoadmapEvidence, validateRoadmapResult } from './customerRoadmap.mjs'
-import { callModel, advanceReviewedModel, ModelWorkflowError } from './modelQuality.mjs'
+import { callModel, reviewModelCandidate, ModelWorkflowError } from './modelQuality.mjs'
 import { RESEARCH_COUNTRIES, SHARED_RESEARCH_DOMAINS } from './researchCountries.mjs'
 import { searchRetrievedSources, researchSourceCandidates, retrieveOfficialEvidence, primarySourceCatalogue, loadPrimarySources, supportingPrimaryEvidence } from './verifiedResearch.mjs'
 import { calculateExpression, quoteContainsNumber } from './checkedCalculations.mjs'
@@ -142,6 +142,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   const request={...baseRequest,model,reasoning:{effort:'low'},instructions:baseInstructions+'\n'+FULL_INSTRUCTIONS+'\nQuotation contract: originals and research are supplied as indexed passages. In every quote field, return the exact passage ID (for example @d0_2 or @s1_3) from that same document_id or url; the server inserts the literal text. Choose a passage containing the claimed number or date. Never invent a passage ID or rewrite its text. Use short concise fields; include all decisive supported financial comparisons, including gross/net differences and allocations, even when the final legal classification remains open.',input:[{role:'user',content:[{type:'input_text',text:JSON.stringify({style,source:indexed.source,...context,retrieved_sources:indexed.research})}]}],text:{format:{type:'json_schema',name:'ash_complete_case_v157',strict:true,schema:COMPLETE_ANALYSIS_SCHEMA}},max_output_tokens:22000}
   const validate=(raw,repair={})=>{if(!draftLetters)raw.letters=[];return validateCompleteAnalysis(resolveQuotationIds(raw,quotes),source,{outputLanguage,referenceLanguage,scope:current.scope,research:current.research,...repair})}
   const reviewContent=[...baseReviewContent.map(item=>item.type==='input_text'?{...item,text:item.text.replace('Original evidence only; no external research was performed.','Original documents plus the separately supplied fetched sources and checked calculations.')} :item),{type:'input_text',text:JSON.stringify(context)}]
+  if(current.modelState?.stage==='review')reviewContent.push({type:'input_text',text:JSON.stringify({numerical_questions_without_calculation:current.scope.issues.filter(issue=>issue.calculation_needed&&!(current.modelState.candidate?.analysis?.calculations||[]).some(calculation=>calculation.topic_ids.includes(issue.id))),instruction:'These are coverage signals, not automatic defects. Check the originals and retrieved rules. Where amounts and a conditional calculation rule are available, missing final eligibility does not justify omitting an informative bounded financial scenario. Where amount, share or applicable calculation rule itself is absent, a precise unresolved reason is valid. Flag omissions only when the actual supplied evidence supports that useful calculation.'})})
   const attempt=current.modelState?.attempt||1
   if(!current.modelState||current.modelState.stage==='generation'){
     const writingPlan=!!current.draftAnalysis
@@ -164,9 +165,24 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     }catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=[{code:'source',location:'output',reason:error.message}]}
     return {status:'processing',state:{...current,draftAnalysis:null,draftFeedback:[],modelState:{stage:'review',attempt,candidate,structuralFeedback,validationContext,model:generated.model,response_id:generated.response_id}}}
   }
-  const checked=await advanceReviewedModel({providerKey,request,reviewContent,validate,state:current.modelState,fetchImpl,onResponse,reviewModel:model})
-  if(checked.status==='processing')return {status:'processing',state:{...current,modelState:checked.state}}
-  return {...checked,result:{...checked.result,analysis:{...checked.result.analysis,research_sources:current.research,verification:{version:COMPLETE_ANALYSIS_VERSION,search_response_id:current.search_response_id,review_response_id:checked.review_response_id,analysis_response_id:current.analysis_response_id,checked_at:new Date().toISOString()}}}}
+  const partIndex=current.reviewIndex||0
+  if(!Number.isInteger(partIndex)||partIndex<0||partIndex>2)throw new ModelWorkflowError('Ungültiger Prüfabschnitt.',409)
+  let candidate=current.modelState.candidate,validationContext=current.modelState.validationContext
+  let structuralFeedback=current.modelState.structuralFeedback||[]
+  try{candidate=validate(candidate,validationContext)}catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=[{code:'source',location:'output',reason:error.message}]}
+  const {analysis,...plan}=candidate
+  const related={topics:analysis?.topics?.map(({id,title,conclusion,conditions,step_ids})=>({id,title,conclusion,conditions,step_ids})),calculations:analysis?.calculations?.map(({id,title,result,unit,conditions,topic_ids})=>({id,title,result,unit,conditions,topic_ids})),steps:plan.steps?.map(({id,action,done_when})=>({id,action,done_when}))}
+  const part=partIndex===0?{analysis:{topics:analysis?.topics,limitations:analysis?.limitations}}:partIndex===1?{analysis:{calculations:analysis?.calculations}}:plan
+  const focus=['Review all substantive conclusions, legal applicability, source support and completeness of the case issues. Use related_output to check numerical coverage and linked practical actions. Flag omitted useful conditional financial scenarios when supported; do not re-audit the full calculation input mechanics or letter wording here.','Review every calculation: literal-source number, role, unit, exact arithmetic, time period, assumption, legal applicability and narrative numerical consistency. Use related_output as context. Every relevant calculation must be checked; do not rewrite legal conclusions or letters in this part.','Review every customer-facing roadmap field, original-document fact, question, step, deadline, dependency, letter and translation. Compare them with the related checked analysis and numerical results. Do not repeat the full legal-source and arithmetic-input audit already assigned to the other two parts.'][partIndex]
+  const review=await reviewModelCandidate({providerKey,candidate:part,reviewContent:[...reviewContent,{type:'input_text',text:JSON.stringify({related_output:related})}],reviewModel:model,reviewFocus:focus+' All original documents remain supplied. Three independent scoped reviews are mandatory before acceptance. Fields assigned to another part are context, not missing candidate fields. Return precise original full-result field locations for any concrete material defect.',deadline:Date.now()+140000,callTimeoutMs:135000,fetchImpl,onResponse:event=>onResponse?.({...event,review_part:partIndex+1}),attempt})
+  const feedback=[...(current.reviewFeedback||[]),...(partIndex===0?structuralFeedback:[]),...review.issues]
+  const reviewIds=[...(current.reviewIds||[]),review.response_id]
+  if(partIndex<2)return {status:'processing',state:{...current,reviewIndex:partIndex+1,reviewFeedback:feedback,reviewIds,modelState:{...current.modelState,candidate,validationContext,structuralFeedback}}}
+  if(feedback.length){
+    if(attempt===2)throw new ModelWorkflowError('Das Ergebnis konnte noch nicht freigegeben werden. Es wurde kein neues Ergebnis gespeichert.',422,'review_unresolved',feedback)
+    return {status:'processing',state:{...current,reviewIndex:0,reviewFeedback:[],reviewIds:[],draftAnalysis:null,draftFeedback:[],modelState:{stage:'generation',attempt:2,previous:candidate,feedback,validationContext}}}
+  }
+  return {status:'completed',attempts:attempt,model:current.modelState.model,response_id:current.modelState.response_id,review_response_id:review.response_id,result:{...candidate,analysis:{...candidate.analysis,research_sources:current.research,verification:{version:COMPLETE_ANALYSIS_VERSION,search_response_id:current.search_response_id,review_response_id:review.response_id,review_response_ids:reviewIds,analysis_response_id:current.analysis_response_id,checked_at:new Date().toISOString()}}}}
 }
 
 export function completeAnalysisStage(state){

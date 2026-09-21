@@ -105,10 +105,10 @@ export async function callModel(providerKey,request,{deadline,fetchImpl,onRespon
   return {parsed,response_id:response.id,model:response.model,response}
 }
 
-export async function reviewModelCandidate({providerKey,candidate,reviewContent,deadline=Date.now()+45000,fetchImpl=fetch,onResponse,attempt=1,callTimeoutMs=90000,reviewModel='gpt-5.6-luna'}) {
+export async function reviewModelCandidate({providerKey,candidate,reviewContent,deadline=Date.now()+45000,fetchImpl=fetch,onResponse,attempt=1,callTimeoutMs=90000,reviewModel='gpt-5.6-luna',reviewFocus=''}) {
   // Live negative controls require the full reasoning review. Do not downgrade
   // the evidence gate to fit a slow request; the common deadline still fails closed.
-  const review=await callModel(providerKey,{model:reviewModel,reasoning:{effort:'high'},instructions:REVIEW_INSTRUCTIONS,input:[{role:'user',content:[...reviewContent,{type:'input_text',text:JSON.stringify({candidate})}]}],text:{format:{type:'json_schema',name:'ash_evidence_review_v139',strict:true,schema:REVIEW_SCHEMA}},max_output_tokens:10000},{deadline,fetchImpl,onResponse,stage:'review',attempt,callTimeoutMs})
+  const review=await callModel(providerKey,{model:reviewModel,reasoning:{effort:'high'},instructions:REVIEW_INSTRUCTIONS+(reviewFocus?'\nREVIEW PART: '+reviewFocus:''),input:[{role:'user',content:[...reviewContent,{type:'input_text',text:JSON.stringify({candidate})}]}],text:{format:{type:'json_schema',name:'ash_evidence_review_v139',strict:true,schema:REVIEW_SCHEMA}},max_output_tokens:10000},{deadline,fetchImpl,onResponse,stage:'review',attempt,callTimeoutMs})
   return {issues:validateQualityReview(review.parsed),response_id:review.response_id}
 }
 
