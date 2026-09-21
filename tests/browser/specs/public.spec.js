@@ -47,6 +47,10 @@ for(const {key:language,label,rtl} of LANGUAGE_CATALOG){
     await expect(page.locator('.publicCapabilitySummary li')).toHaveCount(3)
     await expect(page.locator('html')).toHaveAttribute('dir',rtl?'rtl':'ltr')
     await expect(page.locator('.publicTop button[aria-haspopup="listbox"]')).toHaveCount(2)
+    const explainer=page.locator('[data-explainer-video-section]')
+    await expect(explainer).toBeVisible()
+    await expect(explainer.getByRole('button')).toBeInViewport()
+    await expect(page.locator('.publicExtraHelp')).not.toHaveAttribute('open','')
     await expect(page.locator('#sprachen-rechtsraeume select')).toHaveCount(3)
     await expect(page.locator('.publicLanguageCountryStart button')).toHaveCount(2)
     await expect(page.locator('.publicLegalBrief')).toContainText(legalComparisonPresentation(language).meaning)
@@ -62,6 +66,31 @@ for(const {key:language,label,rtl} of LANGUAGE_CATALOG){
     }
   })
 }
+
+test('videos open directly from the introduction and retain all languages and presenters',async({page},testInfo)=>{
+  await openPublic(page)
+  const explainer=page.locator('[data-explainer-video-section]')
+  await explainer.getByRole('button').click()
+  const video=explainer.locator('video')
+  await expect(video).toBeVisible()
+  await expect(page.locator('.publicExtraHelp')).not.toHaveAttribute('open','')
+  const language=explainer.getByRole('combobox',{name:'Videosprache'})
+  await expect(language.locator('option')).toHaveCount(11)
+  await expect(video.locator('source')).toHaveAttribute('src','/videos/ash-workspace-gold-v134-female-de.mp4')
+  await explainer.getByRole('button',{name:'👨 Männlich',exact:true}).click()
+  await expect(video.locator('source')).toHaveAttribute('src','/videos/ash-workspace-gold-v134-male-de.mp4')
+  await language.selectOption('pl')
+  await expect(video.locator('source')).toHaveAttribute('src',/36a72e70bfaf4900a380bf525590b207-pl/)
+  await expect(video.locator('track')).toHaveAttribute('srclang','pl')
+  await expect(page.locator('html')).toHaveAttribute('lang','de')
+  await explainer.getByRole('button',{name:'👩 Weiblich',exact:true}).click()
+  await expect(video.locator('source')).toHaveAttribute('src',/9ebeaa1c966dd5fd172dcaa87762b76e-pl/)
+  await noHorizontalOverflow(page)
+  await capture(page,testInfo,'visible-explainer',explainer)
+  await explainer.getByRole('button',{name:'Video schließen',exact:true}).click()
+  await expect(video).toHaveCount(0)
+  await expect(explainer.getByRole('button')).toBeVisible()
+})
 
 test('the first action shows an example and translates private and business results independently',async({page},testInfo)=>{
   await openPublic(page)

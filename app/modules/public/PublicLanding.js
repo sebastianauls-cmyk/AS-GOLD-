@@ -97,6 +97,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
           <div className="publicProductIntro">
             <h1>{c.headline}</h1>
             <p className="lead">{c.lead}</p>
+            <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
           </div>
           <PublicResultExample language={language} outputLanguage={outputLanguage}/>
           <div className="publicProductEntry">
@@ -123,7 +124,6 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
       <section className="publicControl section"><div className="wrap"><h2>{c.control}</h2><p className="lead">{c.controlBody}</p>
         <details className="publicExtraHelp"><summary>{c.extraHelp}</summary>
           <details className="publicHelp"><summary>{c.help}</summary><ProductIntroCompact language={language}/><ProblemNavigator outputLanguage={outputLanguage} language={language} onRegister={()=>setScreen('register')} onSelectCase={setSelectedPublicCase}/></details>
-          <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
           <div className="publicInstallRow"><InstallAppButton language={language} surface="public"/></div>
           <PublicTrustSections tt={tt} cd={cd} a={a} compact/>
           <p className="publicLegalContext"><b>{t.legal}</b><br/>{t.marketNote}</p>
