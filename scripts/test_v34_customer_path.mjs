@@ -32,7 +32,7 @@ expect(!layout.includes('HeroProblemOrder'),'legacy DOM-reorder helper must not 
 
 const introPos=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
 const problemPos=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
-const videoPos=publicLanding.indexOf('<ExplainerVideo key=')
+const videoPos=publicLanding.indexOf('<ExplainerVideo ')
 expect(introPos>=0&&problemPos>introPos,'additional help must keep explanation before the single problem input')
 expect(videoPos>publicLanding.indexOf('<h1>')&&videoPos<publicLanding.indexOf('<PublicResultExample'),'the explainer must be directly available in the introduction, outside collapsed help')
 expect(!publicLanding.includes('V37FirstAction'),'PublicLanding must not render a second entry card before the problem input')

@@ -31,7 +31,7 @@ const introSource=await readFile(new URL('../app/modules/public/ProductIntroComp
 const explainerSource=await readFile(new URL('../app/modules/public/ExplainerVideo.js',import.meta.url),'utf8')
 assert.match(switcherSource,/\bVN\b/);assert.match(switcherSource,/const flagComponents=\{[^}]*\bVN\b[^}]*\}/s)
 for(const pair of [['ro','Videoclip explicativ'],['bg','Обяснително видео'],['vi','Video giải thích']]) assert.ok(videoDialogSource.includes(pair[0]+":'"+pair[1]+"'"))
-assert.match(switcherSource,/className="flagLanguagePublicText"/);assert.match(switcherSource,/<strong>\{active\.label\}<\/strong>/);assert.equal((switcherSource.match(/className="flagLanguageMenuBack"/g)||[]).length,2);assert.doesNotMatch(switcherSource,/flagLanguageClose/)
+assert.match(switcherSource,/className="flagLanguagePublicText"/);assert.match(switcherSource,/<strong>\{active\.label\}<\/strong>/);assert.equal((switcherSource.match(/className="flagLanguageMenuBack"/g)||[]).length,1);assert.doesNotMatch(switcherSource,/flagLanguageClose/)
 assert.match(heroSource,/whatIsAsGoldCopy/);for(const language of ['ro','bg','vi'])assert.ok(introCopySource.includes(language+':{title:'));assert.match(introSource,/howAsGoldWorksCopy/)
 for(const language of ['ro','bg','vi'])assert.ok(explainerSource.includes("['"+language+"',"))
 for(const presenter of ['female','male'])for(const language of expectedLanguages)assert.ok(explainerVideoCatalog[presenter]?.[language]?.src,`missing ${presenter} explainer video for ${language}`)

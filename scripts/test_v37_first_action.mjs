@@ -29,7 +29,7 @@ if(!video.includes('Weiblich') || !video.includes('Männlich')) throw new Error(
 if(!video.includes("setPresenter('female')") || !video.includes("setPresenter('male')")) throw new Error('V80 first-action guard: presenter buttons are not interactive')
 const productIndex=publicLanding.indexOf('<ProductIntroCompact language={language}/>')
 const problemIndex=publicLanding.indexOf('<ProblemNavigator outputLanguage={outputLanguage}')
-const videoIndex=publicLanding.indexOf('<ExplainerVideo key=')
+const videoIndex=publicLanding.indexOf('<ExplainerVideo ')
 if(!(productIndex>=0 && problemIndex>productIndex)) throw new Error('First-action guard: additional help must keep explanation before the single problem input')
 if(!(videoIndex>publicLanding.indexOf('<h1>') && videoIndex<publicLanding.indexOf('<PublicResultExample'))) throw new Error('First-action guard: the optional video must be directly visible in the introduction')
 if(!problem.includes('data-problem-voice onClick={voice}')) throw new Error('V80 first-action guard: the remaining microphone action must call speech directly')

@@ -26,16 +26,16 @@ export function PublicLanguageCountryView({language='de',example,onChange,onStar
       <p className="publicLanguageCountryCoverage">{text(c.coverage)}</p>
       <h2 id={`${idPrefix}-title`}>{legal.title}</h2><p className="lead">{legal.intro}</p>
       <div className="publicLegalBrief">{[[legal.here,legal.rule],[legal.there,legal.rule],[legal.meaning,legal.difference]].map(([heading,body])=><div key={heading}><h3>{heading}</h3><p>{body}</p></div>)}</div>
-      <details className="publicCountryDetails" open={compact?undefined:true}>
-      <summary>{publicEntryCopy(language).languageExample}</summary>
       <div className="publicLanguageCountryExample">
         <h3>{c.example}</h3>
         {home.key==='PL'&&target.key==='DE'&&<blockquote>{c.quote}</blockquote>}
-        <div className="publicLanguageCountryControls">{groups.map(([key,label,options])=><label key={key} htmlFor={`${idPrefix}-${key}`}><span>{label}</span><select id={`${idPrefix}-${key}`} value={example[key]} onChange={event=>onChange(key,event.target.value)}>{options.map(([value,name])=><option value={value} key={value}>{name}</option>)}</select></label>)}</div>
+        <div className="publicLanguageCountryControls">{groups.map(([key,label,options])=><label key={key} htmlFor={`${idPrefix}-${key}`}><span>{label}</span><select id={`${idPrefix}-${key}`} aria-label={label} value={example[key]} onChange={event=>onChange(key,event.target.value)}>{options.map(([value,name])=><option value={value} key={value}>{name}</option>)}</select></label>)}</div>
+      </div>
         <div className="publicLanguageCountryResults" aria-live="polite" aria-atomic="true">
           {[[c.translate,text(c.translateBody)],[c.explain,text(c.explainBody)],[c.compare,home.key===target.key?c.same:text(c.compareBody)]].map(([title,body],index)=><article key={title}><span className="publicLanguageCountryNumber" aria-hidden="true">{index+1}</span><h3>{title}</h3><p>{body}</p></article>)}
         </div>
-      </div>
+      <details className="publicCountryDetails" open={compact?undefined:true}>
+      <summary>{publicEntryCopy(language).languageExample}</summary>
       <div className="publicLanguageCountryLetter"><h3>{c.letter}</h3><p>{c.letterBody}</p></div>
       <p className="publicLanguageCountryBasis">{c.basis}</p>
       {onStart&&<div className="publicLanguageCountryStart">

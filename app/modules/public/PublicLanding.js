@@ -102,7 +102,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
               <h2 id="public-summary-title" className="publicVisuallyHidden">{c.summaryTitle}</h2>
               <ul>{c.benefits.map(title=><li key={title}><span aria-hidden="true">✓</span>{title}</li>)}</ul>
             </section>
-            <ExplainerVideo key={language} language={language} openSignal={explainerSignal}/>
+            <ExplainerVideo language={language} openSignal={explainerSignal}/>
           </div>
           <PublicResultExample language={language} outputLanguage={outputLanguage}/>
           <div className="publicProductEntry">
