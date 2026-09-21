@@ -11,14 +11,30 @@ export function completedDocumentAnalysis(result){
     ['summary','next_step','assessment_reasoning'].every(key=>typeof result[key]==='string')
 }
 
-export function restoreDocumentAnalysis(document,{outputLanguage='de',referenceLanguage='de',country='DE'}={}){
+function currentDocumentAnalysisDraft(document){
   const saved=document?.analysis_draft,result=saved?.result
   if(!completedDocumentAnalysis(result)||saved.document_id!==document.id||saved.file_path!==document.file_path||
     saved.data_classification!==document.data_classification||
-    (saved.voice_context||'')!==(document.voice_context||'')||(saved.voice_language||'')!==(document.voice_language||'')||
-    result.output_language!==outputLanguage||result.reference_language!==referenceLanguage||result.target_country!==country)return null
+    (saved.voice_context||'')!==(document.voice_context||'')||(saved.voice_language||'')!==(document.voice_language||''))return null
   const completed=Date.parse(saved.completed_at)
-  if(!Number.isFinite(completed)||completed!==Date.parse(document.ai_last_processed_at)||completed!==Date.parse(document.updated_at))return null
+  const represented=Date.parse(saved.document_updated_at||saved.completed_at)
+  if(!Number.isFinite(completed)||completed!==Date.parse(document.ai_last_processed_at)||
+    !Number.isFinite(represented)||represented!==Date.parse(document.updated_at))return null
+  return saved
+}
+
+// Authorization changes permission and the row version, not the original or the
+// completed result. Carry only an already-valid binding across that exact change.
+// The caller must compare-and-swap the row version it just read. Never revive a
+// draft made stale by a document edit, and never erase it merely to start a retry.
+export function preserveDocumentAnalysisDraft(document,updatedAt){
+  const saved=currentDocumentAnalysisDraft(document)
+  return saved?{...saved,document_updated_at:updatedAt}:document?.analysis_draft??null
+}
+
+export function restoreDocumentAnalysis(document,{outputLanguage='de',referenceLanguage='de',country='DE'}={}){
+  const saved=currentDocumentAnalysisDraft(document),result=saved?.result
+  if(!saved||result.output_language!==outputLanguage||result.reference_language!==referenceLanguage||result.target_country!==country)return null
   const generated=mapDocumentLanguageWorkflowResult(result,document,outputLanguage,referenceLanguage)
   generated.fields.case_id=document.case_id||''
   return generated

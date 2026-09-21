@@ -1,3 +1,5 @@
+import {preserveDocumentAnalysisDraft} from '../documents/documentAnalysisRecovery.mjs'
+
 function legalSettingsPayload({ownerId,privacyNoticeVersion,termsVersion,acknowledgedAt}){
   const timestamp=acknowledgedAt||new Date().toISOString()
   return {owner_id:ownerId,privacy_notice_version:privacyNoticeVersion,privacy_notice_acknowledged_at:timestamp,terms_version:termsVersion,terms_acknowledged_at:timestamp,real_data_authorized:false,ai_processing_enabled:false,special_categories_authorized:false,retention_days:90}
@@ -33,7 +35,11 @@ export function acknowledgeLegalSettings(supabase,{ownerId,privacyNoticeVersion,
 export async function authorizeDocumentAnalysis(supabase,{ownerId,documentId,privacyNoticeVersion,termsVersion}){
   const enabled=await supabase.from('account_privacy_settings').update({ai_processing_enabled:true,updated_at:new Date().toISOString()}).eq('owner_id',ownerId).eq('privacy_notice_version',privacyNoticeVersion).eq('terms_version',termsVersion).select().single()
   if(enabled.error)return {privacy:null,document:null,error:enabled.error}
-  const allowed=await supabase.from('documents').update({analysis_draft:null,ai_processing_allowed:true,privacy_notice_version:privacyNoticeVersion,ai_notice_version:privacyNoticeVersion,updated_at:new Date().toISOString()}).eq('id',documentId).eq('owner_id',ownerId).in('data_classification',['synthetic','anonymized']).select().single()
+  const current=await supabase.from('documents').select('*').eq('id',documentId).eq('owner_id',ownerId).single()
+  if(current.error)return {privacy:enabled.data,document:null,error:current.error}
+  if(!current.data?.updated_at)return {privacy:enabled.data,document:null,error:{message:'Document is no longer available.'}}
+  const updatedAt=new Date(Math.max(Date.now(),Date.parse(current.data.updated_at)+1)).toISOString()
+  const allowed=await supabase.from('documents').update({analysis_draft:preserveDocumentAnalysisDraft(current.data,updatedAt),ai_processing_allowed:true,privacy_notice_version:privacyNoticeVersion,ai_notice_version:privacyNoticeVersion,updated_at:updatedAt}).eq('id',documentId).eq('owner_id',ownerId).eq('updated_at',current.data.updated_at).in('data_classification',['synthetic','anonymized']).select().single()
   if(allowed.error)return {privacy:enabled.data,document:null,error:allowed.error}
   return {privacy:enabled.data,document:allowed.data,error:null}
 }

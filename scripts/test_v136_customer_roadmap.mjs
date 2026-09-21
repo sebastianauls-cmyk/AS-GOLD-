@@ -42,6 +42,17 @@ for(const written of ['1.4.2030','01.04.2030','1.04.2030','01.4.2030','2030-04-0
 }
 assert.doesNotThrow(deadlineCheck('Vom 11.04.2030-21.04.2030.','2030-04-21'))
 assert.doesNotThrow(deadlineCheck('Bitte antworten\nSie bis 11.04.2030.','2030-04-11','Bitte antworten Sie bis 11.04.2030.'))
+for(const written of ['15. Oktober 2026','15 October 2026','October 15, 2026','October 15 2026'])assert.doesNotThrow(deadlineCheck(`Die erste Zahlung ist am ${written} fällig.`,'2026-10-15'))
+assert.doesNotThrow(deadlineCheck('Die erste Zahlung ist am\n15. Oktober 2026 fällig.','2026-10-15','15. Oktober 2026'))
+for(const [original,date,quote] of [
+  ['Termin 15. Oktober 2026.','2026-10-05','5. Oktober 2026'],
+  ['Termin 15. Oktober 2026.','2026-10-15','15. Oktober'],
+  ['Termin 15. Oktober 20260.','2026-10-15'],
+  ['Termin 15. September 2026.','2026-10-15'],
+  ['Termin 31. September 2026.','2026-10-01'],
+  ['Termin 15. Oktober 2026; danach 15. November 2026.','2026-10-15','15. November 2026'],
+  ['Die Frist beträgt einen Monat nach Erhalt.','2026-10-15']
+])assert.throws(deadlineCheck(original,date,quote),/Frist/,'written dates require a complete matching original token; no inferred relative deadline')
 const cycle=structuredClone(roadmapTestResult);cycle.steps[0].depends_on=['abschluss']
 assert.throws(()=>validateRoadmapResult(cycle,source),/Reihenfolge/)
 const falseGreen=structuredClone(roadmapTestResult);falseGreen.steps[0].light='green'
