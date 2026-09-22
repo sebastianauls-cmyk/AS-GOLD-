@@ -222,6 +222,7 @@ linked.analysis.calculations[1].inputs[0].value='1000.00'
 linked.analysis.calculations.reverse()
 assert.throws(()=>validateCompleteAnalysis(linked,source,options),/weiterverwendetes/,'forward references remain invalid')
 
+const outlineFixture=analysis=>({topics:structuredClone(analysis.topics),limitations:analysis.limitations,calculation_plan:analysis.calculations.map(item=>({id:item.id,title:item.title,topic_ids:item.topic_ids,purpose:item.explanation,depends_on:item.inputs.filter(input=>input.kind==='calculation').map(input=>input.calculation_id)}))})
 let calls=0
 const fetchImpl=async(url,options)=>{
   assert.equal(url,'https://api.openai.com/v1/responses');const request=JSON.parse(options.body);calls++
@@ -234,15 +235,22 @@ const fetchImpl=async(url,options)=>{
     const inspect=schema=>{if(!schema||typeof schema!=='object')return;if(schema.properties?.quote){assert.equal(schema.properties.document_id,undefined);assert.equal(schema.properties.url,undefined);assert(schema.properties.quote.pattern)};Object.values(schema).forEach(inspect)}
     inspect(request.text.format.schema)
   }
-  if(name==='ash_complete_numbers_v157'){
+  if(name==='ash_complete_outline_v166'){
     const fields=request.text.format.schema.properties
     assert.equal(fields.topics.minItems,1);assert.equal(fields.topics.maxItems,10)
-    assert.equal(fields.calculations.maxItems,24,'the provider must receive the server calculation limit before generating')
+    assert.equal(fields.calculation_plan.maxItems,24,'the complete numerical manifest is bounded before generation')
+    assert.equal(fields.calculations,undefined,'the outline cannot generate all detailed calculations in one request')
+  }
+  if(name==='ash_complete_numbers_v157'){
+    const fields=request.text.format.schema.properties,assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations
+    assert(assigned.length<=6)
+    assert.equal(fields.calculations.maxItems,assigned.length)
+    assert.equal(fields.calculations.minItems,assigned.length)
     assert.equal(fields.calculations.items.properties.inputs.minItems,1)
     assert.equal(fields.calculations.items.properties.inputs.maxItems,24)
   }
   const {analysis,...plan}=candidate
-  const output=name==='ash_case_scope'?scope:name==='ash_complete_numbers_v157'?structuredClone(analysis):name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
+  const output=name==='ash_case_scope'?scope:name==='ash_complete_outline_v166'?outlineFixture(analysis):name==='ash_complete_numbers_v157'?{calculations:structuredClone(analysis.calculations)}:name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
   if(name==='ash_complete_numbers_v157')for(const calculation of output.calculations)for(const input of calculation.inputs){
     const passage=[...quotationIndex(source,[]).values()].find(entry=>entry.document_id===input.document_id&&entry.quote.includes(input.quote))
     assert(passage,'integration fixture must select a real containing passage')
@@ -259,15 +267,16 @@ for(const repeatOverflow of [false,true]){
     const request=JSON.parse(options.body),name=request.text.format.name
     let output
     if(name==='ash_case_scope')output=scope
-    else if(name==='ash_complete_numbers_v157'){
+    else if(name==='ash_complete_outline_v166'){
       generations++
-      assert.equal(request.text.format.schema.properties.calculations.maxItems,24)
+      assert.equal(request.text.format.schema.properties.calculation_plan.maxItems,24)
       if(generations===2){
         const correction=JSON.parse(request.input.at(-1).content[0].text).correction
-        assert(correction.issues.some(issue=>issue.location==='analysis.calculations'&&issue.reason.includes('25')&&issue.reason.includes('24')))
+        assert(correction.issues.some(issue=>issue.location==='analysis.calculation_plan'&&issue.reason.includes('25')&&issue.reason.includes('24')))
       }
-      output=generations===1||repeatOverflow?overBudget.analysis:candidate.analysis
-    }else if(name==='ash_complete_plan_v157'){
+      output=generations===1||repeatOverflow?outlineFixture(overBudget.analysis):outlineFixture(candidate.analysis)
+    }else if(name==='ash_complete_numbers_v157')output={calculations:structuredClone(candidate.analysis.calculations)}
+    else if(name==='ash_complete_plan_v157'){
       const {analysis,...plan}=candidate;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else {reviews++;output={issues:[]}}
     return Response.json({status:'completed',id:`bounded-${generations}-${reviews}`,output_text:JSON.stringify(output)})
@@ -275,7 +284,7 @@ for(const repeatOverflow of [false,true]){
   let run=await advanceCompleteAnalysis({...args,fetchImpl:boundedFetch}),failure
   try{for(let i=0;run.status==='processing'&&i<10;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:boundedFetch,state:run.state})}catch(error){failure=error}
   assert.equal(generations,2,'only one mechanical repair')
-  if(repeatOverflow){assert.equal(failure?.code,'source_unresolved');assert.equal(failure.issues[0].location,'analysis.calculations');assert.equal(reviews,0);assert(!run.result)}
+  if(repeatOverflow){assert.equal(failure?.code,'source_unresolved');assert.equal(failure.issues[0].location,'analysis.calculation_plan');assert.equal(reviews,0);assert(!run.result)}
   else {assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(reviews,4);assert.equal(run.result.analysis.calculations.length,1)}
 }
 // Scope bounds must be sent to structured generation, not only checked after
@@ -303,6 +312,7 @@ for(const [invalid,locations] of [
   assert.equal(invoked,1,'invalid planning must not reach public research')
 }
 let flow=await advanceCompleteAnalysis(args);assert.equal(flow.state.stage,'analysis');assert(!flow.result)
+flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.analysisOutline);assert.equal(flow.state.draftAnalysis,null)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
 for(let part=0;part<3;part++){
@@ -310,7 +320,7 @@ for(let part=0;part<3;part++){
   if(part===0)for(const reviewCoverage of [undefined,[]])await assert.rejects(advanceCompleteAnalysis({...args,state:{...flow.state,reviewCoverage}}),error=>error.code==='review_coverage_changed','old review receipts cannot be reassigned after a batching change')
 }
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
-assert.equal(calls,7,'no external research is claimed for an arithmetic-only case')
+assert.equal(calls,8,'no external research is claimed for an arithmetic-only case')
 const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}
 const official='https://www.gesetze-im-internet.de/estg/__34.html'
 const batchFetch=async(url,options)=>{
@@ -346,6 +356,7 @@ for(const correctedContent of [true,false,'new_input','repeated_input']){
     const request=JSON.parse(options.body),name=request.text.format.name
     let output
     if(name==='ash_case_scope')output=scope
+    else if(name==='ash_complete_outline_v166')output=outlineFixture(candidate.analysis)
     else if(name==='ash_complete_numbers_v157'){
       generatedAnalyses++
       output=structuredClone(candidate.analysis)
@@ -373,7 +384,7 @@ for(const correctedContent of [true,false,'new_input','repeated_input']){
   }
   let run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth})
   let failure
-  try{for(let i=0;run.status==='processing'&&i<20;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth,state:run.state})}catch(error){failure=error}
+  try{for(let i=0;run.status==='processing'&&i<30;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth,state:run.state})}catch(error){failure=error}
   if(correctedContent===true||correctedContent==='new_input'){
     assert.equal(failure,undefined,'a successful input repair must leave one content correction available')
     assert.equal(run.status,'completed')
@@ -393,6 +404,7 @@ for(const repairOutcome of ['complete','partial','none']){
     stages.push(name)
     let output
     if(name==='ash_case_scope')output=scope
+    else if(name==='ash_complete_outline_v166')output=outlineFixture(candidate.analysis)
     else if(name==='ash_complete_numbers_v157'){
       analysisCalls++
       output=structuredClone(candidate.analysis)
@@ -414,19 +426,48 @@ for(const repairOutcome of ['complete','partial','none']){
   }
   let repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch})
   repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
+  assert(repairFlow.state.analysisOutline);assert.equal(repairFlow.state.inputRepair,null)
+  repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
   assert.equal(repairFlow.state.draftAnalysis,null)
   assert.equal(repairFlow.state.modelState.attempt,1,'the substantive correction is still unused')
   assert.equal(repairFlow.state.inputRepair.feedback.length,2,'both wrong source amounts must reach the single input correction')
   if(repairOutcome!=='complete'){
     await assert.rejects(advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state}),error=>error.code==='source_unresolved'&&error.issues.length===(repairOutcome==='partial'?1:2))
-    assert.equal(stages.length,3,'a second bad number stops before any plan or reviews')
+    assert.equal(stages.length,4,'a second bad number stops before any plan or reviews')
     continue
   }
   while(repairFlow.status==='processing')repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
   assert.equal(repairFlow.result.analysis.calculations[0].result,'1000.00')
   assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,4)
-  assert.equal(stages.length,8,'one source correction, one plan and all four reviews')
+  assert.equal(stages.length,9,'one source correction, one plan and all four reviews')
 }
+// A provider may not omit, rename, reorder or reassign the stored work plan.
+for(const defect of ['missing','extra','renamed','topic','forward_dependency']){
+  let outlineCalls=0,numberCalls=0,laterCalls=0
+  const malformed=async(_url,options)=>{
+    const request=JSON.parse(options.body),name=request.text.format.name
+    let output
+    if(name==='ash_case_scope')output=scope
+    else if(name==='ash_complete_outline_v166'){
+      outlineCalls++;output=outlineFixture(candidate.analysis)
+      if(defect==='forward_dependency')output.calculation_plan[0].depends_on=[output.calculation_plan[0].id]
+    }else if(name==='ash_complete_numbers_v157'){
+      numberCalls++;output={calculations:structuredClone(candidate.analysis.calculations)}
+      if(defect==='missing')output.calculations=[]
+      if(defect==='extra')output.calculations.push(structuredClone(output.calculations[0]))
+      if(defect==='renamed')output.calculations[0].id='unplanned'
+      if(defect==='topic')output.calculations[0].topic_ids=['unplanned']
+    }else {laterCalls++;throw Error('Rejected components must never reach a plan or review')}
+    return Response.json({status:'completed',id:'malformed-'+outlineCalls+'-'+numberCalls,output_text:JSON.stringify(output)})
+  }
+  let run=await advanceCompleteAnalysis({...args,fetchImpl:malformed}),failure
+  try{for(let i=0;i<5&&run.status==='processing';i++)run=await advanceCompleteAnalysis({...args,fetchImpl:malformed,state:run.state})}catch(error){failure=error}
+  assert.equal(failure?.code,'source_unresolved')
+  assert.equal(laterCalls,0);assert(!run.result)
+  assert.equal(outlineCalls,defect==='forward_dependency'?2:1)
+  assert.equal(numberCalls,defect==='forward_dependency'?0:2)
+}
+
 // Maximum supported case: every topic and calculation is audited exactly once
 // per round. A timed-out middle batch resumes alone; a material finding still
 // triggers a full correction and a fresh complete set of final reviews.
@@ -436,18 +477,30 @@ big.analysis.calculations=Array.from({length:24},(_,i)=>({...structuredClone(can
 const bigScope={issues:big.analysis.topics.map(({id,title})=>({id,title,reason:'Synthetic coverage boundary',calculation_needed:true})),research_topics:[]}
 const expectedCoverage=completeReviewCoverage(big),observedBatches=[]
 assert.equal(expectedCoverage.length,10)
-let bigCalls=0,bigRound=0,bigGenerated=0,batchTimedOut=false
+let bigCalls=0,bigRound=0,bigGenerated=0,batchTimedOut=false,generationTimedOut=false
+const badInputRounds=new Set(),generatedAssignments=[]
 const bigFetch=async(url,options)=>{
   if(!options?.body)return new Response('',{status:404})
   const request=JSON.parse(options.body),name=request.text.format.name
   bigCalls++
   let output
   if(name==='ash_case_scope')output=bigScope
+  else if(name==='ash_complete_outline_v166'){bigRound++;output=outlineFixture(big.analysis)}
   else if(name==='ash_complete_numbers_v157'){
-    bigGenerated++;bigRound=Math.ceil(bigGenerated/2);output=structuredClone(big.analysis)
-    if(bigGenerated%2===1)output.calculations[0].inputs[0].value='19000'
-    if(bigRound>1)assert(JSON.parse(request.input.at(-1).content[0].text).correction.issues.some(issue=>issue.location==='analysis.calculations[difference_18]'))
-    if(bigRound===3)assert(JSON.parse(request.input.at(-1).content[0].text).correction.previously_addressed_issues.some(issue=>issue.reason.endsWith('round 1.')),'the third candidate must retain the previously addressed findings')
+    bigGenerated++
+    const component=JSON.parse(request.input.at(-1).content[0].text),assigned=component.assigned_calculations
+    assert(assigned.length<=6)
+    generatedAssignments.push({round:bigRound,ids:assigned.map(item=>item.id)})
+    assert.deepEqual(request.text.format.schema.properties.calculations.items.properties.id.enum,assigned.map(item=>item.id))
+    if(assigned[0].id==='difference_6'&&!generationTimedOut){
+      generationTimedOut=true
+      assert.equal(component.completed_analysis.calculations.length,6,'first checked batch is retained before a later request times out')
+      throw new DOMException('Synthetic numeric-batch timeout','TimeoutError')
+    }
+    output={calculations:structuredClone(big.analysis.calculations.filter(item=>assigned.some(plan=>plan.id===item.id)))}
+    if(!badInputRounds.has(bigRound)){badInputRounds.add(bigRound);output.calculations[0].inputs[0].value='19000'}
+    if(bigRound>1)assert(component.correction.issues.some(issue=>issue.location==='analysis.calculations[difference_18]'))
+    if(bigRound===3)assert(component.correction.previously_addressed_issues.some(issue=>issue.reason.endsWith('round 1.')),'the third candidate must retain the previously addressed findings')
   }else if(name==='ash_complete_plan_v157'){
     const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
   }else{
@@ -465,11 +518,14 @@ const bigFetch=async(url,options)=>{
 }
 const bigArgs={...args,fetchImpl:bigFetch,baseReviewContent:[{type:'input_text',text:'SYNTHETIC_COMPLETE_ORIGINALS'}]}
 let bigFlow=await advanceCompleteAnalysis(bigArgs),transportFailures=0
-for(let i=0;bigFlow.status==='processing'&&i<46;i++){
+for(let i=0;bigFlow.status==='processing'&&i<60;i++){
   try{bigFlow=await advanceCompleteAnalysis({...bigArgs,state:bigFlow.state})}
-  catch(error){if(error.code!=='provider_timeout')throw error;assert.equal(++transportFailures,1)}
+  catch(error){if(error.code!=='provider_timeout')throw error;assert(++transportFailures<=2)}
 }
-assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,41);assert.equal(bigGenerated,6);assert.equal(bigFlow.attempts,3)
+assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,54);assert.equal(bigGenerated,16);assert.equal(bigFlow.attempts,3)
+assert.equal(transportFailures,2)
+assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,5,'outline and every final numeric batch have separate receipts')
+for(const round of [1,2,3])assert.deepEqual([...new Set(generatedAssignments.filter(item=>item.round===round).flatMap(item=>item.ids))],big.analysis.calculations.map(item=>item.id),'every planned calculation is generated in every complete candidate')
 assert.deepEqual(bigFlow.result.analysis.verification.review_coverage,expectedCoverage)
 assert.equal(bigFlow.result.analysis.verification.review_response_ids.length,10)
 assert(bigFlow.result.analysis.verification.review_response_ids.every(id=>id.startsWith('batch-round-3-')))
@@ -477,4 +533,29 @@ assert.deepEqual(observedBatches.filter(item=>item.round===2).map(({round,...ite
 assert.deepEqual(observedBatches.filter(item=>item.round===3).map(({round,...item})=>item),expectedCoverage,'a second correction also requires every batch again')
 const firstRound=observedBatches.filter(item=>item.round===1).map(({round,...item})=>item)
 assert.deepEqual(firstRound,[...expectedCoverage.slice(0,6),expectedCoverage[5],...expectedCoverage.slice(6)],'only the interrupted middle batch is repeated')
+// The one input repair is shared across batches, not reset after each success.
+{
+  let outlines=0,numbers=0,plans=0
+  const multi=structuredClone(big.analysis);multi.calculations=multi.calculations.slice(0,7)
+  const failAcrossBatches=async(_url,options)=>{
+    const request=JSON.parse(options.body),name=request.text.format.name
+    let output
+    if(name==='ash_case_scope')output=bigScope
+    else if(name==='ash_complete_outline_v166'){outlines++;output=outlineFixture(multi)}
+    else if(name==='ash_complete_numbers_v157'){
+      numbers++
+      const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations
+      output={calculations:structuredClone(multi.calculations.filter(item=>assigned.some(entry=>entry.id===item.id)))}
+      if(numbers===1||numbers===3)output.calculations[0].inputs[0].value='19000'
+    }else{plans++;throw Error('Second source failure must stop before a plan')}
+    return Response.json({status:'completed',id:'shared-'+outlines+'-'+numbers,output_text:JSON.stringify(output)})
+  }
+  let run=await advanceCompleteAnalysis({...args,fetchImpl:failAcrossBatches}),failure
+  try{for(let i=0;i<8&&run.status==='processing';i++)run=await advanceCompleteAnalysis({...args,fetchImpl:failAcrossBatches,state:run.state})}catch(error){failure=error}
+  assert.equal(failure?.code,'source_unresolved')
+  assert.equal(failure.issues[0].location,'analysis.calculations[6].inputs[0].value')
+  assert.equal(outlines,1);assert.equal(numbers,3);assert.equal(plans,0)
+  assert.equal(run.state.analysisOutline.analysis.calculations.length,6)
+  assert(!run.result)
+}
 console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete batched reviews, single-batch transport resumption, full correction/review coverage and display/export parity passed (provider mocked).')

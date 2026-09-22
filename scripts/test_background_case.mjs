@@ -14,6 +14,8 @@ let documents=structuredClone(roadmapTestDocuments),modelCalls=0,reviewIssues=[]
 const transientStages=new Set()
 const httpStages=new Map()
 const reviewedParts=[]
+let numericFixture=null,numericTimedOut=false
+const numericRequests=[]
 const oldFetch=globalThis.fetch
 try {
   await db.exec(`create role anon;create role authenticated;create role service_role;
@@ -40,6 +42,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922115500_complete_case_correction.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922121500_bounded_step_retries.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922140000_provider_http_recovery.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922182000_batched_case_generation.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -81,13 +84,20 @@ try {
       }
       if(typeof reviewIssues==='function')issues=reviewIssues(part)
     }
-    const analysis={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Anlage fehlt.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],calculations:[],limitations:[]}
-    const output=name==='ash_case_scope'?{issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:false}],research_topics:[]}
-      :name==='ash_complete_numbers_v157'?analysis:name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:{issues}
+    const analysis=numericFixture||{topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Anlage fehlt.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],calculations:[],limitations:[]}
+    if(name==='ash_complete_numbers_v157'){
+      const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations.map(item=>item.id)
+      numericRequests.push(assigned)
+      assert(assigned.length<=6)
+      if(assigned[0]==='number_6'&&!numericTimedOut){numericTimedOut=true;throw new DOMException('Synthetic second numeric batch timeout','TimeoutError')}
+      return Response.json({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify({calculations:analysis.calculations.filter(item=>assigned.includes(item.id))})})
+    }
+    const output=name==='ash_case_scope'?{issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:!!numericFixture}],research_topics:[]}
+      :name==='ash_complete_outline_v166'?{topics:analysis.topics,limitations:analysis.limitations,calculation_plan:analysis.calculations.map(item=>({id:item.id,title:item.title,topic_ids:item.topic_ids,purpose:item.explanation,depends_on:item.inputs.filter(input=>input.kind==='calculation').map(input=>input.calculation_id)}))}:name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:{issues}
     return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify(output)}))
   }
   const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
-  const drain=async id=>{for(let n=0;n<48;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
+  const drain=async id=>{for(let n=0;n<60;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
   const legacyJob=await enqueue()
   assert.equal(new Date(legacyJob.expires_at)-new Date(legacyJob.created_at),45*60*1000)
@@ -277,15 +287,15 @@ try {
   // The largest batch/correction path and one transport retry remain bounded.
   // The final review is still required at the last allowed claim.
   job=await enqueue();claimed=await claim(job.id)
-  await db.query('update private.case_analysis_work set steps=43,attempts=47 where job_id=$1',[job.id])
+  await db.query('update private.case_analysis_work set steps=55,attempts=59 where job_id=$1',[job.id])
   assert.equal((await finish(claimed,{status:'processing',checkpoint:'synthetic-limit-check',stage:'review'})).status,'queued')
   claimed=await claim(job.id)
-  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),48)
+  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),60)
   assert.equal((await finish(claimed,{status:'completed',result:acceptedResult,model:'test',source_documents:[],workflow_version:'test'})).status,'completed')
 
   job=await enqueue();claimed=await claim(job.id)
-  await db.query('update private.case_analysis_work set steps=44 where job_id=$1',[job.id])
-  assert.equal((await finish(claimed,{status:'processing',checkpoint:'over-limit',stage:'review'})).status,'failed','a forty-sixth successful stage is not allowed')
+  await db.query('update private.case_analysis_work set steps=56 where job_id=$1',[job.id])
+  assert.equal((await finish(claimed,{status:'processing',checkpoint:'over-limit',stage:'review'})).status,'failed','a fifty-eighth successful stage is not allowed')
 
   reviewIssues=part=>Object.hasOwn(part,'letters')?[{code:'meaning',location:'letters[0].body',reason:'Synthetic negative control: letter invents a payment suspension.'}]:[]
   job=await enqueue();const badLetter=await drain(job.id)
@@ -300,6 +310,31 @@ try {
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0,'content rejection never becomes a customer result')
   assert.equal((await stored(job.id)).issues.length,4,'the four scoped findings survive page closure')
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
+
+  // Actual worker + encrypted checkpoints + SQL: a later numeric call fails,
+  // while the first six checked calculations survive without being repeated.
+  reviewIssues=[]
+  const amountQuote='Die einmalige Kapitalzahlung beträgt 18.000 EUR brutto und 17.000 EUR netto.'
+  numericFixture={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Berechnungsanlage fehlt; die Differenz ist rechnerisch prüfbar.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],limitations:[],calculations:Array.from({length:7},(_,i)=>({id:'number_'+i,title:'Kontrollwert '+i,topic_ids:['source'],inputs:i?[{name:'previous',label:'Geprüfte Differenz',value:'1000.00',kind:'calculation',calculation_id:'number_0'}]:[{name:'gross',label:'Brutto',value:'18000',kind:'document',document_id:documents[0].id,quote:amountQuote},{name:'net',label:'Netto',value:'17000',kind:'document',document_id:documents[0].id,quote:amountQuote}],expression:i?'previous':'gross-net',decimal_places:2,unit:'EUR',conditions:'',explanation:'Rein synthetischer Kontrollwert zur abschnittsweisen Verarbeitung.'}))}
+  job=await enqueue();const numericCallsBefore=modelCalls
+  for(let i=0;i<3;i++)await process(await claim(job.id))
+  assert.equal(await scalar('select steps from private.case_analysis_work where job_id=$1',[job.id]),3)
+  const numericCheckpoint=await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id])
+  assert.equal((await stored(job.id)).roadmap_id,null,'partial arithmetic is private, not a saved customer result')
+  await process(await claim(job.id))
+  assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),numericCheckpoint,'a timed-out later batch cannot erase the sealed earlier calculations')
+  assert.equal((await drain(job.id)).status,'completed')
+  assert.equal(modelCalls-numericCallsBefore,11,'one outline, two numeric batches, plan and all five reviews; only the timed-out batch repeats')
+  assert.deepEqual(numericRequests,[Array.from({length:6},(_,i)=>'number_'+i),['number_6'],['number_6']])
+  const numericResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
+  assert.equal(numericResult.analysis.calculations.length,7)
+  assert(numericResult.analysis.calculations.every(item=>item.result==='1000.00'),'cross-batch dependencies retain exact checked values')
+  assert.equal(numericResult.analysis.verification.analysis_response_ids.length,3)
+  assert.equal(numericResult.analysis.verification.review_response_ids.length,5)
+  assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
+  assert.equal(new Date((await stored(job.id)).expires_at).getTime(),new Date(job.expires_at).getTime())
+  numericFixture=null
+  await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
 
   await db.query('update auth.users set banned_until=now()+interval \'1 day\' where id=$1',[owner]);await assert.rejects(enqueue(),/authorization/)
   await db.query('update auth.users set banned_until=null where id=$1',[owner])
