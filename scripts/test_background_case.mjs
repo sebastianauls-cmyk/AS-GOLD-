@@ -5,6 +5,7 @@ import {processCaseAnalysisJob} from '../supabase/functions/_shared/caseAnalysis
 import {roadmapFingerprint,roadmapSource,roadmapStyle} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
 
 // Real Postgres semantics, real migrations, real worker/state machine, validators
 // and encrypted checkpoints. Only dispatch transport and model responses are fake.
@@ -46,6 +47,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922184000_batched_case_topics.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922191500_provider_envelope_recovery.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922200500_bounded_roadmap_letter_reviews.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922213500_approved_case_analysis_retry.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -428,6 +430,7 @@ try {
   await db.query('update auth.users set is_anonymous=false where id=$1',[owner])
   await db.query("insert into case_analysis_jobs(owner_id,case_id,source_fingerprint,status) select $1,$2,$3,'failed' from generate_series(1,20)",[owner,caseId,await fingerprint()])
   await assert.rejects(enqueue(),/daily limit/)
+  await testCaseRepairCredit(db)
   await db.query('delete from cases where id=$1',[caseId])
   assert.equal(await scalar('select count(*)::integer from private.case_analysis_work'),0,'case deletion erases job payloads and checkpoints')
   console.log('Durable analysis: real SQL ownership/privileges, one-use dispatch, page-independent completion, crash recovery, stale-lease rejection, cancellation, consent/access/source guards, bounded retries, all four reviews, persisted failures, quota and deletion passed. Model and network responses are simulated; no live Sarah acceptance claimed.')
