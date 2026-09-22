@@ -177,7 +177,10 @@ for(const [invalid,locations] of [
 let flow=await advanceCompleteAnalysis(args);assert.equal(flow.state.stage,'analysis');assert(!flow.result)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
-for(let part=0;part<3;part++){flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result,'letters still require their separate review before acceptance')}
+for(let part=0;part<3;part++){
+  flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result,'letters still require their separate review before acceptance')
+  if(part===0)for(const reviewCoverage of [undefined,[]])await assert.rejects(advanceCompleteAnalysis({...args,state:{...flow.state,reviewCoverage}}),error=>error.code==='review_coverage_changed','old review receipts cannot be reassigned after a batching change')
+}
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
 assert.equal(calls,7,'no external research is claimed for an arithmetic-only case')
 const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}

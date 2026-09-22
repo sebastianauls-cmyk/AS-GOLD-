@@ -222,6 +222,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   const {analysis,...plan}=candidate
   const {letters,...roadmap}=plan
   const coverage=completeReviewCoverage(candidate)
+  if(current.reviewIds?.length&&JSON.stringify(current.reviewCoverage)!==JSON.stringify(coverage))throw new ModelWorkflowError('Die Prüfabschnitte wurden geändert. Bitte die Auswertung mit dem aktuellen Stand neu beauftragen.',409,'review_coverage_changed')
   if(!Number.isInteger(partIndex)||partIndex<0||partIndex>=coverage.length||coverage.length>10||(current.reviewIds||[]).length!==partIndex)throw new ModelWorkflowError('Ungültiger Prüfabschnitt.',409)
   const section=coverage[partIndex],reviewScope=section.scope
   const related={topics:analysis?.topics?.map(({id,title,conclusion,conditions,step_ids})=>({id,title,conclusion,conditions,step_ids})),calculations:analysis?.calculations?.map(({id,title,result,unit,conditions,topic_ids})=>({id,title,result,unit,conditions,topic_ids})),steps:reviewScope==='letters'?plan.steps:plan.steps?.map(({id,action,done_when})=>({id,action,done_when})),letters:letters?.map(({id,recipient,subject,document_ids})=>({id,recipient,subject,document_ids}))}
@@ -230,10 +231,10 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   const review=await reviewModelCandidate({providerKey,candidate:part,reviewContent:[...reviewContent,{type:'input_text',text:JSON.stringify({related_output:related,assigned_review:section,required_reviews:coverage})}],reviewModel:model,reviewFocus:focus+' All original documents and full fetched source texts remain supplied. Every assigned batch and all four scopes are mandatory before acceptance. Fields assigned to another part are context, not missing candidate fields. Identify findings by the original topic/calculation ID or full-result field path, not by a batch-local array index.',deadline:Date.now()+140000,callTimeoutMs:135000,fetchImpl,onResponse:event=>onResponse?.({...event,review_part:partIndex+1,review_scope:reviewScope}),attempt})
   const feedback=[...(current.reviewFeedback||[]),...(partIndex===0?structuralFeedback:[]),...review.issues]
   const reviewIds=[...(current.reviewIds||[]),review.response_id]
-  if(partIndex<coverage.length-1)return {status:'processing',state:{...current,reviewIndex:partIndex+1,reviewFeedback:feedback,reviewIds,modelState:{...current.modelState,candidate,validationContext,structuralFeedback}}}
+  if(partIndex<coverage.length-1)return {status:'processing',state:{...current,reviewIndex:partIndex+1,reviewFeedback:feedback,reviewIds,reviewCoverage:coverage,modelState:{...current.modelState,candidate,validationContext,structuralFeedback}}}
   if(feedback.length){
     if(attempt===2)throw new ModelWorkflowError('Das Ergebnis konnte noch nicht freigegeben werden. Es wurde kein neues Ergebnis gespeichert.',422,'review_unresolved',feedback)
-    return {status:'processing',state:{...current,reviewIndex:0,reviewFeedback:[],reviewIds:[],draftAnalysis:null,draftFeedback:[],modelState:{stage:'generation',attempt:2,previous:candidate,feedback,validationContext}}}
+    return {status:'processing',state:{...current,reviewIndex:0,reviewFeedback:[],reviewIds:[],reviewCoverage:null,draftAnalysis:null,draftFeedback:[],modelState:{stage:'generation',attempt:2,previous:candidate,feedback,validationContext}}}
   }
   return {status:'completed',attempts:attempt,model:current.modelState.model,response_id:current.modelState.response_id,review_response_id:review.response_id,result:{...candidate,analysis:{...candidate.analysis,research_sources:current.research,verification:{version:COMPLETE_ANALYSIS_VERSION,search_response_id:current.search_response_id,review_response_id:review.response_id,review_response_ids:reviewIds,review_scopes:coverage.map(part=>part.scope),review_coverage:coverage,analysis_response_id:current.analysis_response_id,checked_at:new Date().toISOString()}}}}
 }
