@@ -35,6 +35,12 @@ const completeBinding={...binding,workflow:'complete-case-v157'}
 const completeToken=await sealModelCheckpoint({state:{stage:'research'},binding:completeBinding,secret,issuedAt})
 assert.equal((await openModelCheckpoint({token:completeToken,binding:completeBinding,secret,now:issuedAt+29*60*1000})).issuedAt,issuedAt,'longer complete workflows never renew the original issue time')
 await assert.rejects(openModelCheckpoint({token:completeToken,binding:completeBinding,secret,now:issuedAt+31*60*1000}),/abgelaufen/)
+const backgroundBinding={...binding,workflow:'background-complete-case-v164'}
+const backgroundToken=await sealModelCheckpoint({state:{stage:'review'},binding:backgroundBinding,secret,issuedAt,now:issuedAt+44*60*1000})
+assert.equal((await openModelCheckpoint({token:backgroundToken,binding:backgroundBinding,secret,now:issuedAt+44*60*1000})).issuedAt,issuedAt,'background checkpoints cover their existing 45-minute job lifetime without refreshing the start')
+await assert.rejects(openModelCheckpoint({token:backgroundToken,binding:backgroundBinding,secret,now:issuedAt+45*60*1000+1}),/abgelaufen/)
+await assert.rejects(sealModelCheckpoint({state:{},binding:backgroundBinding,secret,issuedAt,now:issuedAt+45*60*1000+1}),/abgelaufen/)
+await assert.rejects(openModelCheckpoint({token:completeToken,binding:backgroundBinding,secret}),/ungültig/,'a legacy continuation cannot be relabeled as a longer background job')
 await assert.rejects(openModelCheckpoint({token:completeToken,binding:{...completeBinding,owner_id:'other'},secret}),/ungültig/)
 await assert.rejects(openModelCheckpoint({token,binding,secret:'different-test-key-not-a-real-secret'}),/ungültig/)
 
