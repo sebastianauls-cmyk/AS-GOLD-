@@ -126,6 +126,34 @@ const numericalEvidenceCases=[
   ['Saldo −1 234,50 EUR', '-1234.50', true],
   ['Betrag 1’234.50 CHF', '1234.50', true],
   ['Monatliches Einkommen: 1/120', '120', true],
+  ['Monatliches Einkommen: 1/120 260,00 EUR 265,00 EUR', '120', true],
+  ['Monatliches Einkommen: 1/120 260,00 EUR 265,00 EUR', '260', true],
+  ['Monatliches Einkommen: 1/120 260,00 EUR 265,00 EUR', '265', true],
+  ['Monatliches Einkommen: 1/120 260,00 EUR 265,00 EUR', '120260', false],
+  ['Anteil 2/365 180,00 EUR', '365', true],
+  ['Anteil 2/365 180,00 EUR', '365180', false],
+  ['Werte 800 200/360 240,00 EUR', '800200', false],
+  ['Werte 800 200/360 240,00 EUR', '200', true],
+  ['Werte 800 200/360 240,00 EUR', '360', true],
+  ['Anteil 1/120.260,00', '120', false],
+  ['Anteil 1/120.260,00', '120260', true],
+  ['Anteil 1/12\u202f348', '12', false],
+  ['Anteil 1/12\u202f348', '348', false],
+  ['Anteil 1/12\u202f348', '12348', true],
+  ['Anteil 1\u00a0234/120 260,00 EUR', '1234', true],
+  ['Anteil 1\u00a0234/120 260,00 EUR', '234', false],
+  ['Anteil 1\u00a0234/120 260,00 EUR', '120', true],
+  ['Anteil 1\u00a0234/120 260,00 EUR', '120260', false],
+  ['Werte 800 120\u00a0260/12\u202f348 365,00 EUR', '120260', true],
+  ['Werte 800 120\u00a0260/12\u202f348 365,00 EUR', '800120260', false],
+  ['Werte 800 120\u00a0260/12\u202f348 365,00 EUR', '12348', true],
+  ['Werte 800 120\u00a0260/12\u202f348 365,00 EUR', '12348365', false],
+  ['Anteil 1 / 12 348', '12', false],
+  ['Anteil 1 / 12 348', '12348', true],
+  ['Anteil 1/-120 260,00 EUR', '120', false],
+  ['Anteil 1/-120 260,00 EUR', '-120', true],
+  ['Anteil 1/1200 260,00 EUR', '120', false],
+  ['Anteil 1/120x 260,00 EUR', '120', false],
   ['2026 84,0 2053 97,5', '2026840205397.5', false],
   ['Grundfreibetrag 12 348 Euro', '348', false],
   ['Betrag 123,45 EUR', '23.45', false],
@@ -148,6 +176,20 @@ const candidate={...structuredClone(roadmapTestResult),analysis:{topics:[{id:'se
 const options={scope,research:[],outputLanguage:'de',referenceLanguage:'de'}
 const checked=validateCompleteAnalysis(candidate,source,options)
 assert.equal(checked.analysis.calculations[0].result,'1000.00')
+// The same complete, flattened table passage that blocked the additional live
+// run must survive canonical quotation resolution and the real provenance gate.
+const fractionTable='Bemessungsgrundlage Position Kind A Kind B Brutto-Kapitalleistung 31.200,00 EUR 31.800,00 EUR Monatliches Einkommen: 1/120 260,00 EUR 265,00 EUR KV-Freibetrag laut Bescheid 197,75 EUR 197,75 EUR KV-Bemessungsgrundlage 62,25 EUR 67,25 EUR'
+const fractionSource={...source,documents:[...source.documents,{id:'55555555-5555-4555-8555-555555555555',extracted_text:fractionTable}]}
+const fractionQuotes=quotationIndex(fractionSource,[])
+const [fractionQuote]=[...fractionQuotes].find(([,entry])=>entry.document_id==='55555555-5555-4555-8555-555555555555')
+const fractionCandidate=structuredClone(candidate)
+fractionCandidate.analysis.calculations=['31200','31800'].map((gross,index)=>({id:'monthly_'+index,title:'Mechanische Tabellenprüfung',topic_ids:['settlement'],inputs:[{name:'gross',label:'Gedruckter Betrag',value:gross,kind:'document',quote:fractionQuote},{name:'months',label:'Gedruckter Nenner',value:'120',kind:'document',quote:fractionQuote}],expression:'gross/months',decimal_places:2,unit:'EUR',conditions:'Nur Beleg- und Rechenprüfung; keine rechtliche Anwendbarkeit behauptet.',explanation:'Getrennte gedruckte Zahlen bleiben getrennte Eingaben.'}))
+const resolvedFraction=resolveQuotationIds(fractionCandidate,fractionQuotes)
+assert.deepEqual(validateCompleteAnalysis(resolvedFraction,fractionSource,options).analysis.calculations.map(item=>item.result),['260.00','265.00'])
+for(const rejected of ['120260','1200','20']){
+  const wrong=structuredClone(resolvedFraction);wrong.analysis.calculations[0].inputs[1].value=rejected
+  assert.throws(()=>validateCompleteAnalysis(wrong,fractionSource,options),/steht nicht/,'merged, expanded and partial denominators are not evidence')
+}
 for(const [analysis,location] of [[null,'analysis'],[{...candidate.analysis,topics:null},'analysis.topics'],[{...candidate.analysis,calculations:null},'analysis.calculations'],[{...candidate.analysis,limitations:null},'analysis.limitations']]){
   assert.throws(()=>validateCompleteAnalysis({...candidate,analysis},source,options),error=>error.analysisIssues?.[0]?.location===location,'a missing component is identified precisely')
 }
