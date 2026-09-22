@@ -51,6 +51,17 @@ for(const [response,code,status] of [[new Response('<html>busy</html>',{status:4
   await assert.rejects(advanceReviewedModel({providerKey:'fake',request:{input:[]},reviewContent:[],validate:x=>x,fetchImpl:async()=>response}),error=>error.code===code&&(!status||error.provider_status===status))
 }
 await assert.rejects(advanceReviewedModel({providerKey:'fake',request:{input:[]},reviewContent:[],validate:x=>x,state:{stage:'review',attempt:1,candidate:{}},fetchImpl:async()=>Response.json({status:'completed',output_text:'{"wrong":"SECRET"}'})}),error=>error.code==='review_invalid')
+for(const providerCode of ['server_is_overloaded','secret_customer_name']){
+  await assert.rejects(advanceReviewedModel({providerKey:'fake',request:{input:[]},reviewContent:[],validate:x=>x,fetchImpl:async()=>Response.json({error:{code:providerCode,message:'PRIVATE ORIGINAL TEXT',param:'PRIVATE FIELD'}},{status:503,headers:{'retry-after':'95'}})}),error=>{
+    assert.equal(error.provider_status,503);assert.equal(error.retry_after,95)
+    assert.equal(error.provider_error_code,providerCode==='server_is_overloaded'?providerCode:null)
+    assert.match(error.issues[0].reason,/HTTP 503/)
+    assert.doesNotMatch(JSON.stringify(error),/PRIVATE|secret_customer_name/)
+    return true
+  })
+}
+const retryDate=new Date(Date.now()+180000).toUTCString()
+await assert.rejects(advanceReviewedModel({providerKey:'fake',request:{input:[]},reviewContent:[],validate:x=>x,fetchImpl:async()=>new Response('private',{status:503,headers:{'retry-after':retryDate}})}),error=>error.retry_after>=178&&error.retry_after<=180,'HTTP-date Retry-After is retained as seconds')
 
 // Real Postgres rules: only owner-scoped append-only diagnostics, no arbitrary
 // text, JWT-shaped references, forged result fields, anonymous or expired access.

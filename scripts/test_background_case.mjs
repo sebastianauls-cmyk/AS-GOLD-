@@ -12,6 +12,7 @@ const db=await PGlite.create(),owner=roadmapTestCase.owner_id,caseId=roadmapTest
 const secret='synthetic-background-job-secret-never-a-real-key'
 let documents=structuredClone(roadmapTestDocuments),modelCalls=0,reviewIssues=[],failLettersOnce=false
 const transientStages=new Set()
+const httpStages=new Map()
 const reviewedParts=[]
 const oldFetch=globalThis.fetch
 try {
@@ -38,6 +39,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922111500_percentage_input_repairs.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922115500_complete_case_correction.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922121500_bounded_step_retries.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922140000_provider_http_recovery.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -66,6 +68,7 @@ try {
     assert.equal(url,'https://api.openai.com/v1/responses');modelCalls++
     const request=JSON.parse(options.body),name=request.text.format.name
     if(transientStages.delete(name))throw new DOMException('Synthetic independent stage timeout','TimeoutError')
+    if(httpStages.has(name)){const response=httpStages.get(name);httpStages.delete(name);return response}
     let issues=reviewIssues
     if(name==='ash_evidence_review_v139'){
       const payloads=request.input[0].content.map(item=>{try{return JSON.parse(item.text)}catch{return null}}).filter(Boolean)
@@ -197,6 +200,41 @@ try {
   assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),2)
   assert.equal(await scalar('select failures from private.case_analysis_work where job_id=$1',[job.id]),0)
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+
+  // An actual HTTP 503 at the provider boundary resumes only the interrupted
+  // step, observes Retry-After, and still needs all reviews before persistence.
+  job=await enqueue();const httpCalls=modelCalls
+  httpStages.set('ash_case_scope',Response.json({error:{code:'server_is_overloaded',message:'PRIVATE PROVIDER BODY'}},{status:503,headers:{'retry-after':'95'}}))
+  claimed=await claim(job.id);await process(claimed)
+  assert.equal((await stored(job.id)).status,'queued')
+  assert.ok(await scalar("select available_at>=now()+interval '90 seconds' from private.case_analysis_work where job_id=$1",[job.id]),'database does not dispatch before Retry-After')
+  assert.equal((await drain(job.id)).status,'completed')
+  assert.equal(modelCalls-httpCalls,8,'only the rejected request repeats')
+  assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),1)
+  await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+  for(const status of [500,502,504]){
+    job=await enqueue();httpStages.set('ash_case_scope',new Response('PRIVATE PROVIDER BODY',{status}))
+    await process(await claim(job.id));assert.equal((await stored(job.id)).status,'queued')
+    await cancel(job.id);await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+  }
+  for(const [status,providerCode,expected] of [[400,'invalid_value','provider_http'],[401,'invalid_api_key','provider_auth'],[403,'permission_denied','provider_auth'],[429,'project_spend_limit_exceeded','provider_quota'],[429,'rate_limit_exceeded','provider_rate_limit'],[501,'secret_customer_name','provider_http']]){
+    job=await enqueue();const before=modelCalls
+    httpStages.set('ash_case_scope',Response.json({error:{code:providerCode,message:'PRIVATE PROVIDER BODY'}},{status}))
+    await process(await claim(job.id));const failed=await stored(job.id)
+    assert.equal(failed.status,'failed');assert.equal(failed.error_code,expected);assert.equal(modelCalls-before,1)
+    assert.match(failed.issues[0].reason,new RegExp('HTTP '+status))
+    assert.doesNotMatch(JSON.stringify(failed),/PRIVATE PROVIDER BODY|secret_customer_name/)
+    assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
+    await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+  }
+  for(const outcome of [
+    {code:'provider_http',provider_status:400},{code:'provider_http',provider_status:'503'},
+    {code:'provider_http',provider_status:503,retry_after:7200},{code:'provider_quota',provider_status:503},
+  ]){
+    job=await enqueue();claimed=await claim(job.id)
+    assert.equal((await finish(claimed,{status:'failed',retry:true,...outcome})).status,'failed','SQL independently rejects non-transient, mislabeled or beyond-expiry retries')
+    await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+  }
 
   // A successful stage resets the consecutive count, never the total budget.
   job=await enqueue();claimed=await claim(job.id)
