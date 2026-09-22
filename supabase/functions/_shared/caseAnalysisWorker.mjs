@@ -24,7 +24,7 @@ export async function processCaseAnalysisJob({client,job,secret,providerKey,adva
     const checkpoint=job.checkpoint?await openModelCheckpoint({token:job.checkpoint,binding,secret}):null
     if(checkpoint&&(checkpoint.runId!==job.id||checkpoint.issuedAt!==Date.parse(job.created_at)))throw new ModelWorkflowError('Der gespeicherte Auftrag stimmt nicht mit dem Zwischenstand überein.',409,'checkpoint_invalid')
     const {request,reviewContent}=roadmapModelContext({source,style,outputLanguage,referenceLanguage,permissions:{draft_letters:draftLetters}})
-    const analysis=await advance({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest:request,baseReviewContent:reviewContent,draftLetters,state:checkpoint?.state,onResponse:({stage,attempt,response_id,status})=>log('model_response',{stage,attempt,response_id,status})})
+    const analysis=await advance({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest:request,baseReviewContent:reviewContent,draftLetters,state:checkpoint?.state,onResponse:({stage,attempt,response_id,status,provider_status,provider_error_code,retry_after})=>log('model_response',{stage,attempt,response_id,status,provider_status,provider_error_code,retry_after})})
     const fresh=await loadRoadmapSource(client,job.case_id,job.owner_id)
     if(!fresh||await roadmapFingerprint(fresh)!==job.source_fingerprint)throw new ModelWorkflowError('Während der Verarbeitung wurden Unterlagen geändert. Es wurde kein neues Ergebnis gespeichert.',409,'source_changed')
     if(analysis.status==='processing') {
@@ -41,9 +41,11 @@ export async function processCaseAnalysisJob({client,job,secret,providerKey,adva
     // SQL allows one transport retry per interrupted step, at most three per
     // fixed-lifetime job. Content,
     // consent, quota and access failures are never silently retried or waived.
-    const retry=['provider_network','provider_timeout'].includes(code)
+    const providerStatus=error instanceof ModelWorkflowError&&Number.isInteger(error.provider_status)&&error.provider_status>=400&&error.provider_status<=599?error.provider_status:null
+    const retryAfter=Number.isInteger(error.retry_after)&&error.retry_after>=0&&error.retry_after<=86400?error.retry_after:null
+    const retry=['provider_network','provider_timeout'].includes(code)||(code==='provider_http'&&[500,502,503,504].includes(providerStatus))
     const message=error instanceof ModelWorkflowError?error.message:'Die Hintergrundverarbeitung konnte nicht abgeschlossen werden. Kein neues Ergebnis gespeichert.'
     const issues=Array.isArray(error.issues)?error.issues.slice(0,8).map(issue=>({code:String(issue.code||'').slice(0,80),location:String(issue.location||'').slice(0,160),reason:String(issue.reason||'').slice(0,700)})):[]
-    try {await finish({p_outcome:{status:'failed',code,message:message.slice(0,1200),issues,retry}})}catch{log('failure_save_unavailable')}
+    try {await finish({p_outcome:{status:'failed',code,message:message.slice(0,1200),issues,retry,provider_status:providerStatus,retry_after:retryAfter}})}catch{log('failure_save_unavailable')}
   }
 }

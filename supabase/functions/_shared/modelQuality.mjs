@@ -77,6 +77,10 @@ export function validateQualityReview(value) {
 function providerText(response) {
   return response.output_text??response.output?.flatMap(item=>item.content||[]).find(item=>item.type==='output_text')?.text
 }
+// Only documented machine labels may leave the provider boundary. Never retain
+// its raw message, request body or arbitrary error fields in job diagnostics.
+const providerCodes=new Set(['insufficient_quota','credit_balance_exhausted','organization_spend_limit_exceeded','project_spend_limit_exceeded','organization_usage_limit_exceeded','rate_limit_exceeded','slow_down','server_error','server_is_overloaded','invalid_request_error','invalid_value','unsupported_value','invalid_type','invalid_json_schema','context_length_exceeded','model_not_found','invalid_api_key','permission_denied'])
+const quotaCodes=new Set(['insufficient_quota','credit_balance_exhausted','organization_spend_limit_exceeded','project_spend_limit_exceeded','organization_usage_limit_exceeded'])
 export async function callModel(providerKey,request,{deadline,fetchImpl,onResponse,stage,attempt,callTimeoutMs=90000}) {
   const remaining=deadline-Date.now()
   if(remaining<1000) throw new ModelWorkflowError('Die Prüfung hat zu lange gedauert. Es wurde kein ungeprüftes Ergebnis gespeichert.',502,'provider_timeout')
@@ -90,12 +94,15 @@ export async function callModel(providerKey,request,{deadline,fetchImpl,onRespon
   }
   if(!http.ok) {
     let detail;try{detail=await http.json()}catch{}
-    const providerCode=String(detail?.error?.code||'').match(/^[a-z_]{1,60}$/)?.[0]||null
-    const retryAfter=Number(http.headers.get('retry-after'))||null
-    const code=http.status===429?(['insufficient_quota','credit_balance_exhausted'].includes(providerCode)?'provider_quota':'provider_rate_limit'):[401,403].includes(http.status)?'provider_auth':'provider_http'
+    const providerCode=providerCodes.has(detail?.error?.code)?detail.error.code:null
+    const retryHeader=http.headers.get('retry-after')
+    const delay=retryHeader===null?NaN:/^\d+(?:\.\d+)?$/.test(retryHeader)?Number(retryHeader):(Date.parse(retryHeader)-Date.now())/1000
+    const retryAfter=Number.isFinite(delay)?Math.max(0,Math.min(86400,Math.ceil(delay))):null
+    const code=http.status===429?(quotaCodes.has(providerCode)?'provider_quota':'provider_rate_limit'):[401,403].includes(http.status)?'provider_auth':'provider_http'
     onResponse?.({stage:'provider_error',provider_status:http.status,provider_error_code:providerCode,retry_after:retryAfter})
     const message=code==='provider_quota'?'Der KI-Dienst meldet ein ausgeschöpftes API-Kontingent.':code==='provider_rate_limit'?'Der KI-Dienst ist vorübergehend ausgelastet. Bitte kurz warten und erneut versuchen.':'Der KI-Dienst konnte die Anfrage nicht verarbeiten.'
-    throw Object.assign(new ModelWorkflowError(message,502,code),{provider_status:http.status})
+    const issues=[{code:'provider_http',location:'provider',reason:`KI-Dienst: HTTP ${http.status}${providerCode?'; Code: '+providerCode:''}.`}]
+    throw Object.assign(new ModelWorkflowError(message,502,code,issues),{provider_status:http.status,provider_error_code:providerCode,retry_after:retryAfter})
   }
   try {response=await http.json()}
   catch(error){
