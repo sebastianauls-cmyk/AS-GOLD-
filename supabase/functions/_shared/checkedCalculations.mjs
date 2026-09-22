@@ -75,15 +75,29 @@ function quotedNumberLiterals(quote){
   // Whitespace can separate table cells or group thousands. Read complete
   // numeric tokens first, then join only valid three-digit grouping blocks.
   const tokens=[...text.matchAll(/(?<![\p{L}\p{N}.,’'+−-])[-−+]?\d(?:[\d.,’']*\d)?(?![\p{L}\p{N}]|[.,’']\d)/gu)]
+  // Compact fractions are complete mathematical tokens, not the start of a
+  // space-grouped amount in the next table cell ("1/120 260,00 EUR"). Keep
+  // explicitly grouped operands intact; a nonbreaking space still binds digits.
+  const fractionStarts=new Set(),fractionEnds=new Set()
+  const explicitGroup=(left,right)=>/^[-−+]?\d{1,3}$/.test(left[0])&&/^\d{3}(?:[.,]\d+)?$/.test(right[0])&&/^[\u00a0\u202f]+$/u.test(text.slice(left.index+left[0].length,right.index))
+  for(let i=1;i<tokens.length;i++){
+    const left=tokens[i-1],right=tokens[i],leftEnd=left.index+left[0].length,rightEnd=right.index+right[0].length
+    if(text.slice(leftEnd,right.index)!=='/'||text[left.index-1]==='/'||text[rightEnd]==='/')continue
+    let start=i-1,end=i
+    while(start>0&&explicitGroup(tokens[start-1],tokens[start]))start--
+    while(end+1<tokens.length&&explicitGroup(tokens[end],tokens[end+1]))end++
+    fractionStarts.add(tokens[start].index);fractionEnds.add(tokens[end].index)
+  }
   const literals=[]
   for(let i=0;i<tokens.length;i++){
     let raw=tokens[i][0],end=tokens[i].index+raw.length
-    if(/^[-−+]?\d{1,3}$/.test(raw)){
+    if(/^[-−+]?\d{1,3}$/.test(raw)&&!fractionEnds.has(tokens[i].index)){
       while(i+1<tokens.length){
         const next=tokens[i+1]
+        if(fractionStarts.has(next.index))break
         if(!/^[ \u00a0\u202f]+$/.test(text.slice(end,next.index))||!/^\d{3}(?:[.,]\d+)?$/.test(next[0]))break
         raw+=next[0];end=next.index+next[0].length;i++
-        if(/[.,]/.test(next[0]))break
+        if(/[.,]/.test(next[0])||fractionEnds.has(next.index))break
       }
     }
     literals.push(raw.replace(/^\+/,''))
