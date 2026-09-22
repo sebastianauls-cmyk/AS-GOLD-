@@ -11,6 +11,14 @@ import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence} from
 const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
 const quoteMap=quotationIndex({documents:[{id:'original',extracted_text:original}]},[])
 assert.equal([...quoteMap.values()].map(item=>item.quote).join(' '),original,'indexing never drops long tokens or short final passages')
+const durationClause='Tritt an die Stelle der Versorgungsbezüge eine nicht regelmäßig wiederkehrende Leistung, gilt ein Einhundertzwanzigstel der Leistung als monatlicher Zahlbetrag der Versorgungsbezüge, längstens jedoch für einhundertzwanzig Monate.'
+const durationText='Vorbemerkung zur Einordnung. '.repeat(8)+durationClause+' Weitere Erläuterungen folgen. '.repeat(30).trim()
+const durationPassages=[...quotationIndex({documents:[]},[{url:'https://authority.example/duration',source_text:durationText}]).values()]
+assert(durationPassages.some(item=>item.quote.includes(durationClause)),'the factor and its complete duration clause remain together beyond the old 260-character cut')
+assert.equal(durationPassages.map(item=>item.quote).join(' '),durationText.replace(/\s+/g,' ').trim())
+assert(durationPassages.every(item=>item.quote.length<=600),'ordinary sentence passages have a bounded context size')
+const longTokenText='Start '+ 'x'.repeat(900)+' Ende.'
+assert.equal([...quotationIndex({documents:[{id:'long-token',extracted_text:longTokenText}]},[]).values()].map(item=>item.quote).join(' '),longTokenText)
 assert.equal(resolveQuotationIds({document_id:'original',quote:'@d0_0'},quoteMap).quote,[...quoteMap.values()][0].quote)
 assert.throws(()=>resolveQuotationIds({document_id:'different',quote:'@d0_0'},quoteMap),/anderen Quelle/)
 assert.throws(()=>resolveQuotationIds({document_id:'original',quote:'@d0_99'},quoteMap),/Unbekannter/)
@@ -73,6 +81,10 @@ assert(!quoteContainsNumber('Betrag 123,45 EUR','23.45'))
 // must remain readable without accepting a suffix or merging unrelated values.
 const numericalEvidenceCases=[
   ['ein Einhundertzwanzigstel der Leistung', '120', true],
+  ['Die Summe wird zu gleichen Teilen auf die beiden Kinder verteilt.', '2', true],
+  ['Both beneficiaries receive the same share.', '2', true],
+  ['Beiderseitige Ansprüche sind noch offen.', '2', false],
+  ['Die drei Kinder erhalten eine Zahlung.', '2', false],
   ['längstens jedoch für einhundertzwanzig Monate.', '120', true],
   ['2026 84,0 2053 97,5 2027 84,5 2054 98,0', '84.0', true],
   ['2026 84,0 2053 97,5 2027 84,5 2054 98,0', '2026', true],
@@ -105,6 +117,12 @@ const candidate={...structuredClone(roadmapTestResult),analysis:{topics:[{id:'se
 const options={scope,research:[],outputLanguage:'de',referenceLanguage:'de'}
 const checked=validateCompleteAnalysis(candidate,source,options)
 assert.equal(checked.analysis.calculations[0].result,'1000.00')
+const twoChildrenQuote='Die Summe wird zu gleichen Teilen auf die beiden Kinder verteilt.'
+const twoChildrenSource={...source,documents:source.documents.map((doc,index)=>index?doc:{...doc,extracted_text:doc.extracted_text+' '+twoChildrenQuote})}
+const divided=structuredClone(candidate)
+divided.analysis.calculations[0].inputs=[value('gross','18000'),{name:'children',label:'Kinderzahl',value:'2',kind:'document',document_id:source.documents[0].id,quote:twoChildrenQuote}]
+divided.analysis.calculations[0].expression='gross/children'
+assert.equal(validateCompleteAnalysis(divided,twoChildrenSource,options).analysis.calculations[0].result,'9000.00','a documented quantity stated as beiden is sourced from the original, not demoted to an assumption')
 const legalEvidence=[
   {url:'https://www.gesetze-im-internet.de/sgb_5/__229.html',source_text:'gilt ein Einhundertzwanzigstel der Leistung als monatlicher Zahlbetrag der Versorgungsbezüge, längstens jedoch für einhundertzwanzig Monate.'},
   {url:'https://www.gesetze-im-internet.de/estg/__22.html',source_text:'2025 83,5 2052 97,0 2026 84,0 2053 97,5 2027 84,5 2054 98,0'},
@@ -241,7 +259,7 @@ for(const correctedContent of [true,false,'new_input','repeated_input']){
         assert(correction.issues.some(issue=>issue.reason===contentIssue.reason),'substantive feedback still reaches a correction after input repair')
         assert(correction.previous_candidate.analysis,'the full prior result is available for a bounded content correction')
       }
-      if(generatedAnalyses===4){
+      if(generatedAnalyses===4&&['new_input','repeated_input'].includes(correctedContent)){
         const correction=JSON.parse(request.input.at(-1).content[0].text).correction
         assert(correction.issues.some(issue=>issue.reason===contentIssue.reason))
         assert(correction.issues.some(issue=>issue.reason.includes('19000')),'the corrected candidate receives both substantive and new mechanical feedback')
@@ -265,7 +283,7 @@ for(const correctedContent of [true,false,'new_input','repeated_input']){
     assert.equal(run.result.analysis.verification.review_response_ids.length,4)
     assert(run.result.analysis.verification.review_response_ids.every(id=>Number(id.split('-').at(-1))>4),'acceptance uses only the four final reviews')
   }else assert.equal(failure?.code,correctedContent==='repeated_input'?'source_unresolved':'review_unresolved','a second bad input in the same candidate or final material rejection still stops')
-  assert.equal(generatedAnalyses,['new_input','repeated_input'].includes(correctedContent)?4:3);assert.equal(generatedPlans,correctedContent==='repeated_input'?1:2);assert.equal(reviewed,correctedContent==='repeated_input'?4:8)
+  assert.equal(generatedAnalyses,correctedContent===false||['new_input','repeated_input'].includes(correctedContent)?4:3);assert.equal(generatedPlans,correctedContent==='repeated_input'?1:correctedContent===false?3:2);assert.equal(reviewed,correctedContent==='repeated_input'?4:correctedContent===false?12:8)
 }
 
 // Wrong source numbers are repaired before generating a plan. This remains
@@ -321,7 +339,7 @@ big.analysis.calculations=Array.from({length:24},(_,i)=>({...structuredClone(can
 const bigScope={issues:big.analysis.topics.map(({id,title})=>({id,title,reason:'Synthetic coverage boundary',calculation_needed:true})),research_topics:[]}
 const expectedCoverage=completeReviewCoverage(big),observedBatches=[]
 assert.equal(expectedCoverage.length,10)
-let bigCalls=0,bigRound=0,batchTimedOut=false
+let bigCalls=0,bigRound=0,bigGenerated=0,batchTimedOut=false
 const bigFetch=async(url,options)=>{
   if(!options?.body)return new Response('',{status:404})
   const request=JSON.parse(options.body),name=request.text.format.name
@@ -329,8 +347,10 @@ const bigFetch=async(url,options)=>{
   let output
   if(name==='ash_case_scope')output=bigScope
   else if(name==='ash_complete_numbers_v157'){
-    bigRound++;output=big.analysis
-    if(bigRound===2)assert(JSON.parse(request.input.at(-1).content[0].text).correction.issues.some(issue=>issue.location==='analysis.calculations[difference_18]'))
+    bigGenerated++;bigRound=Math.ceil(bigGenerated/2);output=structuredClone(big.analysis)
+    if(bigGenerated%2===1)output.calculations[0].inputs[0].value='19000'
+    if(bigRound>1)assert(JSON.parse(request.input.at(-1).content[0].text).correction.issues.some(issue=>issue.location==='analysis.calculations[difference_18]'))
+    if(bigRound===3)assert(JSON.parse(request.input.at(-1).content[0].text).correction.previously_addressed_issues.some(issue=>issue.reason.endsWith('round 1.')),'the third candidate must retain the previously addressed findings')
   }else if(name==='ash_complete_plan_v157'){
     const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
   }else{
@@ -342,21 +362,22 @@ const bigFetch=async(url,options)=>{
     assert((part.analysis?.topics?.length||0)<=3);assert((part.analysis?.calculations?.length||0)<=6)
     observedBatches.push({round:bigRound,...assignment})
     if(assignment.calculation_ids[0]==='difference_6'&&!batchTimedOut){batchTimedOut=true;throw new DOMException('Synthetic middle-batch timeout','TimeoutError')}
-    output={issues:bigRound===1&&assignment.calculation_ids.includes('difference_18')?[{code:'meaning',location:'analysis.calculations[difference_18]',reason:'Synthetic material defect in the last calculation batch.'}]:[]}
+    output={issues:bigRound<3&&assignment.calculation_ids.includes('difference_18')?[{code:'meaning',location:'analysis.calculations[difference_18]',reason:`Synthetic material defect in the last calculation batch, round ${bigRound}.`}]:[]}
   }
   return new Response(JSON.stringify({status:'completed',id:`batch-round-${bigRound}-call-${bigCalls}`,model:request.model,output_text:JSON.stringify(output)}))
 }
 const bigArgs={...args,fetchImpl:bigFetch,baseReviewContent:[{type:'input_text',text:'SYNTHETIC_COMPLETE_ORIGINALS'}]}
 let bigFlow=await advanceCompleteAnalysis(bigArgs),transportFailures=0
-for(let i=0;bigFlow.status==='processing'&&i<32;i++){
+for(let i=0;bigFlow.status==='processing'&&i<46;i++){
   try{bigFlow=await advanceCompleteAnalysis({...bigArgs,state:bigFlow.state})}
-  catch(error){assert.equal(error.code,'provider_timeout');assert.equal(++transportFailures,1)}
+  catch(error){if(error.code!=='provider_timeout')throw error;assert.equal(++transportFailures,1)}
 }
-assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,26)
+assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,41);assert.equal(bigGenerated,6);assert.equal(bigFlow.attempts,3)
 assert.deepEqual(bigFlow.result.analysis.verification.review_coverage,expectedCoverage)
 assert.equal(bigFlow.result.analysis.verification.review_response_ids.length,10)
-assert(bigFlow.result.analysis.verification.review_response_ids.every(id=>id.startsWith('batch-round-2-')))
+assert(bigFlow.result.analysis.verification.review_response_ids.every(id=>id.startsWith('batch-round-3-')))
 assert.deepEqual(observedBatches.filter(item=>item.round===2).map(({round,...item})=>item),expectedCoverage,'all batches repeat after substantive correction')
+assert.deepEqual(observedBatches.filter(item=>item.round===3).map(({round,...item})=>item),expectedCoverage,'a second correction also requires every batch again')
 const firstRound=observedBatches.filter(item=>item.round===1).map(({round,...item})=>item)
 assert.deepEqual(firstRound,[...expectedCoverage.slice(0,6),expectedCoverage[5],...expectedCoverage.slice(6)],'only the interrupted middle batch is repeated')
 console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete batched reviews, single-batch transport resumption, full correction/review coverage and display/export parity passed (provider mocked).')

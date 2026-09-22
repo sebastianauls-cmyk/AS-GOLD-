@@ -35,6 +35,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922101000_separate_case_corrections.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922104000_batched_case_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922111500_percentage_input_repairs.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922115500_complete_case_correction.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -196,15 +197,15 @@ try {
   // The largest batch/correction path and one transport retry remain bounded.
   // The final review is still required at the last allowed claim.
   job=await enqueue();claimed=await claim(job.id)
-  await db.query('update private.case_analysis_work set steps=30,attempts=32 where job_id=$1',[job.id])
+  await db.query('update private.case_analysis_work set steps=43,attempts=45 where job_id=$1',[job.id])
   assert.equal((await finish(claimed,{status:'processing',checkpoint:'synthetic-limit-check',stage:'review'})).status,'queued')
   claimed=await claim(job.id)
-  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),33)
+  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),46)
   assert.equal((await finish(claimed,{status:'completed',result:acceptedResult,model:'test',source_documents:[],workflow_version:'test'})).status,'completed')
 
   job=await enqueue();claimed=await claim(job.id)
-  await db.query('update private.case_analysis_work set steps=31 where job_id=$1',[job.id])
-  assert.equal((await finish(claimed,{status:'processing',checkpoint:'over-limit',stage:'review'})).status,'failed','a thirty-third successful stage is not allowed')
+  await db.query('update private.case_analysis_work set steps=44 where job_id=$1',[job.id])
+  assert.equal((await finish(claimed,{status:'processing',checkpoint:'over-limit',stage:'review'})).status,'failed','a forty-sixth successful stage is not allowed')
 
   reviewIssues=part=>Object.hasOwn(part,'letters')?[{code:'meaning',location:'letters[0].body',reason:'Synthetic negative control: letter invents a payment suspension.'}]:[]
   job=await enqueue();const badLetter=await drain(job.id)
