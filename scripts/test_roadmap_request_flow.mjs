@@ -74,11 +74,11 @@ globalThis.fetch=async(url,options)=>{
   assert.equal(url,'https://api.openai.com/v1/responses','unexpected external request')
   state.modelCalls++
   const request=JSON.parse(options.body)
-  const generation=['ash_customer_roadmap_v136','ash_complete_outline_v166','ash_complete_plan_v157'].includes(request.text.format.name)
+  const generation=['ash_customer_roadmap_v136','ash_complete_topics_v167','ash_complete_outline_v166','ash_complete_plan_v157'].includes(request.text.format.name)
   if(request.text.format.name==='ash_case_scope')return new Response(JSON.stringify({id:'scope-test',status:'completed',output_text:JSON.stringify({issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:false}],research_topics:[]})}))
   if(!generation&&state.reviewGate)await state.reviewGate()
   const analysis={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Anlage fehlt.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],calculations:[],limitations:[]}
-  const output=request.text.format.name==='ash_complete_outline_v166'?{topics:analysis.topics,limitations:analysis.limitations,calculation_plan:[]}:request.text.format.name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:generation?roadmapTestResult:{issues:state.issues}
+  const output=request.text.format.name==='ash_complete_topics_v167'?{topics:analysis.topics,limitations:analysis.limitations}:request.text.format.name==='ash_complete_outline_v166'?{calculation_plan:[]}:request.text.format.name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:generation?roadmapTestResult:{issues:state.issues}
   return new Response(JSON.stringify({id:'synthetic-'+state.modelCalls,status:'completed',output_text:JSON.stringify(output)}))
 }
 async function call(body=baseBody){
@@ -103,17 +103,18 @@ try {
   const crossMode=await call({...baseBody,checkpoint:planned.data.checkpoint});assert.equal(crossMode.status,409,'checkpoint must bind full/source-only mode')
   state.permissions.full_analysis=false;assert.equal((await call({...fullBody,checkpoint:planned.data.checkpoint})).status,403)
   state.permissions.full_analysis=true
-  const generated=await call({...fullBody,checkpoint:planned.data.checkpoint});assert.equal(generated.status,202);assert.equal(state.case_roadmaps.length,0)
+  const topicDraft=await call({...fullBody,checkpoint:planned.data.checkpoint});assert.equal(topicDraft.status,202);assert.equal(state.case_roadmaps.length,0,'a topical draft cannot be published before calculations and independent review')
+  const generated=await call({...fullBody,checkpoint:topicDraft.data.checkpoint});assert.equal(generated.status,202);assert.equal(state.case_roadmaps.length,0)
   const assembled=await call({...fullBody,checkpoint:generated.data.checkpoint});assert.equal(assembled.status,202);assert.equal(state.case_roadmaps.length,0,'partial calculations and plan are never saved before full review')
   let reviewing=assembled
   for(let part=0;part<3;part++){reviewing=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(reviewing.status,202);assert.equal(state.case_roadmaps.length,0)}
   const accepted=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(accepted.status,200);assert(accepted.data.roadmap.result.analysis.verification.review_response_id);assert.equal(state.case_roadmaps.length,1)
   reset();state.issues=[{code:'meaning',location:'analysis',reason:'Synthetic negative control: material unsupported conclusion.'}]
   let incomplete=await call(fullBody)
-  for(let part=0;part<17;part++){assert.equal(incomplete.status,202);assert.equal(state.case_roadmaps.length,0);incomplete=await call({...fullBody,checkpoint:incomplete.data.checkpoint})}
+  for(let part=0;part<20;part++){assert.equal(incomplete.status,202);assert.equal(state.case_roadmaps.length,0);incomplete=await call({...fullBody,checkpoint:incomplete.data.checkpoint})}
   assert.equal(incomplete.status,202)
   const denied=await call({...fullBody,checkpoint:incomplete.data.checkpoint})
-  assert.equal(denied.status,422);assert.equal(state.case_roadmaps.length,0,'three assembled candidates failing full review never save partial results');assert.equal(state.modelCalls,19,'two bounded corrections of both components and every final independent review')
+  assert.equal(denied.status,422);assert.equal(state.case_roadmaps.length,0,'three assembled candidates failing full review never save partial results');assert.equal(state.modelCalls,22,'two bounded corrections of all three components and every final independent review')
   reset()
   const continuation=await begin()
   const completed=await call(continuation)

@@ -40,13 +40,20 @@ const analysisSchema=object({
   calculations:{...array(object({id:str,title:str,topic_ids:strings,inputs:{...array(inputSchema),minItems:1,maxItems:MAX_CALCULATION_INPUTS},expression:str,decimal_places:{type:'integer',enum:[0,1,2,3,4]},unit:str,conditions:str,explanation:str})),maxItems:MAX_CALCULATIONS},
   limitations:strings
 })
-const CALCULATIONS_PER_GENERATION=6
+const CALCULATIONS_PER_GENERATION=6,TOPICS_PER_GENERATION=3
 const outlineSchema=object({
-  topics:analysisSchema.properties.topics,
-  calculation_plan:{...array(object({id:{type:'string',pattern:'^[a-zA-Z][a-zA-Z0-9_-]{0,49}$'},title:str,topic_ids:strings,purpose:str,depends_on:strings})),maxItems:MAX_CALCULATIONS},
-  limitations:strings
+  calculation_plan:{...array(object({id:{type:'string',pattern:'^[a-zA-Z][a-zA-Z0-9_-]{0,49}$'},title:str,topic_ids:strings,purpose:str,depends_on:strings})),maxItems:MAX_CALCULATIONS}
 })
 function componentFailure(location,reason){throw Object.assign(new Error(reason),{analysisIssues:[{code:'source',location,reason}]})}
+function topicBatchSchema(assigned){
+  const topic=analysisSchema.properties.topics.items
+  return object({topics:{...array({...topic,properties:{...topic.properties,id:enumeration(assigned.map(item=>item.id))}}),minItems:assigned.length,maxItems:assigned.length},limitations:strings})
+}
+function validateTopicBatch(raw,previous,assigned,source,context){
+  if(!Array.isArray(raw?.topics)||raw.topics.length!==assigned.length||raw.topics.some((item,index)=>item?.id!==assigned[index].id)||!Array.isArray(raw.limitations))componentFailure('analysis.topics',`Dieser Abschnitt muss genau die ${assigned.length} zugewiesenen Fallfragen in der vorgegebenen Reihenfolge enthalten.`)
+  const analysis=validateAnalysisContent({topics:[...(previous?.analysis.topics||[]),...raw.topics],calculations:[],limitations:[...new Set([...(previous?.analysis.limitations||[]),...raw.limitations])]},source,{...context,scope:{...context.scope,issues:context.scope.issues.slice(0,(previous?.next||0)+assigned.length)}})
+  return {analysis,next:analysis.topics.length,response_ids:previous?.response_ids||[]}
+}
 function validateOutline(raw,source,context){
   if(!Array.isArray(raw?.calculation_plan)||raw.calculation_plan.length>MAX_CALCULATIONS)componentFailure('analysis.calculation_plan',`Der Rechenplan muss eine Liste mit höchstens ${MAX_CALCULATIONS} Berechnungen sein; übergeben: ${Array.isArray(raw?.calculation_plan)?raw.calculation_plan.length:'keine Liste'}.`)
   const analysis=validateAnalysisContent({topics:raw.topics,calculations:[],limitations:raw.limitations},source,context)
@@ -240,35 +247,45 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   if(!current.modelState||current.modelState.stage==='generation'){
     const writingPlan=!!current.draftAnalysis
     const outline=current.analysisOutline||null
-    const component=writingPlan?'roadmap':outline?'calculations':'outline'
+    const topicDraft=current.topicDraft||null
+    const component=writingPlan?'roadmap':outline?'calculations':topicDraft?.next===current.scope.issues.length?'outline':'topics'
+    const assignedTopics=component==='topics'?current.scope.issues.slice(topicDraft?.next||0,(topicDraft?.next||0)+TOPICS_PER_GENERATION):[]
+    if(component==='topics'&&(!assignedTopics.length||topicDraft&&(!Number.isInteger(topicDraft.next)||topicDraft.next!==topicDraft.analysis.topics.length)))throw new ModelWorkflowError('Ungültiger Themenabschnitt.',409)
+    const componentIndex=component==='topics'?topicDraft?.next||0:outline?.next||0
     const assigned=component==='calculations'?outline.calculation_plan.slice(outline.next,outline.next+CALCULATIONS_PER_GENERATION):[]
     if(component==='calculations'&&(!Number.isInteger(outline.next)||outline.next<0||outline.next!==outline.analysis.calculations.length||!assigned.length))throw new ModelWorkflowError('Ungültiger Berechnungsabschnitt.',409)
     const inputRepair=!writingPlan&&current.inputRepair?.feedback?.length?current.inputRepair:null
-    if(inputRepair&&(inputRepair.component!==component||inputRepair.next!==(outline?.next||0)))throw new ModelWorkflowError('Die Eingabekorrektur gehört zu einem anderen Abschnitt.',409)
+    if(inputRepair&&(inputRepair.component!==component||inputRepair.next!==componentIndex))throw new ModelWorkflowError('Die Eingabekorrektur gehört zu einem anderen Abschnitt.',409)
     const correction=attempt>1||inputRepair?{previous_candidate:current.modelState?.previous||null,issues:[...(attempt>1?current.modelState.feedback:[]),...(inputRepair?.feedback||[])],input_repair:inputRepair?{component,previous:inputRepair.previous}:null,previously_addressed_issues:current.correctionHistory||[],instruction:'Resolve each valid current defect against the originals. Preserve unaffected supported content verbatim, except necessary dependent numerical updates, and retain all needed letters. Previously addressed issues are preservation checks: do not reintroduce their defects or alter already correct content just because an old issue is listed. The input_repair is only the current failed component; do not regenerate already checked earlier calculation batches. Do not invent facts to satisfy feedback.'}:null
     const componentInstructions={
       roadmap:'Produce ONLY the customer roadmap, facts, actions and letters, plus topic_steps mapping EACH supplied analysis topic ID to valid step IDs. Use the supplied checked calculation results in the concise opening and practical plan. Do not output analysis itself or recompute its inputs. Preserve every source qualification. If the originals prohibit sending or restrict use to an internal simulation, prepare the letters and simulate the response/follow-up steps; do not instruct actual dispatch, payment or filing in that test. Still explain the substantive obligations within the scenario.',
-      outline:'Produce ONLY the complete topics, limitations and calculation_plan. Answer every supplied scope issue, preserving the established/conditional/open distinctions, legal qualifications and practical consequences. Set topic.step_ids=[] for now. Plan ALL useful calculations, including each beneficiary, alternatives and decisive comparisons, within the global 24-calculation budget. Every planned calculation has a stable unique id, title, topic_ids, purpose and depends_on containing only EARLIER planned calculation IDs. Use an empty plan only where no useful computation is supported. Do not output numeric inputs, formulas or computed results in this call. Later bounded calls will produce and check every planned calculation; the final independent reviewers will also check whether this plan omitted useful calculations. Avoid uncomputed numerical claims in the topic prose; state the informative scenario and its conditions.',
+      topics:'Produce ONLY the topics in assigned_topics, in exactly that order, plus limitations relevant to those topics. Each assigned scope issue must be answered with its established/conditional/open distinctions, complete legal qualifications, primary-source citations and practical consequences. Other topics have separate calls; do not omit an assigned topic or rewrite an earlier one. All originals, all fetched sources, the full scope and prior checked topic drafts are supplied as context. Set topic.step_ids=[] for now. Do not output a calculation plan, numeric inputs, formulas or roadmap fields. Avoid uncomputed numerical claims; state each useful numerical scenario and its conditions so the next planning step can cover it.',
+      outline:'Produce ONLY calculation_plan for ALL the supplied completed_analysis topics. The topical explanations are already saved and must not be rewritten here. Plan ALL useful calculations, including each beneficiary, alternatives and decisive comparisons, within the global 24-calculation budget. Every planned calculation has a stable unique id, title, topic_ids, purpose and depends_on containing only EARLIER planned calculation IDs. Use an empty plan only where no useful computation is supported. Do not output numeric inputs, formulas or computed results in this call. Later bounded calls will produce and check every planned calculation; the final independent reviewers will also check whether this plan omitted useful calculations.',
       calculations:'Produce ONLY the calculations in assigned_calculations, in exactly that order and with exactly those IDs and topic_ids. All originals, fetched sources and the complete calculation_plan are supplied. Other batches are deliberately not requested here. completed_analysis contains the already checked results from earlier batches: preserve them and use their exact rounded result for any kind=calculation input. A dependency within this batch must precede its use. Include the actual source-bound inputs, exact expression, conditions and explanation for EACH assignment. Return no topics, limitations or roadmap fields. Do not omit, merge, add, rename or repeat assignments. If a source value is genuinely absent, use an explicitly conditional assumption only where supported; never invent a source or factual certainty.'
     }
-    const partRequest={...request,reasoning:{effort:'medium'},instructions:request.instructions+'\nThis is one bounded component of the complete analysis. '+componentInstructions[component],input:[...request.input,{role:'user',content:[{type:'input_text',text:JSON.stringify({component,analysis:current.draftAnalysis||null,completed_analysis:component==='calculations'?outline.analysis:null,calculation_plan:outline?.calculation_plan||null,assigned_calculations:assigned,structural_feedback:current.draftFeedback||[],correction})}]}],text:{format:{type:'json_schema',name:writingPlan?'ash_complete_plan_v157':component==='outline'?'ash_complete_outline_v166':'ash_complete_numbers_v157',strict:true,schema:indexedQuotationSchema(writingPlan?PLAN_SCHEMA:component==='outline'?outlineSchema:calculationBatchSchema(assigned))}},max_output_tokens:writingPlan?11000:8000}
+    const partRequest={...request,reasoning:{effort:'medium'},instructions:request.instructions+'\nThis is one bounded component of the complete analysis. '+componentInstructions[component],input:[...request.input,{role:'user',content:[{type:'input_text',text:JSON.stringify({component,analysis:current.draftAnalysis||null,completed_analysis:component==='calculations'?outline.analysis:topicDraft?.analysis||null,assigned_topics:assignedTopics,calculation_plan:outline?.calculation_plan||null,assigned_calculations:assigned,structural_feedback:current.draftFeedback||[],correction})}]}],text:{format:{type:'json_schema',name:writingPlan?'ash_complete_plan_v157':component==='topics'?'ash_complete_topics_v167':component==='outline'?'ash_complete_outline_v166':'ash_complete_numbers_v157',strict:true,schema:indexedQuotationSchema(writingPlan?PLAN_SCHEMA:component==='topics'?topicBatchSchema(assignedTopics):component==='outline'?outlineSchema:calculationBatchSchema(assigned))}},max_output_tokens:writingPlan?11000:8000}
     const generated=await invoke(partRequest,writingPlan?(attempt>1?'correction':'generation'):'analysis_generation')
     if(!writingPlan){
-      let nextOutline
+      let nextOutline,nextTopics
       try{
         const raw=resolveQuotationIds(generated.parsed,quotes,{pathPrefix:'analysis'})
         const validation={scope:current.scope,research:current.research}
-        nextOutline=component==='outline'?validateOutline(raw,source,validation):{...outline,analysis:validateCalculationBatch(raw,outline,assigned,source,validation),next:outline.next+assigned.length}
+        if(component==='topics')nextTopics=validateTopicBatch(raw,topicDraft,assignedTopics,source,validation)
+        else nextOutline=component==='outline'?{...validateOutline({...raw,topics:topicDraft.analysis.topics,limitations:topicDraft.analysis.limitations},source,validation),response_ids:topicDraft.response_ids}:{...outline,analysis:validateCalculationBatch(raw,outline,assigned,source,validation),next:outline.next+assigned.length}
       }catch(error){
         const feedback=validationFeedback(error,'analysis')
-        // One input repair per substantive candidate, shared by outline and all
-        // numeric batches. A failed batch never replaces earlier checked work.
-        if(current.inputRepair?.used&&(current.inputRepair.attempt||1)===attempt)throw new ModelWorkflowError('Die Berechnungen konnten ihren Originalbelegen noch nicht sicher zugeordnet werden. Es wurde kein neues Ergebnis gespeichert.',422,'source_unresolved',feedback)
-        return {status:'processing',state:{...current,draftAnalysis:null,draftFeedback:[],inputRepair:{used:true,attempt,component,next:outline?.next||0,previous:generated.parsed,feedback},modelState:current.modelState||{stage:'generation',attempt:1,previous:null,feedback:[]}}}
+        // One input repair per substantive candidate, shared by topics, manifest
+        // and all numeric batches. A failed batch never replaces earlier checked work.
+        if(current.inputRepair?.used&&(current.inputRepair.attempt||1)===attempt)throw new ModelWorkflowError('Die Auswertung konnte noch nicht ausreichend belegt werden. Es wurde kein neues Ergebnis gespeichert.',422,'source_unresolved',feedback)
+        return {status:'processing',state:{...current,draftAnalysis:null,draftFeedback:[],inputRepair:{used:true,attempt,component,next:componentIndex,previous:generated.parsed,feedback},modelState:current.modelState||{stage:'generation',attempt:1,previous:null,feedback:[]}}}
+      }
+      if(nextTopics){
+        nextTopics.response_ids=[...nextTopics.response_ids,generated.response_id]
+        return {status:'processing',state:{...current,topicDraft:nextTopics,draftAnalysis:null,draftFeedback:[],inputRepair:current.inputRepair?.used?{used:true,attempt:current.inputRepair.attempt}:null,modelState:current.modelState||{stage:'generation',attempt:1,feedback:[],previous:null}}}
       }
       nextOutline.response_ids=[...(nextOutline.response_ids||[]),generated.response_id]
       const complete=nextOutline.next===nextOutline.calculation_plan.length
-      return {status:'processing',state:{...current,analysisOutline:complete?null:nextOutline,draftAnalysis:complete?nextOutline.analysis:null,draftFeedback:[],inputRepair:current.inputRepair?.used?{used:true,attempt:current.inputRepair.attempt}:null,analysis_response_id:generated.response_id,analysis_response_ids:nextOutline.response_ids,modelState:current.modelState||{stage:'generation',attempt:1,feedback:[],previous:null}}}
+      return {status:'processing',state:{...current,topicDraft:null,analysisOutline:complete?null:nextOutline,draftAnalysis:complete?nextOutline.analysis:null,draftFeedback:[],inputRepair:current.inputRepair?.used?{used:true,attempt:current.inputRepair.attempt}:null,analysis_response_id:generated.response_id,analysis_response_ids:nextOutline.response_ids,modelState:current.modelState||{stage:'generation',attempt:1,feedback:[],previous:null}}}
     }
     const {topic_steps,...plan}=generated.parsed
     const links=new Map((topic_steps||[]).map(item=>[item.id,item.step_ids]))
@@ -299,7 +316,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   if(partIndex<coverage.length-1)return {status:'processing',state:{...current,reviewIndex:partIndex+1,reviewFeedback:feedback,reviewIds,reviewCoverage:coverage,modelState:{...current.modelState,candidate,validationContext,structuralFeedback}}}
   if(feedback.length){
     if(attempt>=MAX_SUBSTANTIVE_CANDIDATES)throw new ModelWorkflowError('Das Ergebnis konnte noch nicht freigegeben werden. Es wurde kein neues Ergebnis gespeichert.',422,'review_unresolved',feedback)
-    return {status:'processing',state:{...current,analysisOutline:null,analysis_response_ids:[],correctionHistory:[...(current.correctionHistory||[]),...(current.modelState.feedback||[])],reviewIndex:0,reviewFeedback:[],reviewIds:[],reviewCoverage:null,draftAnalysis:null,draftFeedback:[],modelState:{stage:'generation',attempt:attempt+1,previous:candidate,feedback,validationContext}}}
+    return {status:'processing',state:{...current,topicDraft:null,analysisOutline:null,analysis_response_ids:[],correctionHistory:[...(current.correctionHistory||[]),...(current.modelState.feedback||[])],reviewIndex:0,reviewFeedback:[],reviewIds:[],reviewCoverage:null,draftAnalysis:null,draftFeedback:[],modelState:{stage:'generation',attempt:attempt+1,previous:candidate,feedback,validationContext}}}
   }
   return {status:'completed',attempts:attempt,model:current.modelState.model,response_id:current.modelState.response_id,review_response_id:review.response_id,result:{...candidate,analysis:{...candidate.analysis,research_sources:current.research,verification:{version:COMPLETE_ANALYSIS_VERSION,search_response_id:current.search_response_id,review_response_id:review.response_id,review_response_ids:reviewIds,review_scopes:coverage.map(part=>part.scope),review_coverage:coverage,analysis_response_id:current.analysis_response_id,analysis_response_ids:current.analysis_response_ids||[current.analysis_response_id],checked_at:new Date().toISOString()}}}}
 }
