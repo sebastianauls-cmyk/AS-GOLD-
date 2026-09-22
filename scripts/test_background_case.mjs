@@ -31,6 +31,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260918123931_v136_customer_roadmaps.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260921222858_durable_case_analysis_jobs.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922091000_scoped_case_reviews.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922101000_separate_case_corrections.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -76,11 +77,12 @@ try {
     return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify(output)}))
   }
   const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
-  const drain=async id=>{for(let n=0;n<18;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
+  const drain=async id=>{for(let n=0;n<21;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
   await assert.rejects(enqueue({acknowledged:false}),/authorization/)
   await assert.rejects(enqueue({output_language:null}),/authorization/)
   let job=await enqueue()
+  assert.equal(new Date(job.expires_at)-new Date(job.created_at),45*60*1000,'new jobs have a fixed bounded lifetime covering both correction budgets')
   assert.equal((await enqueue()).id,job.id,'double submission returns the same active job')
   await assert.rejects(scalar('select public.enqueue_case_analysis_job($1,$2,$3,$4)',[other,caseId,await fingerprint(),input]),/authorization/)
   assert.equal(await scalar('select public.claim_case_analysis_job($1,$2)',[job.id,'f'.repeat(64)]),null,'guessed capability is denied')
@@ -94,6 +96,7 @@ try {
   assert.equal(await finish(beforeCrash,{status:'failed',message:'stale worker'}),null,'expired worker cannot overwrite resumed state')
   const complete=await drain(job.id)
   assert.equal(complete.status,'completed');assert.equal(complete.roadmap_id,job.id)
+  assert.equal(new Date(complete.expires_at).getTime(),new Date(job.expires_at).getTime(),'processing never slides the original deadline')
   assert.equal(modelCalls,7,'page closure and worker restart do not repeat completed model stages')
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),1)
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null,'terminal jobs erase private candidates')
@@ -174,13 +177,18 @@ try {
   assert.equal(modelCalls-callsBeforeTimeout,8,'only the timed-out final review is repeated')
   assert.deepEqual(reviewedParts.slice(partsBeforeTimeout).map(({part})=>Object.hasOwn(part,'letters')), [false,false,false,true,true])
 
-  // The extra checkpoint fits the maximum 18-call path, including one full
-  // correction round. This does not grant more retries or extend the lifetime.
+  // Nineteen successful calls and the single transport retry fit the same
+  // twenty-claim cap. The final review is still required at the last boundary.
   job=await enqueue();claimed=await claim(job.id)
-  await db.query('update private.case_analysis_work set steps=16 where job_id=$1',[job.id])
+  await db.query('update private.case_analysis_work set steps=17,attempts=19 where job_id=$1',[job.id])
   assert.equal((await finish(claimed,{status:'processing',checkpoint:'synthetic-limit-check',stage:'review'})).status,'queued')
   claimed=await claim(job.id)
+  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),20)
   assert.equal((await finish(claimed,{status:'completed',result:acceptedResult,model:'test',source_documents:[],workflow_version:'test'})).status,'completed')
+
+  job=await enqueue();claimed=await claim(job.id)
+  await db.query('update private.case_analysis_work set steps=18 where job_id=$1',[job.id])
+  assert.equal((await finish(claimed,{status:'processing',checkpoint:'over-limit',stage:'review'})).status,'failed','a twentieth successful stage is not allowed')
 
   reviewIssues=part=>Object.hasOwn(part,'letters')?[{code:'meaning',location:'letters[0].body',reason:'Synthetic negative control: letter invents a payment suspension.'}]:[]
   job=await enqueue();const badLetter=await drain(job.id)
