@@ -49,15 +49,36 @@ export function calculateExpression(expression,variables={},places=2){
   return rounded(result,places)
 }
 
+function quotedNumberLiterals(quote){
+  const text=String(quote)
+  // Whitespace can separate table cells or group thousands. Read complete
+  // numeric tokens first, then join only valid three-digit grouping blocks.
+  const tokens=[...text.matchAll(/(?<![\p{L}\p{N}.,’'+−-])[-−+]?\d(?:[\d.,’']*\d)?(?![\p{L}\p{N}]|[.,’']\d)/gu)]
+  const literals=[]
+  for(let i=0;i<tokens.length;i++){
+    let raw=tokens[i][0],end=tokens[i].index+raw.length
+    if(/^[-−+]?\d{1,3}$/.test(raw)){
+      while(i+1<tokens.length){
+        const next=tokens[i+1]
+        if(!/^[ \u00a0\u202f]+$/.test(text.slice(end,next.index))||!/^\d{3}(?:[.,]\d+)?$/.test(next[0]))break
+        raw+=next[0];end=next.index+next[0].length;i++
+        if(/[.,]/.test(next[0]))break
+      }
+    }
+    literals.push(raw.replace(/^\+/,''))
+  }
+  return literals
+}
+
 // A number must actually occur in its cited passage. Locale grouping is handled
 // explicitly; semantic role, unit, period and legal applicability are reviewed.
 export function quoteContainsNumber(quote,value){
   const expected=decimal(value)
   // Statutes commonly spell a small factor out ("ein Fünftel", "fünffach").
   // This verifies the value only; its role in the formula still needs review.
-  const words={2:['zwei','zweifach','halb','hälfte','halftig','hälftig','two','half'],3:['drei','dreifach','drittel','three','third'],4:['vier','vierfach','viertel','four','quarter'],5:['fünf','fünffach','fünftel','fünftels','fünffache','fünffachen','five','fifth'],6:['sechs','six'],12:['zwölf','twelve'],100:['hundert','hundred']}
+  const words={2:['zwei','zweifach','halb','hälfte','halftig','hälftig','two','half'],3:['drei','dreifach','drittel','three','third'],4:['vier','vierfach','viertel','four','quarter'],5:['fünf','fünffach','fünftel','fünftels','fünffache','fünffachen','five','fifth'],6:['sechs','six'],12:['zwölf','twelve'],100:['hundert','hundred'],120:['einhundertzwanzig','hundertzwanzig','einhundertzwanzigstel','einhundertzwanzigstels','hundertzwanzigstel','hundertzwanzigstels']}
   for(const [number,names] of Object.entries(words))if(compare(decimal(number),expected)===0n&&new RegExp(`(?<![\\p{L}\\p{N}])(?:${names.join('|')})(?![\\p{L}\\p{N}])`,'iu').test(String(quote)))return true
-  const parts=String(quote).match(/(?<![\p{L}\p{N}])[-−]?\d(?:[\d.,’'\u00a0\u202f ]*\d)?(?![\p{L}\p{N}])/gu)||[]
+  const parts=quotedNumberLiterals(quote)
   return parts.some(part=>{
     const raw=part.replace(/[’'\u00a0\u202f ]/g,'').replace('−','-')
     const formats=[raw]

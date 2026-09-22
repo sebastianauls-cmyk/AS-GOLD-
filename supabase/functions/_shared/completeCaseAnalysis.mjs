@@ -80,7 +80,7 @@ function validateAnalysisContent(analysis,source,{scope,research,stepIds=null}){
       if(input.kind==='document'||input.kind==='source'){
         const location=`analysis.calculations[${calculationIndex}].inputs[${inputIndex}]`
         const quoted=exactQuote(input.kind==='document'?docs.get(input.document_id):sources.get(input.url)?.source_text,input.quote,location+'.quote')
-        if(quoted&&!quoteContainsNumber(input.quote,input.value))sourceIssues.push({code:'source',location:location+'.value',reason:`Rechenwert ${input.name}=${input.value} steht nicht im angegebenen Beleg.`})
+        if(quoted&&!quoteContainsNumber(input.quote,input.value))sourceIssues.push({code:'source',location:location+'.value',reason:`Rechenwert ${input.name}=${input.value} steht nicht im angegebenen Beleg. Belegauszug: ${String(input.quote).slice(0,220)}`})
       }else if(input.kind==='calculation'){
         // Check references only after all original/source values are verified.
       }else if(input.kind==='assumption'){

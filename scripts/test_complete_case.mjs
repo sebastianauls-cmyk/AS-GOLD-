@@ -39,6 +39,33 @@ assert.throws(()=>calculateExpression('a/120',{a:'1000'}),/belegten/)
 for(const [quote,value] of [['Betrag 1.234,56 EUR','1234.56'],['Amount 1,234.56 EUR','1234.56'],['Beitrag 2,69 %','2.69'],['Summe 18.000 EUR','18000']])assert(quoteContainsNumber(quote,value))
 assert(!quoteContainsNumber('Betrag 123,45 EUR','23.45'))
 
+// Regressions from the live case: statutory words and flattened table cells
+// must remain readable without accepting a suffix or merging unrelated values.
+const numericalEvidenceCases=[
+  ['ein Einhundertzwanzigstel der Leistung', '120', true],
+  ['längstens jedoch für einhundertzwanzig Monate.', '120', true],
+  ['2026 84,0 2053 97,5 2027 84,5 2054 98,0', '84.0', true],
+  ['2026 84,0 2053 97,5 2027 84,5 2054 98,0', '2026', true],
+  ['Beträge 27.930,00 28.421,00 EUR', '28421', true],
+  ['Beträge 31 454,48 31 690,98 EUR', '31690.98', true],
+  ['Grundfreibetrag 12 348 Euro', '12348', true],
+  ['Grundfreibetrag 12\u202f348,00 Euro', '12348', true],
+  ['Saldo −1 234,50 EUR', '-1234.50', true],
+  ['Betrag 1’234.50 CHF', '1234.50', true],
+  ['Monatliches Einkommen: 1/120', '120', true],
+  ['2026 84,0 2053 97,5', '2026840205397.5', false],
+  ['Grundfreibetrag 12 348 Euro', '348', false],
+  ['Betrag 123,45 EUR', '23.45', false],
+  ['Saldo -123,45 EUR', '123.45', false],
+  ['Kennzeichen A120B', '120', false],
+  ['Kennzeichen code120', '120', false],
+  ['Kennzeichen 120x', '120', false],
+  ['einhundertzwanzigtausend Euro', '120', false],
+  ['einhundertzwanzig Monate', '100', false],
+  ['fünfundzwanzig Euro', '5', false],
+]
+assert.deepEqual(numericalEvidenceCases.map(([quote,value])=>quoteContainsNumber(quote,value)),numericalEvidenceCases.map(([, ,expected])=>expected),'statutory table cells, spelled factors and whole-number boundaries')
+
 const source=roadmapSource(roadmapTestCase,roadmapTestDocuments,[])
 assert(completeResearchScope(source).domains.includes('bundesfinanzministerium.de'),'domestic research has tax authority sources')
 const scope={issues:[{id:'settlement',title:'Auszahlung',reason:'Brutto und Netto sind genannt.',calculation_needed:true}],research_topics:[]}
@@ -48,6 +75,16 @@ const candidate={...structuredClone(roadmapTestResult),analysis:{topics:[{id:'se
 const options={scope,research:[],outputLanguage:'de',referenceLanguage:'de'}
 const checked=validateCompleteAnalysis(candidate,source,options)
 assert.equal(checked.analysis.calculations[0].result,'1000.00')
+const legalEvidence=[
+  {url:'https://www.gesetze-im-internet.de/sgb_5/__229.html',source_text:'gilt ein Einhundertzwanzigstel der Leistung als monatlicher Zahlbetrag der Versorgungsbezüge, längstens jedoch für einhundertzwanzig Monate.'},
+  {url:'https://www.gesetze-im-internet.de/estg/__22.html',source_text:'2025 83,5 2052 97,0 2026 84,0 2053 97,5 2027 84,5 2054 98,0'},
+]
+const sourced=structuredClone(candidate)
+sourced.analysis.calculations[0].inputs=[{name:'months',label:'Monate',value:'120',kind:'source',...{url:legalEvidence[0].url,quote:legalEvidence[0].source_text}},{name:'percent',label:'Prozent',value:'84.0',kind:'source',...{url:legalEvidence[1].url,quote:legalEvidence[1].source_text}}]
+sourced.analysis.calculations[0].expression='months+percent'
+assert.equal(validateCompleteAnalysis(sourced,source,{...options,research:legalEvidence}).analysis.calculations[0].result,'204.00','valid statutory words and table values pass the complete source gate before computation')
+sourced.analysis.calculations[0].inputs[1].value='84.1'
+assert.throws(()=>validateCompleteAnalysis(sourced,source,{...options,research:legalEvidence}),error=>error.analysisIssues?.[0]?.reason.includes('84.1')&&error.analysisIssues[0].reason.includes('Belegauszug: 2025 83,5'),'a wrong value remains rejected with the actual cited excerpt for diagnosis')
 let bad=structuredClone(candidate);bad.analysis.calculations[0].inputs[0].value='19000';assert.throws(()=>validateCompleteAnalysis(bad,source,options),/steht nicht/)
 bad=structuredClone(candidate);bad.analysis.topics=[];assert.throws(()=>validateCompleteAnalysis(bad,source,options),/ausgelassen/)
 bad=structuredClone(candidate);bad.analysis.topics[0].sources=[{url:'https://gesetze-im-internet.de/made-up',quote:'This source was never fetched.'}];assert.throws(()=>validateCompleteAnalysis(bad,source,options),/beleg/i)
