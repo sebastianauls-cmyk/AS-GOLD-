@@ -20,7 +20,7 @@ export async function processCaseAnalysisJob({client,job,secret,providerKey,adva
     if(!source||await roadmapFingerprint(source)!==job.source_fingerprint)throw new ModelWorkflowError('Die Fallgrundlage wurde geändert. Der Auftrag wurde beendet; bitte den aktuellen Stand neu beauftragen.',409,'source_changed')
     validateRoadmapInput(source)
     const {style,output_language:outputLanguage,reference_language:referenceLanguage,draft_letters:draftLetters}=job.request
-    const binding={workflow:'background-complete-case-v164',owner_id:job.owner_id,case_id:job.case_id,fingerprint:job.source_fingerprint,outputLanguage,referenceLanguage,style,draft_letters:draftLetters}
+    const binding={workflow:'background-complete-case-v165',owner_id:job.owner_id,case_id:job.case_id,fingerprint:job.source_fingerprint,outputLanguage,referenceLanguage,style,draft_letters:draftLetters}
     const checkpoint=job.checkpoint?await openModelCheckpoint({token:job.checkpoint,binding,secret}):null
     if(checkpoint&&(checkpoint.runId!==job.id||checkpoint.issuedAt!==Date.parse(job.created_at)))throw new ModelWorkflowError('Der gespeicherte Auftrag stimmt nicht mit dem Zwischenstand überein.',409,'checkpoint_invalid')
     const {request,reviewContent}=roadmapModelContext({source,style,outputLanguage,referenceLanguage,permissions:{draft_letters:draftLetters}})

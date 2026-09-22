@@ -86,10 +86,17 @@ try {
   const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
   const drain=async id=>{for(let n=0;n<48;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
+  const legacyJob=await enqueue()
+  assert.equal(new Date(legacyJob.expires_at)-new Date(legacyJob.created_at),45*60*1000)
+  await db.exec(await readFile('supabase/migrations/20260922134000_complete_review_lifetime.sql','utf8'))
+  assert.equal(new Date((await stored(legacyJob.id)).expires_at).getTime(),new Date(legacyJob.expires_at).getTime(),'migration never extends an existing job')
+  await cancel(legacyJob.id)
+  await db.query('delete from public.case_analysis_jobs where id=$1',[legacyJob.id])
+
   await assert.rejects(enqueue({acknowledged:false}),/authorization/)
   await assert.rejects(enqueue({output_language:null}),/authorization/)
   let job=await enqueue()
-  assert.equal(new Date(job.expires_at)-new Date(job.created_at),45*60*1000,'new jobs have a fixed bounded lifetime covering both correction budgets')
+  assert.equal(new Date(job.expires_at)-new Date(job.created_at),60*60*1000,'only new jobs have the fixed one-hour lifetime')
   assert.equal((await enqueue()).id,job.id,'double submission returns the same active job')
   await assert.rejects(scalar('select public.enqueue_case_analysis_job($1,$2,$3,$4)',[other,caseId,await fingerprint(),input]),/authorization/)
   assert.equal(await scalar('select public.claim_case_analysis_job($1,$2)',[job.id,'f'.repeat(64)]),null,'guessed capability is denied')
@@ -204,10 +211,10 @@ try {
   assert.equal((await finish(claimed,{status:'failed',code:'provider_timeout',retry:true})).status,'failed','a fourth independent interruption cannot exceed the whole-job retry budget')
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
 
-  // A background job between minutes 30 and 45 must survive the real encrypted
+  // A new background job beyond minute 45 must survive the real encrypted
   // checkpoint path; its original created_at remains fixed through every step.
   job=await enqueue()
-  await db.query("update public.case_analysis_jobs set created_at=now()-interval '31 minutes',expires_at=now()+interval '14 minutes' where id=$1",[job.id])
+  await db.query("update public.case_analysis_jobs set created_at=now()-interval '46 minutes',expires_at=now()+interval '14 minutes' where id=$1",[job.id])
   const originalJobStart=(await stored(job.id)).created_at
   assert.equal((await drain(job.id)).status,'completed','background checkpoint expiry agrees with the existing database job lifetime')
   assert.equal(new Date((await stored(job.id)).created_at).getTime(),new Date(originalJobStart).getTime())
