@@ -32,10 +32,11 @@ export function calculateExpression(expression,variables={},places=2){
       // sourced input. 0 and 1 are arithmetic identities, not case assumptions.
       if(!['0','1'].includes(token))fail('Zahl '+token+' als belegten Eingabewert angeben.')
       result=decimal(token)
-    }else if(['min','max','round','floor'].includes(token)&&peek()==='('){
+    }else if(['min','max','round','floor','percent'].includes(token)&&peek()==='('){
       take();const args=[sum()];while(peek()===','){take();args.push(sum())}if(take()!==')')fail('Klammer fehlt.')
       if(['min','max'].includes(token)&&args.length>=2&&args.length<=8)result=args.reduce((a,b)=>(compare(a,b)<0n)===(token==='min')?a:b)
       else if(token==='floor'&&args.length===1){const a=args[0];result=rational(a.n/a.d-(a.n<0n&&a.n%a.d?1n:0n))}
+      else if(token==='percent'&&args.length===1)result=rational(args[0].n,args[0].d*100n)
       else if(token==='round'&&args.length===2&&args[1].d===1n)result=decimal(rounded(args[0],Number(args[1].n)))
       else fail('Ungültige Rechenfunktion.')
     }else if(Object.hasOwn(variables,token))result=decimal(variables[token])

@@ -51,6 +51,13 @@ assert.equal(primarySourceCatalogue(['authority.example'],Date.now(),[stale]).le
 assert.equal((await retrieveOfficialEvidence([snapshot],['authority.example'],{fetchImpl:cacheFetch(stale),snapshotRecords:[stale]})).size,0,'failed refresh cannot silently renew old legal text')
 
 assert.equal(calculateExpression('a+b',{a:'0.1',b:'0.2'}),'0.30')
+assert.equal(calculateExpression('amount*percent(rate)',{amount:'2520',rate:'84.0'}),'2116.80','a quoted percentage is converted explicitly without changing the source value')
+assert.equal(calculateExpression('amount*percent(base+extra)',{amount:'62.25',base:'14.6',extra:'2.69'}),'10.76')
+assert.equal(calculateExpression('percent(rate)',{rate:'-2.69'},8),'-0.02690000')
+assert.equal(calculateExpression('percent(percent)',{percent:'84'}),'0.84','legacy input names remain unambiguous because a conversion requires call syntax')
+assert.throws(()=>calculateExpression('percent(a,b)',{a:'84',b:'100'}),/Rechenfunktion/)
+assert.throws(()=>calculateExpression('a/100',{a:'84'}),/belegten/,'unit conversion does not permit arbitrary unsourced numeric literals')
+assert(!quoteContainsNumber('2026 84,0 2053 97,5','0.84'),'a normalized factor must never be passed off as the literal source number')
 assert.equal(calculateExpression('a',{a:'1.005'}),'1.01')
 assert.equal(calculateExpression('-a',{a:'1.005'}),'-1.01')
 assert.equal(calculateExpression('floor(a/b)',{a:'-11',b:'3'},0),'-4')
@@ -108,6 +115,12 @@ sourced.analysis.calculations[0].expression='months+percent'
 assert.equal(validateCompleteAnalysis(sourced,source,{...options,research:legalEvidence}).analysis.calculations[0].result,'204.00','valid statutory words and table values pass the complete source gate before computation')
 sourced.analysis.calculations[0].inputs[1].value='84.1'
 assert.throws(()=>validateCompleteAnalysis(sourced,source,{...options,research:legalEvidence}),error=>error.analysisIssues?.[0]?.reason.includes('84.1')&&error.analysisIssues[0].reason.includes('Belegauszug: 2025 83,5'),'a wrong value remains rejected with the actual cited excerpt for diagnosis')
+const percentageCase=structuredClone(candidate)
+percentageCase.analysis.calculations[0].inputs=[value('gross','18000'),{name:'taxable_rate',label:'Prozentsatz',value:'84.0',kind:'source',url:legalEvidence[1].url,quote:legalEvidence[1].source_text}]
+percentageCase.analysis.calculations[0].expression='gross*percent(taxable_rate)'
+assert.equal(validateCompleteAnalysis(percentageCase,source,{...options,research:legalEvidence}).analysis.calculations[0].result,'15120.00')
+percentageCase.analysis.calculations[0].inputs[1].value='0.84'
+assert.throws(()=>validateCompleteAnalysis(percentageCase,source,{...options,research:legalEvidence}),/steht nicht/,'percentage support never silently rescales a source input')
 let bad=structuredClone(candidate);bad.analysis.calculations[0].inputs[0].value='19000';assert.throws(()=>validateCompleteAnalysis(bad,source,options),/steht nicht/)
 bad=structuredClone(candidate);bad.analysis.topics=[];assert.throws(()=>validateCompleteAnalysis(bad,source,options),/ausgelassen/)
 bad=structuredClone(candidate);bad.analysis.topics[0].sources=[{url:'https://gesetze-im-internet.de/made-up',quote:'This source was never fetched.'}];assert.throws(()=>validateCompleteAnalysis(bad,source,options),/beleg/i)
@@ -211,7 +224,7 @@ for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])for(c
 
 // A mechanical input repair must not consume the later content correction.
 // Reproduce both defects in one workflow, and require all four reviews again.
-for(const correctedContent of [true,false,'bad_input']){
+for(const correctedContent of [true,false,'new_input','repeated_input']){
   let generatedAnalyses=0,generatedPlans=0,reviewed=0
   const contentIssue={code:'meaning',location:'analysis.topics[0].conclusion',reason:'Synthetic material omission: distinguish withholding from the final assessment.'}
   const repairBoth=async(url,options)=>{
@@ -222,11 +235,16 @@ for(const correctedContent of [true,false,'bad_input']){
       generatedAnalyses++
       output=structuredClone(candidate.analysis)
       if(generatedAnalyses===1)output.calculations[0].inputs[0].value='19000'
-      if(generatedAnalyses===3&&correctedContent==='bad_input')output.calculations[0].inputs[0].value='19000'
+      if(generatedAnalyses===3&&['new_input','repeated_input'].includes(correctedContent)||generatedAnalyses===4&&correctedContent==='repeated_input')output.calculations[0].inputs[0].value='19000'
       if(generatedAnalyses===3){
         const correction=JSON.parse(request.input.at(-1).content[0].text).correction
         assert(correction.issues.some(issue=>issue.reason===contentIssue.reason),'substantive feedback still reaches a correction after input repair')
         assert(correction.previous_candidate.analysis,'the full prior result is available for a bounded content correction')
+      }
+      if(generatedAnalyses===4){
+        const correction=JSON.parse(request.input.at(-1).content[0].text).correction
+        assert(correction.issues.some(issue=>issue.reason===contentIssue.reason))
+        assert(correction.issues.some(issue=>issue.reason.includes('19000')),'the corrected candidate receives both substantive and new mechanical feedback')
       }
     }else if(name==='ash_complete_plan_v157'){
       generatedPlans++
@@ -241,17 +259,17 @@ for(const correctedContent of [true,false,'bad_input']){
   let run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth})
   let failure
   try{for(let i=0;run.status==='processing'&&i<20;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth,state:run.state})}catch(error){failure=error}
-  if(correctedContent===true){
+  if(correctedContent===true||correctedContent==='new_input'){
     assert.equal(failure,undefined,'a successful input repair must leave one content correction available')
     assert.equal(run.status,'completed')
     assert.equal(run.result.analysis.verification.review_response_ids.length,4)
     assert(run.result.analysis.verification.review_response_ids.every(id=>Number(id.split('-').at(-1))>4),'acceptance uses only the four final reviews')
-  }else assert.equal(failure?.code,correctedContent==='bad_input'?'source_unresolved':'review_unresolved','input repair cannot reset and a second material rejection still stops')
-  assert.equal(generatedAnalyses,3);assert.equal(generatedPlans,correctedContent==='bad_input'?1:2);assert.equal(reviewed,correctedContent==='bad_input'?4:8)
+  }else assert.equal(failure?.code,correctedContent==='repeated_input'?'source_unresolved':'review_unresolved','a second bad input in the same candidate or final material rejection still stops')
+  assert.equal(generatedAnalyses,['new_input','repeated_input'].includes(correctedContent)?4:3);assert.equal(generatedPlans,correctedContent==='repeated_input'?1:2);assert.equal(reviewed,correctedContent==='repeated_input'?4:8)
 }
 
 // Wrong source numbers are repaired before generating a plan. This remains
-// bounded by one input repair across the job and never skips the four reviews.
+// bounded by one input repair per substantive candidate and never skips reviews.
 for(const repairOutcome of ['complete','partial','none']){
   const stages=[]
   let analysisCalls=0
