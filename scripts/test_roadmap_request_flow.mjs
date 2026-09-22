@@ -107,14 +107,14 @@ try {
   const generated=await call({...fullBody,checkpoint:topicDraft.data.checkpoint});assert.equal(generated.status,202);assert.equal(state.case_roadmaps.length,0)
   const assembled=await call({...fullBody,checkpoint:generated.data.checkpoint});assert.equal(assembled.status,202);assert.equal(state.case_roadmaps.length,0,'partial calculations and plan are never saved before full review')
   let reviewing=assembled
-  for(let part=0;part<3;part++){reviewing=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(reviewing.status,202);assert.equal(state.case_roadmaps.length,0)}
+  for(let part=0;part<7;part++){reviewing=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(reviewing.status,202);assert.equal(state.case_roadmaps.length,0)}
   const accepted=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(accepted.status,200);assert(accepted.data.roadmap.result.analysis.verification.review_response_id);assert.equal(state.case_roadmaps.length,1)
   reset();state.issues=[{code:'meaning',location:'analysis',reason:'Synthetic negative control: material unsupported conclusion.'}]
   let incomplete=await call(fullBody)
-  for(let part=0;part<20;part++){assert.equal(incomplete.status,202);assert.equal(state.case_roadmaps.length,0);incomplete=await call({...fullBody,checkpoint:incomplete.data.checkpoint})}
+  for(let part=0;part<32;part++){assert.equal(incomplete.status,202);assert.equal(state.case_roadmaps.length,0);incomplete=await call({...fullBody,checkpoint:incomplete.data.checkpoint})}
   assert.equal(incomplete.status,202)
   const denied=await call({...fullBody,checkpoint:incomplete.data.checkpoint})
-  assert.equal(denied.status,422);assert.equal(state.case_roadmaps.length,0,'three assembled candidates failing full review never save partial results');assert.equal(state.modelCalls,22,'two bounded corrections of all three components and every final independent review')
+  assert.equal(denied.status,422);assert.equal(state.case_roadmaps.length,0,'three assembled candidates failing full review never save partial results');assert.equal(state.modelCalls,34,'two bounded corrections of all three components and every final independent review')
   reset()
   const continuation=await begin()
   const completed=await call(continuation)

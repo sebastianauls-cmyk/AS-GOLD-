@@ -5,9 +5,10 @@ import { RESEARCH_COUNTRIES, SHARED_RESEARCH_DOMAINS } from './researchCountries
 import { searchRetrievedSources, researchSourceCandidates, retrieveOfficialEvidence, primarySourceCatalogue, loadPrimarySources, supportingPrimaryEvidence } from './verifiedResearch.mjs'
 import { calculateExpression, quoteContainsNumber } from './checkedCalculations.mjs'
 
-export const COMPLETE_ANALYSIS_VERSION='v164'
+export const COMPLETE_ANALYSIS_VERSION='v168'
 const MAX_SUBSTANTIVE_CANDIDATES=3
 const MAX_TOPICS=10,MAX_CALCULATIONS=24,MAX_CALCULATION_INPUTS=24
+const MAX_FACTS=24,MAX_QUESTIONS=24,MAX_STEPS=12,MAX_LETTERS=6,MAX_REVIEW_PARTS=25
 // Keep each high-effort request within the hosted worker's wall-clock limit.
 // Empty numerical cases still receive the calculation-completeness review.
 export function completeReviewCoverage(candidate){
@@ -15,7 +16,17 @@ export function completeReviewCoverage(candidate){
   for(const [scope,items,size,key] of [['analysis',candidate.analysis?.topics||[],3,'topic_ids'],['calculations',candidate.analysis?.calculations||[],6,'calculation_ids']]){
     for(let start=0;start<Math.max(items.length,1);start+=size)coverage.push({scope,topic_ids:[],calculation_ids:[],[key]:items.slice(start,start+size).map(item=>item.id)})
   }
-  return [...coverage,{scope:'roadmap',topic_ids:[],calculation_ids:[]},{scope:'letters',topic_ids:[],calculation_ids:[]}]
+  for(const [key,limit] of [['facts',MAX_FACTS],['open_questions',MAX_QUESTIONS],['steps',MAX_STEPS],['letters',MAX_LETTERS]]){
+    if(!Array.isArray(candidate[key])||candidate[key].length>limit||key==='steps'&&!candidate[key].length)throw new ModelWorkflowError('Der Fahrplan überschreitet die vollständig prüfbare Abschnittsgröße.',422,'review_coverage_invalid',[{code:'source',location:key,reason:`Erforderlich: eine Liste mit höchstens ${limit} Einträgen; Schritte dürfen nicht leer sein.`}])
+  }
+  const roadmapPart=(part,values={})=>({scope:'roadmap',topic_ids:[],calculation_ids:[],part,fact_indexes:[],question_indexes:[],step_ids:[],...values})
+  coverage.push(roadmapPart('overview'))
+  for(let start=0;start<Math.max(candidate.facts.length,candidate.open_questions.length);start+=4)coverage.push(roadmapPart('records',{
+    fact_indexes:candidate.facts.slice(start,start+4).map((_,i)=>start+i),question_indexes:candidate.open_questions.slice(start,start+4).map((_,i)=>start+i)
+  }))
+  for(let start=0;start<candidate.steps.length;start+=3)coverage.push(roadmapPart('steps',{step_ids:candidate.steps.slice(start,start+3).map(item=>item.id)}))
+  for(let start=0;start<Math.max(candidate.letters.length,1);start++)coverage.push({scope:'letters',topic_ids:[],calculation_ids:[],letter_ids:candidate.letters.slice(start,start+1).map(item=>item.id)})
+  return coverage
 }
 const str={type:'string'},strings={type:'array',items:str}
 const object=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)})
@@ -77,7 +88,11 @@ function validateCalculationBatch(raw,outline,assigned,source,context){
   return validateAnalysisContent({...outline.analysis,calculations:[...outline.analysis.calculations,...raw.calculations]},source,context)
 }
 export const COMPLETE_ANALYSIS_SCHEMA=object({...ROADMAP_SCHEMA.properties,analysis:analysisSchema})
-const PLAN_SCHEMA=object({...ROADMAP_SCHEMA.properties,topic_steps:array(object({id:str,step_ids:strings}))})
+const PLAN_SCHEMA=object({...ROADMAP_SCHEMA.properties,
+  key_points:{...ROADMAP_SCHEMA.properties.key_points,minItems:1,maxItems:3},
+  facts:{...ROADMAP_SCHEMA.properties.facts,maxItems:MAX_FACTS},open_questions:{...ROADMAP_SCHEMA.properties.open_questions,maxItems:MAX_QUESTIONS},
+  steps:{...ROADMAP_SCHEMA.properties.steps,minItems:1,maxItems:MAX_STEPS},letters:{...ROADMAP_SCHEMA.properties.letters,maxItems:MAX_LETTERS},
+  topic_steps:array(object({id:str,step_ids:strings}))})
 const normalized=value=>String(value||'').replace(/\s+/gu,' ').trim()
 const fail=message=>{throw new Error(message)}
 const validationFeedback=(error,location)=>error.analysisIssues||[{code:'source',location,reason:error.message}]
@@ -302,15 +317,32 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   let structuralFeedback=current.modelState.structuralFeedback||[]
   try{candidate=validate(candidate,validationContext)}catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=validationFeedback(error,'output')}
   const {analysis,...plan}=candidate
-  const {letters,...roadmap}=plan
+  const {letters,facts,open_questions,steps,...overview}=plan
   const coverage=completeReviewCoverage(candidate)
   if(current.reviewIds?.length&&JSON.stringify(current.reviewCoverage)!==JSON.stringify(coverage))throw new ModelWorkflowError('Die Prüfabschnitte wurden geändert. Bitte die Auswertung mit dem aktuellen Stand neu beauftragen.',409,'review_coverage_changed')
-  if(!Number.isInteger(partIndex)||partIndex<0||partIndex>=coverage.length||coverage.length>10||(current.reviewIds||[]).length!==partIndex)throw new ModelWorkflowError('Ungültiger Prüfabschnitt.',409)
+  if(!Number.isInteger(partIndex)||partIndex<0||partIndex>=coverage.length||coverage.length>MAX_REVIEW_PARTS||(current.reviewIds||[]).length!==partIndex)throw new ModelWorkflowError('Ungültiger Prüfabschnitt.',409)
   const section=coverage[partIndex],reviewScope=section.scope
-  const related={topics:analysis?.topics?.map(({id,title,conclusion,conditions,step_ids})=>({id,title,conclusion,conditions,step_ids})),calculations:analysis?.calculations?.map(({id,title,result,unit,conditions,topic_ids})=>({id,title,result,unit,conditions,topic_ids})),steps:reviewScope==='letters'?plan.steps:plan.steps?.map(({id,action,done_when})=>({id,action,done_when})),letters:letters?.map(({id,recipient,subject,document_ids})=>({id,recipient,subject,document_ids}))}
-  const part=reviewScope==='analysis'?{analysis:{topics:analysis?.topics?.filter(topic=>section.topic_ids.includes(topic.id)),...(partIndex===0?{limitations:analysis?.limitations}:{})}}:reviewScope==='calculations'?{analysis:{calculations:analysis?.calculations?.filter(calculation=>section.calculation_ids.includes(calculation.id))}}:reviewScope==='roadmap'?roadmap:{letters}
-  const focus={analysis:'Review all substantive conclusions, legal applicability and source support of EVERY topic in this assigned batch. Use related_output to check numerical coverage and linked practical actions. Flag omitted useful conditional financial scenarios when supported; do not re-audit calculation input mechanics or letter wording here. '+(partIndex===0?'Also review all limitations and overall issue completeness against the originals and the complete related_output.':'Overall issue completeness and limitations have a separate first-batch review.'),calculations:'Review EVERY calculation in this assigned batch: literal-source number, role, unit, exact arithmetic, time period, assumption, legal applicability and narrative numerical consistency. Use all related_output calculation results to check dependencies and numerical coverage. Do not re-audit calculations assigned to another batch, legal conclusions or letters.',roadmap:'Review every customer-facing roadmap field, original-document fact, question, step, deadline and dependency. Compare them with the related checked analysis and numerical results. Letter identities and purposes are supplied as context; their complete wording and translations receive the separate mandatory letters review. Do not repeat the full legal-source and arithmetic-input audit.',letters:'Review every formal letter and its complete customer translation against all originals, fetched sources, related conclusions, numerical results and roadmap steps. Check sender role, recipient, purpose, source fidelity, amounts, dates, language, translation completeness and consistency with the proposed actions. Also flag a missing necessary grounded letter; an empty letters array does not waive this review. Roadmap steps are context, not fields to re-audit here.'}[reviewScope]
-  const review=await reviewModelCandidate({providerKey,candidate:part,reviewContent:[...reviewContent,{type:'input_text',text:JSON.stringify({related_output:related,assigned_review:section,required_reviews:coverage})}],reviewModel:model,reviewFocus:focus+' The expression function percent(x) is the exact mathematical unit conversion x/100; it does not establish that a source amount is a percentage or that its rule applies. Literal precision in round(x,2) and the square operation x^2 are mathematical operator settings; neither establishes case facts or legal applicability. Review the formula, rounding choice, source roles and conditions against the evidence. All original documents and full fetched source texts remain supplied. Every assigned batch and all four scopes are mandatory before acceptance. Fields assigned to another part are context, not missing candidate fields. Identify findings by the original topic/calculation ID or full-result field path, not by a batch-local array index.',deadline:Date.now()+140000,callTimeoutMs:135000,fetchImpl,onResponse:event=>onResponse?.({...event,review_part:partIndex+1,review_scope:reviewScope}),attempt})
+  const related={topics:analysis?.topics?.map(({id,title,conclusion,conditions,step_ids})=>({id,title,conclusion,conditions,step_ids})),calculations:analysis?.calculations?.map(({id,title,result,unit,conditions,topic_ids})=>({id,title,result,unit,conditions,topic_ids})),steps:['roadmap','letters'].includes(reviewScope)?plan.steps:plan.steps?.map(({id,action,done_when})=>({id,action,done_when})),letters:letters?.map(({id,recipient,subject,document_ids})=>({id,recipient,subject,document_ids}))}
+  if(['roadmap','letters'].includes(reviewScope))Object.assign(related,{overview,facts:facts.map((item,index)=>({index,text:item.text})),open_questions:open_questions.map((item,index)=>({index,...item}))})
+  const part=reviewScope==='analysis'?{analysis:{topics:analysis?.topics?.filter(topic=>section.topic_ids.includes(topic.id)),...(partIndex===0?{limitations:analysis?.limitations}:{})}}
+    :reviewScope==='calculations'?{analysis:{calculations:analysis?.calculations?.filter(calculation=>section.calculation_ids.includes(calculation.id))}}
+    :reviewScope==='letters'?{letters:letters.filter(letter=>section.letter_ids.includes(letter.id))}
+    :section.part==='overview'?overview
+    :section.part==='records'?{facts:facts.filter((_,i)=>section.fact_indexes.includes(i)),open_questions:open_questions.filter((_,i)=>section.question_indexes.includes(i))}
+    :{steps:steps.filter(step=>section.step_ids.includes(step.id))}
+  const roadmapFocus={
+    overview:'Review every supplied overview field, including title, opening, key points, meaning, next action, customer action and closing. Check overall case completeness and consistency against ALL originals and related_output facts, questions, steps, checked analysis and letter identities. Flag a material duty, useful supported outcome or necessary follow-through missing from the entire assembled result. All detailed facts/questions, action fields and letter wording receive separate mandatory reviews; do not repeat their item-by-item audit here.',
+    records:'Review EVERY assigned fact with its original evidence and EVERY assigned open question, recipient and reason. Preserve supported facts and identify only genuinely missing information; do not reopen confirmed events. Other facts/questions are deliberately assigned elsewhere, not missing from the result. Use related_output to check consistency and duplicates; overall case completeness has its own overview review. Map findings to the original fact_indexes and question_indexes in assigned_review, never the batch-local index.',
+    steps:'Review EVERY field of EACH assigned step: title, phase, urgency, reason, owner, action, waiting, response handling, completion condition, follow-up, dependencies, deadline and evidence. Use ALL related_output steps to check dependency ordering and consistent execution, and the complete analysis/results to check the practical meaning. Other steps receive their own mandatory batches; their absence from this candidate is not an omission. Identify each finding by the original step ID.'
+  }
+  const firstLetter=reviewScope==='letters'&&(!letters.length||section.letter_ids.includes(letters[0].id))
+  const focus={analysis:'Review all substantive conclusions, legal applicability and source support of EVERY topic in this assigned batch. Use related_output to check numerical coverage and linked practical actions. Flag omitted useful conditional financial scenarios when supported; do not re-audit calculation input mechanics or letter wording here. '+(partIndex===0?'Also review all limitations and overall issue completeness against the originals and the complete related_output.':'Overall issue completeness and limitations have a separate first-batch review.'),calculations:'Review EVERY calculation in this assigned batch: literal-source number, role, unit, exact arithmetic, time period, assumption, legal applicability and narrative numerical consistency. Use all related_output calculation results to check dependencies and numerical coverage. Do not re-audit calculations assigned to another batch, legal conclusions or letters.',roadmap:roadmapFocus[section.part],letters:'Review the assigned formal letter and its COMPLETE customer translation against all originals, fetched sources, related conclusions, numerical results and roadmap steps. Check every sentence for sender role, recipient, purpose, source fidelity, amounts, dates, language, translation completeness and consistency with the proposed actions. Other letter identities and purposes are supplied as context and their full texts have separate mandatory calls. '+(firstLetter?'Also check the complete related_output letter registry for a missing necessary grounded letter; an empty letters array never waives this completeness check.':'Overall letter completeness has a separate first-letter review.')+' Roadmap steps are context, not fields to re-audit here.'}[reviewScope]
+  let review
+  try{review=await reviewModelCandidate({providerKey,candidate:part,reviewContent:[...reviewContent,{type:'input_text',text:JSON.stringify({related_output:related,assigned_review:section,required_reviews:coverage})}],reviewModel:model,reviewFocus:focus+' The expression function percent(x) is the exact mathematical unit conversion x/100; it does not establish that a source amount is a percentage or that its rule applies. Literal precision in round(x,2) and the square operation x^2 are mathematical operator settings; neither establishes case facts or legal applicability. Review the formula, rounding choice, source roles and conditions against the evidence. All original documents and full fetched source texts remain supplied. Every assigned batch and all four scopes are mandatory before acceptance. Fields assigned to another part are context, not missing candidate fields. Identify findings by the original topic/calculation/step/letter ID or full-result field path, not by a batch-local array index.',deadline:Date.now()+140000,callTimeoutMs:135000,fetchImpl,onResponse:event=>onResponse?.({...event,review_part:partIndex+1,review_scope:reviewScope}),attempt})}
+  catch(error){
+    if(error instanceof ModelWorkflowError)error.issues=[...(error.issues||[]).slice(0,7),{code:'review_stage',location:`review.${reviewScope}${section.part?'.'+section.part:''}`,reason:`Prüfabschnitt ${partIndex+1} von ${coverage.length}; keine geprüfte Antwort dieses Abschnitts gespeichert.`}]
+    throw error
+  }
   const feedback=[...(current.reviewFeedback||[]),...(partIndex===0?structuralFeedback:[]),...review.issues]
   const reviewIds=[...(current.reviewIds||[]),review.response_id]
   if(partIndex<coverage.length-1)return {status:'processing',state:{...current,reviewIndex:partIndex+1,reviewFeedback:feedback,reviewIds,reviewCoverage:coverage,modelState:{...current.modelState,candidate,validationContext,structuralFeedback}}}
