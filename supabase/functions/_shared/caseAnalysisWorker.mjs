@@ -36,14 +36,16 @@ export async function processCaseAnalysisJob({client,job,secret,providerKey,adva
       log(saved.status==='completed'?'reviewed_result_saved':'job_stopped')
     } else throw new ModelWorkflowError('Die Verarbeitung hat keinen gültigen Zwischenstand geliefert.',502,'workflow_invalid')
   } catch(error) {
-    const code=error instanceof ModelWorkflowError?error.code:'worker_failed'
+    let code=error instanceof ModelWorkflowError?error.code:'worker_failed'
+    if(code==='provider_invalid_json'&&error.provider_response_phase==='envelope')code='provider_response_format'
     log('step_failed',{code})
-    // SQL allows one transport retry per interrupted step, at most three per
-    // fixed-lifetime job. Content,
-    // consent, quota and access failures are never silently retried or waived.
+    // SQL allows one transport/protocol retry per interrupted step, at most
+    // three per fixed-lifetime job. Unreadable provider envelopes share that
+    // budget; malformed generated JSON, refusals, content, consent, quota and access
+    // failures are never silently retried or waived.
     const providerStatus=error instanceof ModelWorkflowError&&Number.isInteger(error.provider_status)&&error.provider_status>=400&&error.provider_status<=599?error.provider_status:null
     const retryAfter=Number.isInteger(error.retry_after)&&error.retry_after>=0&&error.retry_after<=86400?error.retry_after:null
-    const retry=['provider_network','provider_timeout'].includes(code)||(code==='provider_http'&&[500,502,503,504].includes(providerStatus))
+    const retry=['provider_network','provider_timeout','provider_response_format'].includes(code)||(code==='provider_http'&&[500,502,503,504].includes(providerStatus))
     const message=error instanceof ModelWorkflowError?error.message:'Die Hintergrundverarbeitung konnte nicht abgeschlossen werden. Kein neues Ergebnis gespeichert.'
     const issues=Array.isArray(error.issues)?error.issues.slice(0,8).map(issue=>({code:String(issue.code||'').slice(0,80),location:String(issue.location||'').slice(0,160),reason:String(issue.reason||'').slice(0,700)})):[]
     try {await finish({p_outcome:{status:'failed',code,message:message.slice(0,1200),issues,retry,provider_status:providerStatus,retry_after:retryAfter}})}catch{log('failure_save_unavailable')}

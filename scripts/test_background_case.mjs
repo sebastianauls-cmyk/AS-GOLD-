@@ -14,7 +14,7 @@ let documents=structuredClone(roadmapTestDocuments),modelCalls=0,reviewIssues=[]
 const transientStages=new Set()
 const httpStages=new Map()
 const reviewedParts=[]
-let numericFixture=null,numericTimedOut=false
+let numericFixture=null,numericTimedOut=false,numericFailure='timeout'
 const numericRequests=[]
 const oldFetch=globalThis.fetch
 try {
@@ -44,6 +44,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922140000_provider_http_recovery.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922182000_batched_case_generation.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922184000_batched_case_topics.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922191500_provider_envelope_recovery.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -90,7 +91,11 @@ try {
       const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations.map(item=>item.id)
       numericRequests.push(assigned)
       assert(assigned.length<=6)
-      if(assigned[0]==='number_6'&&!numericTimedOut){numericTimedOut=true;throw new DOMException('Synthetic second numeric batch timeout','TimeoutError')}
+      if(assigned[0]==='number_6'&&!numericTimedOut){
+        numericTimedOut=true
+        if(numericFailure==='format')return new Response('PRIVATE BROKEN PROVIDER ENVELOPE',{status:200})
+        throw new DOMException('Synthetic second numeric batch timeout','TimeoutError')
+      }
       return Response.json({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify({calculations:analysis.calculations.filter(item=>assigned.includes(item.id))})})
     }
     const output=name==='ash_case_scope'?{issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:!!numericFixture}],research_topics:[]}
@@ -241,6 +246,7 @@ try {
   for(const outcome of [
     {code:'provider_http',provider_status:400},{code:'provider_http',provider_status:'503'},
     {code:'provider_http',provider_status:503,retry_after:7200},{code:'provider_quota',provider_status:503},
+    {code:'provider_invalid_json'},{code:'provider_token_limit'},{code:'review_invalid'},{code:'source_unresolved'},
   ]){
     job=await enqueue();claimed=await claim(job.id)
     assert.equal((await finish(claimed,{status:'failed',retry:true,...outcome})).status,'failed','SQL independently rejects non-transient, mislabeled or beyond-expiry retries')
@@ -250,14 +256,14 @@ try {
   // A successful stage resets the consecutive count, never the total budget.
   job=await enqueue();claimed=await claim(job.id)
   for(let retry=1;retry<=3;retry++){
-    assert.equal((await finish(claimed,{status:'failed',code:'provider_timeout',retry:true})).status,'queued')
+    assert.equal((await finish(claimed,{status:'failed',code:['provider_timeout','provider_response_format','provider_network'][retry-1],retry:true})).status,'queued')
     await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[job.id])
     claimed=await claim(job.id)
     assert.equal((await finish(claimed,{status:'processing',checkpoint:'synthetic-step-'+retry,stage:'review'})).status,'queued')
     assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),retry)
     claimed=await claim(job.id)
   }
-  assert.equal((await finish(claimed,{status:'failed',code:'provider_timeout',retry:true})).status,'failed','a fourth independent interruption cannot exceed the whole-job retry budget')
+  assert.equal((await finish(claimed,{status:'failed',code:'provider_response_format',retry:true})).status,'failed','a fourth independent interruption cannot exceed the whole-job retry budget')
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
 
   // A new background job beyond minute 45 must survive the real encrypted
@@ -316,26 +322,64 @@ try {
   // while the first six checked calculations survive without being repeated.
   reviewIssues=[]
   const amountQuote='Die einmalige Kapitalzahlung beträgt 18.000 EUR brutto und 17.000 EUR netto.'
-  numericFixture={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Berechnungsanlage fehlt; die Differenz ist rechnerisch prüfbar.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],limitations:[],calculations:Array.from({length:7},(_,i)=>({id:'number_'+i,title:'Kontrollwert '+i,topic_ids:['source'],inputs:i?[{name:'previous',label:'Geprüfte Differenz',value:'1000.00',kind:'calculation',calculation_id:'number_0'}]:[{name:'gross',label:'Brutto',value:'18000',kind:'document',document_id:documents[0].id,quote:amountQuote},{name:'net',label:'Netto',value:'17000',kind:'document',document_id:documents[0].id,quote:amountQuote}],expression:i?'previous':'gross-net',decimal_places:2,unit:'EUR',conditions:'',explanation:'Rein synthetischer Kontrollwert zur abschnittsweisen Verarbeitung.'}))}
-  job=await enqueue();const numericCallsBefore=modelCalls
-  for(let i=0;i<4;i++)await process(await claim(job.id))
-  assert.equal(await scalar('select steps from private.case_analysis_work where job_id=$1',[job.id]),4)
-  const numericCheckpoint=await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id])
-  assert.equal((await stored(job.id)).roadmap_id,null,'partial arithmetic is private, not a saved customer result')
-  await process(await claim(job.id))
-  assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),numericCheckpoint,'a timed-out later batch cannot erase the sealed earlier calculations')
-  assert.equal((await drain(job.id)).status,'completed')
-  assert.equal(modelCalls-numericCallsBefore,12,'one topic batch, one manifest, two numeric batches, plan and all five reviews; only the timed-out batch repeats')
-  assert.deepEqual(numericRequests,[Array.from({length:6},(_,i)=>'number_'+i),['number_6'],['number_6']])
-  const numericResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
-  assert.equal(numericResult.analysis.calculations.length,7)
-  assert(numericResult.analysis.calculations.every(item=>item.result==='1000.00'),'cross-batch dependencies retain exact checked values')
-  assert.equal(numericResult.analysis.verification.analysis_response_ids.length,4)
-  assert.equal(numericResult.analysis.verification.review_response_ids.length,5)
+  for(const failureKind of ['timeout','format']){
+    numericFailure=failureKind;numericTimedOut=false;numericRequests.length=0
+    numericFixture={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Berechnungsanlage fehlt; die Differenz ist rechnerisch prüfbar.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],limitations:[],calculations:Array.from({length:7},(_,i)=>({id:'number_'+i,title:'Kontrollwert '+i,topic_ids:['source'],inputs:i?[{name:'previous',label:'Geprüfte Differenz',value:'1000.00',kind:'calculation',calculation_id:'number_0'}]:[{name:'gross',label:'Brutto',value:'18000',kind:'document',document_id:documents[0].id,quote:amountQuote},{name:'net',label:'Netto',value:'17000',kind:'document',document_id:documents[0].id,quote:amountQuote}],expression:i?'previous':'gross-net',decimal_places:2,unit:'EUR',conditions:'',explanation:'Rein synthetischer Kontrollwert zur abschnittsweisen Verarbeitung.'}))}
+    job=await enqueue();const numericCallsBefore=modelCalls
+    for(let i=0;i<4;i++)await process(await claim(job.id))
+    assert.equal(await scalar('select steps from private.case_analysis_work where job_id=$1',[job.id]),4)
+    const numericCheckpoint=await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id])
+    assert.equal((await stored(job.id)).roadmap_id,null,'partial arithmetic is private, not a saved customer result')
+    await process(await claim(job.id))
+    assert.equal((await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]))===numericCheckpoint,true,'a failed later provider response cannot erase the sealed earlier calculations')
+    assert.equal((await drain(job.id)).status,'completed')
+    assert.equal(modelCalls-numericCallsBefore,12,'one topic batch, one manifest, two numeric batches, plan and all five reviews; only the failed provider call repeats')
+    assert.deepEqual(numericRequests,[Array.from({length:6},(_,i)=>'number_'+i),['number_6'],['number_6']])
+    const numericResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
+    assert.equal(numericResult.analysis.calculations.length,7)
+    assert(numericResult.analysis.calculations.every(item=>item.result==='1000.00'),'cross-batch dependencies retain exact checked values')
+    assert.equal(numericResult.analysis.verification.analysis_response_ids.length,4)
+    assert.equal(numericResult.analysis.verification.review_response_ids.length,5)
+    assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
+    assert.equal(new Date((await stored(job.id)).expires_at).getTime(),new Date(job.expires_at).getTime())
+    numericFixture=null
+    await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+  }
+
+  // A second unreadable envelope in the same step exhausts its existing
+  // retry. Generated invalid JSON/refusals/token limits are never classified
+  // as transport failures, and no raw provider payload enters diagnostics.
+  job=await enqueue();const repeatedFormatCalls=modelCalls
+  for(let attempt=0;attempt<2;attempt++){
+    httpStages.set('ash_case_scope',new Response('PRIVATE BROKEN PROVIDER ENVELOPE',{status:200}))
+    await process(await claim(job.id))
+    if(attempt===0){
+      assert.equal((await stored(job.id)).status,'queued')
+      await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[job.id])
+    }
+  }
+  const repeatedFormat=await stored(job.id)
+  assert.equal(repeatedFormat.status,'failed');assert.equal(repeatedFormat.error_code,'provider_response_format')
+  assert.equal(modelCalls-repeatedFormatCalls,2)
+  assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),1)
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
-  assert.equal(new Date((await stored(job.id)).expires_at).getTime(),new Date(job.expires_at).getTime())
-  numericFixture=null
+  assert.doesNotMatch(JSON.stringify(repeatedFormat),/PRIVATE BROKEN PROVIDER ENVELOPE/)
+  assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+  for(const [response,code] of [
+    [{id:'bad-json',status:'completed',output_text:'PRIVATE MALFORMED OUTPUT'},'provider_invalid_json'],
+    [{id:'refusal',status:'completed',output:[{type:'message',content:[{type:'refusal',refusal:'PRIVATE REFUSAL'}]}]},'provider_invalid_json'],
+    [{id:'token-limit',status:'incomplete',incomplete_details:{reason:'max_output_tokens'}},'provider_token_limit'],
+  ]){
+    job=await enqueue();const before=modelCalls
+    httpStages.set('ash_case_scope',Response.json(response));await process(await claim(job.id))
+    const failed=await stored(job.id)
+    assert.equal(failed.status,'failed');assert.equal(failed.error_code,code);assert.equal(modelCalls-before,1)
+    assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),0)
+    assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
+    assert.doesNotMatch(JSON.stringify(failed),/PRIVATE MALFORMED OUTPUT|PRIVATE REFUSAL/)
+    await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+  }
 
   await db.query('update auth.users set banned_until=now()+interval \'1 day\' where id=$1',[owner]);await assert.rejects(enqueue(),/authorization/)
   await db.query('update auth.users set banned_until=null where id=$1',[owner])
