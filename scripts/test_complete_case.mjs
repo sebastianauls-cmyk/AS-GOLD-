@@ -260,6 +260,11 @@ const fetchImpl=async(url,options)=>{
     assert.equal(fields.calculations.items.properties.inputs.minItems,1)
     assert.equal(fields.calculations.items.properties.inputs.maxItems,24)
   }
+  if(name==='ash_complete_plan_v157'){
+    const fields=request.text.format.schema.properties
+    for(const [key,maximum] of [['key_points',3],['facts',24],['open_questions',24],['steps',12],['letters',6]])assert.equal(fields[key].maxItems,maximum)
+    assert.equal(fields.key_points.minItems,1);assert.equal(fields.steps.minItems,1)
+  }
   const {analysis,...plan}=candidate
   const output=name==='ash_case_scope'?scope:name==='ash_complete_topics_v167'?topicFixture(analysis,request):name==='ash_complete_outline_v166'?outlineFixture(analysis):name==='ash_complete_numbers_v157'?{calculations:structuredClone(analysis.calculations)}:name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
   if(name==='ash_complete_numbers_v157')for(const calculation of output.calculations)for(const input of calculation.inputs){
@@ -294,10 +299,10 @@ for(const repeatOverflow of [false,true]){
     return Response.json({status:'completed',id:`bounded-${generations}-${reviews}`,output_text:JSON.stringify(output)})
   }
   let run=await advanceCompleteAnalysis({...args,fetchImpl:boundedFetch}),failure
-  try{for(let i=0;run.status==='processing'&&i<10;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:boundedFetch,state:run.state})}catch(error){failure=error}
+  try{for(let i=0;run.status==='processing'&&i<16;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:boundedFetch,state:run.state})}catch(error){failure=error}
   assert.equal(generations,2,'only one mechanical repair')
   if(repeatOverflow){assert.equal(failure?.code,'source_unresolved');assert.equal(failure.issues[0].location,'analysis.calculation_plan');assert.equal(reviews,0);assert(!run.result)}
-  else {assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(reviews,4);assert.equal(run.result.analysis.calculations.length,1)}
+  else {assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(reviews,8);assert.equal(run.result.analysis.calculations.length,1)}
 }
 // Scope bounds must be sent to structured generation, not only checked after
 // spending a live planning call. Invalid provider output still fails closed.
@@ -328,12 +333,12 @@ flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.resu
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.analysisOutline);assert.equal(flow.state.draftAnalysis,null)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
-for(let part=0;part<3;part++){
+for(let part=0;part<7;part++){
   flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result,'letters still require their separate review before acceptance')
   if(part===0)for(const reviewCoverage of [undefined,[]])await assert.rejects(advanceCompleteAnalysis({...args,state:{...flow.state,reviewCoverage}}),error=>error.code==='review_coverage_changed','old review receipts cannot be reassigned after a batching change')
 }
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
-assert.equal(calls,9,'no external research is claimed for an arithmetic-only case')
+assert.equal(calls,13,'no external research is claimed for an arithmetic-only case')
 const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}
 const official='https://www.gesetze-im-internet.de/estg/__34.html'
 const batchFetch=async(url,options)=>{
@@ -392,20 +397,20 @@ for(const correctedContent of [true,false,'new_input','repeated_input']){
       output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else{
       reviewed++
-      output={issues:reviewed%4===1&&(!correctedContent||reviewed<=4)?[contentIssue]:[]}
+      output={issues:reviewed%8===1&&(!correctedContent||reviewed<=8)?[contentIssue]:[]}
     }
     return new Response(JSON.stringify({status:'completed',id:`both-${generatedAnalyses}-${generatedPlans}-${reviewed}`,model:request.model,output_text:JSON.stringify(output)}))
   }
   let run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth})
   let failure
-  try{for(let i=0;run.status==='processing'&&i<30;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth,state:run.state})}catch(error){failure=error}
+  try{for(let i=0;run.status==='processing'&&i<44;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth,state:run.state})}catch(error){failure=error}
   if(correctedContent===true||correctedContent==='new_input'){
     assert.equal(failure,undefined,'a successful input repair must leave one content correction available')
     assert.equal(run.status,'completed')
-    assert.equal(run.result.analysis.verification.review_response_ids.length,4)
-    assert(run.result.analysis.verification.review_response_ids.every(id=>Number(id.split('-').at(-1))>4),'acceptance uses only the four final reviews')
+    assert.equal(run.result.analysis.verification.review_response_ids.length,8)
+    assert(run.result.analysis.verification.review_response_ids.every(id=>Number(id.split('-').at(-1))>8),'acceptance uses only all eight final reviews')
   }else assert.equal(failure?.code,correctedContent==='repeated_input'?'source_unresolved':'review_unresolved','a second bad input in the same candidate or final material rejection still stops')
-  assert.equal(generatedAnalyses,correctedContent===false||['new_input','repeated_input'].includes(correctedContent)?4:3);assert.equal(generatedPlans,correctedContent==='repeated_input'?1:correctedContent===false?3:2);assert.equal(reviewed,correctedContent==='repeated_input'?4:correctedContent===false?12:8)
+  assert.equal(generatedAnalyses,correctedContent===false||['new_input','repeated_input'].includes(correctedContent)?4:3);assert.equal(generatedPlans,correctedContent==='repeated_input'?1:correctedContent===false?3:2);assert.equal(reviewed,correctedContent==='repeated_input'?8:correctedContent===false?24:16)
 }
 
 // Wrong source numbers are repaired before generating a plan. This remains
@@ -455,8 +460,8 @@ for(const repairOutcome of ['complete','partial','none']){
   }
   while(repairFlow.status==='processing')repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
   assert.equal(repairFlow.result.analysis.calculations[0].result,'1000.00')
-  assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,4)
-  assert.equal(stages.length,10,'one source correction, one plan and all four reviews')
+  assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,8)
+  assert.equal(stages.length,14,'one source correction, one plan and all eight reviews')
 }
 // A provider may not omit, rename, reorder or reassign the stored work plan.
 for(const defect of ['missing','extra','renamed','topic','forward_dependency']){
@@ -490,11 +495,20 @@ for(const defect of ['missing','extra','renamed','topic','forward_dependency']){
 // per round. A timed-out middle batch resumes alone; a material finding still
 // triggers a full correction and a fresh complete set of final reviews.
 const big=structuredClone(candidate)
-big.analysis.topics=Array.from({length:10},(_,i)=>({...candidate.analysis.topics[0],id:'topic_'+i}))
+big.facts=Array.from({length:24},()=>structuredClone(candidate.facts[0]))
+big.open_questions=Array.from({length:24},()=>structuredClone(candidate.open_questions[0]))
+big.steps=Array.from({length:12},(_,i)=>({...structuredClone(candidate.steps[0]),id:'step_'+i,depends_on:i?['step_'+(i-1)]:[]}))
+big.letters=Array.from({length:6},(_,i)=>({...structuredClone(candidate.letters[0]),id:'letter_'+i}))
+big.analysis.topics=Array.from({length:10},(_,i)=>({...candidate.analysis.topics[0],id:'topic_'+i,step_ids:['step_0']}))
 big.analysis.calculations=Array.from({length:24},(_,i)=>({...structuredClone(candidate.analysis.calculations[0]),id:'difference_'+i,topic_ids:['topic_'+(i%10)]}))
 const bigScope={issues:big.analysis.topics.map(({id,title})=>({id,title,reason:'Synthetic coverage boundary',calculation_needed:true})),research_topics:[]}
 const expectedCoverage=completeReviewCoverage(big),observedBatches=[]
-assert.equal(expectedCoverage.length,10)
+assert.equal(expectedCoverage.length,25)
+assert.deepEqual(expectedCoverage.filter(p=>p.part==='records').flatMap(p=>p.fact_indexes),Array.from({length:24},(_,i)=>i))
+assert.deepEqual(expectedCoverage.filter(p=>p.part==='records').flatMap(p=>p.question_indexes),Array.from({length:24},(_,i)=>i))
+assert.deepEqual(expectedCoverage.filter(p=>p.part==='steps').flatMap(p=>p.step_ids),big.steps.map(s=>s.id))
+assert.deepEqual(expectedCoverage.filter(p=>p.scope==='letters').flatMap(p=>p.letter_ids),big.letters.map(s=>s.id))
+for(const key of ['facts','open_questions','steps','letters']){const tooLarge=structuredClone(big);tooLarge[key].push(structuredClone(tooLarge[key][0]));assert.throws(()=>completeReviewCoverage(tooLarge),error=>error.code==='review_coverage_invalid'&&error.issues[0].location===key)}
 let bigCalls=0,bigRound=0,bigGenerated=0,batchTimedOut=false,generationTimedOut=false,topicTimedOut=false
 const badInputRounds=new Set(),generatedAssignments=[],generatedTopics=[]
 const bigFetch=async(url,options)=>{
@@ -543,6 +557,11 @@ const bigFetch=async(url,options)=>{
     const assignment=payloads.find(item=>item.assigned_review).assigned_review,part=payloads.find(item=>item.candidate).candidate
     assert.deepEqual(payloads.find(item=>item.required_reviews).required_reviews,expectedCoverage)
     assert((part.analysis?.topics?.length||0)<=3);assert((part.analysis?.calculations?.length||0)<=6)
+    assert((part.facts?.length||0)<=4);assert((part.open_questions?.length||0)<=4);assert((part.steps?.length||0)<=3);assert((part.letters?.length||0)<=1)
+    if(assignment.scope==='roadmap'||assignment.scope==='letters'){
+      assert.deepEqual(payloads.find(item=>item.related_output).related_output.steps,big.steps,'every action/letter audit retains complete cross-step context')
+      if(assignment.part==='overview')assert.deepEqual(Object.keys(part).sort(),Object.keys(big).filter(k=>!['analysis','facts','open_questions','steps','letters'].includes(k)).sort(),'all remaining customer fields belong to the overview audit')
+    }
     observedBatches.push({round:bigRound,...assignment})
     if(assignment.calculation_ids[0]==='difference_6'&&!batchTimedOut){batchTimedOut=true;throw new DOMException('Synthetic middle-batch timeout','TimeoutError')}
     output={issues:bigRound<3&&assignment.calculation_ids.includes('difference_18')?[{code:'meaning',location:'analysis.calculations[difference_18]',reason:`Synthetic material defect in the last calculation batch, round ${bigRound}.`}]:[]}
@@ -551,11 +570,11 @@ const bigFetch=async(url,options)=>{
 }
 const bigArgs={...args,fetchImpl:bigFetch,baseReviewContent:[{type:'input_text',text:'SYNTHETIC_COMPLETE_ORIGINALS'}]}
 let bigFlow=await advanceCompleteAnalysis(bigArgs),transportFailures=0
-for(let i=0;bigFlow.status==='processing'&&i<78;i++){
+for(let i=0;bigFlow.status==='processing'&&i<120;i++){
   try{bigFlow=await advanceCompleteAnalysis({...bigArgs,state:bigFlow.state})}
   catch(error){if(error.code!=='provider_timeout')throw error;assert(++transportFailures<=3)}
 }
-assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,67);assert.equal(bigGenerated,16);assert.equal(bigFlow.attempts,3)
+assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,112);assert.equal(bigGenerated,16);assert.equal(bigFlow.attempts,3)
 assert.equal(transportFailures,3)
 assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,9,'each topic batch, manifest and final numeric batch has a separate receipt')
 for(const round of [1,2,3]){
@@ -565,7 +584,7 @@ for(const round of [1,2,3]){
 }
 for(const round of [1,2,3])assert.deepEqual([...new Set(generatedAssignments.filter(item=>item.round===round).flatMap(item=>item.ids))],big.analysis.calculations.map(item=>item.id),'every planned calculation is generated in every complete candidate')
 assert.deepEqual(bigFlow.result.analysis.verification.review_coverage,expectedCoverage)
-assert.equal(bigFlow.result.analysis.verification.review_response_ids.length,10)
+assert.equal(bigFlow.result.analysis.verification.review_response_ids.length,25)
 assert(bigFlow.result.analysis.verification.review_response_ids.every(id=>id.startsWith('batch-round-3-')))
 assert.deepEqual(observedBatches.filter(item=>item.round===2).map(({round,...item})=>item),expectedCoverage,'all batches repeat after substantive correction')
 assert.deepEqual(observedBatches.filter(item=>item.round===3).map(({round,...item})=>item),expectedCoverage,'a second correction also requires every batch again')
