@@ -182,8 +182,49 @@ const large=structuredClone(flow.result.analysis);large.calculations[0].result='
 assert(completeAnalysisBlocks(large,'de').some(block=>block.text.includes('9.999.999.999.999.999,99')),'display/export cannot lose exact cents through floating-point conversion')
 for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])for(const value of Object.values(completeAnalysisCopy(lang)))assert(value.trim())
 
+// A mechanical input repair must not consume the later content correction.
+// Reproduce both defects in one workflow, and require all four reviews again.
+for(const correctedContent of [true,false,'bad_input']){
+  let generatedAnalyses=0,generatedPlans=0,reviewed=0
+  const contentIssue={code:'meaning',location:'analysis.topics[0].conclusion',reason:'Synthetic material omission: distinguish withholding from the final assessment.'}
+  const repairBoth=async(url,options)=>{
+    const request=JSON.parse(options.body),name=request.text.format.name
+    let output
+    if(name==='ash_case_scope')output=scope
+    else if(name==='ash_complete_numbers_v157'){
+      generatedAnalyses++
+      output=structuredClone(candidate.analysis)
+      if(generatedAnalyses===1)output.calculations[0].inputs[0].value='19000'
+      if(generatedAnalyses===3&&correctedContent==='bad_input')output.calculations[0].inputs[0].value='19000'
+      if(generatedAnalyses===3){
+        const correction=JSON.parse(request.input.at(-1).content[0].text).correction
+        assert(correction.issues.some(issue=>issue.reason===contentIssue.reason),'substantive feedback still reaches a correction after input repair')
+        assert(correction.previous_candidate.analysis,'the full prior result is available for a bounded content correction')
+      }
+    }else if(name==='ash_complete_plan_v157'){
+      generatedPlans++
+      const {analysis,...plan}=candidate
+      output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
+    }else{
+      reviewed++
+      output={issues:reviewed%4===1&&(!correctedContent||reviewed<=4)?[contentIssue]:[]}
+    }
+    return new Response(JSON.stringify({status:'completed',id:`both-${generatedAnalyses}-${generatedPlans}-${reviewed}`,model:request.model,output_text:JSON.stringify(output)}))
+  }
+  let run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth})
+  let failure
+  try{for(let i=0;run.status==='processing'&&i<20;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth,state:run.state})}catch(error){failure=error}
+  if(correctedContent===true){
+    assert.equal(failure,undefined,'a successful input repair must leave one content correction available')
+    assert.equal(run.status,'completed')
+    assert.equal(run.result.analysis.verification.review_response_ids.length,4)
+    assert(run.result.analysis.verification.review_response_ids.every(id=>Number(id.split('-').at(-1))>4),'acceptance uses only the four final reviews')
+  }else assert.equal(failure?.code,correctedContent==='bad_input'?'source_unresolved':'review_unresolved','input repair cannot reset and a second material rejection still stops')
+  assert.equal(generatedAnalyses,3);assert.equal(generatedPlans,correctedContent==='bad_input'?1:2);assert.equal(reviewed,correctedContent==='bad_input'?4:8)
+}
+
 // Wrong source numbers are repaired before generating a plan. This remains
-// bounded by the existing two attempts and never skips the four reviews.
+// bounded by one input repair across the job and never skips the four reviews.
 for(const repairOutcome of ['complete','partial','none']){
   const stages=[]
   let analysisCalls=0
@@ -214,8 +255,8 @@ for(const repairOutcome of ['complete','partial','none']){
   let repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch})
   repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
   assert.equal(repairFlow.state.draftAnalysis,null)
-  assert.equal(repairFlow.state.modelState.attempt,2)
-  assert.equal(repairFlow.state.modelState.feedback.length,2,'both wrong source amounts must reach the single correction')
+  assert.equal(repairFlow.state.modelState.attempt,1,'the substantive correction is still unused')
+  assert.equal(repairFlow.state.inputRepair.feedback.length,2,'both wrong source amounts must reach the single input correction')
   if(repairOutcome!=='complete'){
     await assert.rejects(advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state}),error=>error.code==='source_unresolved'&&error.issues.length===(repairOutcome==='partial'?1:2))
     assert.equal(stages.length,3,'a second bad number stops before any plan or reviews')
