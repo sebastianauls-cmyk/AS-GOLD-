@@ -11,6 +11,7 @@ import {completeReviewCoverage} from '../supabase/functions/_shared/completeCase
 const db=await PGlite.create(),owner=roadmapTestCase.owner_id,caseId=roadmapTestCase.id,other='77777777-7777-4777-8777-777777777777'
 const secret='synthetic-background-job-secret-never-a-real-key'
 let documents=structuredClone(roadmapTestDocuments),modelCalls=0,reviewIssues=[],failLettersOnce=false
+const transientStages=new Set()
 const reviewedParts=[]
 const oldFetch=globalThis.fetch
 try {
@@ -36,6 +37,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922104000_batched_case_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922111500_percentage_input_repairs.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922115500_complete_case_correction.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922121500_bounded_step_retries.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -63,6 +65,7 @@ try {
   globalThis.fetch=async(url,options)=>{
     assert.equal(url,'https://api.openai.com/v1/responses');modelCalls++
     const request=JSON.parse(options.body),name=request.text.format.name
+    if(transientStages.delete(name))throw new DOMException('Synthetic independent stage timeout','TimeoutError')
     let issues=reviewIssues
     if(name==='ash_evidence_review_v139'){
       const payloads=request.input[0].content.map(item=>{try{return JSON.parse(item.text)}catch{return null}}).filter(Boolean)
@@ -81,7 +84,7 @@ try {
     return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify(output)}))
   }
   const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
-  const drain=async id=>{for(let n=0;n<34;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
+  const drain=async id=>{for(let n=0;n<48;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
   await assert.rejects(enqueue({acknowledged:false}),/authorization/)
   await assert.rejects(enqueue({output_language:null}),/authorization/)
@@ -176,7 +179,39 @@ try {
   assert.equal((await finish(claimed,{status:'failed',code:'provider_network',retry:true})).status,'queued')
   await db.query("update private.case_analysis_work set available_at=now() where job_id=$1",[job.id])
   claimed=await claim(job.id)
-  assert.equal((await finish(claimed,{status:'failed',code:'provider_network',retry:true})).status,'failed','transport retries are bounded across the whole job')
+  assert.equal((await finish(claimed,{status:'failed',code:'provider_network',retry:true})).status,'failed','a second transport failure within the same interrupted step still stops')
+
+  // The live failure happened in different stages. Each interrupted stage can
+  // recover once; successful work and every required review remain mandatory.
+  job=await enqueue();const independentCalls=modelCalls
+  transientStages.add('ash_complete_plan_v157');transientStages.add('ash_evidence_review_v139')
+  assert.equal((await drain(job.id)).status,'completed')
+  assert.equal(modelCalls-independentCalls,9,'only the two independently interrupted stages repeat')
+  assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),2)
+  assert.equal(await scalar('select failures from private.case_analysis_work where job_id=$1',[job.id]),0)
+  await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+
+  // A successful stage resets the consecutive count, never the total budget.
+  job=await enqueue();claimed=await claim(job.id)
+  for(let retry=1;retry<=3;retry++){
+    assert.equal((await finish(claimed,{status:'failed',code:'provider_timeout',retry:true})).status,'queued')
+    await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[job.id])
+    claimed=await claim(job.id)
+    assert.equal((await finish(claimed,{status:'processing',checkpoint:'synthetic-step-'+retry,stage:'review'})).status,'queued')
+    assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),retry)
+    claimed=await claim(job.id)
+  }
+  assert.equal((await finish(claimed,{status:'failed',code:'provider_timeout',retry:true})).status,'failed','a fourth independent interruption cannot exceed the whole-job retry budget')
+  await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+
+  // A background job between minutes 30 and 45 must survive the real encrypted
+  // checkpoint path; its original created_at remains fixed through every step.
+  job=await enqueue()
+  await db.query("update public.case_analysis_jobs set created_at=now()-interval '31 minutes',expires_at=now()+interval '14 minutes' where id=$1",[job.id])
+  const originalJobStart=(await stored(job.id)).created_at
+  assert.equal((await drain(job.id)).status,'completed','background checkpoint expiry agrees with the existing database job lifetime')
+  assert.equal(new Date((await stored(job.id)).created_at).getTime(),new Date(originalJobStart).getTime())
+  await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
 
   job=await enqueue();claimed=await claim(job.id)
   await db.query("update public.case_analysis_jobs set expires_at=now()-interval '1 second' where id=$1",[job.id])
@@ -197,10 +232,10 @@ try {
   // The largest batch/correction path and one transport retry remain bounded.
   // The final review is still required at the last allowed claim.
   job=await enqueue();claimed=await claim(job.id)
-  await db.query('update private.case_analysis_work set steps=43,attempts=45 where job_id=$1',[job.id])
+  await db.query('update private.case_analysis_work set steps=43,attempts=47 where job_id=$1',[job.id])
   assert.equal((await finish(claimed,{status:'processing',checkpoint:'synthetic-limit-check',stage:'review'})).status,'queued')
   claimed=await claim(job.id)
-  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),46)
+  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),48)
   assert.equal((await finish(claimed,{status:'completed',result:acceptedResult,model:'test',source_documents:[],workflow_version:'test'})).status,'completed')
 
   job=await enqueue();claimed=await claim(job.id)
