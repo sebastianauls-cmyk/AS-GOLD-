@@ -4,6 +4,7 @@ import {PGlite} from '@electric-sql/pglite'
 import {processCaseAnalysisJob} from '../supabase/functions/_shared/caseAnalysisWorker.mjs'
 import {roadmapFingerprint,roadmapSource,roadmapStyle} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
+import {completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 
 // Real Postgres semantics, real migrations, real worker/state machine, validators
 // and encrypted checkpoints. Only dispatch transport and model responses are fake.
@@ -32,6 +33,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260921222858_durable_case_analysis_jobs.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922091000_scoped_case_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922101000_separate_case_corrections.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922104000_batched_case_reviews.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -77,7 +79,7 @@ try {
     return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify(output)}))
   }
   const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
-  const drain=async id=>{for(let n=0;n<21;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
+  const drain=async id=>{for(let n=0;n<33;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
   await assert.rejects(enqueue({acknowledged:false}),/authorization/)
   await assert.rejects(enqueue({output_language:null}),/authorization/)
@@ -126,8 +128,21 @@ try {
     {...acceptedResult.analysis.verification,review_response_ids:['a','b','c','c']},
     {...acceptedResult.analysis.verification,review_response_ids:['a','b','c','']},
     {...acceptedResult.analysis.verification,review_scopes:['analysis','calculations','roadmap']},
+    {...acceptedResult.analysis.verification,review_coverage:undefined},
+    {...acceptedResult.analysis.verification,review_coverage:[{scope:'analysis',topic_ids:['unreviewed-topic'],calculation_ids:[]},...acceptedResult.analysis.verification.review_coverage.slice(1)]},
     {...acceptedResult.analysis.verification,version:'unknown'},
   ])await assert.rejects(finish(claimed,{status:'completed',result:{...acceptedResult,analysis:{...acceptedResult.analysis,verification}},workflow_version:'test'}),/Invalid reviewed result/,'SQL rejects incomplete, duplicate or mislabeled review coverage')
+  const maximum=structuredClone(acceptedResult)
+  maximum.analysis.topics=Array.from({length:10},(_,i)=>({...acceptedResult.analysis.topics[0],id:'topic_'+i}))
+  maximum.analysis.calculations=Array.from({length:24},(_,i)=>({id:'calculation_'+i}))
+  const maximumCoverage=completeReviewCoverage(maximum)
+  maximum.analysis.verification={...maximum.analysis.verification,review_response_ids:maximumCoverage.map((_,i)=>'review_'+i),review_scopes:maximumCoverage.map(item=>item.scope),review_coverage:maximumCoverage}
+  assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[maximum]),true,'SQL independently agrees with all ten required batches at maximum supported size')
+  for(const broken of [
+    {...maximum.analysis.verification,review_response_ids:maximum.analysis.verification.review_response_ids.slice(1)},
+    {...maximum.analysis.verification,review_coverage:maximumCoverage.map((item,i)=>i===5?{...item,calculation_ids:item.calculation_ids.slice(1)}:item)},
+    {...maximum.analysis.verification,review_coverage:[maximumCoverage[1],maximumCoverage[0],...maximumCoverage.slice(2)]},
+  ])assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[{...maximum,analysis:{...maximum.analysis,verification:broken}}]),false,'missing or reordered topic/calculation coverage cannot be published')
   await cancel(job.id)
   const callsBeforeCancel=modelCalls
   assert.equal(await claim(job.id),null)
@@ -177,18 +192,18 @@ try {
   assert.equal(modelCalls-callsBeforeTimeout,8,'only the timed-out final review is repeated')
   assert.deepEqual(reviewedParts.slice(partsBeforeTimeout).map(({part})=>Object.hasOwn(part,'letters')), [false,false,false,true,true])
 
-  // Nineteen successful calls and the single transport retry fit the same
-  // twenty-claim cap. The final review is still required at the last boundary.
+  // The largest batch/correction path and one transport retry remain bounded.
+  // The final review is still required at the last allowed claim.
   job=await enqueue();claimed=await claim(job.id)
-  await db.query('update private.case_analysis_work set steps=17,attempts=19 where job_id=$1',[job.id])
+  await db.query('update private.case_analysis_work set steps=29,attempts=31 where job_id=$1',[job.id])
   assert.equal((await finish(claimed,{status:'processing',checkpoint:'synthetic-limit-check',stage:'review'})).status,'queued')
   claimed=await claim(job.id)
-  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),20)
+  assert.equal(await scalar('select attempts from private.case_analysis_work where job_id=$1',[job.id]),32)
   assert.equal((await finish(claimed,{status:'completed',result:acceptedResult,model:'test',source_documents:[],workflow_version:'test'})).status,'completed')
 
   job=await enqueue();claimed=await claim(job.id)
-  await db.query('update private.case_analysis_work set steps=18 where job_id=$1',[job.id])
-  assert.equal((await finish(claimed,{status:'processing',checkpoint:'over-limit',stage:'review'})).status,'failed','a twentieth successful stage is not allowed')
+  await db.query('update private.case_analysis_work set steps=30 where job_id=$1',[job.id])
+  assert.equal((await finish(claimed,{status:'processing',checkpoint:'over-limit',stage:'review'})).status,'failed','a thirty-second successful stage is not allowed')
 
   reviewIssues=part=>Object.hasOwn(part,'letters')?[{code:'meaning',location:'letters[0].body',reason:'Synthetic negative control: letter invents a payment suspension.'}]:[]
   job=await enqueue();const badLetter=await drain(job.id)

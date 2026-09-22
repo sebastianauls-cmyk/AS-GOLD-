@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {calculateExpression,quoteContainsNumber} from '../supabase/functions/_shared/checkedCalculations.mjs'
-import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope,completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult,roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/lib/completeAnalysisDisplay.mjs'
@@ -291,4 +291,51 @@ for(const repairOutcome of ['complete','partial','none']){
   assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,4)
   assert.equal(stages.length,8,'one source correction, one plan and all four reviews')
 }
-console.log('Complete analysis: exact arithmetic, source-bound inputs, incomplete coverage rejection, untranslated-source integrity, staged review, domestic research configuration and display/export parity passed (provider mocked).')
+// Maximum supported case: every topic and calculation is audited exactly once
+// per round. A timed-out middle batch resumes alone; a material finding still
+// triggers a full correction and a fresh complete set of final reviews.
+const big=structuredClone(candidate)
+big.analysis.topics=Array.from({length:10},(_,i)=>({...candidate.analysis.topics[0],id:'topic_'+i}))
+big.analysis.calculations=Array.from({length:24},(_,i)=>({...structuredClone(candidate.analysis.calculations[0]),id:'difference_'+i,topic_ids:['topic_'+(i%10)]}))
+const bigScope={issues:big.analysis.topics.map(({id,title})=>({id,title,reason:'Synthetic coverage boundary',calculation_needed:true})),research_topics:[]}
+const expectedCoverage=completeReviewCoverage(big),observedBatches=[]
+assert.equal(expectedCoverage.length,10)
+let bigCalls=0,bigRound=0,batchTimedOut=false
+const bigFetch=async(url,options)=>{
+  if(!options?.body)return new Response('',{status:404})
+  const request=JSON.parse(options.body),name=request.text.format.name
+  bigCalls++
+  let output
+  if(name==='ash_case_scope')output=bigScope
+  else if(name==='ash_complete_numbers_v157'){
+    bigRound++;output=big.analysis
+    if(bigRound===2)assert(JSON.parse(request.input.at(-1).content[0].text).correction.issues.some(issue=>issue.location==='analysis.calculations[difference_18]'))
+  }else if(name==='ash_complete_plan_v157'){
+    const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
+  }else{
+    assert.equal(request.reasoning.effort,'high')
+    assert(request.input[0].content.some(item=>item.text==='SYNTHETIC_COMPLETE_ORIGINALS'),'every batch retains the complete original evidence')
+    const payloads=request.input[0].content.flatMap(item=>{try{return [JSON.parse(item.text)]}catch{return []}})
+    const assignment=payloads.find(item=>item.assigned_review).assigned_review,part=payloads.find(item=>item.candidate).candidate
+    assert.deepEqual(payloads.find(item=>item.required_reviews).required_reviews,expectedCoverage)
+    assert((part.analysis?.topics?.length||0)<=3);assert((part.analysis?.calculations?.length||0)<=6)
+    observedBatches.push({round:bigRound,...assignment})
+    if(assignment.calculation_ids[0]==='difference_6'&&!batchTimedOut){batchTimedOut=true;throw new DOMException('Synthetic middle-batch timeout','TimeoutError')}
+    output={issues:bigRound===1&&assignment.calculation_ids.includes('difference_18')?[{code:'meaning',location:'analysis.calculations[difference_18]',reason:'Synthetic material defect in the last calculation batch.'}]:[]}
+  }
+  return new Response(JSON.stringify({status:'completed',id:`batch-round-${bigRound}-call-${bigCalls}`,model:request.model,output_text:JSON.stringify(output)}))
+}
+const bigArgs={...args,fetchImpl:bigFetch,baseReviewContent:[{type:'input_text',text:'SYNTHETIC_COMPLETE_ORIGINALS'}]}
+let bigFlow=await advanceCompleteAnalysis(bigArgs),transportFailures=0
+for(let i=0;bigFlow.status==='processing'&&i<32;i++){
+  try{bigFlow=await advanceCompleteAnalysis({...bigArgs,state:bigFlow.state})}
+  catch(error){assert.equal(error.code,'provider_timeout');assert.equal(++transportFailures,1)}
+}
+assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,26)
+assert.deepEqual(bigFlow.result.analysis.verification.review_coverage,expectedCoverage)
+assert.equal(bigFlow.result.analysis.verification.review_response_ids.length,10)
+assert(bigFlow.result.analysis.verification.review_response_ids.every(id=>id.startsWith('batch-round-2-')))
+assert.deepEqual(observedBatches.filter(item=>item.round===2).map(({round,...item})=>item),expectedCoverage,'all batches repeat after substantive correction')
+const firstRound=observedBatches.filter(item=>item.round===1).map(({round,...item})=>item)
+assert.deepEqual(firstRound,[...expectedCoverage.slice(0,6),expectedCoverage[5],...expectedCoverage.slice(6)],'only the interrupted middle batch is repeated')
+console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete batched reviews, single-batch transport resumption, full correction/review coverage and display/export parity passed (provider mocked).')
