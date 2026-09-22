@@ -9,7 +9,8 @@ import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/mod
 // and encrypted checkpoints. Only dispatch transport and model responses are fake.
 const db=await PGlite.create(),owner=roadmapTestCase.owner_id,caseId=roadmapTestCase.id,other='77777777-7777-4777-8777-777777777777'
 const secret='synthetic-background-job-secret-never-a-real-key'
-let documents=structuredClone(roadmapTestDocuments),modelCalls=0,reviewIssues=[]
+let documents=structuredClone(roadmapTestDocuments),modelCalls=0,reviewIssues=[],failLettersOnce=false
+const reviewedParts=[]
 const oldFetch=globalThis.fetch
 try {
   await db.exec(`create role anon;create role authenticated;create role service_role;
@@ -29,6 +30,7 @@ try {
     create function net.http_post(url text,body jsonb,params jsonb default '{}',headers jsonb default '{}',timeout_milliseconds integer default 2000) returns bigint language plpgsql as $$declare v_id bigint;begin insert into private.test_dispatch(body) values(body) returning id into v_id;return v_id;end$$;`)
   await db.exec(await readFile('supabase/migrations/20260918123931_v136_customer_roadmaps.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260921222858_durable_case_analysis_jobs.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260922091000_scoped_case_reviews.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -56,13 +58,25 @@ try {
   globalThis.fetch=async(url,options)=>{
     assert.equal(url,'https://api.openai.com/v1/responses');modelCalls++
     const request=JSON.parse(options.body),name=request.text.format.name
+    let issues=reviewIssues
+    if(name==='ash_evidence_review_v139'){
+      const payloads=request.input[0].content.map(item=>{try{return JSON.parse(item.text)}catch{return null}}).filter(Boolean)
+      const part=payloads.find(item=>item.candidate)?.candidate
+      reviewedParts.push({part,related:payloads.find(item=>item.related_output)?.related_output})
+      assert.equal(request.reasoning.effort,'high')
+      if(failLettersOnce&&Object.keys(part).length===1&&Object.hasOwn(part,'letters')){
+        failLettersOnce=false
+        throw new DOMException('Synthetic final-review transport timeout','TimeoutError')
+      }
+      if(typeof reviewIssues==='function')issues=reviewIssues(part)
+    }
     const analysis={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Anlage fehlt.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],calculations:[],limitations:[]}
     const output=name==='ash_case_scope'?{issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:false}],research_topics:[]}
-      :name==='ash_complete_numbers_v157'?analysis:name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:{issues:reviewIssues}
+      :name==='ash_complete_numbers_v157'?analysis:name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:{issues}
     return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify(output)}))
   }
   const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
-  const drain=async id=>{for(let n=0;n<16;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
+  const drain=async id=>{for(let n=0;n<18;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
   await assert.rejects(enqueue({acknowledged:false}),/authorization/)
   await assert.rejects(enqueue({output_language:null}),/authorization/)
@@ -80,10 +94,14 @@ try {
   assert.equal(await finish(beforeCrash,{status:'failed',message:'stale worker'}),null,'expired worker cannot overwrite resumed state')
   const complete=await drain(job.id)
   assert.equal(complete.status,'completed');assert.equal(complete.roadmap_id,job.id)
-  assert.equal(modelCalls,6,'page closure and worker restart do not repeat completed model stages')
+  assert.equal(modelCalls,7,'page closure and worker restart do not repeat completed model stages')
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),1)
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null,'terminal jobs erase private candidates')
-  assert.equal((await scalar('select result from case_roadmaps where id=$1',[job.id])).analysis.verification.review_response_ids.length,3)
+  assert.equal((await scalar('select result from case_roadmaps where id=$1',[job.id])).analysis.verification.review_response_ids.length,4)
+  const acceptedResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
+  assert.deepEqual(Object.keys(reviewedParts[2].part).sort(),Object.keys(roadmapTestResult).filter(key=>key!=='letters').sort(),'every non-letter roadmap field remains assigned to review')
+  assert.deepEqual(reviewedParts[3].part,{letters:roadmapTestResult.letters},'every letter and complete translation gets its own required review')
+  assert.deepEqual(reviewedParts[3].related.steps,roadmapTestResult.steps,'letter review can check full actions, deadlines and dependencies for consistency')
 
   // Actual RLS/execute privileges, not a string assertion or mocked access check.
   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[owner]);await db.exec('set role authenticated')
@@ -100,6 +118,13 @@ try {
 
   job=await enqueue();claimed=await claim(job.id)
   await assert.rejects(finish(claimed,{status:'completed',result:{},workflow_version:'test'}),/Invalid reviewed result/)
+  for(const verification of [
+    {...acceptedResult.analysis.verification,review_response_ids:['a','b','c']},
+    {...acceptedResult.analysis.verification,review_response_ids:['a','b','c','c']},
+    {...acceptedResult.analysis.verification,review_response_ids:['a','b','c','']},
+    {...acceptedResult.analysis.verification,review_scopes:['analysis','calculations','roadmap']},
+    {...acceptedResult.analysis.verification,version:'unknown'},
+  ])await assert.rejects(finish(claimed,{status:'completed',result:{...acceptedResult,analysis:{...acceptedResult.analysis,verification}},workflow_version:'test'}),/Invalid reviewed result/,'SQL rejects incomplete, duplicate or mislabeled review coverage')
   await cancel(job.id)
   const callsBeforeCancel=modelCalls
   assert.equal(await claim(job.id),null)
@@ -137,12 +162,38 @@ try {
   await db.query("update public.case_analysis_jobs set expires_at=now()-interval '1 second' where id=$1",[job.id])
   assert.equal((await finish(claimed,{status:'processing',checkpoint:'opaque',stage:'review'})).status,'failed','lease/continuation never renews original job lifetime')
 
+  // Reproduce the live interruption at the final scope, after all prior work
+  // was checkpointed. Resumption must invoke only that scope, not start over.
+  job=await enqueue();const callsBeforeTimeout=modelCalls,partsBeforeTimeout=reviewedParts.length
+  for(let n=0;n<6;n++)await process(await claim(job.id))
+  failLettersOnce=true;await process(await claim(job.id))
+  assert.equal((await stored(job.id)).status,'queued')
+  assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
+  await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[job.id])
+  assert.equal((await drain(job.id)).status,'completed')
+  assert.equal(modelCalls-callsBeforeTimeout,8,'only the timed-out final review is repeated')
+  assert.deepEqual(reviewedParts.slice(partsBeforeTimeout).map(({part})=>Object.hasOwn(part,'letters')), [false,false,false,true,true])
+
+  // The extra checkpoint fits the maximum 18-call path, including one full
+  // correction round. This does not grant more retries or extend the lifetime.
+  job=await enqueue();claimed=await claim(job.id)
+  await db.query('update private.case_analysis_work set steps=16 where job_id=$1',[job.id])
+  assert.equal((await finish(claimed,{status:'processing',checkpoint:'synthetic-limit-check',stage:'review'})).status,'queued')
+  claimed=await claim(job.id)
+  assert.equal((await finish(claimed,{status:'completed',result:acceptedResult,model:'test',source_documents:[],workflow_version:'test'})).status,'completed')
+
+  reviewIssues=part=>Object.hasOwn(part,'letters')?[{code:'meaning',location:'letters[0].body',reason:'Synthetic negative control: letter invents a payment suspension.'}]:[]
+  job=await enqueue();const badLetter=await drain(job.id)
+  assert.equal(badLetter.error_code,'review_unresolved')
+  assert.deepEqual(badLetter.issues.map(issue=>issue.location),['letters[0].body'])
+  assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0,'a defect in the new final scope still prevents result publication')
+
   reviewIssues=[{code:'meaning',location:'analysis',reason:'Synthetic negative control: unsupported conclusion.'}]
   job=await enqueue();const rejected=await drain(job.id)
   assert.equal(rejected.status,'failed');assert.equal(rejected.error_code,'review_unresolved')
   assert.ok(rejected.issues.some(issue=>issue.reason.includes('unsupported conclusion')))
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0,'content rejection never becomes a customer result')
-  assert.equal((await stored(job.id)).issues.length,3,'the three scoped findings survive page closure')
+  assert.equal((await stored(job.id)).issues.length,4,'the four scoped findings survive page closure')
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
 
   await db.query('update auth.users set banned_until=now()+interval \'1 day\' where id=$1',[owner]);await assert.rejects(enqueue(),/authorization/)
@@ -153,5 +204,5 @@ try {
   await assert.rejects(enqueue(),/daily limit/)
   await db.query('delete from cases where id=$1',[caseId])
   assert.equal(await scalar('select count(*)::integer from private.case_analysis_work'),0,'case deletion erases job payloads and checkpoints')
-  console.log('Durable analysis: real SQL ownership/privileges, one-use dispatch, page-independent completion, crash recovery, stale-lease rejection, cancellation, consent/access/source guards, bounded retries, all three reviews, persisted failures, quota and deletion passed. Model and network responses are simulated; no live Sarah acceptance claimed.')
+  console.log('Durable analysis: real SQL ownership/privileges, one-use dispatch, page-independent completion, crash recovery, stale-lease rejection, cancellation, consent/access/source guards, bounded retries, all four reviews, persisted failures, quota and deletion passed. Model and network responses are simulated; no live Sarah acceptance claimed.')
 }finally{globalThis.fetch=oldFetch;await db.close()}

@@ -121,9 +121,9 @@ const args={providerKey:'synthetic',source,style:{},outputLanguage:'de',referenc
 let flow=await advanceCompleteAnalysis(args);assert.equal(flow.state.stage,'analysis');assert(!flow.result)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
-for(let part=0;part<2;part++){flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result)}
+for(let part=0;part<3;part++){flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result,'letters still require their separate review before acceptance')}
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
-assert.equal(calls,6,'no external research is claimed for an arithmetic-only case')
+assert.equal(calls,7,'no external research is claimed for an arithmetic-only case')
 const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}
 const official='https://www.gesetze-im-internet.de/estg/__34.html'
 const batchFetch=async(url,options)=>{
@@ -151,7 +151,7 @@ assert(completeAnalysisBlocks(large,'de').some(block=>block.text.includes('9.999
 for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])for(const value of Object.values(completeAnalysisCopy(lang)))assert(value.trim())
 
 // Wrong source numbers are repaired before generating a plan. This remains
-// bounded by the existing two attempts and never skips the three reviews.
+// bounded by the existing two attempts and never skips the four reviews.
 for(const repairOutcome of ['complete','partial','none']){
   const stages=[]
   let analysisCalls=0
@@ -191,7 +191,7 @@ for(const repairOutcome of ['complete','partial','none']){
   }
   while(repairFlow.status==='processing')repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
   assert.equal(repairFlow.result.analysis.calculations[0].result,'1000.00')
-  assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,3)
-  assert.equal(stages.length,7,'one source correction, one plan and all three reviews')
+  assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,4)
+  assert.equal(stages.length,8,'one source correction, one plan and all four reviews')
 }
 console.log('Complete analysis: exact arithmetic, source-bound inputs, incomplete coverage rejection, untranslated-source integrity, staged review, domestic research configuration and display/export parity passed (provider mocked).')
