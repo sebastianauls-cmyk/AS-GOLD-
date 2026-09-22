@@ -33,7 +33,14 @@ export function calculateExpression(expression,variables={},places=2){
       if(!['0','1'].includes(token))fail('Zahl '+token+' als belegten Eingabewert angeben.')
       result=decimal(token)
     }else if(['min','max','round','floor','percent'].includes(token)&&peek()==='('){
-      take();const args=[sum()];while(peek()===','){take();args.push(sum())}if(take()!==')')fail('Klammer fehlt.')
+      take();const args=[sum()]
+      while(peek()===','){
+        take()
+        // A lone round precision is an operator setting, not a sourced amount.
+        // rounded() still restricts it to an integer between zero and eight.
+        args.push(token==='round'&&args.length===1&&/^\d/.test(peek()||'')&&tokens[at+1]===')'?decimal(take()):sum())
+      }
+      if(take()!==')')fail('Klammer fehlt.')
       if(['min','max'].includes(token)&&args.length>=2&&args.length<=8)result=args.reduce((a,b)=>(compare(a,b)<0n)===(token==='min')?a:b)
       else if(token==='floor'&&args.length===1){const a=args[0];result=rational(a.n/a.d-(a.n<0n&&a.n%a.d?1n:0n))}
       else if(token==='percent'&&args.length===1)result=rational(args[0].n,args[0].d*100n)
@@ -43,7 +50,20 @@ export function calculateExpression(expression,variables={},places=2){
     else fail('Unbekannter Rechenwert: '+token)
     depth--;return result
   }
-  function power(){let a=atom();if(peek()==='^'){take();const b=atom();if(b.d!==1n||b.n<0n||b.n>4n)fail('Ungültige Potenz.');a=rational(a.n**b.n,a.d**b.n)}return a}
+  function power(){
+    let a=atom()
+    if(peek()==='^'){
+      take();let b
+      // ^2 is exactly the already-permitted x*x operation. Higher exponents
+      // (potential periods) and every ordinary numeric input remain sourced.
+      if(peek()==='2')b=decimal(take())
+      else if(peek()==='('&&tokens[at+1]==='2'&&tokens[at+2]===')'){at+=3;b=decimal('2')}
+      else b=atom()
+      if(b.d!==1n||b.n<0n||b.n>4n)fail('Ungültige Potenz.')
+      a=rational(a.n**b.n,a.d**b.n)
+    }
+    return a
+  }
   function product(){let a=power();while(['*','/'].includes(peek())){const op=take(),b=power();a=op==='*'?rational(a.n*b.n,a.d*b.d):rational(a.n*b.d,a.d*b.n)}return a}
   function sum(){let a=product();while(['+','-'].includes(peek())){const op=take(),b=product();a=rational(a.n*b.d+(op==='+'?1n:-1n)*b.n*a.d,a.d*b.d)}return a}
   const result=sum();if(at!==tokens.length)fail('Unvollständiger Rechenweg.')

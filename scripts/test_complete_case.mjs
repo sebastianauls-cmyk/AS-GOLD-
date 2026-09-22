@@ -70,6 +70,14 @@ assert.equal(calculateExpression('a',{a:'1.005'}),'1.01')
 assert.equal(calculateExpression('-a',{a:'1.005'}),'-1.01')
 assert.equal(calculateExpression('floor(a/b)',{a:'-11',b:'3'},0),'-4')
 assert.equal(calculateExpression('a^b',{a:'1.2',b:'2'}),'1.44')
+assert.equal(calculateExpression('round(a,2)',{a:'1.005'}),'1.01','rounding precision is syntax, not a case amount')
+assert.equal(calculateExpression('round(-a,2)',{a:'1.005'}),'-1.01')
+assert.equal(calculateExpression('round(a,8)',{a:'1.12345678'},8),'1.12345678')
+assert.equal(calculateExpression('a^2',{a:'1.2'}),calculateExpression('a*a',{a:'1.2'}),'squaring is identical to multiplying the same verified input twice')
+assert.equal(calculateExpression('a^(2)',{a:'1.2'}),'1.44')
+assert.equal(calculateExpression('round(a^2,2)+round(b,2)',{a:'1.2',b:'0.005'}),'1.45')
+for(const expression of ['round(a,9)','round(a,-1)','round(a,1.5)'])assert.throws(()=>calculateExpression(expression,{a:'1.2'}),/Rundung|Rechenfunktion/)
+for(const expression of ['a+2','a/2','2*a','round(2,2)','round(a/2,2)','round(a,2+1)','a^3','a^(2+1)','a^2/100'])assert.throws(()=>calculateExpression(expression,{a:'1.2'}),/belegten/,'structural syntax must not allow unverified amounts, divisors or periods')
 assert.equal(calculateExpression('max(a-b,0)',{a:'10.25',b:'12'}),'0.00')
 assert.throws(()=>calculateExpression('globalThis.fetch(a)',{a:'1'}),/erlaubt/)
 assert.throws(()=>calculateExpression('a/0',{a:'1'}),/null/)
@@ -134,6 +142,21 @@ assert.throws(()=>validateCompleteAnalysis(overBudget,source,options),error=>err
 const overInputs=structuredClone(candidate)
 overInputs.analysis.calculations[0].inputs=Array.from({length:25},(_,i)=>({...value('value_'+i,'18000')}))
 assert.throws(()=>validateCompleteAnalysis(overInputs,source,options),error=>error.analysisIssues?.[0]?.location==='analysis.calculations[0].inputs'&&error.analysisIssues[0].reason.includes('25'),'input overflow identifies the calculation and actual count')
+const roundedCase=structuredClone(candidate)
+roundedCase.analysis.calculations[0].expression='round(gross-net,2)'
+assert.equal(validateCompleteAnalysis(roundedCase,source,options).analysis.calculations[0].result,'1000.00','rounding syntax still runs through original-input validation')
+roundedCase.analysis.calculations[0].expression='(gross-net)^2'
+assert.equal(validateCompleteAnalysis(roundedCase,source,options).analysis.calculations[0].result,'1000000.00')
+const invalidFormulas=structuredClone(candidate)
+invalidFormulas.analysis.calculations[0].expression='gross/2'
+invalidFormulas.analysis.calculations.push({...structuredClone(candidate.analysis.calculations[0]),id:'other_formula',expression:'net/3'})
+invalidFormulas.analysis.calculations.push({...structuredClone(candidate.analysis.calculations[0]),id:'dependent',inputs:[{name:'prior',label:'Ungültiger Vorwert',kind:'calculation',calculation_id:'difference',value:'9000'}],expression:'prior'})
+assert.throws(()=>validateCompleteAnalysis(invalidFormulas,source,options),error=>{
+  assert.deepEqual(error.analysisIssues.map(issue=>issue.location),['analysis.calculations[0].expression','analysis.calculations[1].expression','analysis.calculations[2].inputs[0].value'])
+  assert(error.analysisIssues[0].reason.includes('gross/2'));assert(error.analysisIssues[1].reason.includes('net/3'))
+  assert(error.analysisIssues[2].reason.includes('vorherigen gültigen Berechnung'))
+  return true
+},'repair receives all independent formula errors and no dependent value can consume a rejected calculation')
 const twoChildrenQuote='Die Summe wird zu gleichen Teilen auf die beiden Kinder verteilt.'
 const twoChildrenSource={...source,documents:source.documents.map((doc,index)=>index?doc:{...doc,extracted_text:doc.extracted_text+' '+twoChildrenQuote})}
 const divided=structuredClone(candidate)
