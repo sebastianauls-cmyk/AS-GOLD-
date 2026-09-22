@@ -4,9 +4,13 @@ function passages(value,prefix,origin){
   const normalized=String(value||'').replace(/\s+/gu,' ').trim()
   const chunks=[];let rest=normalized
   while(rest){
-    let end=rest.length<=260?rest.length:rest.lastIndexOf(' ',260)
+    // Prefer a complete sentence, so a factor and its following duration or
+    // qualification are not separated merely by the old character boundary.
+    // Long sentences still have a bounded word-safe fallback.
+    const boundaries=[...rest.slice(0,602).matchAll(/[.!?](?=\s+(?:\p{Lu}|§)|$)/gu)].map(match=>match.index+1).filter(index=>index<=600)
+    let end=rest.length<=600?rest.length:boundaries.find(index=>index>=260)||boundaries.at(-1)||rest.lastIndexOf(' ',600)
     // Long unbroken strings must not disappear from the model's originals.
-    if(end<1)end=rest.indexOf(' ',260)
+    if(end<1)end=rest.indexOf(' ',600)
     if(end<1)end=rest.length
     chunks.push(rest.slice(0,end));rest=rest.slice(end).trimStart()
   }
