@@ -150,6 +150,30 @@ const fetchImpl=async(url,options)=>{
   return new Response(JSON.stringify({status:'completed',id:'mock-'+calls,model:'mock-model',output_text:JSON.stringify(output)}))
 }
 const args={providerKey:'synthetic',source,style:{},outputLanguage:'de',referenceLanguage:'de',baseRequest:{model:'mock-model',instructions:'No external research has been performed in this workflow. Do not invent.\nUse original quotes.',input:[]},baseReviewContent:[],fetchImpl}
+// Scope bounds must be sent to structured generation, not only checked after
+// spending a live planning call. Invalid provider output still fails closed.
+for(const [invalid,locations] of [
+  [{...scope,issues:[]},['scope.issues']],
+  [{...scope,issues:Array.from({length:11},(_,i)=>({...scope.issues[0],id:'item_'+i}))},['scope.issues']],
+  [{...scope,issues:[scope.issues[0],scope.issues[0]]},['scope.issues[1].id']],
+  [{...scope,issues:[{...scope.issues[0],id:'ä'.repeat(51)}]},['scope.issues[0].id']],
+  [{...scope,research_topics:Array.from({length:9},()=> 'Abstract topic')},['scope.research_topics']],
+  [{...scope,research_topics:['private@example.test','https://example.test','x'.repeat(1201)]},['scope.research_topics[0]','scope.research_topics[1]','scope.research_topics[2]']],
+]){
+  let invoked=0
+  const invalidPlanner=async(url,options)=>{
+    invoked++
+    const request=JSON.parse(options.body),schema=request.text.format.schema
+    assert.equal(schema.properties.issues.minItems,1)
+    assert.equal(schema.properties.issues.maxItems,10)
+    assert.equal(schema.properties.research_topics.maxItems,8)
+    assert(!new RegExp(schema.properties.issues.items.properties.id.pattern).test('ä'))
+    assert(!new RegExp(schema.properties.research_topics.items.pattern).test('private@example.test'))
+    return new Response(JSON.stringify({status:'completed',id:'invalid-planning',model:request.model,output_text:JSON.stringify(invalid)}))
+  }
+  await assert.rejects(advanceCompleteAnalysis({...args,fetchImpl:invalidPlanner}),error=>error.code==='scope_invalid'&&JSON.stringify(error.issues.map(issue=>issue.location))===JSON.stringify(locations))
+  assert.equal(invoked,1,'invalid planning must not reach public research')
+}
 let flow=await advanceCompleteAnalysis(args);assert.equal(flow.state.stage,'analysis');assert(!flow.result)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
