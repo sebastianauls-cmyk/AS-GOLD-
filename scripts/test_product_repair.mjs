@@ -86,12 +86,12 @@ for(const [name,code] of [['TimeoutError','provider_timeout'],['TypeError','prov
 // Unreadable provider envelopes are transport/protocol failures, distinct
 // from malformed generated content or a refusal inside a valid response.
 for(const body of ['PRIVATE BROKEN ENVELOPE','null','42','[]']){
-  await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,fetchImpl:async()=>new Response(body,{status:200})}),error=>error.code==='provider_response_format'&&!JSON.stringify(error).includes('PRIVATE BROKEN ENVELOPE'))
+  await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,fetchImpl:async()=>new Response(body,{status:200})}),error=>error.code==='provider_invalid_json'&&error.provider_response_phase==='envelope'&&!JSON.stringify(error).includes('PRIVATE BROKEN ENVELOPE'))
 }
 for(const response of [
   {id:'invalid-output',status:'completed',output_text:'PRIVATE MALFORMED OUTPUT'},
   {id:'refusal',status:'completed',output:[{type:'message',content:[{type:'refusal',refusal:'PRIVATE REFUSAL'}]}]},
-])await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,fetchImpl:async()=>Response.json(response)}),error=>error.code==='provider_invalid_json','model-output errors and refusals must not become retryable protocol errors')
+])await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,fetchImpl:async()=>Response.json(response)}),error=>error.code==='provider_invalid_json'&&error.provider_response_phase===undefined,'model-output errors and refusals must not become retryable protocol errors')
 await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,budgetMs:0,fetchImpl:async()=>{throw Error('must not call')}}),/zu lange/)
 
 let calls=0

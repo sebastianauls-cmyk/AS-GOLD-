@@ -81,6 +81,9 @@ function providerText(response) {
 // its raw message, request body or arbitrary error fields in job diagnostics.
 const providerCodes=new Set(['insufficient_quota','credit_balance_exhausted','organization_spend_limit_exceeded','project_spend_limit_exceeded','organization_usage_limit_exceeded','rate_limit_exceeded','slow_down','server_error','server_is_overloaded','invalid_request_error','invalid_value','unsupported_value','invalid_type','invalid_json_schema','context_length_exceeded','model_not_found','invalid_api_key','permission_denied'])
 const quotaCodes=new Set(['insufficient_quota','credit_balance_exhausted','organization_spend_limit_exceeded','project_spend_limit_exceeded','organization_usage_limit_exceeded'])
+// Retain the established error code for direct document consumers; only the
+// background worker interprets this server-owned phase as a recoverable envelope.
+const providerEnvelopeError=()=>Object.assign(new ModelWorkflowError('Die KI-Antwort hatte kein auswertbares Format.',502,'provider_invalid_json'),{provider_response_phase:'envelope'})
 export async function callModel(providerKey,request,{deadline,fetchImpl,onResponse,stage,attempt,callTimeoutMs=90000}) {
   const remaining=deadline-Date.now()
   if(remaining<1000) throw new ModelWorkflowError('Die Prüfung hat zu lange gedauert. Es wurde kein ungeprüftes Ergebnis gespeichert.',502,'provider_timeout')
@@ -110,9 +113,9 @@ export async function callModel(providerKey,request,{deadline,fetchImpl,onRespon
   try {response=await http.json()}
   catch(error){
     const timedOut=signal.aborted||['TimeoutError','AbortError'].includes(error?.name)
-    throw new ModelWorkflowError(timedOut?'Die aktuelle Prüfung hat ihr Zeitlimit erreicht.':'Die KI-Antwort hatte kein auswertbares Format.',502,timedOut?'provider_timeout':'provider_response_format')
+    throw timedOut?new ModelWorkflowError('Die aktuelle Prüfung hat ihr Zeitlimit erreicht.',502,'provider_timeout'):providerEnvelopeError()
   }
-  if(!response||typeof response!=='object'||Array.isArray(response))throw new ModelWorkflowError('Die KI-Antwort hatte kein auswertbares Format.',502,'provider_response_format')
+  if(!response||typeof response!=='object'||Array.isArray(response))throw providerEnvelopeError()
   if(onResponse) onResponse({stage,attempt,reasoning_effort:request.reasoning?.effort,response_id:response.id,model:response.model,status:response.status,usage:response.usage,output:providerText(response)??null})
   if(response.status!=='completed') throw new ModelWorkflowError('Die KI-Ausgabe war unvollständig. Es wurde kein ungeprüftes Ergebnis gespeichert.',502,response.incomplete_details?.reason==='max_output_tokens'?'provider_token_limit':'provider_incomplete')
   let parsed

@@ -36,7 +36,8 @@ export async function processCaseAnalysisJob({client,job,secret,providerKey,adva
       log(saved.status==='completed'?'reviewed_result_saved':'job_stopped')
     } else throw new ModelWorkflowError('Die Verarbeitung hat keinen gültigen Zwischenstand geliefert.',502,'workflow_invalid')
   } catch(error) {
-    const code=error instanceof ModelWorkflowError?error.code:'worker_failed'
+    let code=error instanceof ModelWorkflowError?error.code:'worker_failed'
+    if(code==='provider_invalid_json'&&error.provider_response_phase==='envelope')code='provider_response_format'
     log('step_failed',{code})
     // SQL allows one transport/protocol retry per interrupted step, at most
     // three per fixed-lifetime job. Unreadable provider envelopes share that
