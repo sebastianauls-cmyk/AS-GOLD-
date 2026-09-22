@@ -97,7 +97,12 @@ export function readableSourceText(body,type) {
     source=/<main\b[^>]*>([\s\S]*?)<\/main\s*>/iu.exec(source)?.[1]||source
     const contentStart=/<(?:div|section)\b[^>]*\bid=["'](?:content|main-content|mainContent)["'][^>]*>/iu.exec(source)
     if(contentStart)source=source.slice(contentStart.index)
-    source=source.replace(/<(nav|header|footer)\b[^>]*>[\s\S]*?<\/\1\s*>/giu,' ').replace(/<[^>]+>/gu,' ')
+    source=source.replace(/<(nav|header|footer)\b[^>]*>[\s\S]*?<\/\1\s*>/giu,' ')
+    // Keep source-defined cell/row boundaries. Plain spaces can otherwise
+    // turn adjacent cells such as 960 and 288 into the false amount 960288.
+    // Within-cell spaces still carry ordinary thousands grouping. Opening
+    // cells also preserve empty cells and HTML with optional closing tags.
+    source=source.replace(/<tr\b[^>]*>/giu,' ; ').replace(/<t[dh]\b[^>]*>/giu,' | ').replace(/<\/table\s*>/giu,' ; ').replace(/<[^>]+>/gu,' ')
   }
   return source.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/giu,(whole,entity)=>{
     if(entity[0]!=='#') return entities[entity]??whole
