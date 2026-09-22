@@ -5,7 +5,7 @@ import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult,roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/lib/completeAnalysisDisplay.mjs'
 import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport.mjs'
-import {quotationIndex,resolveQuotationIds} from '../supabase/functions/_shared/quotationIndex.mjs'
+import {quotationIndex,resolveQuotationIds,indexedQuotationSchema} from '../supabase/functions/_shared/quotationIndex.mjs'
 import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
 
 const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
@@ -14,6 +14,29 @@ assert.equal([...quoteMap.values()].map(item=>item.quote).join(' '),original,'in
 assert.equal(resolveQuotationIds({document_id:'original',quote:'@d0_0'},quoteMap).quote,[...quoteMap.values()][0].quote)
 assert.throws(()=>resolveQuotationIds({document_id:'different',quote:'@d0_0'},quoteMap),/anderen Quelle/)
 assert.throws(()=>resolveQuotationIds({document_id:'original',quote:'@d0_99'},quoteMap),/Unbekannter/)
+assert.equal(resolveQuotationIds({kind:'document',quote:'@d0_0'},quoteMap).document_id,'original','a selected indexed passage supplies its canonical document origin')
+const origins=quotationIndex({documents:[{id:'case-document',extracted_text:'Document amount 100 EUR. Payment remains due.'}]},[{url:'https://authority.example/rule',source_text:'Official rule: payment remains due after an objection.'}])
+assert.deepEqual(resolveQuotationIds({analysis:{topics:[{sources:[{quote:'@s0_0'}]}]}},origins).analysis.topics[0].sources[0],{url:'https://authority.example/rule',quote:'Official rule: payment remains due after an objection.'})
+for(const wrong of [
+  {kind:'source',quote:'@d0_0'},
+  {kind:'document',quote:'@s0_0'},
+  {facts:[{evidence:[{quote:'@s0_0'}]}]},
+  {analysis:{topics:[{sources:[{quote:'@d0_0'}]}]}},
+  {steps:[{deadline:{quote:'@s0_0',date:'2026-10-15'}}]},
+])assert.throws(()=>resolveQuotationIds(wrong,origins),/Falsche Belegart/,'research cannot be relabeled as original customer evidence or vice versa')
+assert.throws(()=>resolveQuotationIds({topics:[{sources:[{url:'https://authority.example/other',quote:'@s0_0'},{quote:'@s99_0'}]}],calculations:[{inputs:[{quote:'@d99_0'}]}]},origins,{pathPrefix:'analysis'}),error=>{
+  assert.deepEqual(error.analysisIssues.map(issue=>issue.location),['analysis.topics[0].sources[0].quote','analysis.topics[0].sources[1].quote','analysis.calculations[0].inputs[0].quote'])
+  assert(error.analysisIssues[0].reason.includes('https://authority.example/other'))
+  assert(error.analysisIssues[0].reason.includes('https://authority.example/rule'))
+  return true
+},'all invalid IDs and conflicting explicit origins reach correction with exact paths; no silent rebinding')
+const literalSchema={type:'object',properties:{document_id:{type:'string'},quote:{type:'string'}},required:['document_id','quote'],additionalProperties:false}
+const indexedSchema=indexedQuotationSchema(literalSchema)
+assert.deepEqual(indexedSchema.required,['quote']);assert.equal(indexedSchema.properties.document_id,undefined)
+assert(new RegExp(indexedSchema.properties.quote.pattern).test('@d0_1'))
+assert(!new RegExp(indexedSchema.properties.quote.pattern).test('@s0_1'))
+assert(!new RegExp(indexedSchema.properties.quote.pattern).test('Rewritten quotation'))
+assert(literalSchema.properties.document_id,'schema conversion must not mutate legacy contracts')
 
 const cachedText='An original public statutory text containing conditions and limitations, retrieved from its official publisher. Amount: 1250 EUR.'
 const digest=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(cachedText))),b=>b.toString(16).padStart(2,'0')).join('')
@@ -112,9 +135,18 @@ const fetchImpl=async(url,options)=>{
   const name=request.text.format.name
   assert.equal(request.model,'gpt-5.6-sol','complete planning, generation and independent review use the higher-capability model')
   if(name==='ash_evidence_review_v139')assert.equal(request.reasoning.effort,'high','the complete assembled result retains the full independent review')
-  if(name.startsWith('ash_complete_'))assert(!request.instructions.includes('No external research has been performed in this workflow.'))
+  if(name.startsWith('ash_complete_')){
+    assert(!request.instructions.includes('No external research has been performed in this workflow.'))
+    const inspect=schema=>{if(!schema||typeof schema!=='object')return;if(schema.properties?.quote){assert.equal(schema.properties.document_id,undefined);assert.equal(schema.properties.url,undefined);assert(schema.properties.quote.pattern)};Object.values(schema).forEach(inspect)}
+    inspect(request.text.format.schema)
+  }
   const {analysis,...plan}=candidate
-  const output=name==='ash_case_scope'?scope:name==='ash_complete_numbers_v157'?analysis:name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
+  const output=name==='ash_case_scope'?scope:name==='ash_complete_numbers_v157'?structuredClone(analysis):name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
+  if(name==='ash_complete_numbers_v157')for(const calculation of output.calculations)for(const input of calculation.inputs){
+    const passage=[...quotationIndex(source,[]).values()].find(entry=>entry.document_id===input.document_id&&entry.quote.includes(input.quote))
+    assert(passage,'integration fixture must select a real containing passage')
+    delete input.document_id;delete input.url;input.quote=passage.id
+  }
   return new Response(JSON.stringify({status:'completed',id:'mock-'+calls,model:'mock-model',output_text:JSON.stringify(output)}))
 }
 const args={providerKey:'synthetic',source,style:{},outputLanguage:'de',referenceLanguage:'de',baseRequest:{model:'mock-model',instructions:'No external research has been performed in this workflow. Do not invent.\nUse original quotes.',input:[]},baseReviewContent:[],fetchImpl}
