@@ -81,6 +81,14 @@ assert(!quoteContainsNumber('Betrag 123,45 EUR','23.45'))
 // must remain readable without accepting a suffix or merging unrelated values.
 const numericalEvidenceCases=[
   ['ein Einhundertzwanzigstel der Leistung', '120', true],
+  ['Die Größe „y“ ist ein Zehntausendstel des übersteigenden Teils.', '10000', true],
+  ['der Wert eines Zehntausendstels', '10000', true],
+  ['ein Tausendstel der Summe', '1000', true],
+  ['ein Hundertstel der Summe', '100', true],
+  ['Die Größe „y“ ist ein Zehntausendstel des übersteigenden Teils.', '1000', false],
+  ['Die Größe „y“ ist ein Zehntausendstel des übersteigenden Teils.', '0.0001', false],
+  ['eintausendzweihundert Euro', '1000', false],
+  ['Die Zehntausendstelle ist belegt.', '10000', false],
   ['Die Summe wird zu gleichen Teilen auf die beiden Kinder verteilt.', '2', true],
   ['Both beneficiaries receive the same share.', '2', true],
   ['Beiderseitige Ansprüche sind noch offen.', '2', false],
@@ -126,7 +134,14 @@ assert.equal(validateCompleteAnalysis(divided,twoChildrenSource,options).analysi
 const legalEvidence=[
   {url:'https://www.gesetze-im-internet.de/sgb_5/__229.html',source_text:'gilt ein Einhundertzwanzigstel der Leistung als monatlicher Zahlbetrag der Versorgungsbezüge, längstens jedoch für einhundertzwanzig Monate.'},
   {url:'https://www.gesetze-im-internet.de/estg/__22.html',source_text:'2025 83,5 2052 97,0 2026 84,0 2053 97,5 2027 84,5 2054 98,0'},
+  {url:'https://www.gesetze-im-internet.de/estg/__32a.html',source_text:'Die Größe „y“ ist ein Zehntausendstel des den Grundfreibetrag übersteigenden Teils.'},
 ]
+const scaled=structuredClone(candidate)
+scaled.analysis.calculations[0].inputs=[value('gross','18000'),{name:'divisor',label:'Rechenteiler',value:'10000',kind:'source',url:legalEvidence[2].url,quote:legalEvidence[2].source_text}]
+scaled.analysis.calculations[0].expression='gross/divisor'
+assert.equal(validateCompleteAnalysis(scaled,source,{...options,research:legalEvidence}).analysis.calculations[0].result,'1.80','a written statutory denominator passes the real provenance and arithmetic gate')
+scaled.analysis.calculations[0].inputs[1].value='1000'
+assert.throws(()=>validateCompleteAnalysis(scaled,source,{...options,research:legalEvidence}),/steht nicht/,'a different denominator remains rejected')
 const sourced=structuredClone(candidate)
 sourced.analysis.calculations[0].inputs=[{name:'months',label:'Monate',value:'120',kind:'source',...{url:legalEvidence[0].url,quote:legalEvidence[0].source_text}},{name:'percent',label:'Prozent',value:'84.0',kind:'source',...{url:legalEvidence[1].url,quote:legalEvidence[1].source_text}}]
 sourced.analysis.calculations[0].expression='months+percent'
