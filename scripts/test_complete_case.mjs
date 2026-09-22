@@ -6,7 +6,7 @@ import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult,roadmapTestRecord
 import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/lib/completeAnalysisDisplay.mjs'
 import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport.mjs'
 import {quotationIndex,resolveQuotationIds,indexedQuotationSchema} from '../supabase/functions/_shared/quotationIndex.mjs'
-import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
+import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence,supportingPrimaryEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
 
 const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
 const quoteMap=quotationIndex({documents:[{id:'original',extracted_text:original}]},[])
@@ -57,6 +57,21 @@ assert.equal((await retrieveOfficialEvidence([snapshot],['authority.example'],{f
 const stale={...snapshot,checked_at:new Date(Date.now()-3*86400000).toISOString()}
 assert.equal(primarySourceCatalogue(['authority.example'],Date.now(),[stale]).length,0)
 assert.equal((await retrieveOfficialEvidence([snapshot],['authority.example'],{fetchImpl:cacheFetch(stale),snapshotRecords:[stale]})).size,0,'failed refresh cannot silently renew old legal text')
+
+// The base contribution statute delegates its current rate to a separate act.
+// A same-act-only fallback omitted that operative text even when freshly fetched.
+const statuteUrl='https://www.gesetze-im-internet.de/sgb_11/__55.html'
+const adjustedRateUrl='https://www.gesetze-im-internet.de/pbav_2025/__1.html'
+const effectiveDateUrl='https://www.gesetze-im-internet.de/pbav_2025/__2.html'
+const rateSources=[statuteUrl,adjustedRateUrl,effectiveDateUrl].map(url=>({...snapshot,url}))
+assert.deepEqual((await supportingPrimaryEvidence([statuteUrl],['gesetze-im-internet.de'],rateSources)).map(item=>item.url),[statuteUrl,adjustedRateUrl,effectiveDateUrl],'the current rate and commencement provision accompany the selected base statute')
+assert.deepEqual((await supportingPrimaryEvidence(['https://www.gesetze-im-internet.de/sgb_11/__57.html'],['gesetze-im-internet.de'],rateSources)).map(item=>item.url),[statuteUrl,adjustedRateUrl,effectiveDateUrl],'the dependency is retained when the base rate enters via another provision of the same act')
+assert.equal((await supportingPrimaryEvidence(['https://www.gesetze-im-internet.de/bgb/__1642.html'],['gesetze-im-internet.de'],rateSources)).length,0,'unrelated cases are not given the rate adjustment as applicable law')
+assert.equal((await supportingPrimaryEvidence([statuteUrl],['authority.example'],rateSources)).length,0,'cross-act support does not bypass the country allowlist')
+for(const rejected of [{...rateSources[1],checked_at:stale.checked_at},{...rateSources[1],content_sha256:'a'.repeat(64)}]){
+  const valid=await supportingPrimaryEvidence([statuteUrl],['gesetze-im-internet.de'],[rateSources[0],rejected])
+  assert.deepEqual(valid.map(item=>item.url),[statuteUrl],'stale or altered adjustments remain unavailable, not invented or renewed')
+}
 
 assert.equal(calculateExpression('a+b',{a:'0.1',b:'0.2'}),'0.30')
 assert.equal(calculateExpression('amount*percent(rate)',{amount:'2520',rate:'84.0'}),'2116.80','a quoted percentage is converted explicitly without changing the source value')
@@ -214,6 +229,7 @@ const fetchImpl=async(url,options)=>{
   assert.equal(request.model,'gpt-5.6-sol','complete planning, generation and independent review use the higher-capability model')
   if(name==='ash_evidence_review_v139')assert.equal(request.reasoning.effort,'high','the complete assembled result retains the full independent review')
   if(name.startsWith('ash_complete_')){
+    assert.equal(request.reasoning.effort,'medium','separate bounded analysis and plan calls get substantive reasoning; review remains independent and high')
     assert(!request.instructions.includes('No external research has been performed in this workflow.'))
     const inspect=schema=>{if(!schema||typeof schema!=='object')return;if(schema.properties?.quote){assert.equal(schema.properties.document_id,undefined);assert.equal(schema.properties.url,undefined);assert(schema.properties.quote.pattern)};Object.values(schema).forEach(inspect)}
     inspect(request.text.format.schema)

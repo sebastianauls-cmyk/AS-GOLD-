@@ -73,12 +73,16 @@ async function cachedSource(url,domains,maxChars,records){
   return {...item,source_text,truncated:source_text.length<item.source_text.length,content_sha256:await hash(source_text)}
 }
 
-// A selected provision often needs its statute's tariff, eligibility or procedure
-// to be useful. Supply the small independently refreshed set from that SAME act,
-// never facts or a reference answer from the customer's case.
+// A selected provision often needs its tariff, eligibility or procedure. Some
+// operative rules are in a separate implementing act: § 55 SGB XI alone still
+// prints 3.4%, while PBAV 2025 § 1 sets the rate from 2025. Supply that fetched
+// text and its commencement clause, not a hard-coded rate or case conclusion.
+// Freshness, content hashes and the country allowlist apply to every dependency.
+const SUPPORTING_ACTS={sgb_11:['pbav_2025']}
 export async function supportingPrimaryEvidence(selectedUrls,domains,records){
   const act=url=>{try{const parsed=new URL(url);return parsed.hostname==='www.gesetze-im-internet.de'?/^\/([a-z0-9_]+)\/__[a-z0-9]+\.html$/.exec(parsed.pathname)?.[1]:null}catch{return null}}
   const acts=new Set(selectedUrls.map(act).filter(Boolean))
+  for(const selected of [...acts])for(const related of SUPPORTING_ACTS[selected]||[])acts.add(related)
   const relevant=primarySourceCatalogue(domains,Date.now(),records).filter(item=>acts.has(act(item.url)))
   return (await Promise.all(relevant.map(item=>cachedSource(item.url,domains,22000,records)))).filter(Boolean)
 }
