@@ -83,6 +83,15 @@ const invalid=structuredClone(roadmapTestResult);invalid.facts[0].evidence[0].qu
 mock=provider([invalid,defect,roadmapTestResult,{issues:[]}]);state=null
 for(let step=0;step<4;step++){const result=await advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,state,fetchImpl:mock.fetchImpl});state=result.state;if(step===1){assert.equal(state.feedback.length,2,'collect both structural and semantic defects before the single correction');assert.equal(result.result,undefined)}if(step===3)assert.equal(result.status,'completed')}
 for(const [name,code] of [['TimeoutError','provider_timeout'],['TypeError','provider_network']])await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,fetchImpl:async()=>{const error=new Error();error.name=name;throw error}}),error=>error.code===code)
+// Unreadable provider envelopes are transport/protocol failures, distinct
+// from malformed generated content or a refusal inside a valid response.
+for(const body of ['PRIVATE BROKEN ENVELOPE','null','42','[]']){
+  await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,fetchImpl:async()=>new Response(body,{status:200})}),error=>error.code==='provider_response_format'&&!JSON.stringify(error).includes('PRIVATE BROKEN ENVELOPE'))
+}
+for(const response of [
+  {id:'invalid-output',status:'completed',output_text:'PRIVATE MALFORMED OUTPUT'},
+  {id:'refusal',status:'completed',output:[{type:'message',content:[{type:'refusal',refusal:'PRIVATE REFUSAL'}]}]},
+])await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,fetchImpl:async()=>Response.json(response)}),error=>error.code==='provider_invalid_json','model-output errors and refusals must not become retryable protocol errors')
 await assert.rejects(advanceReviewedModel({providerKey:'mock',request,reviewContent:[],validate,budgetMs:0,fetchImpl:async()=>{throw Error('must not call')}}),/zu lange/)
 
 let calls=0

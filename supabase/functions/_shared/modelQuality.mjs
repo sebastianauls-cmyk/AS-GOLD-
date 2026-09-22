@@ -104,12 +104,15 @@ export async function callModel(providerKey,request,{deadline,fetchImpl,onRespon
     const issues=[{code:'provider_http',location:'provider',reason:`KI-Dienst: HTTP ${http.status}${providerCode?'; Code: '+providerCode:''}.`}]
     throw Object.assign(new ModelWorkflowError(message,502,code,issues),{provider_status:http.status,provider_error_code:providerCode,retry_after:retryAfter})
   }
+  // Classify the provider envelope separately from generated JSON. A caller
+  // may retry the interrupted request, never reinterpret an invalid model
+  // output or refusal as a recoverable transport problem.
   try {response=await http.json()}
   catch(error){
     const timedOut=signal.aborted||['TimeoutError','AbortError'].includes(error?.name)
-    throw new ModelWorkflowError(timedOut?'Die aktuelle Prüfung hat ihr Zeitlimit erreicht.':'Die KI-Antwort hatte kein auswertbares Format.',502,timedOut?'provider_timeout':'provider_invalid_json')
+    throw new ModelWorkflowError(timedOut?'Die aktuelle Prüfung hat ihr Zeitlimit erreicht.':'Die KI-Antwort hatte kein auswertbares Format.',502,timedOut?'provider_timeout':'provider_response_format')
   }
-  if(!response||typeof response!=='object')throw new ModelWorkflowError('Die KI-Antwort hatte kein auswertbares Format.',502,'provider_invalid_json')
+  if(!response||typeof response!=='object'||Array.isArray(response))throw new ModelWorkflowError('Die KI-Antwort hatte kein auswertbares Format.',502,'provider_response_format')
   if(onResponse) onResponse({stage,attempt,reasoning_effort:request.reasoning?.effort,response_id:response.id,model:response.model,status:response.status,usage:response.usage,output:providerText(response)??null})
   if(response.status!=='completed') throw new ModelWorkflowError('Die KI-Ausgabe war unvollständig. Es wurde kein ungeprüftes Ergebnis gespeichert.',502,response.incomplete_details?.reason==='max_output_tokens'?'provider_token_limit':'provider_incomplete')
   let parsed
