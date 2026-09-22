@@ -41,6 +41,12 @@ assert.equal((await openModelCheckpoint({token:backgroundToken,binding:backgroun
 await assert.rejects(openModelCheckpoint({token:backgroundToken,binding:backgroundBinding,secret,now:issuedAt+45*60*1000+1}),/abgelaufen/)
 await assert.rejects(sealModelCheckpoint({state:{},binding:backgroundBinding,secret,issuedAt,now:issuedAt+45*60*1000+1}),/abgelaufen/)
 await assert.rejects(openModelCheckpoint({token:completeToken,binding:backgroundBinding,secret}),/ungültig/,'a legacy continuation cannot be relabeled as a longer background job')
+const extendedBackgroundBinding={...binding,workflow:'background-complete-case-v165'}
+const extendedBackgroundToken=await sealModelCheckpoint({state:{stage:'review'},binding:extendedBackgroundBinding,secret,issuedAt,now:issuedAt+59*60*1000})
+assert.equal((await openModelCheckpoint({token:extendedBackgroundToken,binding:extendedBackgroundBinding,secret,now:issuedAt+59*60*1000})).issuedAt,issuedAt,'new one-hour jobs preserve the original checkpoint start')
+await assert.rejects(openModelCheckpoint({token:extendedBackgroundToken,binding:extendedBackgroundBinding,secret,now:issuedAt+60*60*1000+1}),/abgelaufen/)
+await assert.rejects(sealModelCheckpoint({state:{},binding:extendedBackgroundBinding,secret,issuedAt,now:issuedAt+60*60*1000+1}),/abgelaufen/)
+for(const legacyToken of [token,completeToken,backgroundToken])await assert.rejects(openModelCheckpoint({token:legacyToken,binding:extendedBackgroundBinding,secret}),/ungültig/,'older checkpoints cannot be relabeled to extend their lifetime')
 await assert.rejects(openModelCheckpoint({token:completeToken,binding:{...completeBinding,owner_id:'other'},secret}),/ungültig/)
 await assert.rejects(openModelCheckpoint({token,binding,secret:'different-test-key-not-a-real-secret'}),/ungültig/)
 

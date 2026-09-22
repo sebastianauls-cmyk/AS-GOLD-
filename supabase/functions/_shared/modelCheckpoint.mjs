@@ -1,7 +1,7 @@
 import { ModelWorkflowError } from './modelQuality.mjs'
 
 const encoder=new TextEncoder(),MAX_BYTES=500000,TTL_MS=15*60*1000
-const ttlFor=binding=>binding?.workflow==='background-complete-case-v164'?45*60*1000:['complete-case-v157','fixed-complete-eval-v157'].includes(binding?.workflow)?30*60*1000:TTL_MS
+const ttlFor=binding=>binding?.workflow==='background-complete-case-v165'?60*60*1000:binding?.workflow==='background-complete-case-v164'?45*60*1000:['complete-case-v157','fixed-complete-eval-v157'].includes(binding?.workflow)?30*60*1000:TTL_MS
 const RUN_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 const domain='ash-reviewed-model-checkpoint-v1'
 function encode(bytes) {let value='';for(let i=0;i<bytes.length;i+=8192)value+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(value).replaceAll('+','-').replaceAll('/','_').replaceAll('=','')}
