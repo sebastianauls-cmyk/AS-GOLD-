@@ -112,7 +112,7 @@
     "test:ai-evidence-quality": "node scripts/test_ai_evidence_quality.mjs",
     "test:product-repair": "node scripts/test_background_case.mjs && node scripts/test_background_worker_http.mjs && node scripts/test_complete_case.mjs && node scripts/test_product_repair.mjs && node scripts/test_roadmap_request_flow.mjs && node scripts/test_pdf_text_exports.mjs && node scripts/test_practical_roadmap.mjs && npm run test:retest-corrections",
     "test:retest-corrections": "node scripts/test_retest_corrections.mjs",
-    "test:completion-followup": "node scripts/test_completion_followup.mjs && node scripts/test_legal_research_flow.mjs",
+    "test:completion-followup": "node scripts/test_completion_followup.mjs && node scripts/test_legal_research_flow.mjs && node scripts/test_primary_source_tables.mjs",
     "test:password-recovery": "node scripts/test_password_recovery_routing.mjs",
     "test:password-reset-limits": "node scripts/test_password_reset_limits.mjs",
     "test:workspace-recovery": "node scripts/test_workspace_session_recovery.mjs",

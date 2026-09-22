@@ -29,9 +29,14 @@ class Text(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag in ('script', 'style'): self.ignored += 1
         if tag == 'title': self.in_title = True
+        # Match live extraction: retain actual rows/cells instead of guessing
+        # whether adjacent three-digit values form a thousands-grouped number.
+        if not self.ignored and tag == 'tr': self.parts.append(' ; ')
+        if not self.ignored and tag in ('td', 'th'): self.parts.append(' | ')
     def handle_endtag(self, tag):
         if tag in ('script', 'style'): self.ignored = max(0, self.ignored - 1)
         if tag == 'title': self.in_title = False
+        if not self.ignored and tag == 'table': self.parts.append(' ; ')
     def handle_data(self, data):
         if not self.ignored: self.parts.append(data)
         if self.in_title: self.title.append(data)
