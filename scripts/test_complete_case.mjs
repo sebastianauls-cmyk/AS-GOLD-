@@ -125,6 +125,15 @@ const candidate={...structuredClone(roadmapTestResult),analysis:{topics:[{id:'se
 const options={scope,research:[],outputLanguage:'de',referenceLanguage:'de'}
 const checked=validateCompleteAnalysis(candidate,source,options)
 assert.equal(checked.analysis.calculations[0].result,'1000.00')
+for(const [analysis,location] of [[null,'analysis'],[{...candidate.analysis,topics:null},'analysis.topics'],[{...candidate.analysis,calculations:null},'analysis.calculations'],[{...candidate.analysis,limitations:null},'analysis.limitations']]){
+  assert.throws(()=>validateCompleteAnalysis({...candidate,analysis},source,options),error=>error.analysisIssues?.[0]?.location===location,'a missing component is identified precisely')
+}
+const overBudget=structuredClone(candidate)
+overBudget.analysis.calculations=Array.from({length:25},(_,i)=>({...structuredClone(candidate.analysis.calculations[0]),id:'calculation_'+i}))
+assert.throws(()=>validateCompleteAnalysis(overBudget,source,options),error=>error.analysisIssues?.[0]?.location==='analysis.calculations'&&error.analysisIssues[0].reason.includes('25')&&error.analysisIssues[0].reason.includes('24'),'an oversized analysis is not misreported as a missing analysis')
+const overInputs=structuredClone(candidate)
+overInputs.analysis.calculations[0].inputs=Array.from({length:25},(_,i)=>({...value('value_'+i,'18000')}))
+assert.throws(()=>validateCompleteAnalysis(overInputs,source,options),error=>error.analysisIssues?.[0]?.location==='analysis.calculations[0].inputs'&&error.analysisIssues[0].reason.includes('25'),'input overflow identifies the calculation and actual count')
 const twoChildrenQuote='Die Summe wird zu gleichen Teilen auf die beiden Kinder verteilt.'
 const twoChildrenSource={...source,documents:source.documents.map((doc,index)=>index?doc:{...doc,extracted_text:doc.extracted_text+' '+twoChildrenQuote})}
 const divided=structuredClone(candidate)
@@ -155,7 +164,7 @@ assert.equal(validateCompleteAnalysis(percentageCase,source,{...options,research
 percentageCase.analysis.calculations[0].inputs[1].value='0.84'
 assert.throws(()=>validateCompleteAnalysis(percentageCase,source,{...options,research:legalEvidence}),/steht nicht/,'percentage support never silently rescales a source input')
 let bad=structuredClone(candidate);bad.analysis.calculations[0].inputs[0].value='19000';assert.throws(()=>validateCompleteAnalysis(bad,source,options),/steht nicht/)
-bad=structuredClone(candidate);bad.analysis.topics=[];assert.throws(()=>validateCompleteAnalysis(bad,source,options),/ausgelassen/)
+bad=structuredClone(candidate);bad.analysis.topics=[];assert.throws(()=>validateCompleteAnalysis(bad,source,options),error=>error.analysisIssues?.[0]?.location==='analysis.topics'&&error.analysisIssues[0].reason.includes('0 Fallfragen'))
 bad=structuredClone(candidate);bad.analysis.topics[0].sources=[{url:'https://gesetze-im-internet.de/made-up',quote:'This source was never fetched.'}];assert.throws(()=>validateCompleteAnalysis(bad,source,options),/beleg/i)
 bad=structuredClone(candidate);bad.analysis.calculations[0].inputs[0]={...value('gross','19000'),kind:'assumption'};assert.throws(()=>validateCompleteAnalysis(bad,source,options),/annahme/i)
 bad=structuredClone(candidate)
@@ -186,6 +195,13 @@ const fetchImpl=async(url,options)=>{
     const inspect=schema=>{if(!schema||typeof schema!=='object')return;if(schema.properties?.quote){assert.equal(schema.properties.document_id,undefined);assert.equal(schema.properties.url,undefined);assert(schema.properties.quote.pattern)};Object.values(schema).forEach(inspect)}
     inspect(request.text.format.schema)
   }
+  if(name==='ash_complete_numbers_v157'){
+    const fields=request.text.format.schema.properties
+    assert.equal(fields.topics.minItems,1);assert.equal(fields.topics.maxItems,10)
+    assert.equal(fields.calculations.maxItems,24,'the provider must receive the server calculation limit before generating')
+    assert.equal(fields.calculations.items.properties.inputs.minItems,1)
+    assert.equal(fields.calculations.items.properties.inputs.maxItems,24)
+  }
   const {analysis,...plan}=candidate
   const output=name==='ash_case_scope'?scope:name==='ash_complete_numbers_v157'?structuredClone(analysis):name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
   if(name==='ash_complete_numbers_v157')for(const calculation of output.calculations)for(const input of calculation.inputs){
@@ -196,6 +212,33 @@ const fetchImpl=async(url,options)=>{
   return new Response(JSON.stringify({status:'completed',id:'mock-'+calls,model:'mock-model',output_text:JSON.stringify(output)}))
 }
 const args={providerKey:'synthetic',source,style:{},outputLanguage:'de',referenceLanguage:'de',baseRequest:{model:'mock-model',instructions:'No external research has been performed in this workflow. Do not invent.\nUse original quotes.',input:[]},baseReviewContent:[],fetchImpl}
+// Reproduce a provider exceeding the old hidden calculation cap. The bounded
+// repair receives the exact count/path, then every final review is still needed.
+for(const repeatOverflow of [false,true]){
+  let generations=0,reviews=0
+  const boundedFetch=async(_url,options)=>{
+    const request=JSON.parse(options.body),name=request.text.format.name
+    let output
+    if(name==='ash_case_scope')output=scope
+    else if(name==='ash_complete_numbers_v157'){
+      generations++
+      assert.equal(request.text.format.schema.properties.calculations.maxItems,24)
+      if(generations===2){
+        const correction=JSON.parse(request.input.at(-1).content[0].text).correction
+        assert(correction.issues.some(issue=>issue.location==='analysis.calculations'&&issue.reason.includes('25')&&issue.reason.includes('24')))
+      }
+      output=generations===1||repeatOverflow?overBudget.analysis:candidate.analysis
+    }else if(name==='ash_complete_plan_v157'){
+      const {analysis,...plan}=candidate;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
+    }else {reviews++;output={issues:[]}}
+    return Response.json({status:'completed',id:`bounded-${generations}-${reviews}`,output_text:JSON.stringify(output)})
+  }
+  let run=await advanceCompleteAnalysis({...args,fetchImpl:boundedFetch}),failure
+  try{for(let i=0;run.status==='processing'&&i<10;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:boundedFetch,state:run.state})}catch(error){failure=error}
+  assert.equal(generations,2,'only one mechanical repair')
+  if(repeatOverflow){assert.equal(failure?.code,'source_unresolved');assert.equal(failure.issues[0].location,'analysis.calculations');assert.equal(reviews,0);assert(!run.result)}
+  else {assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(reviews,4);assert.equal(run.result.analysis.calculations.length,1)}
+}
 // Scope bounds must be sent to structured generation, not only checked after
 // spending a live planning call. Invalid provider output still fails closed.
 for(const [invalid,locations] of [
