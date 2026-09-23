@@ -17,6 +17,7 @@ const transientStages=new Set()
 const httpStages=new Map()
 const reviewedParts=[]
 let numericFixture=null,numericTimedOut=false,numericFailure='timeout'
+let localLetterScenario=false,localRepairCalls=0
 const numericRequests=[]
 const oldFetch=globalThis.fetch
 try {
@@ -99,6 +100,12 @@ try {
       if(typeof reviewIssues==='function')issues=reviewIssues(part)
     }
     const analysis=numericFixture||{topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Anlage fehlt.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],calculations:[],limitations:[]}
+    if(name==='ash_complete_repair_v169'){
+      localRepairCalls++
+      const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_replacements
+      const output={requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,structuredClone(roadmapTestResult.letters.find(letter=>letter.id===item.previous.id)||item.previous)]))}
+      return Response.json({id:'synthetic-'+modelCalls,status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:JSON.stringify(output)})
+    }
     if(name==='ash_complete_numbers_v157'){
       const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations.map(item=>item.id)
       numericRequests.push(assigned)
@@ -113,6 +120,7 @@ try {
     }
     const output=name==='ash_case_scope'?{issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:!!numericFixture}],research_topics:[]}
       :name==='ash_complete_topics_v167'?{topics:analysis.topics,limitations:analysis.limitations}:name==='ash_complete_outline_v166'?{calculation_plan:analysis.calculations.map(item=>({id:item.id,title:item.title,topic_ids:item.topic_ids,purpose:item.explanation,depends_on:item.inputs.filter(input=>input.kind==='calculation').map(input=>input.calculation_id)}))}:name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:{issues}
+    if(localLetterScenario&&name==='ash_complete_plan_v157')output.letters=output.letters.map((letter,index)=>index?letter:{...letter,body:letter.body+' Die Anlage wurde bereits versandt.'})
     return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:JSON.stringify(output)}))
   }
   const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
@@ -355,6 +363,19 @@ try {
   job=await enqueue();claimed=await claim(job.id)
   await db.query('update private.case_analysis_work set steps=113 where job_id=$1',[job.id])
   assert.equal((await finish(claimed,{status:'processing',checkpoint:'over-limit',stage:'review'})).status,'failed','a one-hundred-fifteenth successful stage is not allowed')
+
+  // The real worker persists a local correction in its encrypted checkpoint,
+  // charges the repair and changed review, then saves only the accepted result.
+  localLetterScenario=true;localRepairCalls=0
+  reviewIssues=part=>part.letters?.some(letter=>letter.body.includes('Die Anlage wurde bereits versandt.'))?[{code:'invention',location:'letters[versorgung].body',reason:'No original confirms that the annex was sent.'}]:[]
+  job=await enqueue();const locallyRepaired=await drain(job.id)
+  assert.equal(locallyRepaired.status,'completed');assert.equal(localRepairCalls,1)
+  const localResult=await scalar('select result from public.case_roadmaps where id=$1',[locallyRepaired.roadmap_id])
+  assert.deepEqual(localResult.letters,roadmapTestResult.letters,'server-preserved letters pass through the real persistence gate')
+  assert.equal(localResult.analysis.verification.review_response_ids.length,8)
+  assert.equal(localResult.analysis.verification.reused_review_response_ids.length,7)
+  assert.equal(localResult.analysis.verification.correction_response_ids.length,1)
+  localLetterScenario=false
 
   reviewIssues=part=>part.letters?.some(letter=>letter.id===roadmapTestResult.letters.at(-1).id)?[{code:'meaning',location:'letters[0].body',reason:'Synthetic negative control: letter invents a payment suspension.'}]:[]
   job=await enqueue();const badLetter=await drain(job.id)

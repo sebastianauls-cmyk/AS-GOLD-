@@ -9,6 +9,7 @@ import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/
 import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport.mjs'
 import {quotationIndex,resolveQuotationIds,indexedQuotationSchema,indexedModelData} from '../supabase/functions/_shared/quotationIndex.mjs'
 import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence,supportingPrimaryEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
+import {runLocalizedRepairChecks} from './test_localized_case_repair.mjs'
 
 const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
 const quoteMap=quotationIndex({documents:[{id:'original',extracted_text:original}]},[])
@@ -386,7 +387,7 @@ assert.equal(calls,13,'no external research is claimed for an arithmetic-only ca
 // A local letter repair must not rebuild arithmetic or pay for identical
 // independent reviews. A changed dependent action invalidates those receipts.
 for(const change of ['letter','dependent_step','unlocated']){
-  let paid=0,plans=0,topics=0,numbers=0,reviews=0,flagged=false
+  let paid=0,plans=0,topics=0,numbers=0,reviews=0,flagged=false,patches=0
   const repairFetch=async(_url,options)=>{
     if(_url!=='https://api.openai.com/v1/responses')return new Response('',{status:404})
     paid++
@@ -402,6 +403,9 @@ for(const change of ['letter','dependent_step','unlocated']){
       if(plans===1)plan.letters[0].body+=' Die Berechnungsanlage wurde bereits versandt.'
       if(plans>1&&change==='dependent_step')plan.steps[0].action+=' Bitte die vorhandene Abrechnung bereithalten.'
       output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
+    }else if(name==='ash_complete_repair_v169'){
+      patches++
+      output=change==='letter'?{requires_full_correction:false,reason:'',changes:{edit_0:structuredClone(candidate.letters[0])}}:{requires_full_correction:true,reason:'The dependent action also needs a change outside the assigned letter.',changes:null}
     }else{
       reviews++
       const part=JSON.parse(request.input.at(-1).content.at(-1).text).candidate
@@ -414,11 +418,12 @@ for(const change of ['letter','dependent_step','unlocated']){
   let repaired=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch})
   for(let step=0;repaired.status==='processing'&&step<40;step++)repaired=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repaired.state})
   assert.equal(repaired.status,'completed');assert.equal(repaired.attempts,2)
-  assert.equal(plans,2);assert.equal(topics,change==='unlocated'?2:1);assert.equal(numbers,change==='unlocated'?2:1)
+  assert.equal(plans,change==='letter'?1:2);assert.equal(topics,change==='letter'?1:2);assert.equal(numbers,change==='letter'?1:2)
+  assert.equal(patches,change==='unlocated'?0:1)
   assert.deepEqual(repaired.result.analysis.calculations,checked.analysis.calculations,'the exact source-bound arithmetic survives the plan repair')
   assert.equal(repaired.result.analysis.verification.review_response_ids.length,8,'every section has a matching approval')
   if(change==='letter'){
-    assert.equal(paid,15,'13 initial calls plus one plan repair and one changed letter review; previously 25')
+    assert.equal(paid,15,'13 initial calls plus one assigned-letter repair and its changed review; no whole-plan rewrite')
     assert.equal(reviews,9);assert.equal(repaired.result.analysis.verification.reused_review_response_ids.length,7)
   }else{
     assert.equal(reviews,16,'changed dependencies or unlocated defects require all current reviews')
@@ -456,7 +461,9 @@ for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])for(c
 // Reproduce both defects in one workflow, and require all four reviews again.
 for(const correctedContent of [true,false,'new_input','repeated_input']){
   let generatedAnalyses=0,generatedPlans=0,reviewed=0
-  const contentIssue={code:'meaning',location:'analysis.topics[0].conclusion',reason:'Synthetic material omission: distinguish withholding from the final assessment.'}
+  // This fixture exercises the full correction fallback for an unlocated
+  // cross-topic omission. Precise findings use the local-repair fixtures below.
+  const contentIssue={code:'meaning',location:'analysis.topics',reason:'Synthetic material omission: distinguish withholding from the final assessment across the analysis.'}
   const repairBoth=async(url,options)=>{
     const request=JSON.parse(options.body),name=request.text.format.name
     let output
@@ -644,7 +651,7 @@ const bigFetch=async(url,options)=>{
     }
     output={calculations:structuredClone(big.analysis.calculations.filter(item=>assigned.some(plan=>plan.id===item.id)))}
     if(!badInputRounds.has(bigRound)){badInputRounds.add(bigRound);output.calculations[0].inputs[0].value='19000'}
-    if(bigRound>1)assert(component.correction.issues.some(issue=>issue.location==='analysis.calculations[difference_18]'))
+    if(bigRound>1)assert(component.correction.issues.some(issue=>issue.location==='analysis.calculations'))
     if(bigRound===3)assert(component.correction.previously_addressed_issues.some(issue=>issue.reason.endsWith('round 1.')),'the third candidate must retain the previously addressed findings')
   }else if(name==='ash_complete_plan_v157'){
     const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
@@ -662,7 +669,7 @@ const bigFetch=async(url,options)=>{
     }
     observedBatches.push({round:bigRound,...assignment})
     if(assignment.calculation_ids[0]==='difference_6'&&!batchTimedOut){batchTimedOut=true;throw new DOMException('Synthetic middle-batch timeout','TimeoutError')}
-    output={issues:bigRound<3&&assignment.calculation_ids.includes('difference_18')?[{code:'meaning',location:'analysis.calculations[difference_18]',reason:`Synthetic material defect in the last calculation batch, round ${bigRound}.`}]:[]}
+    output={issues:bigRound<3&&assignment.calculation_ids.includes('difference_18')?[{code:'meaning',location:'analysis.calculations',reason:`Synthetic unlocated numerical coverage defect, round ${bigRound}.`}]:[]}
   }
   return new Response(JSON.stringify({status:'completed',id:`batch-round-${bigRound}-call-${bigCalls}`,model:request.model,output_text:JSON.stringify(output)}))
 }
@@ -879,4 +886,5 @@ for(const component of ['topics','calculations']){
   assert.equal(component==='topics'?resumed.state.topicDraft.next:resumed.state.analysisOutline.next,(component==='topics'?2:6)+1,'only the next assigned item advances after complete validated output')
   await assert.rejects(advanceCompleteAnalysis({...args,state:{...base,generationBatchSizes:{[component]:0}}}),e=>e.code==='generation_batch_invalid')
 }
-console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete batched reviews, single-batch transport resumption, full correction/review coverage and display/export parity passed (provider mocked).')
+await runLocalizedRepairChecks({args,candidate,big,bigScope,topicFixture,outlineFixture})
+console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete batched reviews, single-batch transport resumption, local/full correction coverage and display/export parity passed (provider mocked).')
