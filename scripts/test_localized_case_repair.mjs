@@ -104,6 +104,53 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   const {research_sources,verification,...finalAnalysis}=flow.result.analysis
   assert.deepEqual({...flow.result,analysis:finalAnalysis},validateCompleteAnalysis(expected,args.source,{scope:bigScope,research:[],outputLanguage:'de',referenceLanguage:'de'}))
 
+  // A no-research fixture cannot detect needless invalidation of scoped review
+  // receipts. Use distinct, explicitly fictional source families here so an
+  // unchanged review really has a different request from a full-source review.
+  const research=data.analysis.topics.map((topic,index)=>({
+    url:`https://www.gesetze-im-internet.de/synthetic_repair_${index}/__1.html`,
+    title:'Fictional correction-routing source '+index,
+    source_text:`SYNTHETIC REPAIR EVIDENCE ${index}. Complete fictional rule and exception.`,
+    checked_at:'2026-09-23T00:00:00Z'
+  }))
+  const sourced=structuredClone(data)
+  sourced.analysis.topics.forEach((topic,index)=>{topic.sources=[{url:research[index].url,quote:`SYNTHETIC REPAIR EVIDENCE ${index}.`}]})
+  let scopedCalls=0,scopedRepairs=0,scopedReviews=0,modules=0,initiallyRejected=false
+  const scopedTransport=async(url,options)=>{
+    assert.equal(url,'https://api.openai.com/v1/responses','this fixture never fetches real research or model output')
+    const request=JSON.parse(options.body)
+    const payloads=request.input.flatMap(message=>message.content).map(block=>{try{return JSON.parse(block.text)}catch{return {}}})
+    scopedCalls++
+    let output
+    if(request.text.format.name==='ash_complete_repair_v169'){
+      scopedRepairs++
+      assert.equal(payloads.find(payload=>payload.retrieved_sources).retrieved_sources.length,research.length,'the local correction still receives every fetched source')
+      const value=cleanCalculation(sourced.analysis.calculations[18]);value.explanation+=' Synthetic explanation clarification.'
+      output={requires_full_correction:false,reason:'',changes:{edit_0:value}}
+    }else{
+      assert.equal(request.text.format.name,'ash_evidence_review_v139','a local explanation correction must not regenerate other components')
+      scopedReviews++
+      const sources=payloads.find(payload=>payload.retrieved_sources)
+      if(sources.research_context?.mode==='module')modules++
+      const part=payloads.find(payload=>payload.candidate).candidate
+      const reject=!initiallyRejected&&part.analysis?.calculations?.some(item=>item.id==='difference_18')
+      if(reject)initiallyRejected=true
+      output={issues:reject?[issue('analysis.calculations[difference_18].explanation')]:[]}
+    }
+    return Response.json({status:'completed',id:'scoped-local-'+scopedCalls,model:request.model,output_text:JSON.stringify(output)})
+  }
+  let scopedRun={status:'processing',state:{stage:'analysis',scope:bigScope,research,discovery_gaps:[],modelState:{stage:'review',attempt:1,candidate:sourced,structuralFeedback:[],response_id:'synthetic-initial-generation'}}}
+  for(let step=0;scopedRun.status==='processing'&&step<60;step++)scopedRun=await advanceCompleteAnalysis({...args,fetchImpl:scopedTransport,state:scopedRun.state})
+  assert.equal(scopedRun.status,'completed')
+  assert(modules>0,'this regression must exercise actual scoped source contexts')
+  assert.equal(scopedRepairs,1)
+  assert.equal(scopedReviews,26,'25 initial reviews plus only the changed review; unchanged scoped requests keep their approvals')
+  assert.equal(scopedRun.result.analysis.verification.reused_review_response_ids.length,24)
+  assert.equal(scopedRun.result.analysis.verification.review_response_ids.length,25)
+  assert.deepEqual(scopedRun.result.analysis.research_sources,research)
+  assert.deepEqual(scopedRun.result.analysis.topics,sourced.analysis.topics)
+  console.log(`Localized correction with scoped research: ${scopedCalls} simulated requests from a generated candidate; 25 initial reviews + 1 correction + 1 changed review.`)
+
   // Invalid numbers never enter the final reviewers; one mechanical repair is
   // available in this candidate, and a second bad repair stops the job.
   for(const repeatBad of [false,true]){
