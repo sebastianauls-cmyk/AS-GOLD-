@@ -106,6 +106,7 @@ try {
       if(assigned[0]==='number_6'&&!numericTimedOut){
         numericTimedOut=true
         if(numericFailure==='format')return new Response('PRIVATE BROKEN PROVIDER ENVELOPE',{status:200})
+        if(numericFailure==='truncated')return Response.json({id:'truncated-numbers',status:'incomplete',incomplete_details:{reason:'max_output_tokens'},usage:{input_tokens:100,output_tokens:request.max_output_tokens},output_text:'{incomplete'})
         throw new DOMException('Synthetic second numeric batch timeout','TimeoutError')
       }
       return Response.json({id:'synthetic-'+modelCalls,status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:JSON.stringify({calculations:analysis.calculations.filter(item=>assigned.includes(item.id))})})
@@ -373,24 +374,28 @@ try {
   // while the first six checked calculations survive without being repeated.
   reviewIssues=[]
   const amountQuote='Die einmalige Kapitalzahlung beträgt 18.000 EUR brutto und 17.000 EUR netto.'
-  for(const failureKind of ['timeout','format']){
+  for(const failureKind of ['timeout','format','truncated']){
     numericFailure=failureKind;numericTimedOut=false;numericRequests.length=0
-    numericFixture={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Berechnungsanlage fehlt; die Differenz ist rechnerisch prüfbar.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],limitations:[],calculations:Array.from({length:7},(_,i)=>({id:'number_'+i,title:'Kontrollwert '+i,topic_ids:['source'],inputs:i?[{name:'previous',label:'Geprüfte Differenz',value:'1000.00',kind:'calculation',calculation_id:'number_0'}]:[{name:'gross',label:'Brutto',value:'18000',kind:'document',document_id:documents[0].id,quote:amountQuote},{name:'net',label:'Netto',value:'17000',kind:'document',document_id:documents[0].id,quote:amountQuote}],expression:i?'previous':'gross-net',decimal_places:2,unit:'EUR',conditions:'',explanation:'Rein synthetischer Kontrollwert zur abschnittsweisen Verarbeitung.'}))}
+    numericFixture={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Berechnungsanlage fehlt; die Differenz ist rechnerisch prüfbar.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],limitations:[],calculations:Array.from({length:failureKind==='truncated'?13:7},(_,i)=>({id:'number_'+i,title:'Kontrollwert '+i,topic_ids:['source'],inputs:i?[{name:'previous',label:'Geprüfte Differenz',value:'1000.00',kind:'calculation',calculation_id:'number_0'}]:[{name:'gross',label:'Brutto',value:'18000',kind:'document',document_id:documents[0].id,quote:amountQuote},{name:'net',label:'Netto',value:'17000',kind:'document',document_id:documents[0].id,quote:amountQuote}],expression:i?'previous':'gross-net',decimal_places:2,unit:'EUR',conditions:'',explanation:'Rein synthetischer Kontrollwert zur abschnittsweisen Verarbeitung.'}))}
     job=await enqueue();const numericCallsBefore=modelCalls
     for(let i=0;i<4;i++)await process(await claim(job.id))
     assert.equal(await scalar('select steps from private.case_analysis_work where job_id=$1',[job.id]),4)
     const numericCheckpoint=await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id])
     assert.equal((await stored(job.id)).roadmap_id,null,'partial arithmetic is private, not a saved customer result')
     await process(await claim(job.id))
-    assert.equal((await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]))===numericCheckpoint,true,'a failed later provider response cannot erase the sealed earlier calculations')
+    if(failureKind==='truncated'){
+      assert.equal(await scalar('select steps from private.case_analysis_work where job_id=$1',[job.id]),5,'smaller assignments are checkpointed in the same job')
+      assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),0,'size reduction is not a blind transport retry')
+      assert.equal(await scalar('select count(*)::integer from private.case_model_calls where job_id=$1 and charged_output_tokens=8000 and settled_at is not null',[job.id]),1,'the incomplete request remains fully charged')
+    }else assert.equal((await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]))===numericCheckpoint,true,'a failed later provider response cannot erase the sealed earlier calculations')
     assert.equal((await drain(job.id)).status,'completed')
-    assert.equal(modelCalls-numericCallsBefore,16,'one topic batch, one manifest, two numeric batches, plan and all nine reviews; only the failed provider call repeats')
-    assert.deepEqual(numericRequests,[Array.from({length:6},(_,i)=>'number_'+i),['number_6'],['number_6']])
+    assert.equal(modelCalls-numericCallsBefore,failureKind==='truncated'?19:16,'one topic batch, one manifest, two numeric batches, plan and all nine reviews; only the failed provider call repeats')
+    assert.deepEqual(numericRequests,failureKind==='truncated'?[Array.from({length:6},(_,i)=>'number_'+i),Array.from({length:6},(_,i)=>'number_'+(i+6)),['number_6','number_7','number_8'],['number_9','number_10','number_11'],['number_12']]:[Array.from({length:6},(_,i)=>'number_'+i),['number_6'],['number_6']])
     const numericResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
-    assert.equal(numericResult.analysis.calculations.length,7)
+    assert.equal(numericResult.analysis.calculations.length,failureKind==='truncated'?13:7)
     assert(numericResult.analysis.calculations.every(item=>item.result==='1000.00'),'cross-batch dependencies retain exact checked values')
-    assert.equal(numericResult.analysis.verification.analysis_response_ids.length,4)
-    assert.equal(numericResult.analysis.verification.review_response_ids.length,9)
+    assert.equal(numericResult.analysis.verification.analysis_response_ids.length,failureKind==='truncated'?6:4)
+    assert.equal(numericResult.analysis.verification.review_response_ids.length,failureKind==='truncated'?10:9)
     assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
     assert.equal(new Date((await stored(job.id)).expires_at).getTime(),new Date(job.expires_at).getTime())
     numericFixture=null
