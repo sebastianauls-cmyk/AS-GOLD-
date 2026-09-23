@@ -303,7 +303,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
       ...(generationAssignment?[{type:'input_text',text:JSON.stringify({research_context:generationAssignment})}]:[])
     ]}
     partRequest.prompt_cache_options={mode:'explicit'}
-    partRequest.prompt_cache_key='ash-case-generation:'+source.case.id+':'+component
+    partRequest.prompt_cache_key='ash-gen:'+source.case.id+':'+component
     let generated
     try{generated=await invoke(partRequest,writingPlan?(attempt>1?'correction':'generation'):'analysis_generation')}
     catch(error){
