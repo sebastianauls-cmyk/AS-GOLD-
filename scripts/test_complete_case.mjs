@@ -285,7 +285,7 @@ const fetchImpl=async(url,options)=>{
   }
   if(name==='ash_complete_topics_v167'){
     const fields=request.text.format.schema.properties,assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_topics
-    assert(assigned.length<=3)
+    assert(assigned.length<=2)
     assert.equal(fields.topics.minItems,assigned.length);assert.equal(fields.topics.maxItems,assigned.length)
     assert.deepEqual(fields.topics.items.properties.id.enum,assigned.map(item=>item.id))
     assert.equal(fields.calculation_plan,undefined);assert.equal(fields.calculations,undefined)
@@ -606,15 +606,15 @@ const bigFetch=async(url,options)=>{
   if(name==='ash_case_scope')output=bigScope
   else if(name==='ash_complete_topics_v167'){
     const component=JSON.parse(request.input.at(-1).content[0].text),assigned=component.assigned_topics
-    assert(assigned.length<=3)
+    assert(assigned.length<=2)
     const supplied=JSON.parse(request.input[0].content[0].text)
     assert.deepEqual(supplied.scope,bigScope,'every topic batch retains the complete scope')
     assert.deepEqual(supplied.source.documents.map(item=>({id:item.id,text:item.passages.map(p=>p.text).join(' ')})),source.documents.map(item=>({id:item.id,text:item.extracted_text.replace(/\s+/gu,' ').trim()})),'every topic generation receives all original passages')
     assert.deepEqual(request.text.format.schema.properties.topics.items.properties.id.enum,assigned.map(item=>item.id))
     generatedTopics.push({round:bigRound+1,ids:assigned.map(item=>item.id)})
-    if(assigned[0].id==='topic_3'&&!topicTimedOut){
+    if(assigned[0].id==='topic_2'&&!topicTimedOut){
       topicTimedOut=true
-      assert.deepEqual(component.completed_analysis.topics.map(item=>item.id),['topic_0','topic_1','topic_2'])
+      assert.deepEqual(component.completed_analysis.topics.map(item=>item.id),['topic_0','topic_1'])
       throw new DOMException('Synthetic second topic batch timeout','TimeoutError')
     }
     output=topicFixture(big.analysis,request)
@@ -661,11 +661,11 @@ for(let i=0;bigFlow.status==='processing'&&i<120;i++){
   try{bigFlow=await advanceCompleteAnalysis({...bigArgs,state:bigFlow.state})}
   catch(error){if(error.code!=='provider_timeout')throw error;assert(++transportFailures<=3)}
 }
-assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,112);assert.equal(bigGenerated,16);assert.equal(bigFlow.attempts,3)
+assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,115);assert.equal(bigGenerated,16);assert.equal(bigFlow.attempts,3)
 assert.equal(transportFailures,3)
-assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,9,'each topic batch, manifest and final numeric batch has a separate receipt')
+assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,10,'each topic batch, manifest and final numeric batch has a separate receipt')
 for(const round of [1,2,3]){
-  const expected=Array.from({length:4},(_,i)=>big.analysis.topics.slice(i*3,i*3+3).map(item=>item.id))
+  const expected=Array.from({length:5},(_,i)=>big.analysis.topics.slice(i*2,i*2+2).map(item=>item.id))
   if(round===1)expected.splice(2,0,expected[1])
   assert.deepEqual(generatedTopics.filter(item=>item.round===round).map(item=>item.ids),expected,'each topic batch is generated once per candidate; only the interrupted batch repeats')
 }
@@ -696,7 +696,7 @@ assert.deepEqual(firstRound,[...expectedCoverage.slice(0,6),expectedCoverage[5],
     return Response.json({status:'completed',id:'shared-'+outlines+'-'+numbers,output_text:JSON.stringify(output)})
   }
   let run=await advanceCompleteAnalysis({...args,fetchImpl:failAcrossBatches}),failure
-  try{for(let i=0;i<8&&run.status==='processing';i++)run=await advanceCompleteAnalysis({...args,fetchImpl:failAcrossBatches,state:run.state})}catch(error){failure=error}
+  try{for(let i=0;i<10&&run.status==='processing';i++)run=await advanceCompleteAnalysis({...args,fetchImpl:failAcrossBatches,state:run.state})}catch(error){failure=error}
   assert.equal(failure?.code,'source_unresolved')
   assert.equal(failure.issues[0].location,'analysis.calculations[6].inputs[0].value')
   assert.equal(outlines,1);assert.equal(numbers,3);assert.equal(plans,0)
@@ -751,7 +751,7 @@ for(const failingComponent of ['outline','calculations']){
   let run=await advanceCompleteAnalysis({...args,fetchImpl:sharedRepair}),failure
   try{for(let i=0;i<12&&run.status==='processing';i++)run=await advanceCompleteAnalysis({...args,fetchImpl:sharedRepair,state:run.state})}catch(error){failure=error}
   assert.equal(failure?.code,'source_unresolved');assert(!run.result)
-  assert.equal(topicCalls,5);assert.equal(manifestCalls,1);assert.equal(numberCalls,failingComponent==='calculations'?1:0)
+  assert.equal(topicCalls,6);assert.equal(manifestCalls,1);assert.equal(numberCalls,failingComponent==='calculations'?1:0)
 }
 // Measure complete request payloads, including instructions, schemas, manifests
 // and retained originals. Source bodies and model replies are fictional; this
@@ -822,9 +822,41 @@ for(const rejectWholeCase of [false,true]){
   assert.deepEqual(run.result.analysis.verification.review_coverage,expectedCoverage)
   assert(run.result.analysis.verification.review_response_ids.every(id=>id.startsWith(`module-round-${rejectWholeCase?2:1}-`)),'a whole-case objection prevents every first-round approval from completing the result')
   if(!rejectWholeCase){
-    assert.equal(calls,35,'routing adds no provider calls to the 10-topic, 24-calculation, 25-review fixture')
+    assert.equal(calls,36,'two-topic generation plus complete 24-calculation and 25-review coverage')
     console.log(JSON.stringify({synthetic_module_payload:{requests:calls,scoped_requests:scopedRequests,bytes,full_context_bytes:fullBytes,reduction_percent:Number((100*(1-bytes/fullBytes)).toFixed(1))}}))
     assert(bytes<fullBytes,'source manifests and routing must not increase the complete request payload')
   }
+}
+// A provider token-limit response shrinks only a divisible generation batch.
+// No incomplete output or skipped question can enter the completed result.
+for(const component of ['topics','calculations']){
+  const base={stage:'analysis',scope:bigScope,research:[],discovery_gaps:[],modelState:{stage:'generation',attempt:1,feedback:[],previous:null}}
+  if(component==='topics')base.topicDraft={analysis:{topics:structuredClone(big.analysis.topics.slice(0,2)),calculations:[],limitations:[]},next:2,response_ids:['earlier-topic-receipt']}
+  else base.analysisOutline={analysis:{...structuredClone(big.analysis),calculations:structuredClone(big.analysis.calculations.slice(0,6))},calculation_plan:outlineFixture(big.analysis).calculation_plan,next:6,response_ids:['earlier-calculation-receipt']}
+  const before=structuredClone(base),sizes=[],reservations=[],reported=[]
+  const overflow=async(_url,options)=>{
+    const request=JSON.parse(options.body),data=JSON.parse(request.input.at(-1).content[0].text)
+    const assigned=component==='topics'?data.assigned_topics:data.assigned_calculations
+    sizes.push(assigned.length)
+    return Response.json({id:'truncated-'+sizes.length,status:'incomplete',incomplete_details:{reason:'max_output_tokens'},usage:{input_tokens:100,output_tokens:request.max_output_tokens},output_text:'{unusable truncated JSON'})
+  }
+  let state=base,error
+  for(let n=0;n<5;n++){
+    try{const next=await advanceCompleteAnalysis({...args,state,fetchImpl:overflow,beforeRequest:async request=>reservations.push(request.max_output_tokens),onResponse:async event=>reported.push(event.usage.output_tokens)});assert(!next.result);state=next.state}
+    catch(e){error=e;break}
+  }
+  assert.deepEqual(sizes,component==='topics'?[2,1]:[6,3,1])
+  assert.equal(error?.code,'provider_token_limit','a single oversized item stops; it cannot loop forever')
+  assert.deepEqual(reservations,reported,'each failed paid request retains its actual maximum output usage')
+  assert(reservations.every(n=>n===8000),'splitting never raises the per-request output allowance')
+  assert.deepEqual(state.topicDraft,before.topicDraft);assert.deepEqual(state.analysisOutline,before.analysisOutline)
+  assert.deepEqual(state.scope,before.scope);assert.deepEqual(state.modelState,before.modelState)
+  const resumed=await advanceCompleteAnalysis({...args,state,fetchImpl:async(_url,options)=>{
+    const request=JSON.parse(options.body),data=JSON.parse(request.input.at(-1).content[0].text)
+    const output=component==='topics'?topicFixture(big.analysis,request):{calculations:big.analysis.calculations.filter(c=>data.assigned_calculations.some(a=>a.id===c.id))}
+    return Response.json({id:'smaller-complete',status:'completed',output_text:JSON.stringify(output)})
+  }})
+  assert.equal(component==='topics'?resumed.state.topicDraft.next:resumed.state.analysisOutline.next,(component==='topics'?2:6)+1,'only the next assigned item advances after complete validated output')
+  await assert.rejects(advanceCompleteAnalysis({...args,state:{...base,generationBatchSizes:{[component]:0}}}),e=>e.code==='generation_batch_invalid')
 }
 console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete batched reviews, single-batch transport resumption, full correction/review coverage and display/export parity passed (provider mocked).')

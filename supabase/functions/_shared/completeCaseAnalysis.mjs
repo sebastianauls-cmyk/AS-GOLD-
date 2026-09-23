@@ -53,7 +53,7 @@ const analysisSchema=object({
   calculations:{...array(object({id:str,title:str,topic_ids:strings,inputs:{...array(inputSchema),minItems:1,maxItems:MAX_CALCULATION_INPUTS},expression:str,decimal_places:{type:'integer',enum:[0,1,2,3,4]},unit:str,conditions:str,explanation:str})),maxItems:MAX_CALCULATIONS},
   limitations:strings
 })
-const CALCULATIONS_PER_GENERATION=6,TOPICS_PER_GENERATION=3
+const CALCULATIONS_PER_GENERATION=6,TOPICS_PER_GENERATION=2
 const outlineSchema=object({
   calculation_plan:{...array(object({id:{type:'string',pattern:'^[a-zA-Z][a-zA-Z0-9_-]{0,49}$'},title:str,topic_ids:strings,purpose:str,depends_on:strings})),maxItems:MAX_CALCULATIONS}
 })
@@ -267,10 +267,13 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     const outline=current.analysisOutline||null
     const topicDraft=current.topicDraft||null
     const component=writingPlan?'roadmap':outline?'calculations':topicDraft?.next===current.scope.issues.length?'outline':'topics'
-    const assignedTopics=component==='topics'?current.scope.issues.slice(topicDraft?.next||0,(topicDraft?.next||0)+TOPICS_PER_GENERATION):[]
+    const topicBatchSize=current.generationBatchSizes?.topics??TOPICS_PER_GENERATION
+    const calculationBatchSize=current.generationBatchSizes?.calculations??CALCULATIONS_PER_GENERATION
+    if(!Number.isInteger(topicBatchSize)||topicBatchSize<1||topicBatchSize>TOPICS_PER_GENERATION||!Number.isInteger(calculationBatchSize)||calculationBatchSize<1||calculationBatchSize>CALCULATIONS_PER_GENERATION)throw new ModelWorkflowError('Ungültige Abschnittsgröße.',409,'generation_batch_invalid')
+    const assignedTopics=component==='topics'?current.scope.issues.slice(topicDraft?.next||0,(topicDraft?.next||0)+topicBatchSize):[]
     if(component==='topics'&&(!assignedTopics.length||topicDraft&&(!Number.isInteger(topicDraft.next)||topicDraft.next!==topicDraft.analysis.topics.length)))throw new ModelWorkflowError('Ungültiger Themenabschnitt.',409)
     const componentIndex=component==='topics'?topicDraft?.next||0:outline?.next||0
-    const assigned=component==='calculations'?outline.calculation_plan.slice(outline.next,outline.next+CALCULATIONS_PER_GENERATION):[]
+    const assigned=component==='calculations'?outline.calculation_plan.slice(outline.next,outline.next+calculationBatchSize):[]
     if(component==='calculations'&&(!Number.isInteger(outline.next)||outline.next<0||outline.next!==outline.analysis.calculations.length||!assigned.length))throw new ModelWorkflowError('Ungültiger Berechnungsabschnitt.',409)
     const inputRepair=!writingPlan&&current.inputRepair?.feedback?.length?current.inputRepair:null
     if(inputRepair&&(inputRepair.component!==component||inputRepair.next!==componentIndex))throw new ModelWorkflowError('Die Eingabekorrektur gehört zu einem anderen Abschnitt.',409)
@@ -290,7 +293,19 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
         partRequest.instructions=partRequest.instructions.replace('All originals, fetched sources and the complete calculation_plan are supplied.','All originals, the module-selected full fetched sources and the complete calculation_plan are supplied.')+'\n'+MODULE_RESEARCH_INSTRUCTIONS
       }
     }
-    const generated=await invoke(partRequest,writingPlan?(attempt>1?'correction':'generation'):'analysis_generation')
+    let generated
+    try{generated=await invoke(partRequest,writingPlan?(attempt>1?'correction':'generation'):'analysis_generation')}
+    catch(error){
+      const size=component==='topics'?assignedTopics.length:component==='calculations'?assigned.length:1
+      if(error instanceof ModelWorkflowError&&error.code==='provider_token_limit'&&size>1){
+        // Incomplete JSON is never accepted. Keep all earlier checked work and
+        // source evidence; the next paid lease handles a strictly smaller batch.
+        // Sizes only shrink (2 -> 1 topics, 6 -> 3 -> 1 calculations). Existing
+        // call/output/byte/input/time budgets still apply to every attempt.
+        return {status:'processing',state:{...current,generationBatchSizes:{...current.generationBatchSizes,[component]:Math.max(1,Math.floor(size/2))}}}
+      }
+      throw error
+    }
     if(!writingPlan){
       let nextOutline,nextTopics
       try{
