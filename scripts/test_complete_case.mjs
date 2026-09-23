@@ -604,7 +604,7 @@ const bigFetch=async(url,options)=>{
   bigCalls++
   if(['ash_complete_topics_v167','ash_complete_numbers_v157'].includes(name)){
     assert.deepEqual(request.prompt_cache_options,{mode:'explicit'})
-    assert(request.prompt_cache_key.startsWith('ash-case-generation:'))
+    assert(request.prompt_cache_key.startsWith('ash-gen:'));assert(request.prompt_cache_key.length<=64,'case/component cache keys stay within the API key length limit')
     assert(request.input.every(message=>message.role==='user'),'source passages stay untrusted data')
     const blocks=request.input[0].content
     assert.deepEqual(blocks.slice(0,2).map(b=>b.prompt_cache_breakpoint),[{mode:'explicit'},{mode:'explicit'}])
