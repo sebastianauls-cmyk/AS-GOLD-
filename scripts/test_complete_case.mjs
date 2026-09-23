@@ -10,6 +10,8 @@ import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport
 import {quotationIndex,resolveQuotationIds,indexedQuotationSchema,indexedModelData} from '../supabase/functions/_shared/quotationIndex.mjs'
 import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence,supportingPrimaryEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
 
+const requestCorrection=request=>request.input.flatMap(message=>message.content).map(block=>JSON.parse(block.text)).find(payload=>payload.correction)?.correction||null
+
 const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
 const quoteMap=quotationIndex({documents:[{id:'original',extracted_text:original}]},[])
 assert.equal([...quoteMap.values()].map(item=>item.quote).join(' '),original,'indexing never drops long tokens or short final passages')
@@ -332,7 +334,7 @@ for(const repeatOverflow of [false,true]){
       generations++
       assert.equal(request.text.format.schema.properties.calculation_plan.maxItems,24)
       if(generations===2){
-        const correction=JSON.parse(request.input.at(-1).content[0].text).correction
+        const correction=requestCorrection(request)
         assert(correction.issues.some(issue=>issue.location==='analysis.calculation_plan'&&issue.reason.includes('25')&&issue.reason.includes('24')))
       }
       output=generations===1||repeatOverflow?outlineFixture(overBudget.analysis):outlineFixture(candidate.analysis)
@@ -469,12 +471,12 @@ for(const correctedContent of [true,false,'new_input','repeated_input']){
       if(generatedAnalyses===1)output.calculations[0].inputs[0].value='19000'
       if(generatedAnalyses===3&&['new_input','repeated_input'].includes(correctedContent)||generatedAnalyses===4&&correctedContent==='repeated_input')output.calculations[0].inputs[0].value='19000'
       if(generatedAnalyses===3){
-        const correction=JSON.parse(request.input.at(-1).content[0].text).correction
+        const correction=requestCorrection(request)
         assert(correction.issues.some(issue=>issue.reason===contentIssue.reason),'substantive feedback still reaches a correction after input repair')
         assert(correction.previous_candidate.analysis,'the full prior result is available for a bounded content correction')
       }
       if(generatedAnalyses===4&&['new_input','repeated_input'].includes(correctedContent)){
-        const correction=JSON.parse(request.input.at(-1).content[0].text).correction
+        const correction=requestCorrection(request)
         assert(correction.issues.some(issue=>issue.reason===contentIssue.reason))
         assert(correction.issues.some(issue=>issue.reason.includes('19000')),'the corrected candidate receives both substantive and new mechanical feedback')
       }
@@ -518,7 +520,7 @@ for(const repairOutcome of ['complete','partial','none']){
       if(analysisCalls===1||repairOutcome==='none')output.calculations[0].inputs[0].value='19000'
       if(analysisCalls===1||repairOutcome!=='complete')output.calculations[0].inputs[1].value='16000'
       if(analysisCalls===2){
-        const feedback=JSON.parse(request.input.at(-1).content[0].text).correction.issues
+        const feedback=requestCorrection(request).issues
         assert.equal(feedback.length,2,'the one correction receives every invalid number, not only the first')
         assert.deepEqual(feedback.map(issue=>issue.location),['analysis.calculations[0].inputs[0].value','analysis.calculations[0].inputs[1].value'])
         assert(feedback.every(issue=>issue.reason.includes('steht nicht im angegebenen Beleg')))
@@ -597,7 +599,7 @@ assert.deepEqual(expectedCoverage.filter(p=>p.part==='steps').flatMap(p=>p.step_
 assert.deepEqual(expectedCoverage.filter(p=>p.scope==='letters').flatMap(p=>p.letter_ids),big.letters.map(s=>s.id))
 for(const key of ['facts','open_questions','steps','letters']){const tooLarge=structuredClone(big);tooLarge[key].push(structuredClone(tooLarge[key][0]));assert.throws(()=>completeReviewCoverage(tooLarge),error=>error.code==='review_coverage_invalid'&&error.issues[0].location===key)}
 let bigCalls=0,bigRound=0,bigGenerated=0,batchTimedOut=false,generationTimedOut=false,topicTimedOut=false
-const badInputRounds=new Set(),generatedAssignments=[],generatedTopics=[],generationPrefixes=new Map()
+const badInputRounds=new Set(),generatedAssignments=[],generatedTopics=[],generationPrefixes=new Map(),correctionPrefixes=new Map()
 const bigFetch=async(url,options)=>{
   if(!options?.body)return new Response('',{status:404})
   const request=JSON.parse(options.body),name=request.text.format.name
@@ -611,7 +613,18 @@ const bigFetch=async(url,options)=>{
     const prefix=JSON.stringify({model:request.model,instructions:request.instructions,reasoning:request.reasoning,format:request.text.format,content:blocks.slice(0,2)})
     if(generationPrefixes.has(name))assert.equal(prefix,generationPrefixes.get(name),'schemas and complete evidence prefix remain identical across assignments, retries and corrections')
     else generationPrefixes.set(name,prefix)
-    assert(!request.input.at(-1).content.some(block=>block.prompt_cache_breakpoint),'changing assignments and candidates remain outside cache writes')
+    assert(!request.input.at(-1).content.some(block=>block.prompt_cache_breakpoint),'changing assignments and partial work remain outside cache writes')
+    assert(!Object.hasOwn(JSON.parse(request.input.at(-1).content[0].text),'correction'),'the full correction is not duplicated after changing assignments')
+    const correction=requestCorrection(request)
+    if(correction){
+      assert.deepEqual(JSON.parse(blocks[2].text),{correction},'complete correction context precedes changing assignments')
+      assert.deepEqual(blocks[2].prompt_cache_breakpoint,{mode:'explicit'})
+      const round=name==='ash_complete_topics_v167'?bigRound+1:bigRound
+      const key=`${name}:${round}:${correction.input_repair?'repair':'standard'}`
+      const correctedPrefix=JSON.stringify({prefix,correction:blocks[2]})
+      if(correctionPrefixes.has(key))assert.equal(correctedPrefix,correctionPrefixes.get(key),'all batches of the same correction retain one exact reusable prefix')
+      else correctionPrefixes.set(key,correctedPrefix)
+    }else assert.equal(blocks.length,2,'the first candidate needs no prior-candidate cache block')
   }
   let output
   if(name==='ash_case_scope')output=bigScope
@@ -644,8 +657,8 @@ const bigFetch=async(url,options)=>{
     }
     output={calculations:structuredClone(big.analysis.calculations.filter(item=>assigned.some(plan=>plan.id===item.id)))}
     if(!badInputRounds.has(bigRound)){badInputRounds.add(bigRound);output.calculations[0].inputs[0].value='19000'}
-    if(bigRound>1)assert(component.correction.issues.some(issue=>issue.location==='analysis.calculations[difference_18]'))
-    if(bigRound===3)assert(component.correction.previously_addressed_issues.some(issue=>issue.reason.endsWith('round 1.')),'the third candidate must retain the previously addressed findings')
+    if(bigRound>1)assert(requestCorrection(request).issues.some(issue=>issue.location==='analysis.calculations[difference_18]'))
+    if(bigRound===3)assert(requestCorrection(request).previously_addressed_issues.some(issue=>issue.reason.endsWith('round 1.')),'the third candidate must retain the previously addressed findings')
   }else if(name==='ash_complete_plan_v157'){
     const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
   }else{
@@ -674,6 +687,12 @@ for(let i=0;bigFlow.status==='processing'&&i<120;i++){
 }
 assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,115);assert.equal(bigGenerated,16);assert.equal(bigFlow.attempts,3)
 assert.equal(transportFailures,3)
+for(const name of ['ash_complete_topics_v167','ash_complete_numbers_v157']){
+  const second=correctionPrefixes.get(`${name}:2:standard`),third=correctionPrefixes.get(`${name}:3:standard`)
+  assert(second&&third)
+  assert.notEqual(second,third,'new feedback/history cannot reuse the previous correction prefix')
+}
+for(const round of [2,3])assert.notEqual(correctionPrefixes.get(`ash_complete_numbers_v157:${round}:repair`),correctionPrefixes.get(`ash_complete_numbers_v157:${round}:standard`),'mechanical repair feedback has its own prefix; it cannot retain an earlier correction cache entry')
 assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,10,'each topic batch, manifest and final numeric batch has a separate receipt')
 for(const round of [1,2,3]){
   const expected=Array.from({length:5},(_,i)=>big.analysis.topics.slice(i*2,i*2+2).map(item=>item.id))
