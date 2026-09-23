@@ -50,6 +50,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922200500_bounded_roadmap_letter_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922213500_approved_case_analysis_retry.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260923120225_bounded_case_model_budget.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260923134458_cache_aware_case_input_budget.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -78,7 +79,7 @@ try {
   await testCaseModelBudget({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar})
   // Unrelated workflow cases share this isolated database; daily-budget edges
   // are tested above against the real production defaults and low boundaries.
-  await db.exec("update private.case_model_budget_policy set max_calls=10000,max_output_tokens=100000000,max_request_bytes=1000000000,max_input_tokens=100000000 where scope<>'job'")
+  await db.exec("update private.case_model_budget_policy set max_calls=10000,max_output_tokens=100000000,max_request_bytes=1000000000,max_input_units=100000000 where scope<>'job'")
   globalThis.fetch=async(url,options)=>{
     assert.equal(url,'https://api.openai.com/v1/responses');modelCalls++
     const request=JSON.parse(options.body),name=request.text.format.name

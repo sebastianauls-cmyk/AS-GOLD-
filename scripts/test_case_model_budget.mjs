@@ -12,7 +12,7 @@ export async function testCaseModelBudget({db,client,owner,caseId,secret,enqueue
     for(const id of ids)await cancel(id)
     await db.query('delete from public.case_analysis_jobs where id=any($1)',[ids])
     await db.query('delete from private.case_model_calls where job_id=any($1)',[ids]);ids.length=0
-    for(const p of policies)await db.query('update private.case_model_budget_policy set max_calls=$2,max_output_tokens=$3,max_request_bytes=$4,max_search_calls=$5,max_input_tokens=$6 where scope=$1',[p.scope,p.max_calls,p.max_output_tokens,p.max_request_bytes,p.max_search_calls,p.max_input_tokens])
+    for(const p of policies)await db.query('update private.case_model_budget_policy set max_calls=$2,max_output_tokens=$3,max_request_bytes=$4,max_search_calls=$5,max_input_units=$6 where scope=$1',[p.scope,p.max_calls,p.max_output_tokens,p.max_request_bytes,p.max_search_calls,p.max_input_units])
   }
   let paid=0
   const run=(job,mode='ok',rpcClient=client)=>processCaseAnalysisJob({client:rpcClient,job,secret,providerKey:'synthetic-only',advance:async({beforeRequest,onResponse})=>{
@@ -61,7 +61,7 @@ export async function testCaseModelBudget({db,client,owner,caseId,secret,enqueue
     await reset()
 
     // Every hard boundary blocks before fetch, and failure is terminal.
-    for(const [field,value] of [['max_calls',1],['max_output_tokens',9000],['max_request_bytes',1],['max_input_tokens',100]]){
+    for(const [field,value] of [['max_calls',1],['max_output_tokens',9000],['max_request_bytes',1],['max_input_units',82]]){
       await db.query(`update private.case_model_budget_policy set ${field}=$1 where scope='job'`,[value])
       job=await fresh();const before=paid
       await run(job)
@@ -71,6 +71,25 @@ export async function testCaseModelBudget({db,client,owner,caseId,secret,enqueue
       assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
       await reset()
     }
+    // Real raw usage may exceed the old token stop only when actual cache reads
+    // justify the lower cost. Cache writes and predicted hits receive no credit.
+    job=await fresh();let weighted=await reserve(job)
+    assert.equal(await settle(job,weighted.reservation_id,650000,100,600000),true)
+    assert.equal(await scalar('select input_units from private.case_model_calls where id=$1',[weighted.reservation_id]),110000)
+    await finish(job,{status:'processing',stage:'planning',checkpoint:'synthetic-cache-budget'})
+    assert((await reserve(await claim(job.id))).reservation_id,'provider-confirmed reuse fits the unchanged allowance')
+    await reset()
+    job=await fresh();weighted=await reserve(job)
+    assert.equal(await settle(job,weighted.reservation_id,600000,100,0),true)
+    await finish(job,{status:'processing',stage:'planning',checkpoint:'synthetic-cache-budget'})
+    assert.equal((await reserve(await claim(job.id))).limit,'job','uncached input still stops at 600,000')
+    await reset()
+    job=await fresh();weighted=await reserve(job,9000,1200)
+    assert.equal(await scalar('select input_units from private.case_model_calls where id=$1',[weighted.reservation_id]),1200,'unknown input keeps request-byte reservation')
+    assert.equal(await settle(job,weighted.reservation_id,19,100,9),true)
+    assert.equal(await scalar('select input_units from private.case_model_calls where id=$1',[weighted.reservation_id]),11,'fractional cached units round up')
+    await reset()
+
     // An interrupted request keeps its maximum reservation through a retry.
     await db.exec("update private.case_model_budget_policy set max_output_tokens=9000 where scope='job'")
     job=await fresh();const beforeRetry=paid;await run(job,'timeout')
