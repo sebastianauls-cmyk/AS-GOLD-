@@ -286,8 +286,8 @@ const fetchImpl=async(url,options)=>{
   if(name==='ash_complete_topics_v167'){
     const fields=request.text.format.schema.properties,assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_topics
     assert(assigned.length<=2)
-    assert.equal(fields.topics.minItems,assigned.length);assert.equal(fields.topics.maxItems,assigned.length)
-    assert.deepEqual(fields.topics.items.properties.id.enum,assigned.map(item=>item.id))
+    assert.equal(fields.topics.minItems,1);assert.equal(fields.topics.maxItems,Math.min(2,scope.issues.length))
+    assert.deepEqual(fields.topics.items.properties.id.enum,scope.issues.map(item=>item.id))
     assert.equal(fields.calculation_plan,undefined);assert.equal(fields.calculations,undefined)
   }
   if(name==='ash_complete_outline_v166'){
@@ -299,8 +299,8 @@ const fetchImpl=async(url,options)=>{
   if(name==='ash_complete_numbers_v157'){
     const fields=request.text.format.schema.properties,assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations
     assert(assigned.length<=6)
-    assert.equal(fields.calculations.maxItems,assigned.length)
-    assert.equal(fields.calculations.minItems,assigned.length)
+    assert.equal(fields.calculations.maxItems,Math.min(6,candidate.analysis.calculations.length))
+    assert.equal(fields.calculations.minItems,1)
     assert.equal(fields.calculations.items.properties.inputs.minItems,1)
     assert.equal(fields.calculations.items.properties.inputs.maxItems,24)
   }
@@ -610,7 +610,7 @@ const bigFetch=async(url,options)=>{
     const supplied=JSON.parse(request.input[0].content[0].text)
     assert.deepEqual(supplied.scope,bigScope,'every topic batch retains the complete scope')
     assert.deepEqual(supplied.source.documents.map(item=>({id:item.id,text:item.passages.map(p=>p.text).join(' ')})),source.documents.map(item=>({id:item.id,text:item.extracted_text.replace(/\s+/gu,' ').trim()})),'every topic generation receives all original passages')
-    assert.deepEqual(request.text.format.schema.properties.topics.items.properties.id.enum,assigned.map(item=>item.id))
+    assert.deepEqual(request.text.format.schema.properties.topics.items.properties.id.enum,bigScope.issues.map(item=>item.id))
     generatedTopics.push({round:bigRound+1,ids:assigned.map(item=>item.id)})
     if(assigned[0].id==='topic_2'&&!topicTimedOut){
       topicTimedOut=true
@@ -625,7 +625,7 @@ const bigFetch=async(url,options)=>{
     const component=JSON.parse(request.input.at(-1).content[0].text),assigned=component.assigned_calculations
     assert(assigned.length<=6)
     generatedAssignments.push({round:bigRound,ids:assigned.map(item=>item.id)})
-    assert.deepEqual(request.text.format.schema.properties.calculations.items.properties.id.enum,assigned.map(item=>item.id))
+    assert.deepEqual(request.text.format.schema.properties.calculations.items.properties.id.enum,big.analysis.calculations.map(item=>item.id))
     if(assigned[0].id==='difference_6'&&!generationTimedOut){
       generationTimedOut=true
       assert.equal(component.completed_analysis.calculations.length,6,'first checked batch is retained before a later request times out')
@@ -705,7 +705,7 @@ assert.deepEqual(firstRound,[...expectedCoverage.slice(0,6),expectedCoverage[5],
 }
 // Strict provider schemas are not trusted: reject omitted, duplicated,
 // reordered and unrelated topic answers before numerical generation.
-for(const defect of ['missing','duplicate','reordered','unrelated']){
+for(const defect of ['missing','duplicate','reordered','unrelated','other_batch']){
   let topicCalls=0,laterCalls=0
   const malformedTopics=async(_url,options)=>{
     const request=JSON.parse(options.body),name=request.text.format.name
@@ -717,6 +717,7 @@ for(const defect of ['missing','duplicate','reordered','unrelated']){
       if(defect==='duplicate')output.topics[1]=structuredClone(output.topics[0])
       if(defect==='reordered')output.topics.reverse()
       if(defect==='unrelated')output.topics[1].id='not_assigned'
+      if(defect==='other_batch')output.topics[1]=structuredClone(big.analysis.topics[3])
     }else{laterCalls++;throw Error('Invalid topics cannot reach numerical generation or a customer result')}
     return Response.json({status:'completed',id:'invalid-topics-'+topicCalls,output_text:JSON.stringify(output)})
   }
@@ -762,6 +763,7 @@ for(const rejectWholeCase of [false,true]){
   moduleCandidate.analysis.topics.forEach((topic,i)=>{topic.sources=[{url:research[i].url,quote:`SYNTHETIC EVIDENCE ${i}.`}]})
   const fullIndexed=indexedModelData(source,research,quotationIndex(source,research)).research
   let calls=0,round=1,bytes=0,fullBytes=0,scopedRequests=0,fullAudits=0
+  const topicRequests=[]
   const transport=async(_url,options)=>{
     const request=JSON.parse(options.body),name=request.text.format.name
     calls++
@@ -789,6 +791,24 @@ for(const rejectWholeCase of [false,true]){
     bytes+=Buffer.byteLength(options.body);fullBytes+=Buffer.byteLength(JSON.stringify(baseline))
     let output
     const component=payloads.find(item=>item.component)
+    if(component){
+      assert.deepEqual(request.prompt_cache_options,{mode:'explicit'})
+      assert.equal(request.prompt_cache_key,'ash-case-generation:'+source.case.id)
+      assert.deepEqual(request.input[0].content[0].prompt_cache_breakpoint,{mode:'explicit'})
+      assert.equal(request.input.flatMap(message=>message.content).filter(item=>item.prompt_cache_breakpoint).length,1,'changing assignment/output is never written to the evidence cache')
+      assert.equal(request.input[0].role,'user','originals and research remain untrusted data')
+      assert.equal(JSON.parse(request.input[0].content[0].text).component,undefined)
+      assert.equal(request.reasoning.effort,'medium');assert.equal(request.store,false)
+      assert.equal(request.max_output_tokens,name==='ash_complete_plan_v157'?11000:8000)
+      if(name==='ash_complete_topics_v167'&&round===1)topicRequests.push(request)
+      const researchContext=payloads.find(item=>item.research_context)?.research_context
+      if(researchContext){
+        assert.equal(researchContext.topic_ids,undefined)
+        assert.equal(researchContext.calculation_ids,undefined)
+        assert(component.research_assignment,'module assignment metadata is retained after the cache boundary')
+        assert.equal(researchContext.available_sources.length,research.length,'every complete source remains bound by its manifest')
+      }
+    }
     if(name==='ash_complete_topics_v167')output=topicFixture(moduleCandidate.analysis,request)
     else if(name==='ash_complete_outline_v166')output=outlineFixture(moduleCandidate.analysis)
     else if(name==='ash_complete_numbers_v157'){
@@ -823,6 +843,14 @@ for(const rejectWholeCase of [false,true]){
   assert(run.result.analysis.verification.review_response_ids.every(id=>id.startsWith(`module-round-${rejectWholeCase?2:1}-`)),'a whole-case objection prevents every first-round approval from completing the result')
   if(!rejectWholeCase){
     assert.equal(calls,36,'two-topic generation plus complete 24-calculation and 25-review coverage')
+    assert.equal(topicRequests.length,5)
+    const prefix=request=>JSON.stringify({model:request.model,reasoning:request.reasoning,text:request.text,instructions:request.instructions,prompt_cache_options:request.prompt_cache_options,prompt_cache_key:request.prompt_cache_key,input:request.input.slice(0,1)})
+    for(const request of topicRequests.slice(1)){
+      assert.equal(prefix(request),prefix(topicRequests[0]),'schema, instructions and entire evidence prefix match across different assigned topic batches')
+      assert.notDeepEqual(request.input.at(-1),topicRequests[0].input.at(-1),'each batch retains its own assignment and prior checked results')
+    }
+    const changed=structuredClone(topicRequests[0]);changed.input[0].content[0].text+=' CHANGED ORIGINAL'
+    assert.notEqual(prefix(changed),prefix(topicRequests[0]),'changed original evidence never matches the old prefix')
     console.log(JSON.stringify({synthetic_module_payload:{requests:calls,scoped_requests:scopedRequests,bytes,full_context_bytes:fullBytes,reduction_percent:Number((100*(1-bytes/fullBytes)).toFixed(1))}}))
     assert(bytes<fullBytes,'source manifests and routing must not increase the complete request payload')
   }

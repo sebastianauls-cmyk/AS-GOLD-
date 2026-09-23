@@ -56,6 +56,36 @@ Apply `20260923120225_bounded_case_model_budget.sql` and `20260923134458_cache_a
 
 The UI restores job status and polls saved state. Closing the page does not restart generation. Word/PDF export still uses only the accepted result; no external sending is added.
 
+### Stable generation prefixes
+
+Generation now uses a stable per-case schema for each component: topic IDs come
+from the complete scope, calculation IDs from the complete stored manifest.
+The schema retains the two-topic/six-calculation maximum, while the existing
+server validators still require exactly the assigned IDs, count, order and
+calculation topic links. A valid ID belonging to another batch is rejected.
+No model result is accepted from schema compliance alone.
+
+Complete indexed originals and fetched evidence have an explicit cache boundary.
+Changing assignments, previous checked answers, repair feedback and module
+assignment IDs follow that boundary. The complete source manifest remains in the
+evidence prefix. Each case has its own cache-accounting key. Model, reasoning,
+output allowance, mandatory reviews and all job/owner/global limits are unchanged.
+Different component schemas or different evidence still have different prefixes;
+this does not guarantee a cache hit or a successful case.
+
+This corrects two observed reuse blockers: per-batch enum/length changes in the
+structured-output schema, and absence of a boundary before the changing suffix.
+The official prompt-caching guide identifies output schema and instructions as
+part of prefix matching (checked 2026-09-23):
+https://developers.openai.com/api/docs/guides/prompt-caching
+
+The regression suite exercises a complete ten-topic case with five distinct topic
+assignments and proves that their schema, instructions and full evidence prefix
+are identical. It also rejects an in-scope answer from the wrong batch, retains
+all mandatory final reviews, and runs the unchanged SQL spending/lease/cancellation
+gates against PGlite. Provider responses are simulated: live cache hits, cost and
+successful case completion remain separate acceptance requirements.
+
 `test_background_case.mjs` runs the actual SQL migrations, grants/RLS, leases, budget reservations, encrypted checkpoints and worker against PGlite. Model and dispatch transports are simulated. `test_complete_case.mjs` covers exact arithmetic, provenance, required review coverage, preserved calculations, review reuse, dependency invalidation and full-correction fallback. The local letter-repair fixture falls from 25 to 15 model calls; this is not a live Sarah time/cost measurement. No paid model request is needed for these tests.
 
 Provider request-limit reference: https://developers.openai.com/api/reference/cli/resources/responses/methods/create (checked 2026-09-23).
