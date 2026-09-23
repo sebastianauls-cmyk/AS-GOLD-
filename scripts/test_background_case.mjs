@@ -86,7 +86,7 @@ try {
     if(httpStages.has(name)){const response=httpStages.get(name);httpStages.delete(name);return response}
     let issues=reviewIssues
     if(name==='ash_evidence_review_v139'){
-      const payloads=request.input[0].content.map(item=>{try{return JSON.parse(item.text)}catch{return null}}).filter(Boolean)
+      const payloads=request.input.filter(message=>message.role==='user').flatMap(message=>message.content).map(item=>{try{return JSON.parse(item.text)}catch{return null}}).filter(Boolean)
       const part=payloads.find(item=>item.candidate)?.candidate
       reviewedParts.push({part,related:payloads.find(item=>item.related_output)?.related_output})
       assert.equal(request.reasoning.effort,'high')

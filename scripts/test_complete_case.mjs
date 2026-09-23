@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import './test_case_review_cache.mjs'
 import {calculateExpression,quoteContainsNumber} from '../supabase/functions/_shared/checkedCalculations.mjs'
 import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope,completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
@@ -402,7 +403,7 @@ for(const change of ['letter','dependent_step','unlocated']){
       output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else{
       reviews++
-      const part=JSON.parse(request.input[0].content.at(-1).text).candidate
+      const part=JSON.parse(request.input.at(-1).content.at(-1).text).candidate
       const reject=!flagged&&part.letters?.[0]?.body.includes('bereits versandt')
       if(reject)flagged=true
       output={issues:reject?[{code:'invention',location:change==='unlocated'?'output':'letters[versorgung].body',reason:'No original confirms that the calculation annex was sent.'}]:[]}
@@ -638,7 +639,7 @@ const bigFetch=async(url,options)=>{
   }else{
     assert.equal(request.reasoning.effort,'high')
     assert(request.input[0].content.some(item=>item.text==='SYNTHETIC_COMPLETE_ORIGINALS'),'every batch retains the complete original evidence')
-    const payloads=request.input[0].content.flatMap(item=>{try{return [JSON.parse(item.text)]}catch{return []}})
+    const payloads=request.input.filter(message=>message.role==='user').flatMap(message=>message.content).flatMap(item=>{try{return [JSON.parse(item.text)]}catch{return []}})
     const assignment=payloads.find(item=>item.assigned_review).assigned_review,part=payloads.find(item=>item.candidate).candidate
     assert.deepEqual(payloads.find(item=>item.required_reviews).required_reviews,expectedCoverage)
     assert((part.analysis?.topics?.length||0)<=3);assert((part.analysis?.calculations?.length||0)<=6)
