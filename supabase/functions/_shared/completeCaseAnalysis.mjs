@@ -58,9 +58,9 @@ const outlineSchema=object({
   calculation_plan:{...array(object({id:{type:'string',pattern:'^[a-zA-Z][a-zA-Z0-9_-]{0,49}$'},title:str,topic_ids:strings,purpose:str,depends_on:strings})),maxItems:MAX_CALCULATIONS}
 })
 function componentFailure(location,reason){throw Object.assign(new Error(reason),{analysisIssues:[{code:'source',location,reason}]})}
-function topicBatchSchema(assigned){
+function topicBatchSchema(issues){
   const topic=analysisSchema.properties.topics.items
-  return object({topics:{...array({...topic,properties:{...topic.properties,id:enumeration(assigned.map(item=>item.id))}}),minItems:assigned.length,maxItems:assigned.length},limitations:strings})
+  return object({topics:{...array({...topic,properties:{...topic.properties,id:enumeration(issues.map(item=>item.id))}}),minItems:1,maxItems:TOPICS_PER_GENERATION},limitations:strings})
 }
 function validateTopicBatch(raw,previous,assigned,source,context){
   if(!Array.isArray(raw?.topics)||raw.topics.length!==assigned.length||raw.topics.some((item,index)=>item?.id!==assigned[index].id)||!Array.isArray(raw.limitations))componentFailure('analysis.topics',`Dieser Abschnitt muss genau die ${assigned.length} zugewiesenen Fallfragen in der vorgegebenen Reihenfolge enthalten.`)
@@ -77,9 +77,9 @@ function validateOutline(raw,source,context){
   }
   return {analysis,calculation_plan:raw.calculation_plan,next:0,response_ids:[]}
 }
-function calculationBatchSchema(assigned){
+function calculationBatchSchema(plan){
   const calculation=analysisSchema.properties.calculations.items
-  return object({calculations:{...array({...calculation,properties:{...calculation.properties,id:enumeration(assigned.map(item=>item.id))}}),minItems:assigned.length,maxItems:assigned.length}})
+  return object({calculations:{...array({...calculation,properties:{...calculation.properties,id:enumeration(plan.map(item=>item.id))}}),minItems:1,maxItems:CALCULATIONS_PER_GENERATION}})
 }
 function validateCalculationBatch(raw,outline,assigned,source,context){
   if(!Array.isArray(raw?.calculations)||raw.calculations.length!==assigned.length)componentFailure('analysis.calculations',`Dieser Abschnitt muss genau ${assigned.length} zugewiesene Berechnungen enthalten.`)
@@ -284,7 +284,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
       outline:'Produce ONLY calculation_plan for ALL the supplied completed_analysis topics. The topical explanations are already saved and must not be rewritten here. Plan ALL useful calculations, including each beneficiary, alternatives and decisive comparisons, within the global 24-calculation budget. Every planned calculation has a stable unique id, title, topic_ids, purpose and depends_on containing only EARLIER planned calculation IDs. Use an empty plan only where no useful computation is supported. Do not output numeric inputs, formulas or computed results in this call. Later bounded calls will produce and check every planned calculation; the final independent reviewers will also check whether this plan omitted useful calculations.',
       calculations:'Produce ONLY the calculations in assigned_calculations, in exactly that order and with exactly those IDs and topic_ids. All originals, fetched sources and the complete calculation_plan are supplied. Other batches are deliberately not requested here. completed_analysis contains the already checked results from earlier batches: preserve them and use their exact rounded result for any kind=calculation input. A dependency within this batch must precede its use. Include the actual source-bound inputs, exact expression, conditions and explanation for EACH assignment. Return no topics, limitations or roadmap fields. Do not omit, merge, add, rename or repeat assignments. If a source value is genuinely absent, use an explicitly conditional assumption only where supported; never invent a source or factual certainty.'
     }
-    const partRequest={...request,reasoning:{effort:'medium'},instructions:request.instructions+'\nThis is one bounded component of the complete analysis. '+componentInstructions[component],input:[...request.input,{role:'user',content:[{type:'input_text',text:JSON.stringify({component,analysis:current.draftAnalysis||null,completed_analysis:component==='calculations'?outline.analysis:topicDraft?.analysis||null,assigned_topics:assignedTopics,calculation_plan:outline?.calculation_plan||null,assigned_calculations:assigned,structural_feedback:current.draftFeedback||[],correction})}]}],text:{format:{type:'json_schema',name:writingPlan?'ash_complete_plan_v157':component==='topics'?'ash_complete_topics_v167':component==='outline'?'ash_complete_outline_v166':'ash_complete_numbers_v157',strict:true,schema:indexedQuotationSchema(writingPlan?PLAN_SCHEMA:component==='topics'?topicBatchSchema(assignedTopics):component==='outline'?outlineSchema:calculationBatchSchema(assigned))}},max_output_tokens:writingPlan?11000:8000}
+    const partRequest={...request,reasoning:{effort:'medium'},instructions:request.instructions+'\nThis is one bounded component of the complete analysis. '+componentInstructions[component],input:[...request.input,{role:'user',content:[{type:'input_text',text:JSON.stringify({component,analysis:current.draftAnalysis||null,completed_analysis:component==='calculations'?outline.analysis:topicDraft?.analysis||null,assigned_topics:assignedTopics,calculation_plan:outline?.calculation_plan||null,assigned_calculations:assigned,structural_feedback:current.draftFeedback||[],correction})}]}],text:{format:{type:'json_schema',name:writingPlan?'ash_complete_plan_v157':component==='topics'?'ash_complete_topics_v167':component==='outline'?'ash_complete_outline_v166':'ash_complete_numbers_v157',strict:true,schema:indexedQuotationSchema(writingPlan?PLAN_SCHEMA:component==='topics'?topicBatchSchema(current.scope.issues):component==='outline'?outlineSchema:calculationBatchSchema(outline.calculation_plan))}},max_output_tokens:writingPlan?11000:8000}
     if(component==='calculations'&&!current.fullResearch&&!inputRepair){
       const selected=selectCaseResearch({research:current.research,analysis:outline.analysis,calculationPlan:outline.calculation_plan,calculationIds:assigned.map(item=>item.id)})
       if(selected.mode==='module'){
@@ -293,6 +293,17 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
         partRequest.instructions=partRequest.instructions.replace('All originals, fetched sources and the complete calculation_plan are supplied.','All originals, the module-selected full fetched sources and the complete calculation_plan are supplied.')+'\n'+MODULE_RESEARCH_INSTRUCTIONS
       }
     }
+    // Output-format schemas are part of the cached prefix. Keep the schema
+    // stable for every batch of a component; the server still checks exact
+    // assigned IDs, order and count before retaining ANY returned item.
+    const {retrieved_sources:generationSources,research_context:generationAssignment,...generationOriginals}=JSON.parse(partRequest.input[0].content[0].text)
+    partRequest.input[0]={role:'user',content:[
+      {type:'input_text',text:JSON.stringify(generationOriginals),prompt_cache_breakpoint:{mode:'explicit'}},
+      {type:'input_text',text:JSON.stringify({retrieved_sources:generationSources}),prompt_cache_breakpoint:{mode:'explicit'}},
+      ...(generationAssignment?[{type:'input_text',text:JSON.stringify({research_context:generationAssignment})}]:[])
+    ]}
+    partRequest.prompt_cache_options={mode:'explicit'}
+    partRequest.prompt_cache_key='ash-case-generation:'+source.case.id+':'+component
     let generated
     try{generated=await invoke(partRequest,writingPlan?(attempt>1?'correction':'generation'):'analysis_generation')}
     catch(error){

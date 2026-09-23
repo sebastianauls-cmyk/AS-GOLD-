@@ -286,8 +286,8 @@ const fetchImpl=async(url,options)=>{
   if(name==='ash_complete_topics_v167'){
     const fields=request.text.format.schema.properties,assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_topics
     assert(assigned.length<=2)
-    assert.equal(fields.topics.minItems,assigned.length);assert.equal(fields.topics.maxItems,assigned.length)
-    assert.deepEqual(fields.topics.items.properties.id.enum,assigned.map(item=>item.id))
+    assert.equal(fields.topics.minItems,1);assert.equal(fields.topics.maxItems,2)
+    assert.deepEqual(fields.topics.items.properties.id.enum,JSON.parse(request.input[0].content[0].text).scope.issues.map(item=>item.id))
     assert.equal(fields.calculation_plan,undefined);assert.equal(fields.calculations,undefined)
   }
   if(name==='ash_complete_outline_v166'){
@@ -299,8 +299,8 @@ const fetchImpl=async(url,options)=>{
   if(name==='ash_complete_numbers_v157'){
     const fields=request.text.format.schema.properties,assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations
     assert(assigned.length<=6)
-    assert.equal(fields.calculations.maxItems,assigned.length)
-    assert.equal(fields.calculations.minItems,assigned.length)
+    assert.equal(fields.calculations.maxItems,6)
+    assert.equal(fields.calculations.minItems,1)
     assert.equal(fields.calculations.items.properties.inputs.minItems,1)
     assert.equal(fields.calculations.items.properties.inputs.maxItems,24)
   }
@@ -597,11 +597,22 @@ assert.deepEqual(expectedCoverage.filter(p=>p.part==='steps').flatMap(p=>p.step_
 assert.deepEqual(expectedCoverage.filter(p=>p.scope==='letters').flatMap(p=>p.letter_ids),big.letters.map(s=>s.id))
 for(const key of ['facts','open_questions','steps','letters']){const tooLarge=structuredClone(big);tooLarge[key].push(structuredClone(tooLarge[key][0]));assert.throws(()=>completeReviewCoverage(tooLarge),error=>error.code==='review_coverage_invalid'&&error.issues[0].location===key)}
 let bigCalls=0,bigRound=0,bigGenerated=0,batchTimedOut=false,generationTimedOut=false,topicTimedOut=false
-const badInputRounds=new Set(),generatedAssignments=[],generatedTopics=[]
+const badInputRounds=new Set(),generatedAssignments=[],generatedTopics=[],generationPrefixes=new Map()
 const bigFetch=async(url,options)=>{
   if(!options?.body)return new Response('',{status:404})
   const request=JSON.parse(options.body),name=request.text.format.name
   bigCalls++
+  if(['ash_complete_topics_v167','ash_complete_numbers_v157'].includes(name)){
+    assert.deepEqual(request.prompt_cache_options,{mode:'explicit'})
+    assert(request.prompt_cache_key.startsWith('ash-case-generation:'))
+    assert(request.input.every(message=>message.role==='user'),'source passages stay untrusted data')
+    const blocks=request.input[0].content
+    assert.deepEqual(blocks.slice(0,2).map(b=>b.prompt_cache_breakpoint),[{mode:'explicit'},{mode:'explicit'}])
+    const prefix=JSON.stringify({model:request.model,instructions:request.instructions,reasoning:request.reasoning,format:request.text.format,content:blocks.slice(0,2)})
+    if(generationPrefixes.has(name))assert.equal(prefix,generationPrefixes.get(name),'schemas and complete evidence prefix remain identical across assignments, retries and corrections')
+    else generationPrefixes.set(name,prefix)
+    assert(!request.input.at(-1).content.some(block=>block.prompt_cache_breakpoint),'changing assignments and candidates remain outside cache writes')
+  }
   let output
   if(name==='ash_case_scope')output=bigScope
   else if(name==='ash_complete_topics_v167'){
@@ -610,7 +621,7 @@ const bigFetch=async(url,options)=>{
     const supplied=JSON.parse(request.input[0].content[0].text)
     assert.deepEqual(supplied.scope,bigScope,'every topic batch retains the complete scope')
     assert.deepEqual(supplied.source.documents.map(item=>({id:item.id,text:item.passages.map(p=>p.text).join(' ')})),source.documents.map(item=>({id:item.id,text:item.extracted_text.replace(/\s+/gu,' ').trim()})),'every topic generation receives all original passages')
-    assert.deepEqual(request.text.format.schema.properties.topics.items.properties.id.enum,assigned.map(item=>item.id))
+    assert.deepEqual(request.text.format.schema.properties.topics.items.properties.id.enum,bigScope.issues.map(item=>item.id))
     generatedTopics.push({round:bigRound+1,ids:assigned.map(item=>item.id)})
     if(assigned[0].id==='topic_2'&&!topicTimedOut){
       topicTimedOut=true
@@ -625,7 +636,7 @@ const bigFetch=async(url,options)=>{
     const component=JSON.parse(request.input.at(-1).content[0].text),assigned=component.assigned_calculations
     assert(assigned.length<=6)
     generatedAssignments.push({round:bigRound,ids:assigned.map(item=>item.id)})
-    assert.deepEqual(request.text.format.schema.properties.calculations.items.properties.id.enum,assigned.map(item=>item.id))
+    assert.deepEqual(request.text.format.schema.properties.calculations.items.properties.id.enum,component.calculation_plan.map(item=>item.id))
     if(assigned[0].id==='difference_6'&&!generationTimedOut){
       generationTimedOut=true
       assert.equal(component.completed_analysis.calculations.length,6,'first checked batch is retained before a later request times out')
@@ -705,7 +716,7 @@ assert.deepEqual(firstRound,[...expectedCoverage.slice(0,6),expectedCoverage[5],
 }
 // Strict provider schemas are not trusted: reject omitted, duplicated,
 // reordered and unrelated topic answers before numerical generation.
-for(const defect of ['missing','duplicate','reordered','unrelated']){
+for(const defect of ['missing','duplicate','reordered','unrelated','other_batch']){
   let topicCalls=0,laterCalls=0
   const malformedTopics=async(_url,options)=>{
     const request=JSON.parse(options.body),name=request.text.format.name
@@ -717,6 +728,7 @@ for(const defect of ['missing','duplicate','reordered','unrelated']){
       if(defect==='duplicate')output.topics[1]=structuredClone(output.topics[0])
       if(defect==='reordered')output.topics.reverse()
       if(defect==='unrelated')output.topics[1].id='not_assigned'
+      if(defect==='other_batch')output.topics[1]=structuredClone(big.analysis.topics[2])
     }else{laterCalls++;throw Error('Invalid topics cannot reach numerical generation or a customer result')}
     return Response.json({status:'completed',id:'invalid-topics-'+topicCalls,output_text:JSON.stringify(output)})
   }
@@ -771,11 +783,13 @@ for(const rejectWholeCase of [false,true]){
       let payload;try{payload=JSON.parse(item.text)}catch{continue}
       payloads.push(payload)
       if(payload.retrieved_sources){
-        if(payload.research_context?.mode==='module'){
+        const generationAssignment=request.input[messageIndex].content.map(block=>{try{return JSON.parse(block.text).research_context}catch{return null}}).find(Boolean)
+        if((payload.research_context||generationAssignment)?.mode==='module'){
           assert.equal(round,1,'all repairs restore full research instead of repeating a context gap')
           scopedRequests++
           const restored={...payload,retrieved_sources:name==='ash_evidence_review_v139'?research:fullIndexed}
           delete restored.research_context
+          if(generationAssignment)baseline.input[messageIndex].content=baseline.input[messageIndex].content.filter(block=>{try{return !JSON.parse(block.text).research_context}catch{return true}})
           baseline.input[messageIndex].content[contentIndex].text=JSON.stringify(restored)
           assert(payload.retrieved_sources.length<research.length)
           for(const item of payload.retrieved_sources){
@@ -851,6 +865,12 @@ for(const component of ['topics','calculations']){
   assert(reservations.every(n=>n===8000),'splitting never raises the per-request output allowance')
   assert.deepEqual(state.topicDraft,before.topicDraft);assert.deepEqual(state.analysisOutline,before.analysisOutline)
   assert.deepEqual(state.scope,before.scope);assert.deepEqual(state.modelState,before.modelState)
+  if(component==='calculations'){
+    const wrongAssignment=await advanceCompleteAnalysis({...args,state,fetchImpl:async()=>Response.json({id:'wrong-valid-case-id',status:'completed',output_text:JSON.stringify({calculations:[big.analysis.calculations[12]]})})})
+    assert(!wrongAssignment.result)
+    assert.deepEqual(wrongAssignment.state.analysisOutline,state.analysisOutline,'an ID allowed elsewhere in this case cannot replace the assigned calculation')
+    assert.equal(wrongAssignment.state.inputRepair.component,'calculations')
+  }
   const resumed=await advanceCompleteAnalysis({...args,state,fetchImpl:async(_url,options)=>{
     const request=JSON.parse(options.body),data=JSON.parse(request.input.at(-1).content[0].text)
     const output=component==='topics'?topicFixture(big.analysis,request):{calculations:big.analysis.calculations.filter(c=>data.assigned_calculations.some(a=>a.id===c.id))}
