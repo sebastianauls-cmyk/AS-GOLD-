@@ -30,6 +30,12 @@ An approved review can be reused only if a SHA-256 digest of the **entire serial
 
 ## Rollout and verification
 
+Complete-case reviews now use an explicit prompt-cache breakpoint after the shared original/research context. The server-owned review focus follows that boundary in a developer message; related outputs, assignment and candidate remain user data after it. All original/source text, high reasoning, output limits and every required review remain present. A case-specific opaque key separates cache accounting. This affects only the explicitly opted-in complete-case reviewer, not document/source-only reviews. The receipt hash still covers the entire final request, including the focus, candidate, dependencies and cache settings; prompt reuse cannot substitute for an approval. Worker logs include cache-write counts as well as cache reads.
+
+This follows the current OpenAI prompt-caching guide: https://developers.openai.com/api/docs/guides/prompt-caching (checked 2026-09-23). It avoids writing the changing review suffix to cache and makes the shared prefix eligible for reuse. Actual cache hits, runtime and invoice savings still require provider usage from a live run. Request-byte and total-input resource limits are unchanged; cached input still counts toward the existing input threshold. No guaranteed case completion or currency ceiling is implied.
+
+`test_case_review_cache.mjs` checks identical evidence prefixes across changing sections, unchanged source text and instruction/data roles, full-request receipt invalidation, rejection handling, and fail-before-transport behavior. It runs through `test_complete_case.mjs` using a simulated provider.
+
 Apply `20260923120225_bounded_case_model_budget.sql`, deploy the updated worker and roadmap endpoint together, then verify configuration without starting a paid case. Do not raise limits as part of recovery. A worker deployed before the migration fails closed. Existing active jobs would have no accounting for earlier calls: pause dispatch and finish/cancel them before rollout; this migration does not requeue any historical job. Rollback must keep dispatch paused until the worker and policy agree, because older workers do not enforce these reservations.
 
 The UI restores job status and polls saved state. Closing the page does not restart generation. Word/PDF export still uses only the accepted result; no external sending is added.
