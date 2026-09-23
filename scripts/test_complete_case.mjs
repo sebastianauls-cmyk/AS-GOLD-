@@ -381,6 +381,48 @@ for(let part=0;part<7;part++){
 }
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
 assert.equal(calls,13,'no external research is claimed for an arithmetic-only case')
+// A local letter repair must not rebuild arithmetic or pay for identical
+// independent reviews. A changed dependent action invalidates those receipts.
+for(const change of ['letter','dependent_step','unlocated']){
+  let paid=0,plans=0,topics=0,numbers=0,reviews=0,flagged=false
+  const repairFetch=async(_url,options)=>{
+    if(_url!=='https://api.openai.com/v1/responses')return new Response('',{status:404})
+    paid++
+    const request=JSON.parse(options.body),name=request.text.format.name
+    let output
+    if(name==='ash_case_scope')output=scope
+    else if(name==='ash_complete_topics_v167'){topics++;output=topicFixture(candidate.analysis,request)}
+    else if(name==='ash_complete_outline_v166')output=outlineFixture(candidate.analysis)
+    else if(name==='ash_complete_numbers_v157'){numbers++;output={calculations:structuredClone(candidate.analysis.calculations)}}
+    else if(name==='ash_complete_plan_v157'){
+      plans++
+      const {analysis,...plan}=structuredClone(candidate)
+      if(plans===1)plan.letters[0].body+=' Die Berechnungsanlage wurde bereits versandt.'
+      if(plans>1&&change==='dependent_step')plan.steps[0].action+=' Bitte die vorhandene Abrechnung bereithalten.'
+      output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
+    }else{
+      reviews++
+      const part=JSON.parse(request.input[0].content.at(-1).text).candidate
+      const reject=!flagged&&part.letters?.[0]?.body.includes('bereits versandt')
+      if(reject)flagged=true
+      output={issues:reject?[{code:'invention',location:change==='unlocated'?'output':'letters[versorgung].body',reason:'No original confirms that the calculation annex was sent.'}]:[]}
+    }
+    return Response.json({id:'local-repair-'+paid,status:'completed',model:request.model,output_text:JSON.stringify(output)})
+  }
+  let repaired=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch})
+  for(let step=0;repaired.status==='processing'&&step<40;step++)repaired=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repaired.state})
+  assert.equal(repaired.status,'completed');assert.equal(repaired.attempts,2)
+  assert.equal(plans,2);assert.equal(topics,change==='unlocated'?2:1);assert.equal(numbers,change==='unlocated'?2:1)
+  assert.deepEqual(repaired.result.analysis.calculations,checked.analysis.calculations,'the exact source-bound arithmetic survives the plan repair')
+  assert.equal(repaired.result.analysis.verification.review_response_ids.length,8,'every section has a matching approval')
+  if(change==='letter'){
+    assert.equal(paid,15,'13 initial calls plus one plan repair and one changed letter review; previously 25')
+    assert.equal(reviews,9);assert.equal(repaired.result.analysis.verification.reused_review_response_ids.length,7)
+  }else{
+    assert.equal(reviews,16,'changed dependencies or unlocated defects require all current reviews')
+    assert.equal(repaired.result.analysis.verification.reused_review_response_ids.length,0)
+  }
+}
 const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}
 const official='https://www.gesetze-im-internet.de/estg/__34.html'
 const batchFetch=async(url,options)=>{
@@ -389,6 +431,7 @@ const batchFetch=async(url,options)=>{
   const request=JSON.parse(options.body),name=request.text.format.name
   let output=batchedScope,search=[]
   if(name==='ash_case_research'){
+    assert.equal(request.max_tool_calls,2,'built-in research calls also have a provider-enforced bound')
     const input=JSON.parse(request.input);assert.equal(input.research_topics.length,2)
     assert(!request.input.includes(source.documents[0].id),'public research receives no document identifiers')
     researchedTopics.push(...input.research_topics)

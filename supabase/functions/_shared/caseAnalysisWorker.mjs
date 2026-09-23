@@ -1,3 +1,4 @@
+import {caseModelBudget} from './caseModelBudget.mjs'
 import {loadRoadmapSource,roadmapModelContext} from './roadmapModelContext.mjs'
 import {roadmapFingerprint,validateRoadmapInput} from './customerRoadmap.mjs'
 import {advanceCompleteAnalysis,completeAnalysisStage} from './completeCaseAnalysis.mjs'
@@ -24,7 +25,8 @@ export async function processCaseAnalysisJob({client,job,secret,providerKey,adva
     const checkpoint=job.checkpoint?await openModelCheckpoint({token:job.checkpoint,binding,secret}):null
     if(checkpoint&&(checkpoint.runId!==job.id||checkpoint.issuedAt!==Date.parse(job.created_at)))throw new ModelWorkflowError('Der gespeicherte Auftrag stimmt nicht mit dem Zwischenstand überein.',409,'checkpoint_invalid')
     const {request,reviewContent}=roadmapModelContext({source,style,outputLanguage,referenceLanguage,permissions:{draft_letters:draftLetters}})
-    const analysis=await advance({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest:request,baseReviewContent:reviewContent,draftLetters,state:checkpoint?.state,onResponse:({stage,attempt,response_id,status,provider_status,provider_error_code,retry_after})=>log('model_response',{stage,attempt,response_id,status,provider_status,provider_error_code,retry_after})})
+    const budget=caseModelBudget({client,job})
+    const analysis=await advance({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest:request,baseReviewContent:reviewContent,draftLetters,state:checkpoint?.state,beforeRequest:budget.beforeRequest,onResponse:async event=>{if(event.stage==='retrieval')return;await budget.onResponse(event);const {stage,attempt,response_id,status,provider_status,provider_error_code,retry_after,usage}=event;log('model_response',{stage,attempt,response_id,status,provider_status,provider_error_code,retry_after,...(usage?{input_tokens:usage.input_tokens,output_tokens:usage.output_tokens,cached_tokens:usage.input_tokens_details?.cached_tokens??0}:{})})}})
     const fresh=await loadRoadmapSource(client,job.case_id,job.owner_id)
     if(!fresh||await roadmapFingerprint(fresh)!==job.source_fingerprint)throw new ModelWorkflowError('Während der Verarbeitung wurden Unterlagen geändert. Es wurde kein neues Ergebnis gespeichert.',409,'source_changed')
     if(analysis.status==='processing') {
