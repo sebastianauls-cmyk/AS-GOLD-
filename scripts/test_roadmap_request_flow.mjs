@@ -99,22 +99,10 @@ try {
   assert.equal(state.enqueued.length,1,'unapproved jobs never reach the background dispatcher')
   reset()
   const fullBody={...baseBody,analysis_mode:'complete'}
-  const planned=await call(fullBody);assert.equal(planned.status,202);assert.equal(state.case_roadmaps.length,0)
-  const crossMode=await call({...baseBody,checkpoint:planned.data.checkpoint});assert.equal(crossMode.status,409,'checkpoint must bind full/source-only mode')
-  state.permissions.full_analysis=false;assert.equal((await call({...fullBody,checkpoint:planned.data.checkpoint})).status,403)
-  state.permissions.full_analysis=true
-  const topicDraft=await call({...fullBody,checkpoint:planned.data.checkpoint});assert.equal(topicDraft.status,202);assert.equal(state.case_roadmaps.length,0,'a topical draft cannot be published before calculations and independent review')
-  const generated=await call({...fullBody,checkpoint:topicDraft.data.checkpoint});assert.equal(generated.status,202);assert.equal(state.case_roadmaps.length,0)
-  const assembled=await call({...fullBody,checkpoint:generated.data.checkpoint});assert.equal(assembled.status,202);assert.equal(state.case_roadmaps.length,0,'partial calculations and plan are never saved before full review')
-  let reviewing=assembled
-  for(let part=0;part<7;part++){reviewing=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(reviewing.status,202);assert.equal(state.case_roadmaps.length,0)}
-  const accepted=await call({...fullBody,checkpoint:reviewing.data.checkpoint});assert.equal(accepted.status,200);assert(accepted.data.roadmap.result.analysis.verification.review_response_id);assert.equal(state.case_roadmaps.length,1)
-  reset();state.issues=[{code:'meaning',location:'analysis',reason:'Synthetic negative control: material unsupported conclusion.'}]
-  let incomplete=await call(fullBody)
-  for(let part=0;part<32;part++){assert.equal(incomplete.status,202);assert.equal(state.case_roadmaps.length,0);incomplete=await call({...fullBody,checkpoint:incomplete.data.checkpoint})}
-  assert.equal(incomplete.status,202)
-  const denied=await call({...fullBody,checkpoint:incomplete.data.checkpoint})
-  assert.equal(denied.status,422);assert.equal(state.case_roadmaps.length,0,'three assembled candidates failing full review never save partial results');assert.equal(state.modelCalls,34,'two bounded corrections of all three components and every final independent review')
+  const legacy=await call(fullBody)
+  assert.equal(legacy.status,409);assert.equal(legacy.data.code,'background_required')
+  assert.equal(state.modelCalls,0,'the old complete path cannot bypass durable resource limits')
+  assert.equal(state.case_roadmaps.length,0)
   reset()
   const continuation=await begin()
   const completed=await call(continuation)

@@ -5,6 +5,7 @@ import {processCaseAnalysisJob} from '../supabase/functions/_shared/caseAnalysis
 import {roadmapFingerprint,roadmapSource,roadmapStyle} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {testCaseModelBudget} from './test_case_model_budget.mjs'
 import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
 
 // Real Postgres semantics, real migrations, real worker/state machine, validators
@@ -48,6 +49,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922191500_provider_envelope_recovery.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922200500_bounded_roadmap_letter_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922213500_approved_case_analysis_retry.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260923114636_bounded_case_model_budget.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -69,9 +71,14 @@ try {
     maybeSingle(){return this.execute(true)} then(resolve,reject){return this.execute().then(resolve,reject)}
   }
   const client={from:table=>new Query(table),rpc:async(name,args)=>{
-    assert.equal(name,'finish_case_analysis_job')
-    try{return {data:await scalar('select public.finish_case_analysis_job($1,$2,$3)',[args.p_job_id,args.p_lease,args.p_outcome]),error:null}}catch(error){return {data:null,error}}
+    const calls={finish_case_analysis_job:['p_job_id','p_lease','p_outcome'],reserve_case_model_call:['p_job_id','p_lease','p_output_tokens','p_request_bytes','p_search_calls','p_stage'],settle_case_model_call:['p_job_id','p_lease','p_reservation_id','p_input_tokens','p_output_tokens','p_cached_tokens']}
+    assert(calls[name])
+    try{return {data:await scalar(`select public.${name}(${calls[name].map((_,i)=>'$'+(i+1)).join(',')})`,calls[name].map(key=>args[key])),error:null}}catch(error){return {data:null,error}}
   }}
+  await testCaseModelBudget({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar})
+  // Unrelated workflow cases share this isolated database; daily-budget edges
+  // are tested above against the real production defaults and low boundaries.
+  await db.exec("update private.case_model_budget_policy set max_calls=10000,max_output_tokens=100000000,max_request_bytes=1000000000,max_input_tokens=100000000 where scope<>'job'")
   globalThis.fetch=async(url,options)=>{
     assert.equal(url,'https://api.openai.com/v1/responses');modelCalls++
     const request=JSON.parse(options.body),name=request.text.format.name
@@ -100,11 +107,11 @@ try {
         if(numericFailure==='format')return new Response('PRIVATE BROKEN PROVIDER ENVELOPE',{status:200})
         throw new DOMException('Synthetic second numeric batch timeout','TimeoutError')
       }
-      return Response.json({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify({calculations:analysis.calculations.filter(item=>assigned.includes(item.id))})})
+      return Response.json({id:'synthetic-'+modelCalls,status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:JSON.stringify({calculations:analysis.calculations.filter(item=>assigned.includes(item.id))})})
     }
     const output=name==='ash_case_scope'?{issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:!!numericFixture}],research_topics:[]}
       :name==='ash_complete_topics_v167'?{topics:analysis.topics,limitations:analysis.limitations}:name==='ash_complete_outline_v166'?{calculation_plan:analysis.calculations.map(item=>({id:item.id,title:item.title,topic_ids:item.topic_ids,purpose:item.explanation,depends_on:item.inputs.filter(input=>input.kind==='calculation').map(input=>input.calculation_id)}))}:name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:{issues}
-    return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',output_text:JSON.stringify(output)}))
+    return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:JSON.stringify(output)}))
   }
   const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
   const drain=async id=>{for(let n=0;n<117;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
@@ -410,12 +417,12 @@ try {
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
   for(const [response,code] of [
-    [{id:'bad-json',status:'completed',output_text:'PRIVATE MALFORMED OUTPUT'},'provider_invalid_json'],
+    [{id:'bad-json',status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:'PRIVATE MALFORMED OUTPUT'},'provider_invalid_json'],
     [{id:'refusal',status:'completed',output:[{type:'message',content:[{type:'refusal',refusal:'PRIVATE REFUSAL'}]}]},'provider_invalid_json'],
     [{id:'token-limit',status:'incomplete',incomplete_details:{reason:'max_output_tokens'}},'provider_token_limit'],
   ]){
     job=await enqueue();const before=modelCalls
-    httpStages.set('ash_case_scope',Response.json(response));await process(await claim(job.id))
+    httpStages.set('ash_case_scope',Response.json({...response,usage:{input_tokens:100,output_tokens:100}}));await process(await claim(job.id))
     const failed=await stored(job.id)
     assert.equal(failed.status,'failed');assert.equal(failed.error_code,code);assert.equal(modelCalls-before,1)
     assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),0)

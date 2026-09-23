@@ -29,6 +29,7 @@ Deno.serve(async(req:Request)=>{
   const body=await req.json().catch(()=>null);
   if(!body||!UUID.test(body.case_id)||JSON.stringify(body).length>800000||JSON.stringify({...body,checkpoint:undefined}).length>10000) return reply(req,{error:'Ungültige Anfrage'},400);
   if(!['generate','enqueue','cancel','progress'].includes(body.action)) return reply(req,{error:'Unbekannte Aktion'},400);
+  if(body.action==='generate'&&body.analysis_mode==='complete')return reply(req,{code:'background_required',error:'Bitte die vollständige Fallanalyse über den Hintergrundauftrag starten. Nur dieser Ablauf besitzt die Verbrauchsbegrenzung.'},409);
   try {
     // Caller-scoped reads enforce RLS and the active test-access boundary before
     // any service-role write or provider call. A guessed ID grants no access.
