@@ -30,7 +30,7 @@ An approved review can be reused only if a SHA-256 digest of the **entire serial
 
 ## Rollout and verification
 
-Apply `20260923114636_bounded_case_model_budget.sql`, deploy the updated worker and roadmap endpoint together, then verify configuration without starting a paid case. Do not raise limits as part of recovery. A worker deployed before the migration fails closed. Existing active jobs would have no accounting for earlier calls: pause dispatch and finish/cancel them before rollout; this migration does not requeue any historical job. Rollback must keep dispatch paused until the worker and policy agree, because older workers do not enforce these reservations.
+Apply `20260923120225_bounded_case_model_budget.sql`, deploy the updated worker and roadmap endpoint together, then verify configuration without starting a paid case. Do not raise limits as part of recovery. A worker deployed before the migration fails closed. Existing active jobs would have no accounting for earlier calls: pause dispatch and finish/cancel them before rollout; this migration does not requeue any historical job. Rollback must keep dispatch paused until the worker and policy agree, because older workers do not enforce these reservations.
 
 The UI restores job status and polls saved state. Closing the page does not restart generation. Word/PDF export still uses only the accepted result; no external sending is added.
 

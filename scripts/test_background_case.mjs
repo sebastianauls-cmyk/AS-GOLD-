@@ -49,7 +49,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922191500_provider_envelope_recovery.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922200500_bounded_roadmap_letter_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260922213500_approved_case_analysis_retry.sql','utf8'))
-  await db.exec(await readFile('supabase/migrations/20260923114636_bounded_case_model_budget.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260923120225_bounded_case_model_budget.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
