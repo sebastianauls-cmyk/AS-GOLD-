@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict'
 import './test_case_review_cache.mjs'
+import './test_case_research_context.mjs'
 import {calculateExpression,quoteContainsNumber} from '../supabase/functions/_shared/checkedCalculations.mjs'
 import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope,completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult,roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/lib/completeAnalysisDisplay.mjs'
 import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport.mjs'
-import {quotationIndex,resolveQuotationIds,indexedQuotationSchema} from '../supabase/functions/_shared/quotationIndex.mjs'
+import {quotationIndex,resolveQuotationIds,indexedQuotationSchema,indexedModelData} from '../supabase/functions/_shared/quotationIndex.mjs'
 import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence,supportingPrimaryEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
 
 const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
@@ -751,5 +752,79 @@ for(const failingComponent of ['outline','calculations']){
   try{for(let i=0;i<12&&run.status==='processing';i++)run=await advanceCompleteAnalysis({...args,fetchImpl:sharedRepair,state:run.state})}catch(error){failure=error}
   assert.equal(failure?.code,'source_unresolved');assert(!run.result)
   assert.equal(topicCalls,5);assert.equal(manifestCalls,1);assert.equal(numberCalls,failingComponent==='calculations'?1:0)
+}
+// Measure complete request payloads, including instructions, schemas, manifests
+// and retained originals. Source bodies and model replies are fictional; this
+// is not a token/cost estimate or a live legal-quality test.
+for(const rejectWholeCase of [false,true]){
+  const moduleCandidate=structuredClone(big)
+  const research=big.analysis.topics.map((topic,i)=>({url:`https://www.gesetze-im-internet.de/synthetic_act_${i}/__1.html`,title:'Fictional routing source '+i,source_text:`SYNTHETIC EVIDENCE ${i}. `+'Complete fictional rule with an exception and its conditions. '.repeat(150),checked_at:'2026-09-23T00:00:00Z'}))
+  moduleCandidate.analysis.topics.forEach((topic,i)=>{topic.sources=[{url:research[i].url,quote:`SYNTHETIC EVIDENCE ${i}.`}]})
+  const fullIndexed=indexedModelData(source,research,quotationIndex(source,research)).research
+  let calls=0,round=1,bytes=0,fullBytes=0,scopedRequests=0,fullAudits=0
+  const transport=async(_url,options)=>{
+    const request=JSON.parse(options.body),name=request.text.format.name
+    calls++
+    const baseline=structuredClone(request)
+    const payloads=[]
+    for(const [messageIndex,message] of request.input.entries())for(const [contentIndex,item] of message.content.entries()){
+      let payload;try{payload=JSON.parse(item.text)}catch{continue}
+      payloads.push(payload)
+      if(payload.retrieved_sources){
+        if(payload.research_context?.mode==='module'){
+          assert.equal(round,1,'all repairs restore full research instead of repeating a context gap')
+          scopedRequests++
+          const restored={...payload,retrieved_sources:name==='ash_evidence_review_v139'?research:fullIndexed}
+          delete restored.research_context
+          baseline.input[messageIndex].content[contentIndex].text=JSON.stringify(restored)
+          assert(payload.retrieved_sources.length<research.length)
+          for(const item of payload.retrieved_sources){
+            const original=research.find(source=>source.url===item.url)
+            if(item.source_text)assert.equal(item.source_text,original.source_text)
+            else assert.equal(item.passages.map(p=>p.text).join(' '),original.source_text.trim())
+          }
+        }else assert.equal(payload.retrieved_sources.length,research.length)
+      }
+    }
+    bytes+=Buffer.byteLength(options.body);fullBytes+=Buffer.byteLength(JSON.stringify(baseline))
+    let output
+    const component=payloads.find(item=>item.component)
+    if(name==='ash_complete_topics_v167')output=topicFixture(moduleCandidate.analysis,request)
+    else if(name==='ash_complete_outline_v166')output=outlineFixture(moduleCandidate.analysis)
+    else if(name==='ash_complete_numbers_v157'){
+      output={calculations:moduleCandidate.analysis.calculations.filter(item=>component.assigned_calculations.some(assigned=>assigned.id===item.id))}
+    }else if(name==='ash_complete_plan_v157'){
+      const {analysis,...plan}=moduleCandidate;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
+    }else{
+      const assignment=payloads.find(item=>item.assigned_review).assigned_review
+      assert.equal(request.reasoning.effort,'high')
+      assert(payloads.some(item=>item.originals?.documents.length===source.documents.length),'every reviewer retains every original')
+      output={issues:[]}
+      if(assignment.part==='overview'){
+        fullAudits++
+        assert.deepEqual(payloads.find(item=>item.retrieved_sources).retrieved_sources,research)
+        assert.deepEqual(payloads.find(item=>item.related_output).related_output.topics,moduleCandidate.analysis.topics,'the independent whole-case audit can see every citation and qualification')
+        if(rejectWholeCase&&round===1)output.issues=[{code:'source',location:'analysis.topics[topic_4]',reason:'Synthetic cross-topic exception requires the full research context.'}]
+      }
+    }
+    return Response.json({id:`module-round-${round}-call-${calls}`,status:'completed',model:request.model,output_text:JSON.stringify(output)})
+  }
+  const moduleArgs={...args,fetchImpl:transport,baseReviewContent:[{type:'input_text',text:JSON.stringify({originals:source})}]}
+  let run={status:'processing',state:{stage:'analysis',scope:bigScope,research,discovery_gaps:[],modelState:{stage:'generation',attempt:1,feedback:[],previous:null}}}
+  for(let i=0;run.status==='processing'&&i<80;i++){
+    round=run.state.modelState?.attempt||1
+    run=await advanceCompleteAnalysis({...moduleArgs,state:run.state})
+  }
+  assert.equal(run.status,'completed');assert.equal(run.attempts,rejectWholeCase?2:1)
+  assert.equal(fullAudits,rejectWholeCase?2:1)
+  assert(scopedRequests>0)
+  assert.deepEqual(run.result.analysis.research_sources,research,'saved evidence and exports retain all research')
+  assert.deepEqual(run.result.analysis.verification.review_coverage,expectedCoverage)
+  assert(run.result.analysis.verification.review_response_ids.every(id=>id.startsWith(`module-round-${rejectWholeCase?2:1}-`)),'a whole-case objection prevents every first-round approval from completing the result')
+  if(!rejectWholeCase){
+    assert.equal(calls,35,'routing adds no provider calls to the 10-topic, 24-calculation, 25-review fixture')
+    console.log(JSON.stringify({synthetic_module_payload:{requests:calls,scoped_requests:scopedRequests,bytes,full_context_bytes:fullBytes,reduction_percent:Number((100*(1-bytes/fullBytes)).toFixed(1))}}))
+    assert(bytes<fullBytes,'source manifests and routing must not increase the complete request payload')
+  }
 }
 console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete batched reviews, single-batch transport resumption, full correction/review coverage and display/export parity passed (provider mocked).')

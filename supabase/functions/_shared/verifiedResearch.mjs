@@ -79,11 +79,25 @@ async function cachedSource(url,domains,maxChars,records){
 // text and its commencement clause, not a hard-coded rate or case conclusion.
 // Freshness, content hashes and the country allowlist apply to every dependency.
 const SUPPORTING_ACTS={sgb_11:['pbav_2025']}
+export function primaryEvidenceAct(url){
+  try{const parsed=new URL(url);return parsed.protocol==='https:'&&parsed.hostname==='www.gesetze-im-internet.de'?/^\/([a-z0-9_]+)\/__[a-z0-9]+\.html$/.exec(parsed.pathname)?.[1]||null:null}catch{return null}
+}
+export function primaryEvidenceActs(urls,{bidirectional=false}={}){
+  const acts=new Set(urls.map(primaryEvidenceAct).filter(Boolean))
+  let changed=true
+  while(changed){
+    changed=false
+    for(const [base,dependencies] of Object.entries(SUPPORTING_ACTS)){
+      if(acts.has(base)||bidirectional&&dependencies.some(act=>acts.has(act))){
+        for(const act of [base,...dependencies])if(!acts.has(act)){acts.add(act);changed=true}
+      }
+    }
+  }
+  return acts
+}
 export async function supportingPrimaryEvidence(selectedUrls,domains,records){
-  const act=url=>{try{const parsed=new URL(url);return parsed.hostname==='www.gesetze-im-internet.de'?/^\/([a-z0-9_]+)\/__[a-z0-9]+\.html$/.exec(parsed.pathname)?.[1]:null}catch{return null}}
-  const acts=new Set(selectedUrls.map(act).filter(Boolean))
-  for(const selected of [...acts])for(const related of SUPPORTING_ACTS[selected]||[])acts.add(related)
-  const relevant=primarySourceCatalogue(domains,Date.now(),records).filter(item=>acts.has(act(item.url)))
+  const acts=primaryEvidenceActs(selectedUrls)
+  const relevant=primarySourceCatalogue(domains,Date.now(),records).filter(item=>acts.has(primaryEvidenceAct(item.url)))
   return (await Promise.all(relevant.map(item=>cachedSource(item.url,domains,22000,records)))).filter(Boolean)
 }
 

@@ -126,17 +126,19 @@ export async function callModel(providerKey,request,{deadline,fetchImpl,onRespon
   return {parsed,response_id:response.id,model:response.model,response}
 }
 
-export async function reviewModelCandidate({providerKey,candidate,reviewContent,deadline=Date.now()+45000,fetchImpl=fetch,onResponse,beforeRequest,attempt=1,callTimeoutMs=90000,reviewModel='gpt-5.6-luna',reviewFocus='',previousReview=null,cachePrefixLength=0,cacheKey=null}) {
+export async function reviewModelCandidate({providerKey,candidate,reviewContent,deadline=Date.now()+45000,fetchImpl=fetch,onResponse,beforeRequest,attempt=1,callTimeoutMs=90000,reviewModel='gpt-5.6-luna',reviewFocus='',previousReview=null,cachePrefixLength=0,cacheSharedPrefixLength=0,cacheKey=null}) {
   // Live negative controls require the full reasoning review. Do not downgrade
   // the evidence gate to fit a slow request; the common deadline still fails closed.
   const request={model:reviewModel,reasoning:{effort:'high'},instructions:REVIEW_INSTRUCTIONS+(reviewFocus?'\nREVIEW PART: '+reviewFocus:''),input:[{role:'user',content:[...reviewContent,{type:'input_text',text:JSON.stringify({candidate})}]}],text:{format:{type:'json_schema',name:'ash_evidence_review_v139',strict:true,schema:REVIEW_SCHEMA}},max_output_tokens:10000}
   if(cachePrefixLength){
     if(!Number.isInteger(cachePrefixLength)||cachePrefixLength<1||cachePrefixLength>reviewContent.length||reviewContent[cachePrefixLength-1]?.type!=='input_text'||!present(cacheKey))throw new ModelWorkflowError('Ungültige Konfiguration der Fallprüfung.',500,'review_cache_invalid')
-    // Complete-case reviews share all originals and fetched texts. Keep their
+    if(!Number.isInteger(cacheSharedPrefixLength)||cacheSharedPrefixLength<0||cacheSharedPrefixLength>=cachePrefixLength||cacheSharedPrefixLength&&reviewContent[cacheSharedPrefixLength-1]?.type!=='input_text')throw new ModelWorkflowError('Ungültige Konfiguration der Fallprüfung.',500,'review_cache_invalid')
+    // Complete-case reviews share originals and may share fetched texts. Keep their
     // explicit cache boundary BEFORE the varying focus, dependencies and answer.
     // Source material stays user data; only the server-owned focus is a developer
     // instruction. No content is omitted and no quality setting is reduced.
     const prefix=reviewContent.slice(0,cachePrefixLength)
+    if(cacheSharedPrefixLength)prefix[cacheSharedPrefixLength-1]={...prefix[cacheSharedPrefixLength-1],prompt_cache_breakpoint:{mode:'explicit'}}
     prefix[prefix.length-1]={...prefix.at(-1),prompt_cache_breakpoint:{mode:'explicit'}}
     request.instructions=REVIEW_INSTRUCTIONS
     request.input=[{role:'user',content:prefix},...(reviewFocus?[{role:'developer',content:[{type:'input_text',text:'REVIEW PART: '+reviewFocus}]}]:[]),{role:'user',content:[...reviewContent.slice(cachePrefixLength),{type:'input_text',text:JSON.stringify({candidate})}]}]
