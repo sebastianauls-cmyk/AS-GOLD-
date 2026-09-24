@@ -16,7 +16,7 @@ All correction attempts, evidence, partial generations and completed review rece
 
 The real worker/SQL test stops a synthetic job after 11 completed provider stages, submits a new authorized job and completes the last stage: 12 total simulated calls, with all eight assigned reviews present. It also verifies budget exhaustion, context mismatch, expiry, revoked consent, private access and deletion. Already erased historical checkpoints cannot be recovered. This is a recovery-mechanism test, not a completed live Sarah case.
 
-Rollout: apply `20260924000301_retained_case_work.sql`, then deploy the worker and its relative dependencies. Keep the processing pause in place until a separate authorized live test. The migration does not modify configuration, historical jobs or budget policies. The Supabase-injected deployment identifier is documented at https://supabase.com/docs/guides/functions/secrets.
+Rollout: apply `20260924001546_retained_case_work.sql`, then deploy the worker and its relative dependencies. Keep the processing pause in place until a separate authorized live test. The migration does not modify configuration, historical jobs or budget policies. The Supabase-injected deployment identifier is documented at https://supabase.com/docs/guides/functions/secrets.
 
 ## Bounded generation after truncated output
 

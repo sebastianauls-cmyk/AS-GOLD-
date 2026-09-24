@@ -1,3 +1,4 @@
+do $$ begin if exists(select 1 from private.case_analysis_config where singleton and enabled) or exists(select 1 from public.case_analysis_jobs where status in ('queued','running')) then raise exception 'Retained-work rollout requires paused processing and no active jobs'; end if; end $$;
 -- Keep the latest encrypted, unfinished work for an explicitly authorized new
 -- job after a technical interruption. No enqueue, credit, budget, deadline,
 -- retry or review-acceptance rule is changed. Existing lost work is not restored.
@@ -25,7 +26,7 @@ language sql immutable set search_path='' as $$
 $$;
 revoke all on function private.case_work_failure_recoverable(text) from public,anon,authenticated,service_role;
 
-create function public.read_retained_case_work(p_job_id uuid,p_lease uuid,p_cache_key text) returns jsonb
+create function private.read_retained_case_work(p_job_id uuid,p_lease uuid,p_cache_key text) returns jsonb
 language plpgsql security definer set search_path='' as $$
 declare w private.case_analysis_work; j public.case_analysis_jobs; v_result jsonb;
 begin
@@ -43,7 +44,7 @@ begin
   return coalesce(v_result,'{}'::jsonb);
 end $$;
 
-create function public.save_retained_case_work(p_job_id uuid,p_lease uuid,p_cache_key text,p_ciphertext text) returns boolean
+create function private.save_retained_case_work(p_job_id uuid,p_lease uuid,p_cache_key text,p_ciphertext text) returns boolean
 language plpgsql security definer set search_path='' as $$
 declare w private.case_analysis_work; j public.case_analysis_jobs;
 begin
@@ -60,7 +61,13 @@ begin
       source_fingerprint=excluded.source_fingerprint,ciphertext=excluded.ciphertext,saved_at=excluded.saved_at,expires_at=excluded.expires_at;
   return true;
 end $$;
+create function public.read_retained_case_work(p_job_id uuid,p_lease uuid,p_cache_key text) returns jsonb
+language sql security invoker set search_path='' as $$select private.read_retained_case_work(p_job_id,p_lease,p_cache_key)$$;
+create function public.save_retained_case_work(p_job_id uuid,p_lease uuid,p_cache_key text,p_ciphertext text) returns boolean
+language sql security invoker set search_path='' as $$select private.save_retained_case_work(p_job_id,p_lease,p_cache_key,p_ciphertext)$$;
+revoke all on function private.read_retained_case_work(uuid,uuid,text),private.save_retained_case_work(uuid,uuid,text,text) from public,anon,authenticated;
 revoke all on function public.read_retained_case_work(uuid,uuid,text),public.save_retained_case_work(uuid,uuid,text,text) from public,anon,authenticated;
+grant execute on function private.read_retained_case_work(uuid,uuid,text),private.save_retained_case_work(uuid,uuid,text,text) to service_role;
 grant execute on function public.read_retained_case_work(uuid,uuid,text),public.save_retained_case_work(uuid,uuid,text,text) to service_role;
 
 -- Cancellation, completion and content/source failures discard unfinished work.
