@@ -28,6 +28,7 @@ for(const text of [
   'Die Frist bis 24.09.2026 soll ersetzt werden durch die Frist bis 02.10.2026.',
   'Die Frist bis 24.09.2026 wurde auf den 31.02.2026 verlängert.'
 ])assert.equal(analyzeDeadlines({text,now}).primary.date,'2026-09-24','a request, condition, denial, question or invalid date cannot silently retire the old deadline')
+assert(!extractDeadlineDates('Die Frist für das Schreiben vom 24.09.2026 wurde auf den 02.10.2026 verlängert.').some(entry=>entry.state==='superseded'),'a referenced letter date is not evidence of the old deadline')
 const shiftOriginal={...documents[0],id:'shift-original',extracted_text:'Rechnung SHIFT-100. Zahlung bis 24.09.2026.'}
 const shiftReply={...documents[0],id:'shift-reply',extracted_text:'Rechnung SHIFT-100. Die Zahlungsfrist bis 24.09.2026 wurde auf den 02.10.2026 verlängert.'}
 assert.equal(analyzeCaseDeadlines(item,[shiftOriginal,shiftReply],now).primary.date,'2026-10-02','explicit extensions reconcile across documents with matching references')

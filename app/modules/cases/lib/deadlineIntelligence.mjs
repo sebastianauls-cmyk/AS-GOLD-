@@ -34,7 +34,9 @@ function explicitDeadlineShift(context){
   const before=context.slice(0,oldDate.index)
   const between=context.slice(oldDate.index+oldDate[0].length,newDate.index)
   const after=context.slice(newDate.index+newDate[0].length)
-  if(!(/frist/iu.test(before)||STRONG_DEADLINE_CUES.test(before)))return null
+  // The first date must itself name the old deadline, not e.g. the date of a
+  // letter mentioned elsewhere in a sentence about a deadline.
+  if(!/(?:frist(?:\s+(?:(?:wird|wurde|ist)\s+)?(?:bis(?:\s+zum)?|vom|von))?|(?:zahlbar|fällig)(?:\s+am)?|bis(?:\s+zum)?)\s*$/iu.test(before))return null
   if(!/^\s*(?:(?:wird|wurde|ist)\s+)?(?:(?:hiermit|nun|jetzt)\s+)?(?:(?:verlängert|verschoben)\s+)?(?:auf|bis)(?:\s+(?:den|zum))?\s*$/iu.test(between))return null
   if(!/\b(?:verlängert|verschoben)\b/iu.test(between)&&!/^\s*(?:verlängert|verschoben)\b/iu.test(after))return null
   const oldValue=dateFromParts(oldDate[1],oldDate[2],oldDate[3])
