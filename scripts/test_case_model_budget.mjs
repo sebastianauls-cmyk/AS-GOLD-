@@ -15,7 +15,7 @@ export async function testCaseModelBudget({db,client,owner,caseId,secret,enqueue
     for(const p of policies)await db.query('update private.case_model_budget_policy set max_calls=$2,max_output_tokens=$3,max_request_bytes=$4,max_search_calls=$5,max_input_units=$6 where scope=$1',[p.scope,p.max_calls,p.max_output_tokens,p.max_request_bytes,p.max_search_calls,p.max_input_units])
   }
   let paid=0
-  const run=(job,mode='ok',rpcClient=client)=>processCaseAnalysisJob({client:rpcClient,job,secret,providerKey:'synthetic-only',advance:async({beforeRequest,onResponse})=>{
+  const run=(job,mode='ok',rpcClient=client)=>processCaseAnalysisJob({client:rpcClient,job,secret,providerKey:'synthetic-only',cacheNamespace:'synthetic-budget-deployment',advance:async({beforeRequest,onResponse})=>{
     await callModel('synthetic-only',{model:'gpt-5.6-sol',input:'synthetic',max_output_tokens:9000},{stage:'planning',deadline:Date.now()+10000,beforeRequest,onResponse,fetchImpl:async()=>{
       paid++
       if(mode==='timeout')throw new DOMException('synthetic','TimeoutError')
