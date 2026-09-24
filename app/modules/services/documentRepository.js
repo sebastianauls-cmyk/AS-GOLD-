@@ -51,18 +51,67 @@ export async function uploadPrivateObject(storage,path,file){
   return {data:null,error:networkUploadError(retried.error)}
 }
 
-export async function uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion,documentType,documentDate,source,sourceLanguage,voiceContext,voiceLanguage,intakeQuality}){
+function unconfirmedUpload(){
+  return {data:null,error:{code:'DOCUMENT_UPLOAD_CONFIRMATION_PENDING',message:'Document upload confirmation pending',stage:'metadata'}}
+}
+
+// These explicit database rejections roll back this insert. A timeout, missing
+// response or duplicate key is not evidence that the document does not exist.
+const rejectedInsertCodes=new Set(['42501','23502','23503','23514','22P02','22001','PGRST204'])
+
+export async function uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion,documentType,documentDate,source,sourceLanguage,voiceContext,voiceLanguage,intakeQuality,sampleDocument=null,attempt={current:null}}){
   const extension=file.name.includes('.')?file.name.split('.').pop().toLowerCase():''
-  const path=`${ownerId}/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`
-  const upload=await uploadPrivateObject(supabase.storage.from('goldstandard-private'),path,file)
-  if(upload.error)return {data:null,error:upload.error}
-  let extractedText=null
-  if(['txt','csv'].includes(extension)&&file.size<=2*1024*1024){
-    try{extractedText=(await file.text()).trim()||null}catch{extractedText=null}
+  const metadata={owner_id:ownerId,title:file.name,case_id:caseId||null,document_type:documentType||extension.toUpperCase(),document_date:documentDate||null,source:source||'upload',source_language:sourceLanguage||null,voice_context:voiceContext||null,voice_language:voiceLanguage||null,intake_quality:intakeQuality||{},data_classification:dataClassification,privacy_notice_version:privacyNoticeVersion,ai_processing_allowed:false}
+  // The intake component refreshes checked_at on ordinary renders. That display
+  // timestamp does not change the selected file or the confirmed quality result.
+  const key=JSON.stringify([{...metadata,intake_quality:{...metadata.intake_quality,checked_at:undefined}},sampleDocument])
+  let pending=attempt.current
+  if(!pending||pending.file!==file||pending.key!==key){
+    const id=crypto.randomUUID(),path=`${ownerId}/${id}-${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`
+    pending={file,key,path,sampleDocument,payload:{id,...metadata,file_path:path,extracted_text:null},uploaded:false,storageAttempted:false,insertStarted:false,uncertain:false}
+    attempt.current=pending
   }
-  const insert=await supabase.from('documents').insert({owner_id:ownerId,title:file.name,file_path:path,case_id:caseId,document_type:documentType||extension.toUpperCase(),document_date:documentDate||null,source:source||'upload',source_language:sourceLanguage||null,voice_context:voiceContext||null,voice_language:voiceLanguage||null,intake_quality:intakeQuality||{},extracted_text:extractedText,data_classification:dataClassification,privacy_notice_version:privacyNoticeVersion,ai_processing_allowed:false}).select().single()
-  if(insert.error){await supabase.storage.from('goldstandard-private').remove([path]);return {data:null,error:insert.error}}
-  return {data:insert.data,error:null}
+  const storage=supabase.storage.from('goldstandard-private')
+  if(!pending.uploaded){
+    if(pending.storageAttempted&&await storedObjectExists(storage,pending.path))pending.uploaded=true
+    else{
+      pending.storageAttempted=true
+      const upload=await uploadPrivateObject(storage,pending.path,file)
+      if(upload.error)return {data:null,error:upload.error}
+      pending.uploaded=true
+    }
+    if(['txt','csv'].includes(extension)&&file.size<=2*1024*1024){
+      try{pending.payload.extracted_text=(await file.text()).trim()||null}catch{}
+    }
+  }
+  const matches=row=>row?.id===pending.payload.id&&row.owner_id===ownerId&&row.file_path===pending.path
+  const complete=row=>{if(attempt.current===pending)attempt.current=null;return {data:row,error:null}}
+  const read=async()=>{
+    try{return await supabase.from('documents').select('*').eq('id',pending.payload.id).eq('owner_id',ownerId).eq('file_path',pending.path).maybeSingle()}
+    catch(error){return {data:null,error}}
+  }
+  if(pending.insertStarted){
+    const saved=await read()
+    if(!saved.error&&matches(saved.data))return complete(saved.data)
+    if(saved.error||saved.data)return unconfirmedUpload()
+    // Explicit retry, same primary key and same object. Even a delayed first
+    // commit cannot create a second document or overwrite the original.
+  }
+  pending.insertStarted=true
+  let insert
+  try{insert=await supabase.from('documents').insert(pending.payload).select().single()}
+  catch(error){insert={data:null,error}}
+  if(!insert.error&&matches(insert.data))return complete(insert.data)
+  pending.uncertain ||= !rejectedInsertCodes.has(insert.error?.code)
+  const saved=await read()
+  if(!saved.error&&matches(saved.data))return complete(saved.data)
+  if(!pending.uncertain&&!saved.error&&!saved.data){
+    // Cleanup only after an explicit rollback and an owner-scoped absence read.
+    try{await storage.remove([pending.path])}catch{}
+    if(attempt.current===pending)attempt.current=null
+    return {data:null,error:insert.error}
+  }
+  return unconfirmedUpload()
 }
 
 export function createWorkspaceDocumentSignedUrl(supabase,filePath,expiresIn=300){

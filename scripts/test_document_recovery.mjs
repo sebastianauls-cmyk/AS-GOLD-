@@ -13,6 +13,7 @@ import {mapDocumentLanguageWorkflowResult} from '../app/modules/language/documen
 import {updateDocumentRecord} from '../app/modules/services/documentRepository.js'
 import {readDocumentAnalysisError,recordDocumentAnalysisFailure} from '../app/modules/documents/documentAnalysisError.mjs'
 import {authorizeDocumentAnalysis} from '../app/modules/services/complianceRepository.js'
+import {recordCommittedAction} from '../app/modules/workspace/committedAction.mjs'
 
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222'
 const at='2026-09-20T17:40:00.000Z'
@@ -25,7 +26,7 @@ const retained={...item,analysis_draft:{document_id:id,file_path:item.file_path,
 function workflow({delivery='lost',stored=retained,audit='ok',localFailure=false,completedBeforeRequest=false}={}){
   const state={authorizations:0,invocations:0,reads:0,messages:[],filters:[]}
   const query={select(){return this},eq(k,v){state.filters.push([k,v]);return this},async maybeSingle(){state.reads++;return {data:completedBeforeRequest||state.invocations?stored:item,error:null}}}
-  const context={...recovery,mapDocumentLanguageWorkflowResult,normalizeOutputLanguage:key=>key||'de',readCountryContext:()=> 'DE',
+  const context={...recovery,recordCommittedAction,mapDocumentLanguageWorkflowResult,normalizeOutputLanguage:key=>key||'de',readCountryContext:()=> 'DE',
     PRIVACY_NOTICE_VERSION:'test',TERMS_VERSION:'test',
     authorizeDocumentAnalysis:async()=>{state.authorizations++;return {privacy:{},document:item}},
     invokeDocumentAnalysis:async()=>{state.invocations++;return delivery==='lost'?{error:{name:'FunctionsFetchError'}}:{data:delivery==='empty'?{}:result}},
@@ -34,7 +35,7 @@ function workflow({delivery='lost',stored=retained,audit='ok',localFailure=false
   vm.createContext(context)
   const source=fs.readFileSync('app/modules/documents/documentWorkflow.js','utf8').replace(/^import .*$/gm,'').replace('export function ','function ')
   vm.runInContext(source+'\nthis.create=createDocumentWorkflowActions',context)
-  const actions=context.create({supabase:{from:table=>{assert.equal(table,'documents');return query}},ownerId:owner,data:{cases:[]},language:'de',privacyCurrent:true,outputLanguage:'de',analysisCopy:{...documentAnalysisRecoveryCopy('de'),failed:'failed'},serverCopy:{auditFailed:'audit unavailable'},setPrivacySettings(){},setMessage:value=>state.messages.push(value),recordLocalAction(){if(localFailure)throw new Error('device storage unavailable')},recordServerAudit:async type=>{if(type==='document_analysis_generated'&&audit==='pending')return new Promise(()=>{});if(type==='document_analysis_generated'&&audit==='failed')throw new Error('audit unavailable');return true}})
+  const actions=context.create({supabase:{from:table=>{assert.equal(table,'documents');return query}},ownerId:owner,data:{cases:[]},language:'de',privacyCurrent:true,outputLanguage:'de',analysisCopy:{...documentAnalysisRecoveryCopy('de'),failed:'failed'},serverCopy:{auditFailed:'audit unavailable'},setPrivacySettings(){},setMessage:value=>state.messages.push(value),recordLocalAction(){if(localFailure)throw new Error('device storage unavailable')},recordServerAudit:async type=>{if(type==='document_analysis_generated'&&audit==='pending'||type==='document_ai_transfer_authorized'&&audit==='authorization-pending')return new Promise(()=>{});if(type==='document_analysis_generated'&&audit==='failed'||type==='document_ai_transfer_authorized'&&audit==='authorization-failed')throw new Error('audit unavailable');return true}})
   return {actions,state}
 }
 {
@@ -61,10 +62,12 @@ for(const changed of [{owner_id:'foreign'},{file_path:owner+'/changed.pdf'},{cas
   const {actions}=workflow({completedBeforeRequest:true,stored:{...retained,...changed}})
   assert.equal(await actions.recoverDocumentAnalysis(item),false,'recovery cannot cross an owner, source or case change')
 }
-for(const audit of ['pending','failed']){
-  const {actions}=workflow({delivery:'normal',audit,localFailure:true})
+for(const audit of ['pending','failed','authorization-pending','authorization-failed']){
+  const {actions,state}=workflow({delivery:'normal',audit,localFailure:true})
   const generated=await Promise.race([actions.analyzeDocument(item),new Promise(resolve=>setTimeout(()=>resolve(null),100))])
   assert.equal(generated?.fields.extracted_text,result.extracted_text,'optional device/audit storage cannot swallow the completed result')
+  assert.equal(state.authorizations,1,'the actual persisted authorization remains mandatory')
+  assert.equal(state.invocations,1)
 }
 for(const stored of [null,item,{...retained,updated_at:'2026-09-20T18:00:00Z'}]){
   const {actions,state}=workflow({stored})

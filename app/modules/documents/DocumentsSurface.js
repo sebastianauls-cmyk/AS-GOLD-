@@ -31,7 +31,7 @@ export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode
   return <>
     <div className="sectionHead"><button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backOverview}</button><h2>{a.sections.documents}</h2></div>
     {access?.app_role!=='owner'&&Number(access?.permissions?.document_limit||0)>0&&<p className="muted">{a.used.replace('{used}',documents.length).replace('{limit}',access.permissions.document_limit)}</p>}
-    <form className="actionCard coreForm" onSubmit={submitDocument}>
+    <form className="actionCard coreForm documentUploadForm" onSubmit={submitDocument}>
       <div className="formIntro"><h3>{simple.add}</h3>{linkedCase&&<p>{linkedCase.title}</p>}<div className="modeSwitch"><button type="button" className={documentMode==='upload'?'active':''} onClick={()=>setDocumentMode('upload')}>{core.uploadMode}</button><button type="button" className={documentMode==='scan'?'active':''} onClick={()=>setDocumentMode('scan')}>{core.scanMode}</button></div></div>
       <DocumentFileIntake key={`file-${documentMode}-${intakeRevision}`} language={interfaceLanguage} documentMode={documentMode} allowedUploadAccept={allowedUploadAccept}/>
       {linkedCase?<input type="hidden" name="case_id" value={linkedCase.id}/>:<label htmlFor="document-case">{core.selectCase}<select id="document-case" name="case_id" defaultValue={uploadCaseId||''}><option value="">{core.withoutCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>}
