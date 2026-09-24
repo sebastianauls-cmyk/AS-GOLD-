@@ -1,0 +1,18 @@
+.caseAnalysisModes{margin:18px 0;min-width:0}
+.freeAnalysisModes,.freeAnalysisActions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.freeAnalysisModes button{min-height:44px;white-space:normal}
+.freeCaseAnalysis{padding:22px;border:1px solid #cbd9e4;border-radius:16px;background:#fff;color:#202b3b;overflow-wrap:anywhere}
+.freeCaseAnalysis h3,.freeCaseAnalysis h4,.freeCaseAnalysis h5{margin:16px 0 10px;line-height:1.4}
+.freeCaseAnalysis h3{margin-top:0}.freeCaseAnalysis h5{font-size:1rem}
+.freeCaseAnalysis p{line-height:1.6}.freeAnalysisScope,.freeCaseAnalysis small{color:#536174;font-size:.9rem;line-height:1.5}
+.freeAnalysisResult{margin-top:24px;border-top:1px solid #d8e1e9;padding-top:8px}
+.freeAnalysisDocument{padding:8px 0 20px;border-top:1px solid #d8e1e9}
+.freeAnalysisDocument>button{display:block;margin:12px 0;max-width:100%;white-space:normal;text-align:left}
+.freeAnalysisStatus{display:inline-flex;align-items:baseline;gap:8px}
+.freeAnalysisDot{width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 10px;border:1px solid transparent}
+.freeAnalysisDot.green{background:#287b50}.freeAnalysisDot.yellow{background:#c08a16}.freeAnalysisDot.red{background:#bf3f3f}
+.freeAnalysisCheck{padding:14px;margin:10px 0;background:#f5f8fa;border-radius:10px}
+.freeCaseAnalysis details{margin:14px 0}.freeCaseAnalysis summary{cursor:pointer;font-weight:600}
+.freeCaseAnalysis blockquote{margin:10px 0;padding:6px 12px;border-left:3px solid #ccd6e0;white-space:pre-line}
+.freeCaseAnalysis ul{padding-left:22px}.freeCaseAnalysis li{margin:8px 0}
+@media(max-width:600px){.freeCaseAnalysis{padding:16px}.freeAnalysisModes button{width:100%}.freeAnalysisCheck{padding:10px}}

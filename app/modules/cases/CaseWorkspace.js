@@ -24,6 +24,7 @@ import { analyzeCaseDeadlines } from './lib/caseDeadlineEvidence.mjs'
 import { caseStatusLabel } from './lib/caseStatus.mjs'
 import { DocumentDeadlineCandidates } from './DocumentDeadlineCandidates'
 import { CustomerRoadmapPanel } from './CustomerRoadmapPanel'
+import { CaseAnalysisModes } from './FreeCaseAnalysisPanel'
 import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
 import { SimpleCaseStart } from './SimpleCaseStart'
 import { ResultContinuation } from './ResultContinuation'
@@ -98,7 +99,7 @@ export function CaseSection({copy:on, language='de', clients, cases, newCase, se
   </>
 }
 
-export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate, onAnalyzeDocument, onRecoverDocument, onSaveDocument, continuation}){
+export function CaseDetail({copy:on, analysis, access=null, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate, onAnalyzeDocument, onRecoverDocument, onSaveDocument, continuation}){
   const [editing,setEditing]=useState(false)
   const [draft,setDraft]=useState({title:item.title||'',client_id:item.client_id||'',reference_no:item.reference_no||'',goal:item.goal||'',summary:item.summary||'',deadline_at:localDateTime(item.deadline_at),next_action:item.next_action||'',traffic_light:item.traffic_light||'yellow',status:item.status||'open',home_country:item.home_country||'DE',target_country:item.target_country||'DE',test_case_id:item.test_case_id||null,test_case_expected_ampel:item.test_case_expected_ampel||null,test_case_language:item.test_case_language||null})
   const [assessment,setAssessment]=useState(emptyAssessment)
@@ -135,7 +136,9 @@ export function CaseDetail({copy:on, analysis, language='de', outputLanguage='de
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
     <div className="caseTitleRow"><div><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2>{item.title}</h2><p>{client?.name||on.clientUnknown}{item.reference_no?` · ${item.reference_no}`:''}</p></div><button className="secondary" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button></div>
+    <CaseAnalysisModes access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
     {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} continuation={continuation}/>}
+    </CaseAnalysisModes>
     <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>
     {editing&&<form className="actionCard coreForm" onSubmit={event=>{event.preventDefault();onSave(item.id,draft).then(saved=>{if(saved)setEditing(false)})}}>
       <label htmlFor={fieldId(item.id,'title')}>{on.title}<input id={fieldId(item.id,'title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
