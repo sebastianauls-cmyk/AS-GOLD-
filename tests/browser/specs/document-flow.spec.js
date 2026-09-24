@@ -7,6 +7,7 @@ async function prepare(page,{sample=false}={}){
   else await page.locator('input[name=file]').setInputFiles({name:'Erfundene_Rechnung.txt',mimeType:'text/plain',buffer:Buffer.from('ERFUNDENE RECHNUNG: 900 EUR offen.')})
   await page.locator('select[name=data_classification]').selectOption('synthetic')
   await page.locator('input[name=test_data_confirmed]').check()
+  console.log('DOCUMENT_INTAKE_LAYOUT',JSON.stringify(await page.locator('form.actionCard').evaluate(form=>({viewport:innerWidth,form:form.getBoundingClientRect().toJSON(),grid:getComputedStyle(form).gridTemplateColumns,items:[...form.children].map(element=>({tag:element.tagName,class:element.className,rect:element.getBoundingClientRect().toJSON(),height:getComputedStyle(element).height,position:getComputedStyle(element).position,gridColumn:getComputedStyle(element).gridColumn})),confirmation:[...form.querySelector('.documentPrivacyConfirm').children].map(element=>({tag:element.tagName,rect:element.getBoundingClientRect().toJSON(),height:getComputedStyle(element).height,position:getComputedStyle(element).position}))}))))
 }
 for(const audit of ['pending','rejected'])test('document upload and save survive '+audit+' optional audit and unavailable device storage',async({page})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
@@ -14,7 +15,8 @@ for(const audit of ['pending','rejected'])test('document upload and save survive
   if(audit==='rejected')await page.getByRole('button',{name:'Reject optional audit',exact:true}).click()
   await page.getByRole('button',{name:'Hochladen',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Dokument prüfen',exact:true})).toBeVisible()
-  await page.getByLabel('Ausgelesener Inhalt',{exact:true}).fill('ERFUNDENE RECHNUNG: 900 EUR; Zahlungsstand noch zu klären.')
+  console.log('DOCUMENT_EDITOR_LABELS',JSON.stringify(await page.locator('.documentReviewForm label').allTextContents()))
+  await page.getByLabel(/^Ausgelesener Inhalt/).fill('ERFUNDENE RECHNUNG: 900 EUR; Zahlungsstand noch zu klären.')
   await page.locator('.documentReviewForm').getByRole('button',{name:'Geprüfte Angaben bewusst speichern',exact:true}).click()
   await expect(page.getByTestId('saved-document')).toContainText('Zahlungsstand noch zu klären.')
   await expect(page.getByTestId('document-message')).toContainText('✓')
