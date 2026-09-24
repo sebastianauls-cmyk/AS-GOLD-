@@ -92,10 +92,11 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       if(request.text.format.name==='ash_complete_repair_v169'){
         repairCalls++
         assert.equal(reviewCalls,expectedReviews,'all initial mandatory reviews precede the single local correction')
-        assert.deepEqual(payloads.find(p=>p.assigned_replacements).assigned_replacements.map(t=>t.location),['analysis.topics[0]'])
+        const assigned=payloads.find(p=>p.assigned_replacements).assigned_replacements
+        assert.deepEqual(assigned.map(t=>t.location),['analysis.topics[0]','steps[1]'])
         const replacement=structuredClone((outcome==='unresolved'?previous:original).analysis.topics[0])
         if(outcome==='bad_quote')replacement.sources=[{url:'https://example.invalid/not-fetched',quote:'A fabricated legal condition.'}]
-        output={requires_full_correction:false,reason:'',changes:{edit_0:replacement}}
+        output={requires_full_correction:false,reason:'',changes:{edit_0:replacement,edit_1:original.steps[1]}}
       }else{
         assert.equal(request.text.format.name,'ash_evidence_review_v139')
         reviewCalls++
