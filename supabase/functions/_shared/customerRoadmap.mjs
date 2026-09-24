@@ -115,10 +115,45 @@ export function splitVerbatimRoadmapEvidence(raw,source){
     ...(Array.isArray(raw.steps)?{steps:raw.steps.map(step=>({...step,evidence:split(step.evidence)}))}:{})}
 }
 
+// A model can state an explicit wait for steps 2–4 but omit step 3 from its
+// machine-readable graph. Resolve only complete, unqualified numbered reply
+// lists in waiting_for. No general prose/negation/alternative interpretation,
+// guessed prerequisites or extra model call. Other wording stays with review.
+function explicitWaitPositions(value){
+  const match=text(value).match(/^(?:(?:Antwort(?:en)?|Rückmeldung(?:en)?|Ergebnis(?:se)?)\s+(?:aus|von|zu)\s+(?:(?:den|dem)\s+)?Schritt(?:e|en)?|(?:Responses?|Repl(?:y|ies)|Results?)\s+from\s+steps?)\s+(.+?)[.!]?$/iu)
+  if(!match)return []
+  const specification=match[1].trim()
+  const range=specification.match(/^(\d{1,2})\s*(?:bis|to|through|[-–—])\s*(\d{1,2})$/iu)
+  let positions=[]
+  if(range){
+    const first=Number(range[1]),last=Number(range[2])
+    if(first<1||last<first||last>12)return []
+    positions=Array.from({length:last-first+1},(_,index)=>first+index)
+  }else if(/^\d{1,2}(?:\s*(?:,|und|and)\s*\d{1,2})*$/iu.test(specification))positions=specification.match(/\d+/g).map(Number)
+  return positions.every(position=>position>=1&&position<=12)?[...new Set(positions)]:[]
+}
+
+function withExplicitWaitDependencies(raw){
+  let changed=false
+  const steps=raw.steps.map((step,index)=>{
+    const positions=explicitWaitPositions(step.waiting_for)
+    if(!positions.length||!Array.isArray(step.depends_on))return step
+    // A step can describe the reply to its own request. Such wording is not a
+    // prerequisite on a preceding step and must not become a self/future edge.
+    if(positions.some(position=>position>index))return step
+    const missing=positions.map(position=>raw.steps[position-1].id).filter(id=>!step.depends_on.includes(id))
+    if(!missing.length)return step
+    changed=true
+    return {...step,depends_on:[...step.depends_on,...missing]}
+  })
+  return changed?{...raw,steps}:raw
+}
+
 export function validateRoadmapResult(raw,source,{outputLanguage,referenceLanguage,requiredLetterIds=[]}={}) {
   if(!raw || !text(raw.title) || !text(raw.opening) || !text(raw.meaning) || !text(raw.next) || !text(raw.customer_action)) throw new Error('Der Kundenfahrplan ist unvollständig.')
   if(!Array.isArray(raw.key_points) || raw.key_points.length<1 || raw.key_points.length>3) throw new Error('Die Kurzfassung muss ein bis drei Kernpunkte enthalten.')
   if(!Array.isArray(raw.steps) || !raw.steps.length || raw.steps.length>12 || list(raw.letters).length>6) throw new Error('Der Fahrplan enthält keine gültige Schrittfolge.')
+  raw=withExplicitWaitDependencies(raw)
   if(requiredLetterIds.some(id=>!list(raw.letters).some(letter=>letter.id===id))) throw new Error('Ein Anschreiben darf nicht entfernt werden, um die fehlende Kundenübersetzung zu umgehen. Die Übersetzung muss ergänzt werden.')
   const docs = new Map(source.documents.map(doc=>[doc.id,doc]))
   const normalized = value=>text(value).replace(/\s+/gu,' ')
