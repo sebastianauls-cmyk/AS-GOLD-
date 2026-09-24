@@ -9,12 +9,15 @@ import {emptyCase} from '../modules/workspace/stateConfig'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestRecord} from '../modules/testing/customerRoadmapFixture.mjs'
 import {roadmapFingerprint,roadmapSource} from '../../supabase/functions/_shared/customerRoadmap.mjs'
 import {workflowErrorMessage} from '../modules/services/workflowError.mjs'
+import freeFixture from '../../scripts/fixtures/freeAnalysisSarah.json'
 
 export default function Fixture(){
   const [draft,setDraft]=useState({...emptyCase}),[started,setStarted]=useState(false),[language,setLanguage]=useState('de')
   const [documents,setDocuments]=useState(()=>roadmapTestDocuments.map((doc,i)=>({...doc,title:`${i+1}.pdf`,file_path:`fixture/${i+1}.pdf`,extracted_text:null})))
   const [stats,setStats]=useState({read:0,saved:0,generated:0,sent:0})
   const [opened,setOpened]=useState(''),[caseVisible,setCaseVisible]=useState(true)
+  const [internal,setInternal]=useState(false)
+  const [invocations,setInvocations]=useState(0)
   const current=useRef({}),cache=useRef(new Map()),fail=useRef(false),reviewFailure=useRef(false),savedJob=useRef(null),savedRoadmap=useRef(null),holdJob=useRef(false)
   const item={...roadmapTestCase,title:draft.title||'Ich verstehe meine Briefe nicht.',goal:draft.goal||roadmapTestCase.goal}
   current.current={item,documents}
@@ -29,6 +32,7 @@ export default function Fixture(){
   const supabase=useMemo(()=>({
     from(table){const query={select(){return this},eq(){return this},order(){return this},update(){return this},limit:async()=>({data:structuredClone(table==='case_analysis_jobs'&&savedJob.current?[savedJob.current]:table==='case_roadmaps'&&savedRoadmap.current?[savedRoadmap.current]:[]),error:null}),single:async()=>({data:{},error:null}),then(resolve,reject){return Promise.resolve({data:[],error:null}).then(resolve,reject)}};return query},
     functions:{invoke:async(name,{body})=>{
+      setInvocations(value=>value+1)
       if(name!=='gold-case-roadmap')return {data:null,error:null}
       if(body.action==='cancel'){savedJob.current={...savedJob.current,status:'cancelled'};return {data:{job:structuredClone(savedJob.current)},error:null}}
       if(body.action!=='enqueue'||body.analysis_mode!=='complete')throw new Error('Durable complete analysis was not requested')
@@ -67,7 +71,9 @@ export default function Fixture(){
     <button onClick={()=>{holdJob.current=true}}>Hold background job</button>
     <button onClick={()=>setCaseVisible(value=>!value)}>{caseVisible?'Leave case page':'Return to case page'}</button>
     <button onClick={finishBackground}>Finish background job</button>
-    {caseVisible&&(!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>setStarted(false)} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} continuation={{canContinue:true}}/>)}
-    <output data-testid="stats">{JSON.stringify(stats)}</output><output>{opened}</output>
+    <button onClick={()=>{setInternal(true);setDocuments(freeFixture.documents.map(doc=>({...doc,case_id:item.id,owner_id:item.owner_id})))}}>Use internal free mode</button>
+    <button onClick={()=>setDocuments(previous=>previous.map((doc,index)=>index?doc:{...doc,extracted_text:doc.extracted_text.replace('27.930,00 EUR','27.830,00 EUR')}))}>Change a saved amount</button>
+    {caseVisible&&(!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail access={internal?{active:true,status:'approved',app_role:'owner'}:null} copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>setStarted(false)} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} continuation={{canContinue:true}}/>)}
+    <output data-testid="stats">{JSON.stringify(stats)}</output><output data-testid="invocations">{invocations}</output><output>{opened}</output>
   </main>
 }

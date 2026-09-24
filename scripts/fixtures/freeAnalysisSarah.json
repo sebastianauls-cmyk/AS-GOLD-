@@ -1,0 +1,42 @@
+{
+  "item": {
+    "id": "free-synthetic-case",
+    "owner_id": "free-synthetic-owner",
+    "title": "Synthetischer Hinterbliebenenfall",
+    "goal": "Abrechnung, Renten und Beiträge anhand der erfundenen Testunterlagen ordnen."
+  },
+  "documents": [
+    {
+      "title": "01_Mandantenangaben_Abrechnung.pdf",
+      "extracted_text": "ASH-Vergleichstest | ausschließlich erfundene Testdaten | 20.09.2026 1\nSYNTHETISCHE FALLAKTE - KEIN ORIGINALDOKUMENT\nAusgangsfrage und Abrechnung\nAlle Personen, Kennzeichen, Beträge und individuellen Ereignisse sind erfunden. Die genannten Institutionen dienen\nausschließlich einem internen Funktionstest. Keine Versendung.\nAusgangsfrage vom 20. September 2026\nIch bin Mara Beispiel, die Mutter und gesetzliche Vertreterin meiner beiden minderjährigen\nTöchter Kind A und Kind B. Ihr Vater ist am 15. Mai 2026 verstorben. Hapag-Lloyd hat beiden\nKindern Geld ausgezahlt. Jetzt liegen Briefe der TK vor. Was bedeutet das für uns, und was soll\nich konkret tun? Bitte erkläre es mir verständlich und bereite bei Bedarf getrennte Schreiben an\nHapag-Lloyd und die TK in meinem Namen vor.\nAngaben zur Familie\nKind A ist am 11. Mai 2013 geboren, Kind B am 11. November 2015. Ich möchte persönlich mit\nDu angesprochen werden. Die folgenden Unterlagen gehören zu unserem gemeinsamen Fall; die\nVermögenswerte und Ansprüche sollen für jedes Kind getrennt betrachtet werden.\nAngabe zu weiteren Einkünften\nAuf die Frage nach weiteren Einkünften habe ich geantwortet: Die Mädchen haben keine\nanderen Einkünfte. Die beigefügten Rentenbescheide gehören ebenfalls zum Fall. Eine\nSteuererklärung für 2026 wurde noch nicht erstellt.\nFiktive Lohnabrechnungen August 2026\nPosition Kind A Kind B\nLohnart Kapitalausz. 1/5 Kapitalausz. 1/5\nBruttobetrag 31.200,00 EUR 31.800,00 EUR\nLohnsteuer 3.000,00 EUR 3.100,00 EUR\nKirchensteuer 270,00 EUR 279,00 EUR\nAuszahlungsbetrag 27.930,00 EUR 28.421,00 EUR\nDokumentenstand\nDie Auszahlung ist laut Mandantenangabe im August 2026 eingegangen. Elektronische\nLohnsteuerbescheinigungen 2026, Versorgungsordnungen im Volltext und weitere\nSteuerunterlagen liegen noch nicht vor. Eine separate Erläuterung der Lohnart liegt nicht vor.",
+      "id": "free-document-1",
+      "case_id": "free-synthetic-case",
+      "owner_id": "free-synthetic-owner",
+      "updated_at": "2026-09-24T00:00:00Z"
+    },
+    {
+      "title": "02_Hapag_Leistungsmitteilung.pdf",
+      "extracted_text": "ASH-Vergleichstest | ausschließlich erfundene Testdaten | 20.09.2026 1\nSYNTHETISCHE FALLAKTE - KEIN ORIGINALDOKUMENT\nHapag-Lloyd: Leistungsmitteilung\nAlle Personen, Kennzeichen, Beträge und individuellen Ereignisse sind erfunden. Die genannten Institutionen dienen\nausschließlich einem internen Funktionstest. Keine Versendung.\nFiktiver Auszug vom 14. August 2026\nAdressiert an Mara Beispiel als gesetzliche Vertreterin von Kind A und Kind B. Aus der\nVersorgungsordnung 2023 besteht für beide Kinder ein Anspruch auf Waisenzahlung in Form\neiner einmaligen Kapitalzahlung.\nVersorgungsordnung 2023\nDas Versorgungsguthaben des verstorbenen Vaters beträgt 8.000,00 EUR. Ein\nZurechnungsbeitrag von 52.000,00 EUR kommt hinzu. Die Summe wird zu gleichen Teilen auf\ndie beiden Kinder verteilt.\nVersorgungsordnung 2017\nZusätzlich bestehen Ansprüche aus einer älteren Versorgungsordnung. Diese Ansprüche werden\nebenfalls als einmalige Kapitalzahlung abgefunden. Die Berechnungsunterlagen und der Volltext\nbeider Versorgungsordnungen sind diesem Auszug nicht beigefügt.\nBeträge je Kind\nPosition Kind A Kind B\nVersorgungsordnung 2023 30.000,00 EUR 30.000,00 EUR\nAbfindung aus Ordnung 2017 1.200,00 EUR 1.800,00 EUR\nGesamter Bruttoanspruch 31.200,00 EUR 31.800,00 EUR\nVerfügbare Informationen\nWeitere Zahlungen sind in dieser Mitteilung nicht angekündigt. Eine steuerliche Erläuterung der\nAbrechnungsbezeichnung Kapitalausz. 1/5 sowie Angaben aus einer elektronischen\nLohnsteuerbescheinigung enthält die Mitteilung nicht.",
+      "id": "free-document-2",
+      "case_id": "free-synthetic-case",
+      "owner_id": "free-synthetic-owner",
+      "updated_at": "2026-09-24T00:00:00Z"
+    },
+    {
+      "title": "03_DRV_Rentenbescheide.pdf",
+      "extracted_text": "ASH-Vergleichstest | ausschließlich erfundene Testdaten | 20.09.2026\n1\nSYNTHETISCHE FALLAKTE - KEIN ORIGINALDOKUMENT\nHalbwaisenrenten beider Kinder\nAlle Personen, Kennzeichen, Beträge und individuellen Ereignisse sind erfunden. Die genannten Institutionen dienen\nausschließlich einem internen Funktionstest. Keine Versendung.\nFiktive Bescheide vom 20. Juli 2026\nDie Deutsche Rentenversicherung bewilligt für jedes Kind eine Halbwaisenrente. Der Vater ist\nam 15. Mai 2026 verstorben. Die Rente beginnt am 1. Juni 2026.\nFestgesetzte Leistungen\nPosition\nKind A\nKind B\nBeginn der Rente\n01.06.2026\n01.06.2026\nLaufende Zahlung ab\n01.08.2026\n01.08.2026\nMonatlicher Bruttobetrag\n360,00 EUR\n360,00 EUR\nMonatlicher Zahlbetrag\n360,00 EUR\n360,00 EUR\nNachzahlung Juni/Juli 2026\n720,00 EUR\n720,00 EUR\nBefristung bis\n31.05.2031\n30.11.2033\nHinweise aus den synthetischen Bescheiden\nDie Nachzahlungen werden zusammen mit den laufenden Leistungen ausgezahlt. Der Anspruch\nist zunächst bis zur Vollendung des 18. Lebensjahres befristet. Unter bestimmten\nVoraussetzungen kommt eine Weiterzahlung nach Antrag in Betracht. Eine\nRentenbezugsmitteilung für das Kalenderjahr 2026 ist nicht beigefügt.",
+      "id": "free-document-3",
+      "case_id": "free-synthetic-case",
+      "owner_id": "free-synthetic-owner",
+      "updated_at": "2026-09-24T00:00:00Z"
+    },
+    {
+      "title": "04_TK_Beitragsbescheide.pdf",
+      "extracted_text": "ASH-Vergleichstest | ausschließlich erfundene Testdaten | 20.09.2026 1\nSYNTHETISCHE FALLAKTE - KEIN ORIGINALDOKUMENT\nTK: bereits festgesetzte Beiträge\nAlle Personen, Kennzeichen, Beträge und individuellen Ereignisse sind erfunden. Die genannten Institutionen dienen\nausschließlich einem internen Funktionstest. Keine Versendung.\nFiktive Bescheide vom 2. September 2026\nFür jedes Kind liegt ein eigener Beitragsbescheid vor. Das jeweilige Datum des Zugangs ist nicht\ndokumentiert. Die TK bezeichnet beide Kinder als pflichtversicherte Rentnerinnen; auch die\nPflegeversicherung ist als Pflichtversicherung angegeben.\nBemessungsgrundlage\nPosition Kind A Kind B\nBrutto-Kapitalleistung 31.200,00 EUR 31.800,00 EUR\nMonatliches Einkommen: 1/120 260,00 EUR 265,00 EUR\nKV-Freibetrag laut Bescheid 197,75 EUR 197,75 EUR\nKV-Bemessungsgrundlage 62,25 EUR 67,25 EUR\nPV-Bemessungsgrundlage 260,00 EUR 265,00 EUR\nBerechnung der monatlichen Beiträge\nPosition Kind A Kind B\nKrankenversicherung: 14,6 % 9,09 EUR 9,82 EUR\nZusatzbeitrag: 2,69 % 1,67 EUR 1,81 EUR\nPflegeversicherung: 3,6 % 9,36 EUR 9,54 EUR\nFestgesetzter Monatsbeitrag 20,12 EUR 21,17 EUR\nZeitraum und Zahlung\nAuszahlungsmonat der Kapitalleistung: August 2026. Beginn der Beitragspflicht: 1. September\n2026. Im Bescheid genanntes Ende: 31. August 2036. Die erste Zahlung für September ist am\n15. Oktober 2026 fällig. Der Beitrag ist danach monatlich zum 15. des Folgemonats zu zahlen.\nEin Bankeinzug ist nicht dokumentiert.\nRechtsbehelfsbelehrung im Testdokument\nDer Bescheid nennt eine Widerspruchsfrist von einem Monat nach Erhalt. Ein Widerspruch, ein\nÄnderungsbescheid oder eine Entscheidung zur Aussetzung liegt nicht vor. Der Bescheid enthält\nkeine Berechnung eines zusätzlichen Beitrags unmittelbar aus der Halbwaisenrente.",
+      "id": "free-document-4",
+      "case_id": "free-synthetic-case",
+      "owner_id": "free-synthetic-owner",
+      "updated_at": "2026-09-24T00:00:00Z"
+    }
+  ]
+}

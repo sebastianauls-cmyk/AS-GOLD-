@@ -9,6 +9,52 @@ async function begin(page){
   await expect(page.getByRole('heading',{name:'Ihre Antwort',exact:true})).toBeVisible()
 }
 
+test('internal free analysis calculates Sarah without any AI invocation and exports the result',async({page},testInfo)=>{
+  const errors=[],providerRequests=[]
+  page.on('pageerror',error=>errors.push(error.message))
+  page.on('request',request=>{if(/\/functions\/v1\/|api\.openai\.com/.test(request.url()))providerRequests.push(request.url())})
+  await begin(page)
+  await page.getByRole('button',{name:'Use internal free mode',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Kostenlos · ohne KI-Aufruf',exact:true})).toHaveAttribute('aria-pressed','true')
+  await expect(page.getByRole('checkbox',{name:/Ich erlaube/})).toHaveCount(0)
+  await page.getByRole('button',{name:'Kostenlos auswerten',exact:true}).click()
+  const panel=page.getByRole('region',{name:'Kostenlose Analyse',exact:true})
+  await expect(panel.getByRole('status')).toHaveText('4 von 4 Dokumenttexten verfügbar · 8 Rechenproben · 0 Abweichungen')
+  await expect(panel).toContainText('27.930,00')
+  await expect(panel).toContainText('28.421,00')
+  await expect(panel).toContainText('Datum des Zugangs ist nicht dokumentiert')
+  await expect(panel).toContainText('Rechtsfristen bleiben ungeprüft')
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:0,saved:0,generated:0,sent:0}))
+  await expect(page.getByTestId('invocations')).toHaveText('0')
+  for(const [label,extension] of [['Word','docx'],['PDF','pdf']]){
+    const [download]=await Promise.all([page.waitForEvent('download'),panel.getByRole('button',{name:label,exact:true}).click()])
+    expect(download.suggestedFilename()).toMatch(new RegExp(`\\.${extension}$`))
+    expect(await download.failure()).toBeNull()
+  }
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
+  await page.screenshot({path:testInfo.outputPath('free-sarah-analysis.png'),fullPage:true})
+  expect(providerRequests).toEqual([])
+  expect(errors).toEqual([])
+})
+
+test('free analysis hides stale results and finds a changed payout without paid fallback',async({page})=>{
+  await begin(page)
+  await page.getByRole('button',{name:'Use internal free mode',exact:true}).click()
+  await page.getByRole('button',{name:'Kostenlos auswerten',exact:true}).click()
+  await page.getByRole('button',{name:'Change a saved amount',exact:true}).click()
+  const panel=page.getByRole('region',{name:'Kostenlose Analyse',exact:true})
+  await expect(panel.getByRole('status')).toContainText('Unterlagen wurden geändert')
+  await expect(panel.getByRole('button',{name:'PDF',exact:true})).toHaveCount(0)
+  await page.getByRole('button',{name:'Erneut kostenlos auswerten',exact:true}).click()
+  await expect(panel.getByRole('status')).toContainText('1 Abweichung')
+  await expect(panel).toContainText('Rechenabweichung')
+  await expect(page.getByTestId('invocations')).toHaveText('0')
+  await page.getByRole('button',{name:'Leave case page',exact:true}).click()
+  await page.getByRole('button',{name:'Return to case page',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Kostenlos auswerten',exact:true})).toBeVisible()
+  await expect(page.getByRole('checkbox',{name:/Ich erlaube/})).toHaveCount(0)
+})
+
 test('one human question, one consent, all documents and one answer',async({page},testInfo)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
   await page.goto('/qa-case-flow')
