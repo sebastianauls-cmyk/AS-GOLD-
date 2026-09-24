@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
-import {localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair} from '../supabase/functions/_shared/completeCaseRepair.mjs'
+import {resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 
 const get=(value,path)=>path.reduce((item,key)=>item[key],value)
 const issue=(location,reason='Synthetic concrete defect in this field.')=>({code:'meaning',location,reason})
@@ -15,6 +15,34 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   const data=validateCompleteAnalysis({...big,analysis:{...big.analysis,calculations:big.analysis.calculations.map(cleanCalculation)}},args.source,{scope:bigScope,research:[],outputLanguage:'de',referenceLanguage:'de'})
   const unchanged=structuredClone(data),groupCount=completeReviewGroups(data).length
   assert.equal(groupCount,8,'all 25 maximum-size sections fit in eight bounded review requests')
+  for(const [scope,key,path] of [['analysis','topic_ids',['analysis','topics']],['calculations','calculation_ids',['analysis','calculations']],['roadmap','step_ids',['steps']],['letters','letter_ids',['letters']]]){
+    const original=get(data,path)[1],sections=[{scope,[key]:[original.id]}],finding=issue(original.id)
+    const resolved=resolveReviewIssueLocations([finding],data,sections)
+    const targets=localizedRepairTargets(data,resolved,schema)
+    assert.deepEqual(targets[0].path,[...path,1],'the assigned original ID selects its whole-result item, not local index zero')
+    assert.equal(resolved[0].reason,finding.reason);assert.equal(resolved[0].code,finding.code)
+    assert.equal(finding.location,original.id,'normalization never mutates provider findings')
+    assert.deepEqual(resolveReviewIssueLocations(resolved,data,sections),resolved,'full paths remain unchanged')
+    for(const id of ['unknown_id',get(data,path)[0].id]){
+      const unresolved=resolveReviewIssueLocations([issue(id)],data,sections)
+      assert.equal(unresolved[0].location,id,'unknown and out-of-assignment IDs are never guessed')
+      assert.equal(localizedRepairTargets(data,unresolved,schema),null)
+    }
+    const sourceFinding=resolveReviewIssueLocations([{...finding,code:'source'}],data,sections)
+    assert.equal(localizedRepairTargets(data,sourceFinding,schema),null,'ID normalization does not weaken source objections')
+  }
+  const repeatedId=structuredClone(data),sharedId=repeatedId.analysis.topics[0].id
+  repeatedId.letters[0].id=sharedId
+  const topicSection={scope:'analysis',topic_ids:[sharedId]},letterSection={scope:'letters',letter_ids:[sharedId]}
+  assert.equal(resolveReviewIssueLocations([issue(sharedId)],repeatedId,[topicSection])[0].location,'analysis.topics[0]','the current review assignment disambiguates IDs across collections')
+  assert.equal(resolveReviewIssueLocations([issue(sharedId)],repeatedId,[letterSection])[0].location,'letters[0]')
+  assert.equal(resolveReviewIssueLocations([issue(sharedId)],repeatedId,[topicSection,letterSection])[0].location,sharedId,'conflicting assignments stay unresolved')
+  repeatedId.analysis.topics[1].id=sharedId
+  assert.equal(resolveReviewIssueLocations([issue(sharedId)],repeatedId,[topicSection])[0].location,sharedId,'duplicate IDs cannot choose an arbitrary item')
+  assert.equal(resolveReviewIssueLocations([issue('opening')],data,[topicSection])[0].location,'opening','explicit scalar field paths keep their meaning')
+  repeatedId.analysis.topics[0].id='opening'
+  const scalarCollision=resolveReviewIssueLocations([issue('opening')],repeatedId,[{scope:'analysis',topic_ids:['opening']}])
+  assert.equal(localizedRepairTargets(repeatedId,scalarCollision,schema),null,'a scalar/item ID collision must not select either possible target')
   const targets=localizedRepairTargets(data,[issue('analysis.calculations[difference_18].explanation'),issue('analysis.calculations[18].conditions')],schema)
   assert.equal(targets.length,1,'several findings on the same item require only one replacement')
   assert.deepEqual(targets[0].path,['analysis','calculations',18])
@@ -29,7 +57,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   linked.analysis.calculations[19].expression='prior+prior'
   linked.analysis.calculations[20].inputs=[{name:'prior',label:'Vorheriger Wert',kind:'calculation',calculation_id:'difference_19',value:'2000.00'}]
   linked.analysis.calculations[20].expression='prior'
-  const dependent=localizedRepairTargets(linked,[issue('analysis.calculations[difference_18].inputs[0].value')],schema)
+  const dependent=localizedRepairTargets(linked,resolveReviewIssueLocations([issue('difference_18')],linked,[{scope:'calculations',calculation_ids:['difference_18']}]),schema)
   assert.deepEqual(dependent.map(t=>t.path.at(-1)),[18,19,20],'all transitive numerical consumers are assigned in their original order')
   const linkedChanges=Object.fromEntries(dependent.map(target=>[target.key,cleanCalculation(get(linked,target.path))]))
   linkedChanges.edit_0.inputs[0].value='17000'
@@ -86,7 +114,9 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       const part=payloads.find(p=>p.candidate).candidate
       const reject=!flagged&&part.analysis?.calculations?.some(c=>c.id==='difference_18')
       if(reject)flagged=true
-      output={issues:reject?[issue('analysis.calculations[difference_18].explanation')]:[]}
+      // The production review prompt explicitly allows an original item ID.
+      // This must reach the same bounded correction as its full field path.
+      output={issues:reject?[issue('difference_18')]:[]}
     }
     return Response.json({status:'completed',id:'localized-'+counts.total,model:request.model,output_text:JSON.stringify(output)})
   }

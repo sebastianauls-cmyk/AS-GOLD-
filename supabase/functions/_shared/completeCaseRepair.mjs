@@ -7,6 +7,32 @@ const get=(value,path)=>path.reduce((item,key)=>item?.[key],value)
 const label=path=>path.map((key,index)=>typeof key==='number'?`[${key}]`:(index?'.':'')+key).join('')
 const own=(value,key)=>value!==null&&typeof value==='object'&&Object.hasOwn(value,key)
 
+// Reviewers may return the original item ID instead of a full-result path.
+// Resolve only exact IDs assigned by the server to this review. The same ID
+// in a different collection must never redirect a correction to that item.
+export function resolveReviewIssueLocations(issues,candidate,sections){
+  const assignments={analysis:['topic_ids',['analysis','topics']],calculations:['calculation_ids',['analysis','calculations']],roadmap:['step_ids',['steps']],letters:['letter_ids',['letters']]}
+  const locations=new Map()
+  for(const section of sections){
+    const assignment=assignments[section.scope]
+    if(!assignment)continue
+    const [key,prefix]=assignment
+    for(const [index,item] of (get(candidate,prefix)||[]).entries()){
+      if(typeof item?.id!=='string'||!item.id||!(section[key]||[]).includes(item.id))continue
+      const paths=locations.get(item.id)||new Set()
+      paths.add(label([...prefix,index]));locations.set(item.id,paths)
+    }
+  }
+  return issues.map(issue=>{
+    const paths=locations.get(issue.location)
+    // An item ID matching a scalar field is ambiguous: never let that
+    // collision select either the item or the overview field by accident.
+    if(scalarPaths.some(path=>issue.location===label(path)))return paths?.size?{...issue,location:'ambiguous:'+issue.location}:issue
+    // Unknown, ambiguous and unassigned IDs remain unresolved, not guessed.
+    return paths?.size===1?{...issue,location:[...paths][0]}:issue
+  })
+}
+
 function schemaAt(schema,path){
   for(const key of path)schema=typeof key==='number'?schema?.items:schema?.properties?.[key]
   return schema
@@ -29,7 +55,7 @@ function locate(candidate,location,schema){
     items.forEach((item,index)=>{if(item?.id===selector)indexes.add(index)})
     if(indexes.size!==1)return null
     const index=[...indexes][0],path=[...prefix,index],suffix=location.slice(end+1)
-    // Unknown field names and ambiguous/global findings retain the full route.
+    // Unknown field names and ambiguous/global findings cannot select a patch.
     if(suffix){
       if(!suffix.startsWith('.'))return null
       const field=suffix.slice(1).split(/[.\[]/,1)[0]
@@ -43,7 +69,7 @@ function locate(candidate,location,schema){
 export function localizedRepairTargets(candidate,feedback,schema){
   if(!Array.isArray(feedback)||!feedback.length)return null
   // A substantive source objection can invalidate applicability across the
-  // whole case. Keep the existing full-evidence correction for that finding.
+  // whole case, so it cannot trigger an automatic local correction.
   if(feedback.some(issue=>issue.code==='source'))return null
   const selected=new Map()
   for(const issue of feedback){
