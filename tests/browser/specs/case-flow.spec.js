@@ -176,6 +176,10 @@ test('speaking fills the same human question without a second form',async({page}
 
 
 test('complete analysis shows checked amounts and conditions behind the short answer',async({page},testInfo)=>{
+  async function expectContained(){
+    const layout=await page.evaluate(()=>({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].map(element=>({tag:element.tagName,class:element.className,text:element.textContent?.slice(0,100),width:element.clientWidth,scroll:element.scrollWidth,right:element.getBoundingClientRect().right})).filter(element=>element.right>innerWidth+1||element.scroll>element.width+1).slice(-15)}))
+    expect(layout.scroll,JSON.stringify(layout)).toBeLessThanOrEqual(layout.width+1)
+  }
   await begin(page)
   await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
   await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
@@ -187,12 +191,13 @@ test('complete analysis shows checked amounts and conditions behind the short an
   await expect(page.getByText('Voraussetzungen: Die Art der Abzüge ist ungeklärt.',{exact:true})).toBeVisible()
   const analysis=page.locator('.roadmapCompleteAnalysis')
   await expect(analysis).toContainText('Fallfragen: Zusammensetzung der Abzüge')
+  await expectContained()
   await analysis.getByRole('button',{name:'Zugehöriger Schritt: 2. Beide Auskunftsanfragen vorbereiten',exact:true}).click()
   await expect(page.locator('[data-step-id="anfragen"]')).toBeFocused()
   await analysis.getByRole('button',{name:'Originalunterlage: 1.pdf',exact:true}).first().click()
   await expect(page.getByTestId('opened-document')).toHaveText('1.pdf')
   await expect(page.locator('.roadmapActions').getByRole('button',{name:'PDF',exact:true}).first()).toBeEnabled()
-  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
+  await expectContained()
   await page.screenshot({path:testInfo.outputPath('complete-analysis.png'),fullPage:true})
 })
 
