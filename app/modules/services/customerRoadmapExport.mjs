@@ -45,7 +45,7 @@ export function roadmapExportBlocks(record,{letterId}={}) {
     add(ui.questions,'heading')
     for(const question of record.result.open_questions) add(`${question.question}\n${ui.owner}: ${question.who}\n${ui.reason}: ${question.why}`)
   }
-  blocks.push(...completeAnalysisBlocks(record.result.analysis,record.output_language))
+  blocks.push(...completeAnalysisBlocks(record.result.analysis,record.output_language,{steps:record.result.steps,documents:record.source_documents}))
   roadmapSteps(record).forEach((step,index)=>{
     add(`${index+1}. ${step.title}`,'step',step.light)
     add(`${ui[step.phase]} · ${ui[step.light]}`,'meta')

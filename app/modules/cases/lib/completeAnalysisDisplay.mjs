@@ -12,7 +12,24 @@ const labels={
  vi:['Phân tích','Tính toán','Điều kiện','Vấn đề chưa giải quyết','Nguồn','Cách tính','Giả định','Đã trả lời','Có điều kiện','Còn mở','Đang xem xét các câu hỏi của vụ việc …','Đang nghiên cứu các nguồn liên quan …','Phân tích trước đây chưa có phần nghiên cứu và tính toán tích hợp. Hãy tạo lại để được kiểm tra đầy đủ hơn.']
 }
 const keys=['analysis','calculations','conditions','limitations','sources','formula','assumption','answered','conditional','open','planning','research','legacy']
-export function completeAnalysisCopy(language='de'){return Object.fromEntries(keys.map((key,index)=>[key,(labels[language]||labels.de)[index]]))}
+const traceLabels={
+ de:['Originalunterlage','Aus Berechnung','Zugehöriger Schritt','Fallfragen','Nicht angegeben'],
+ en:['Original document','From calculation','Related step','Case questions','Not provided'],
+ fr:['Document original','Issu du calcul','Étape associée','Questions du dossier','Non indiqué'],
+ tr:['Asıl belge','Hesaplamadan','İlgili adım','Dosya soruları','Belirtilmemiş'],
+ pl:['Dokument źródłowy','Z obliczenia','Powiązany krok','Zagadnienia sprawy','Nie podano'],
+ ru:['Исходный документ','Из расчёта','Связанный шаг','Вопросы дела','Не указано'],
+ ar:['المستند الأصلي','من الحساب','الخطوة ذات الصلة','مسائل القضية','غير مذكور'],
+ fa:['سند اصلی','از محاسبه','گام مرتبط','پرسش‌های پرونده','ذکر نشده'],
+ ro:['Document original','Din calcul','Pas asociat','Întrebările cazului','Nespecificat'],
+ bg:['Оригинален документ','От изчисление','Свързана стъпка','Въпроси по случая','Не е посочено'],
+ vi:['Tài liệu gốc','Từ phép tính','Bước liên quan','Câu hỏi của vụ việc','Chưa cung cấp']
+}
+const traceKeys=['document','derived','relatedSteps','topics','unavailable']
+export function completeAnalysisCopy(language='de'){return Object.fromEntries([
+  ...keys.map((key,index)=>[key,(labels[language]||labels.de)[index]]),
+  ...traceKeys.map((key,index)=>[key,(traceLabels[language]||traceLabels.de)[index]])
+])}
 const number=(value,language)=>{
   const text=String(value),[whole,fraction]=text.split('.'),format=new Intl.NumberFormat(language)
   const integer=BigInt(whole),formatted=integer===0n&&text.startsWith('-')?format.format(-0):format.format(integer)
@@ -21,28 +38,37 @@ const number=(value,language)=>{
   return formatted+decimal+[...fraction].map(digit=>format.format(Number(digit))).join('')
 }
 // Shared semantic blocks keep the visible full analysis and Word/PDF identical.
-export function completeAnalysisBlocks(analysis,language='de'){
+export function completeAnalysisBlocks(analysis,language='de',{steps=[],documents=[]}={}){
   if(!analysis)return []
   const ui=completeAnalysisCopy(language),blocks=[]
-  const add=(text,kind='body',url)=>{if(text)blocks.push({text,kind,...(url?{url}:{})})}
+  const documentTitles=new Map(documents.map(doc=>[doc.id,doc.title]))
+  const stepTitles=new Map(steps.map((step,index)=>[step.id,`${index+1}. ${step.title}`]))
+  const topicTitles=new Map(analysis.topics.map(topic=>[topic.id,topic.title]))
+  const calculationTitles=new Map(analysis.calculations.map(calculation=>[calculation.id,calculation.title]))
+  const add=(text,kind='body',reference={})=>{if(text)blocks.push({text,kind,...reference})}
   add(ui.analysis,'heading')
   for(const topic of analysis.topics){
     add(topic.title+' · '+ui[topic.status],'heading');add(topic.conclusion)
     if(topic.conditions)add(ui.conditions+': '+topic.conditions)
-    for(const source of topic.sources)add('„'+source.quote+'“\n'+source.url,'meta',source.url)
+    for(const source of topic.sources)add('„'+source.quote+'“\n'+source.url,'meta',{url:source.url})
+    for(const id of topic.step_ids||[])add(ui.relatedSteps+': '+(stepTitles.get(id)||id),'meta',{stepId:id})
   }
   if(analysis.calculations.length)add(ui.calculations,'heading')
   for(const calculation of analysis.calculations){
     add(calculation.title+': '+number(calculation.result,language)+' '+calculation.unit,'heading')
     add(calculation.explanation)
+    if(calculation.topic_ids?.length)add(ui.topics+': '+calculation.topic_ids.map(id=>topicTitles.get(id)||id).join(' · '),'meta')
     for(const input of calculation.inputs){
       add(input.label+': '+number(input.value,language)+(input.kind==='assumption'?' · '+ui.assumption+': '+input.explanation:''),'body')
+      if(input.kind==='document')add(ui.document+': '+(documentTitles.get(input.document_id)||input.document_id||ui.unavailable),'meta',{documentId:input.document_id})
+      if(input.kind==='source')add(ui.sources+': '+(input.url||ui.unavailable),'meta',input.url?{url:input.url}:{})
+      if(input.kind==='calculation')add(ui.derived+': '+(calculationTitles.get(input.calculation_id)||input.calculation_id||ui.unavailable),'meta')
       if(input.quote)add('„'+input.quote+'“','meta')
     }
     add(ui.formula+': '+calculation.expression+' = '+calculation.result+' '+calculation.unit,'meta')
     if(calculation.conditions)add(ui.conditions+': '+calculation.conditions)
   }
   if(analysis.limitations.length){add(ui.limitations,'heading');for(const item of analysis.limitations)add(item,'bullet')}
-  if(analysis.research_sources?.length){add(ui.sources,'heading');for(const source of analysis.research_sources)add(source.title+' · '+source.checked_at.slice(0,10)+'\n'+source.url,'meta',source.url)}
+  if(analysis.research_sources?.length){add(ui.sources,'heading');for(const source of analysis.research_sources)add(source.title+' · '+source.checked_at.slice(0,10)+'\n'+source.url,'meta',{url:source.url})}
   return blocks
 }

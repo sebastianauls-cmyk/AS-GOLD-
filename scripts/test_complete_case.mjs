@@ -452,7 +452,7 @@ let batched=await advanceCompleteAnalysis({...args,fetchImpl:batchFetch})
 for(let i=0;i<4;i++)batched=await advanceCompleteAnalysis({...args,fetchImpl:batchFetch,state:batched.state})
 assert.equal(batched.state.stage,'analysis');assert.deepEqual(researchedTopics,batchedScope.research_topics,'every planned topic is researched exactly once in bounded batches')
 const record=roadmapTestRecord();record.result=flow.result
-const blocks=completeAnalysisBlocks(flow.result.analysis,'de'),exported=roadmapExportBlocks(record)
+const blocks=completeAnalysisBlocks(flow.result.analysis,'de',{steps:record.result.steps,documents:record.source_documents}),exported=roadmapExportBlocks(record)
 for(const block of blocks)assert(exported.some(item=>item.text===block.text),'visible analysis must also appear in Word/PDF')
 const large=structuredClone(flow.result.analysis);large.calculations[0].result='9999999999999999.99'
 assert(completeAnalysisBlocks(large,'de').some(block=>block.text.includes('9.999.999.999.999.999,99')),'display/export cannot lose exact cents through floating-point conversion')

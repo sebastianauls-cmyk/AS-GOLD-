@@ -65,7 +65,16 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
       <div className="roadmapActions"><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('docx')}>Word</button><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('pdf')}>PDF</button></div>
       {result.facts.length>0&&<section><h4>{ui.facts}</h4>{result.facts.map((fact,index)=><div key={index}><p>{fact.text}</p><Evidence items={fact.evidence} documents={documents} ui={ui} onOpenDocument={onOpenDocument}/></div>)}</section>}
       {result.open_questions.length>0&&<section><h4>{ui.questions}</h4><ul>{result.open_questions.map((question,index)=><li key={index}><b>{question.question}</b><p>{ui.owner}: {question.who}<br/>{ui.reason}: {question.why}</p></li>)}</ul></section>}
-      {result.analysis&&<section className="roadmapCompleteAnalysis">{completeAnalysisBlocks(result.analysis,record.output_language).map((block,index)=>block.kind==='heading'?<h4 key={index}>{block.text}</h4>:<p key={index} className={block.kind==='meta'?'roadmapMeta':undefined} style={{whiteSpace:'pre-line'}}>{block.url?<a href={block.url} target="_blank" rel="noopener noreferrer">{block.text}</a>:block.text}</p>)}</section>}
+      {result.analysis&&<section className="roadmapCompleteAnalysis">{completeAnalysisBlocks(result.analysis,record.output_language,{steps:result.steps,documents:record.source_documents}).map((block,index)=>{
+        if(block.kind==='heading')return <h4 key={index}>{block.text}</h4>
+        const doc=block.documentId&&documents.find(item=>item.id===block.documentId)
+        const step=block.stepId&&steps.find(item=>item.id===block.stepId)
+        let content=block.text
+        if(block.url)content=<a href={block.url} target="_blank" rel="noopener noreferrer">{block.text}</a>
+        else if(doc&&onOpenDocument)content=<button type="button" className="linkBtn" onClick={()=>onOpenDocument(doc)}>{block.text}</button>
+        else if(step)content=<button type="button" className="linkBtn" onClick={()=>setFocusStep(step.id)}>{block.text}</button>
+        return <p key={index} className={block.kind==='meta'?'roadmapMeta':undefined} style={{whiteSpace:'pre-line'}}>{content}</p>
+      })}</section>}
       <h4>{ui.steps}</h4>
       <ol className="roadmapStepList">{steps.map((step,index)=><li key={step.id} className="roadmapStep" data-step-id={step.id} tabIndex={-1} ref={element=>{if(element)stepRefs.current.set(step.id,element);else stepRefs.current.delete(step.id)}}>
         <div className="roadmapStepHead"><h4>{index+1}. {step.title}</h4><Dot light={step.light} label={ui[step.light]}/></div>

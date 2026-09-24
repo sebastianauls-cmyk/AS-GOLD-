@@ -43,7 +43,7 @@ async function scenario(id,title,amount,paid,question){
   const record={id:id+'-result',owner_id:owner,case_id:id,output_language:'de',reference_language:'de',created_at:'2026-09-24T11:00:00Z',style:{sender_name:'Synthetische Testberatung',salutation:'Guten Tag'},progress:{},events:[],source_documents:[doc],result:{
     title:'Auswertung '+title,opening:question,key_points:[question],meaning:'Zahlungsstand mit dem Original abgleichen.',facts:[{text:question,evidence:[{document_id:doc.id,quote:doc.extracted_text}]}],open_questions:[],
     steps:[{id:'clarify',title:'Belege zur Differenz anfordern',phase:'now',light:'yellow',owner:'Kunde',reason:question,action:'Aufstellung mit Zahlungsbelegen abgleichen.',done_when:'Die Differenz ist mit Belegen erklärt.',follow_up:'Bei fehlender Antwort erneut nachfragen.',depends_on:[],evidence:[],deadline:null}],letters:[],closing:'ENDE-'+id,
-    analysis:{topics:[{id:'balance',title:'Zahlungsstand',status:'open',conclusion:question,conditions:'Zahlungen müssen vollständig belegt sein.',sources:[]}],calculations:[{id:'difference',title:'Rechnerische Differenz',result:String(amount-paid),unit:'EUR',expression:`${amount}-${paid}`,explanation:`${amount} minus ${paid} ergibt ${amount-paid}.`,inputs:[{label:'Betrag',value:String(amount),kind:'document',quote:doc.extracted_text},{label:'Bezahlt',value:String(paid),kind:'document'}]}],limitations:['Rechnerische Differenz ist keine bestätigte Zahlungspflicht.'],research_sources:[]}
+    analysis:{topics:[{id:'balance',title:'Zahlungsstand',status:'open',conclusion:question,conditions:'Zahlungen müssen vollständig belegt sein.',sources:[],step_ids:['clarify']}],calculations:[{id:'difference',title:'Rechnerische Differenz',topic_ids:['balance'],result:String(amount-paid),unit:'EUR',expression:'amount-paid',explanation:`${amount} minus ${paid} ergibt ${amount-paid}.`,inputs:[{name:'amount',label:'Betrag',value:String(amount),kind:'document',document_id:doc.id,quote:doc.extracted_text},{name:'paid',label:'Bezahlt',value:String(paid),kind:'document',document_id:doc.id,quote:doc.extracted_text}]}],limitations:['Rechnerische Differenz ist keine bestätigte Zahlungspflicht.'],research_sources:[]}
   }}
   record.source_fingerprint=await roadmapFingerprint(roadmapSource(item,[doc],[]))
   return {item,doc,record,tables:{cases:[item],documents:[doc],assessments:[],source_status:[],approvals:[],case_roadmaps:[record]}}
@@ -53,6 +53,11 @@ const scenarios=await Promise.all([
   scenario('rent','Mietkaution',1500,250,'Einbehaltene Beträge sind noch nicht erklärt.'),
   scenario('insurance','Versicherungsabrechnung',2500,1800,'Die Kürzung ist nicht aufgeschlüsselt.')
 ])
+scenarios[0].record.result.analysis.calculations.push({id:'scenario',title:'Erfundenes Rechenbeispiel',topic_ids:['balance'],result:'180.00',unit:'EUR',expression:'previous*percent(rate)*periods',conditions:'Nur ein erfundenes bedingtes Rechenbeispiel.',explanation:'Dieses Szenario ist kein tatsächlicher Anspruch.',inputs:[
+  {name:'previous',label:'Offener Betrag',value:'900',kind:'calculation',calculation_id:'difference'},
+  {name:'rate',label:'Beispielsatz',value:'10',kind:'source',url:'https://fixtures.invalid/numeric-input-only',quote:'ERFUNDENE QUELLE: Satz 10 Prozent.'},
+  {name:'periods',label:'Zeiträume',value:'2',kind:'assumption',explanation:'Zwei Zeiträume nur als Beispiel.'}
+]})
 const originalFetch=globalThis.fetch
 globalThis.fetch=async url=>{
   assert.match(String(url),/^\/fonts\/DejaVuSans(?:-Bold)?\.ttf$/,'export tests may only load local fonts')
@@ -67,7 +72,8 @@ try{
     assert.equal(saved.outputLanguage,'de','export labels must describe the saved language; switching a selector is not translation')
     assert.ok(db.reads.every(read=>read.filters.some(([key,value])=>key==='owner_id'&&value===owner)))
     const rows=buildWorkspaceExportRows({...saved,copy})
-    const expected=[fixture.item.summary,'Bei fehlender Antwort erneut nachfragen.','Rechnerische Differenz ist keine bestätigte Zahlungspflicht.','ENDE-'+fixture.item.id]
+    const expected=[fixture.item.summary,'Bei fehlender Antwort erneut nachfragen.','Rechnerische Differenz ist keine bestätigte Zahlungspflicht.','ENDE-'+fixture.item.id,'Originalunterlage: '+fixture.doc.title,'Zugehöriger Schritt: 1. Belege zur Differenz anfordern','Fallfragen: Zahlungsstand']
+    if(fixture===scenarios[0])expected.push('Aus Berechnung: Rechnerische Differenz','https://fixtures.invalid/numeric-input-only','Angenommen: Zwei Zeiträume nur als Beispiel.','ERFUNDENE QUELLE: Satz 10 Prozent.')
     for(const text of expected)assert.ok(rows.flat().join('\n').includes(text),'general case export includes '+text)
     for(const type of ['docx','pdf','xlsx','pptx','csv','txt']){
       const {blob}=await createWorkspaceExportArtifact({...saved,copy,type})

@@ -104,6 +104,9 @@ test('general case export downloads the saved complete result in all six formats
       expect(text).toContain('Brutto minus netto: 1.000,00 EUR')
       expect(text).toContain('Beide Auskunftsanfragen vorbereiten')
       expect(text).toContain('Die Berechnungsanlage fehlt.')
+      expect(text).toContain('Originalunterlage: 1.pdf')
+      expect(text).toContain('Zugehöriger Schritt: 2. Beide Auskunftsanfragen vorbereiten')
+      expect(text).toContain('Fallfragen: Zusammensetzung der Abzüge')
     }
   }
   await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:2,generated:1,sent:0}))
@@ -182,6 +185,12 @@ test('complete analysis shows checked amounts and conditions behind the short an
   await expect(page.locator('.roadmapCompleteAnalysis')).toBeVisible()
   await expect(page.getByRole('heading',{name:'Brutto minus netto: 1.000,00 EUR'})).toBeVisible()
   await expect(page.getByText('Voraussetzungen: Die Art der Abzüge ist ungeklärt.',{exact:true})).toBeVisible()
+  const analysis=page.locator('.roadmapCompleteAnalysis')
+  await expect(analysis).toContainText('Fallfragen: Zusammensetzung der Abzüge')
+  await analysis.getByRole('button',{name:'Zugehöriger Schritt: 2. Beide Auskunftsanfragen vorbereiten',exact:true}).click()
+  await expect(page.locator('[data-step-id="anfragen"]')).toBeFocused()
+  await analysis.getByRole('button',{name:'Originalunterlage: 1.pdf',exact:true}).first().click()
+  await expect(page.getByTestId('opened-document')).toHaveText('1.pdf')
   await expect(page.locator('.roadmapActions').getByRole('button',{name:'PDF',exact:true}).first()).toBeEnabled()
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
   await page.screenshot({path:testInfo.outputPath('complete-analysis.png'),fullPage:true})
