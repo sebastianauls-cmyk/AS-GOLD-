@@ -43,7 +43,6 @@ import { createDocumentWorkflowActions } from '../documents/documentWorkflow'
 import { createExportWorkflowActions } from '../documents/exportWorkflow'
 import { createWorkspaceAuthActions } from '../auth/workspaceAuthWorkflow'
 import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
-import { observePaymentConfig } from '../services/pricingRepository.js'
 import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
@@ -79,7 +78,7 @@ for(const [catalogName,translations] of Object.entries(pageTranslations)){
   Object.assign(pageCatalogs[catalogName],translations)
 }
 
-export default function WorkspaceController({publicOnly=false}={}){
+export default function WorkspaceController({publicOnly=false,initialPaymentConfig}={}){
   const [screen,setScreen]=useState(publicOnly?'public':'loading')
   const [email,setEmail]=useState('')
   const [password,setPassword]=useState('')
@@ -109,7 +108,7 @@ export default function WorkspaceController({publicOnly=false}={}){
   const [promoCode,setPromoCode]=useState('')
   const [appliedPromoCode,setAppliedPromoCode]=useState('')
   const [promoRevision,setPromoRevision]=useState(0)
-  const [paymentConfig,setPaymentConfig]=useState({enabled:false,provider:'sumup',mode:'disabled',liveLocked:false})
+  const paymentConfig=initialPaymentConfig||{enabled:false,provider:'sumup',mode:'disabled',liveLocked:true}
   const [checkoutPlan,setCheckoutPlan]=useState('')
   const [newClient,setNewClient]=useState({name:'',email:'',phone:'',notes:''})
   const [showClientForm,setShowClientForm]=useState(false)
@@ -282,8 +281,6 @@ export default function WorkspaceController({publicOnly=false}={}){
   const {loadQuotes,applyPromo,clearPromo,requestUpgrade,handleCheckoutReturn}=createPricingWorkflowActions({
     supabase,upgrades,termMonths,promoCode,appliedPromoCode,quotes,promoCopy:promo,paymentCopy:payment,paymentConfig,notices:n,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setCheckoutPlan,setMessage,setAccess,setUpgrades,onTestAccessGranted:()=>setSection('dashboard'),onPaymentAccessGranted:()=>setSection('dashboard'),formatAccessEnd:value=>new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(value)),recordServerAudit
   })
-
-  useEffect(()=>observePaymentConfig(setPaymentConfig),[])
 
   useEffect(()=>{
     if(screen!=='app'||checkoutReturnHandled.current||typeof window==='undefined')return
