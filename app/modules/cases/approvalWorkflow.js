@@ -1,6 +1,7 @@
 import { approveApprovalRecord, createApprovalRecord, rejectApprovalRecord, updateApprovalRecord } from '../services/approvalRepository'
 import { approvalDefaultsForDocument } from './approvalDefaults.mjs'
 import { bilingualLetterStatus, isCompleteBilingualLetterBody } from '../language/bilingualLetter.mjs'
+import { recordCommittedAction } from '../workspace/committedAction.mjs'
 
 export { approvalDefaultsForDocument } from './approvalDefaults.mjs'
 
@@ -33,12 +34,11 @@ export function createApprovalWorkflowActions({
     }
     const {data:created,error}=await createApprovalRecord(supabase,{ownerId,draft,linkedDocument})
     if(error){setMessage(error.message);return false}
-    recordLocalAction('approval_created')
-    await recordServerAudit('approval_created',{revision:Number(created.preview_revision)},'approval',created.id)
     setData(previous=>({...previous,approvals:[created,...previous.approvals]}))
     setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''})
     setSelectedApproval(created)
     setMessage(approvalUi.created)
+    recordCommittedAction(recordLocalAction,recordServerAudit,'approval_created',{revision:Number(created.preview_revision)},'approval',created.id)
     return created
   }
 
@@ -57,11 +57,10 @@ export function createApprovalWorkflowActions({
     if(error){setMessage(error.message);return false}
     if(!updated){setMessage(approvalUi.stale);return false}
     const eventType=invalidated?'approval_invalidated':'approval_updated'
-    recordLocalAction(eventType)
-    await recordServerAudit(eventType,{revision:Number(updated.preview_revision)},'approval',updated.id)
     setData(previous=>({...previous,approvals:previous.approvals.map(item=>item.id===updated.id?updated:item)}))
     setSelectedApproval(updated)
     setMessage(approvalUi.saved)
+    recordCommittedAction(recordLocalAction,recordServerAudit,eventType,{revision:Number(updated.preview_revision)},'approval',updated.id)
     return updated
   }
 
@@ -70,11 +69,10 @@ export function createApprovalWorkflowActions({
     const {data:updated,error}=await approveApprovalRecord(supabase,{ownerId,item})
     if(error){setMessage(error.message);return false}
     if(!updated){setMessage(approvalUi.stale);return false}
-    recordLocalAction('approval_approved')
-    await recordServerAudit('approval_approved',{revision:Number(updated.approved_revision)},'approval',updated.id)
     setData(previous=>({...previous,approvals:previous.approvals.map(entry=>entry.id===updated.id?updated:entry)}))
     setSelectedApproval(updated)
     setMessage(approvalUi.approvedMessage)
+    recordCommittedAction(recordLocalAction,recordServerAudit,'approval_approved',{revision:Number(updated.approved_revision)},'approval',updated.id)
     return updated
   }
 
@@ -83,11 +81,10 @@ export function createApprovalWorkflowActions({
     const {data:updated,error}=await rejectApprovalRecord(supabase,{ownerId,item})
     if(error){setMessage(error.message);return false}
     if(!updated){setMessage(approvalUi.stale);return false}
-    recordLocalAction('approval_rejected')
-    await recordServerAudit('approval_rejected',{revision:Number(updated.preview_revision)},'approval',updated.id)
     setData(previous=>({...previous,approvals:previous.approvals.map(entry=>entry.id===updated.id?updated:entry)}))
     setSelectedApproval(updated)
     setMessage(approvalUi.rejectedMessage)
+    recordCommittedAction(recordLocalAction,recordServerAudit,'approval_rejected',{revision:Number(updated.preview_revision)},'approval',updated.id)
     return updated
   }
 

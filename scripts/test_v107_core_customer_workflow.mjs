@@ -46,7 +46,7 @@ assert.deepEqual(captured.args,{p_case_id:'case-1',p_title:'Aktueller Stand',p_t
 assert.deepEqual(result,{assessment:expected.assessment,updatedCase:expected.case,error:null})
 
 assert.match(caseWorkflow,/updateClientRecord/)
-assert.match(caseWorkflow,/recordLocalAction\('client_updated'\)/)
+assert.match(caseWorkflow,/recordCommittedAction\(recordLocalAction,recordServerAudit,'client_updated'/)
 assert.match(customerSurface,/onSave\(selectedClient\.id,draft\)/)
 assert.match(customerSurface,/a\.relatedDocs/)
 assert.match(customerSurface,/onOpenCase/)

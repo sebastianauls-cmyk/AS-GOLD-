@@ -4,6 +4,7 @@ import { assessmentEvidenceText } from '../cases/lib/assessmentEvidenceText.mjs'
 import { OFFICE_EXPORT_RENDER_VERSION, createPptxBlob, createXlsxBlob } from './officeExportsUnicode.js'
 import { normalizeOutputLanguage, outputLanguageLabels } from '../language/outputLanguage.js'
 import { composeBilingualLetter } from '../language/bilingualLetter.mjs'
+import { roadmapExportBlocks } from './customerRoadmapExport.mjs'
 
 function safeBase(value,fallback){
   return String(value||fallback).replace(/[^a-zA-Z0-9äöüÄÖÜß_-]/g,'_').slice(0,80)
@@ -55,7 +56,7 @@ async function createUnicodePdfBlob({rows,outputLanguage}){
   return createTextPdf({blocks,language:outputLanguage})
 }
 
-export function buildWorkspaceExportRows({ref,data,copy,outputLanguage='de'}){
+export function buildWorkspaceExportRows({ref,data,copy,outputLanguage='de',roadmap}){
   const {ex,core,approvalUi}=copy
   const language=normalizeOutputLanguage(outputLanguage)
   const languageLabel=outputLanguageFieldLabels[language]||outputLanguageFieldLabels.de
@@ -72,11 +73,23 @@ export function buildWorkspaceExportRows({ref,data,copy,outputLanguage='de'}){
   const caseAssessments=data.assessments.filter(item=>item.case_id===ref.item.id)
   const caseSources=data.sourceStatus.filter(item=>item.case_id===ref.item.id)
   const caseApprovals=data.approvals.filter(item=>item.case_id===ref.item.id)
-  return [[ex.caseTitle,''],languageRow,[ex.case,ref.item.title||ex.case],[ex.status,localStatus(ref.item.status)],[ex.traffic,localLight(ref.item.traffic_light)],[core.homeCountry,ref.item.home_country||'DE'],[core.targetCountry,ref.item.target_country||'DE'],[core.goal,ref.item.goal||''],[ex.summary,ref.item.summary||''],[core.deadline,ref.item.deadline_at?new Date(ref.item.deadline_at).toLocaleString():''],[core.nextAction,ref.item.next_action||''],[ex.documents,caseDocuments.map(item=>item.title).join(', ')||ex.none],[core.currentAssessments,caseAssessments.map(item=>localLight(item.traffic_light)+' · '+item.title+': '+(item.reasoning||'')+'\n'+assessmentEvidenceText(item,caseDocuments,language,caseAssessments)+(item.next_step?' · '+core.nextAction+': '+item.next_step:'')).join('\n')||ex.none],[core.sourceBasis,caseSources.map(item=>(item.source_label||item.source_kind)+': '+item.status+(item.details?' · '+item.details:'')).join('\n')||ex.none],[approvalUi.title,caseApprovals.map(item=>(item.subject||item.approval_type)+' · '+(approvalUi[item.status]||item.status)+' · '+approvalUi.revision+' '+item.preview_revision).join('\n')||ex.none]]
+  const rows=[[ex.caseTitle,''],languageRow,[ex.case,ref.item.title||ex.case],[ex.status,localStatus(ref.item.status)],[ex.traffic,localLight(ref.item.traffic_light)],[core.homeCountry,ref.item.home_country||'DE'],[core.targetCountry,ref.item.target_country||'DE'],[core.goal,ref.item.goal||''],[ex.summary,ref.item.summary||''],[core.deadline,ref.item.deadline_at?new Date(ref.item.deadline_at).toLocaleString():''],[core.nextAction,ref.item.next_action||''],[ex.documents,caseDocuments.map(item=>item.title).join(', ')||ex.none],[core.currentAssessments,caseAssessments.map(item=>localLight(item.traffic_light)+' · '+item.title+': '+(item.reasoning||'')+'\n'+assessmentEvidenceText(item,caseDocuments,language,caseAssessments)+(item.next_step?' · '+core.nextAction+': '+item.next_step:'')).join('\n')||ex.none],[core.sourceBasis,caseSources.map(item=>(item.source_label||item.source_kind)+': '+item.status+(item.details?' · '+item.details:'')).join('\n')||ex.none],[approvalUi.title,caseApprovals.map(item=>(item.subject||item.approval_type)+' · '+(approvalUi[item.status]||item.status)+' · '+approvalUi.revision+' '+item.preview_revision).join('\n')||ex.none]]
+  if(roadmap){
+    let heading=null,body=[]
+    const flush=()=>{rows.push([heading,body.join('\n')]);body=[]}
+    for(const block of roadmapExportBlocks(roadmap)){
+      if(['title','heading','step'].includes(block.kind)){
+        if(heading!==null)flush()
+        heading=(block.light?trafficLightDot(block.light)+' ':'')+block.text
+      }else body.push((block.light?trafficLightDot(block.light)+' ':'')+block.text)
+    }
+    if(heading!==null)flush()
+  }
+  return rows
 }
 
-export async function createWorkspaceExportArtifact({ref,type,data,copy,outputLanguage='de'}){
-  const rows=buildWorkspaceExportRows({ref,data,copy,outputLanguage})
+export async function createWorkspaceExportArtifact({ref,type,data,copy,outputLanguage='de',roadmap}){
+  const rows=buildWorkspaceExportRows({ref,data,copy,outputLanguage,roadmap})
   const base=safeBase(ref.item.title,ref.kind==='case'?'Fall':'Dokument')
   if(type==='docx'){
     const {Document,Packer,Paragraph,TextRun}=await import('docx')
