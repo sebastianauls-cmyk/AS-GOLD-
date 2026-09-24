@@ -1,6 +1,6 @@
 // Pure, bounded document checks. No provider, network, background job or generated
 // legal conclusion belongs in this module. All findings retain their source text.
-export const FREE_ANALYSIS_VERSION='local-document-check-v1'
+export const FREE_ANALYSIS_VERSION='local-document-check-v2'
 const MAX_TEXT=120000
 const MAX_DOCUMENTS=30
 const normalize=value=>String(value||'').replace(/\s+/gu,' ').trim()
@@ -74,27 +74,34 @@ export function readMoneyTables(text){
 }
 
 function tableChecks(table){
-  const checks=[]
+  const checks=[],limitations=[]
   const rows=table.rows
   const compatible=group=>group.length>1&&group.every(row=>row.values.length===group[0].values.length)
   const add=(kind,inputs,target,operation,divisor=null)=>{
     if(!compatible([...inputs,target]))return
     for(let index=0;index<target.values.length;index++){
       const raw=operation(inputs.map(row=>row.values[index]))
-      const expected=Math.round(raw)
+      // Round exact integer cents symmetrically, including negative half cents.
+      const amount=inputs[0].values[index]
+      const absolute=Math.abs(amount)
+      const expected=divisor?(amount<0?-1:1)*(Math.floor(absolute/divisor)+(absolute%divisor*2>=divisor?1:0)):raw
       if(!Number.isSafeInteger(expected))continue
       const actual=target.values[index]
       checks.push({kind,column:table.columns[index]||null,column_index:index+1,
         inputs:inputs.map(row=>({label:row.label,cents:row.values[index],quote:row.quote,line_start:row.line_start,line_end:row.line_end})),
         target:{label:target.label,cents:actual,quote:target.quote,line_start:target.line_start,line_end:target.line_end},
-        expected,actual,difference:actual-expected,matches:actual===expected,divisor,rounded:!Number.isInteger(raw)})
+        expected:expected||0,actual,difference:actual-expected,matches:actual===expected,divisor,rounded:divisor?absolute%divisor!==0:false})
     }
   }
   const gross=rows.filter(row=>/^(?:Bruttobetrag|Gesamtbrutto|Brutto)$/iu.test(row.label))
   const net=rows.filter(row=>/^(?:Auszahlungsbetrag|Nettobetrag|Netto)$/iu.test(row.label))
   const deductions=rows.filter(row=>/^(?:Lohnsteuer|Kirchensteuer|Solidaritätszuschlag|Krankenversicherung|Rentenversicherung|Arbeitslosenversicherung|Pflegeversicherung|SV-Abzug)$/iu.test(row.label))
   if(gross.length===1&&net.length===1&&deductions.length&&rows.length===deductions.length+2){
-    add('net',[gross[0],...deductions],net[0],values=>values[0]-values.slice(1).reduce((sum,value)=>sum+value,0))
+    const signed=deductions.filter(row=>row.values.some(value=>value<0))
+    // A negative tax row can be a signed deduction or a refund. The layout alone
+    // cannot decide which convention is intended; retain it without a red/green check.
+    if(signed.length)limitations.push({code:'signed_deductions',sources:signed})
+    else add('net',[gross[0],...deductions],net[0],values=>values[0]-values.slice(1).reduce((sum,value)=>sum+value,0))
   }
   const last=rows.at(-1)
   if(rows.length>2&&/^(?:Gesamter Bruttoanspruch|Gesamtbetrag|Gesamtsumme|Summe|Festgesetzter Monatsbeitrag)$/iu.test(last.label)&&!rows.slice(0,-1).some(row=>/gesamt|summe|brutto|netto|auszahlung/iu.test(row.label))){
@@ -105,7 +112,7 @@ function tableChecks(table){
     const divisor=match?Number(match[1]):0
     if(divisor>1&&divisor<=10000)add('divide',[rows[index-1]],rows[index],values=>values[0]/divisor,divisor)
   }
-  return checks
+  return {checks,limitations}
 }
 
 const months=['januar','februar','märz','april','mai','juni','juli','august','september','oktober','november','dezember']
@@ -130,7 +137,13 @@ function openStatements(text){
   const flat=normalize(text)
   const sentences=typeof Intl.Segmenter==='function'?[...new Intl.Segmenter('de',{granularity:'sentence'}).segment(flat)].map(entry=>entry.segment.trim()):text.split(/\r?\n/u)
   const pattern=/(?:liegt|liegen|ist|sind|wurde|wurden)[^.!?]{0,260}\b(?:nicht|keine?)\b[^.!?]{0,100}\b(?:vor|beigefügt|dokumentiert|erstellt|enthalten)\b|\b(?:fehlt|fehlen|fehlend\w*|ungeklärt|unbekannt)\b/iu
-  return [...new Set(sentences.filter(sentence=>pattern.test(sentence)))].map(quote=>({quote}))
+  const unresolved=sentence=>sentence
+    .replace(/\b(?:fehlt|fehlen)\s+(?:kein\w*|nichts)\b/giu,'')
+    .replace(/\b(?:fehlt|fehlen)\s+nicht(?:\s+mehr)?\b/giu,'')
+    .replace(/\b(?:nicht|keineswegs)\s+(?:mehr\s+)?(?:fehlend\w*|ungeklärt|unbekannt)\b/giu,'')
+  // Remove only explicit negations before matching. Preserve a real gap in a
+  // different clause, and always return the unmodified source sentence.
+  return [...new Set(sentences.filter(sentence=>pattern.test(unresolved(sentence))))].map(quote=>({quote}))
 }
 
 export function freeAnalysisInput(item,documents){
@@ -144,8 +157,9 @@ export function analyzeFreeCase(input){
     // Never perform arithmetic on a cut-off table.
     const text=truncated?doc.text.slice(0,MAX_TEXT).replace(/\n[^\n]*$/u,''):doc.text
     const tables=truncated?[]:readMoneyTables(text)
+    const reviews=tables.map(tableChecks)
     return {...doc,text:undefined,has_text:normalize(text).length>0,truncated,
-      tables,checks:tables.flatMap(tableChecks),open:openStatements(text),dates:dateMentions(text)}
+      tables,checks:reviews.flatMap(review=>review.checks),limitations:reviews.flatMap(review=>review.limitations),open:openStatements(text),dates:dateMentions(text)}
   })
   return {version:FREE_ANALYSIS_VERSION,case_id:input.case_id,title:input.title,goal:input.goal,
     documents,omitted_documents:Math.max(0,input.documents.length-MAX_DOCUMENTS),

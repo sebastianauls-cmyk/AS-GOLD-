@@ -10,6 +10,7 @@ const de={
   available:'Text vorhanden',missing:'Text fehlt – Dokument öffnen und Inhalt ergänzen.',truncated:'Langer Text: nur die ersten 120.000 Zeichen berücksichtigt; keine Rechenprobe für dieses Dokument.',
   noDocuments:'Noch keine Unterlagen zugeordnet.',noChecks:'Keine eindeutig unterstützte Abrechnung erkannt. Daraus folgt nicht, dass die Beträge stimmen.',noOpen:'Keine passenden Textstellen erkannt. Das belegt keine Vollständigkeit.',
   source:'Fundstelle',line:'Zeile',column:'Spalte',mathOk:'Rechnerisch passend',mathDiff:'Rechenabweichung',reported:'laut Dokument',difference:'Differenz',rounded:'auf Cent gerundet',
+  limitations:{signed_deductions:'Brutto/Netto nicht geprüft: Abzüge enthalten Minuszeichen. Bitte im Original klären, ob damit Abzüge oder Erstattungen gemeint sind.'},
   kinds:{net:'Brutto abzüglich ausgewiesener Abzüge',sum:'Summe der aufgeführten Positionen',divide:'Aufteilung laut Tabellenangabe'},
   table:'Erkannte Betragszeilen',openDocument:'Dokument öffnen',exportError:'Die Datei konnte nicht erstellt werden. Das sichtbare Ergebnis bleibt verfügbar.',
   next:'Als Nächstes',nextMissing:'Fehlende Texte über „Dokument öffnen“ aus der Vorlage ergänzen. Es wird kein kostenpflichtiges Auslesen gestartet.',nextMath:'Rechenabweichungen mit dem Original abgleichen; Beträge nicht automatisch übernehmen.',nextOpen:'Die zitierten offenen Angaben anhand der Originale klären. Dieser Modus erstellt keine rechtliche Gesamtbewertung.',
@@ -27,6 +28,7 @@ const en={
   available:'Text available',missing:'Text missing – open the document and add its content.',truncated:'Long text: only the first 120,000 characters considered; no arithmetic checks for this document.',
   noDocuments:'No documents assigned yet.',noChecks:'No unambiguous supported calculation found. This does not establish that the amounts are correct.',noOpen:'No matching passages found. This does not establish completeness.',
   source:'Source',line:'Line',column:'Column',mathOk:'Arithmetic matches',mathDiff:'Arithmetic discrepancy',reported:'as stated',difference:'Difference',rounded:'rounded to cents',
+  limitations:{signed_deductions:'Gross/net not checked: deductions include negative amounts. Check the original to determine whether these mean deductions or refunds.'},
   kinds:{net:'Gross less listed deductions',sum:'Sum of listed items',divide:'Division specified in the table'},
   table:'Recognised amount rows',openDocument:'Open document',exportError:'The file could not be created. The displayed result remains available.',
   next:'Next',nextMissing:'Use “Open document” to add missing text from the original. No paid extraction is started.',nextMath:'Compare arithmetic discrepancies with the original; do not automatically adopt the amounts.',nextOpen:'Clarify the quoted missing information against the originals. This mode does not produce a legal assessment.',
@@ -63,6 +65,10 @@ export function freeAnalysisBlocks(result,language='de',createdAt=new Date().toI
   for(const doc of result.documents){
     add(doc.title,'heading');add(doc.has_text?ui.available:ui.missing,'body',doc.has_text?'green':'yellow')
     if(doc.truncated)add(ui.truncated,'body','yellow')
+    for(const limitation of doc.limitations||[]){
+      add(ui.limitations[limitation.code],'body','yellow')
+      for(const row of limitation.sources)add(`${ui.source} · ${ui.line} ${row.line_start}: ${row.quote}`,'meta')
+    }
     if(doc.checks.length)add(ui.checks,'heading')
     for(const check of doc.checks){
       add(freeCheckTitle(check,language),'heading')

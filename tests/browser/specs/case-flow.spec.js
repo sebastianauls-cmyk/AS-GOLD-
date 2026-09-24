@@ -55,6 +55,19 @@ test('free analysis hides stale results and finds a changed payout without paid 
   await expect(page.getByRole('checkbox',{name:/Ich erlaube/})).toHaveCount(0)
 })
 
+test('free analysis keeps signed deductions unreviewed and handles negative cents and denied gaps',async({page})=>{
+  await begin(page)
+  await page.getByRole('button',{name:'Use arithmetic edge cases',exact:true}).click()
+  await page.getByRole('button',{name:'Kostenlos auswerten',exact:true}).click()
+  const panel=page.getByRole('region',{name:'Kostenlose Analyse',exact:true})
+  await expect(panel.getByRole('status')).toContainText('1 Rechenprobe · 0 Abweichungen')
+  await expect(panel).toContainText('Brutto/Netto nicht geprüft: Abzüge enthalten Minuszeichen.')
+  await expect(panel).toContainText('Rechnerisch passend')
+  await expect(panel.getByRole('heading',{name:'Im Text als offen oder fehlend beschrieben',exact:true})).toHaveCount(0)
+  await expect(page.getByTestId('invocations')).toHaveText('0')
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
+})
+
 test('one human question, one consent, all documents and one answer',async({page},testInfo)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
   await page.goto('/qa-case-flow')
