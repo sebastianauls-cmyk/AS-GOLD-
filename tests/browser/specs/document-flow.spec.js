@@ -1,15 +1,18 @@
 import {test,expect} from '@playwright/test'
 
 test.skip(process.env.ASH_BROWSER_LOCAL!=='true','Persistence fixture is deliberately absent from production.')
+async function expectDocumentLayout(page,selector){
+  const layout=await page.locator(selector).evaluate(form=>({formWidth:form.clientWidth,contentWidth:form.scrollWidth,pageWidth:document.documentElement.clientWidth,pageContentWidth:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(element=>element.getBoundingClientRect().right>document.documentElement.clientWidth+1).slice(0,12).map(element=>({tag:element.tagName,class:element.className,width:element.getBoundingClientRect().width}))}))
+  expect(layout.contentWidth,JSON.stringify(layout)).toBeLessThanOrEqual(layout.formWidth+1)
+  expect(layout.pageContentWidth,JSON.stringify(layout)).toBeLessThanOrEqual(layout.pageWidth+1)
+}
 async function prepare(page,{sample=false}={}){
   await page.goto('/qa-document-flow')
   if(sample)await page.getByRole('button',{name:'Synthetische Musterdatei auswählen',exact:true}).click()
   else await page.locator('input[name=file]').setInputFiles({name:'Erfundene_Rechnung.txt',mimeType:'text/plain',buffer:Buffer.from('ERFUNDENE RECHNUNG: 900 EUR offen.')})
   await page.locator('select[name=data_classification]').selectOption('synthetic')
   await page.locator('input[name=test_data_confirmed]').check()
-  const layout=await page.locator('.documentUploadForm').evaluate(form=>({formWidth:form.clientWidth,contentWidth:form.scrollWidth,pageWidth:document.documentElement.clientWidth,pageContentWidth:document.documentElement.scrollWidth}))
-  expect(layout.contentWidth,'Upload controls must fit inside the form').toBeLessThanOrEqual(layout.formWidth+1)
-  expect(layout.pageContentWidth,'Document intake must not widen the mobile viewport').toBeLessThanOrEqual(layout.pageWidth+1)
+  await expectDocumentLayout(page,'.documentUploadForm')
 }
 for(const audit of ['pending','rejected'])test('document upload and save survive '+audit+' optional audit and unavailable device storage',async({page})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
@@ -17,7 +20,9 @@ for(const audit of ['pending','rejected'])test('document upload and save survive
   if(audit==='rejected')await page.getByRole('button',{name:'Reject optional audit',exact:true}).click()
   await page.getByRole('button',{name:'Hochladen',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Dokument prüfen',exact:true})).toBeVisible()
+  expect(await page.locator('[id]').evaluateAll(elements=>elements.map(element=>element.id).filter((id,index,ids)=>ids.indexOf(id)!==index)),'Document fields and navigation targets need unique IDs').toEqual([])
   await page.getByLabel(/^Ausgelesener Inhalt/).fill('ERFUNDENE RECHNUNG: 900 EUR; Zahlungsstand noch zu klären.')
+  await expectDocumentLayout(page,'.documentReviewForm')
   await page.locator('.documentReviewForm').getByRole('button',{name:'Geprüfte Angaben bewusst speichern',exact:true}).click()
   await expect(page.getByTestId('saved-document')).toContainText('Zahlungsstand noch zu klären.')
   await expect(page.getByTestId('document-message')).toContainText('✓')

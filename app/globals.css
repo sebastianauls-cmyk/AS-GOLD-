@@ -776,5 +776,5 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 @media(max-width:600px){.simpleCaseStart{padding:20px 16px}.simpleCaseButtons button{flex:1}.roadmapSetup fieldset>.linkBtn{display:block;margin:14px 0 0}.simpleCaseMore .caseCoreGrid{grid-template-columns:1fr}}
 
 /* File and language controls must not impose their intrinsic width on mobile. */
-.documentUploadForm>*{min-width:0}
-.documentUploadForm :where(input:not([type="checkbox"]),select,textarea){min-width:0;width:100%;max-width:100%}
+:is(.documentUploadForm,.documentReviewForm,.documentLanguagePair)>*{min-width:0}
+:is(.documentUploadForm,.documentReviewForm,.documentLanguagePair) :where(input:not([type="checkbox"]),select,textarea){min-width:0;width:100%;max-width:100%}
