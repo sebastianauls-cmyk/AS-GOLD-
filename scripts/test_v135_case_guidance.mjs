@@ -73,10 +73,11 @@ console.log('V135: actionable case guidance, source isolation, changed/new docum
 // catches the formerly missing setSelectedClient closure binding at runtime.
 const workflowSource=(await readFile(new URL('../app/modules/cases/caseWorkflow.js',import.meta.url),'utf8')).replace(/^import .*$/gm,'').replace(/^export \{.*$/gm,'').replace('export function createCaseWorkflowActions','function createCaseWorkflowActions')
 const updatedClient={id:'client-1',name:'Korrigierter Mustername'}
-const createActions=new Function('updateClientRecord',workflowSource+';return createCaseWorkflowActions')(async()=>({data:updatedClient,error:null}))
+const {recordCommittedAction}=await import('../app/modules/workspace/committedAction.mjs')
+const createActions=new Function('updateClientRecord','recordCommittedAction',workflowSource+';return createCaseWorkflowActions')(async()=>({data:updatedClient,error:null}),recordCommittedAction)
 let selectedClient=null
 let workspace={clients:[{id:'client-1',name:'Alter Mustername'}]}
-const actions=createActions({supabase:{},ownerId:'owner-1',setMessage:()=>{},recordLocalAction:()=>{},setData:update=>{workspace=update(workspace)},setSelectedClient:client=>{selectedClient=client}})
+const actions=createActions({supabase:{},ownerId:'owner-1',setMessage:()=>{},recordLocalAction:()=>{},recordServerAudit:async()=>true,setData:update=>{workspace=update(workspace)},setSelectedClient:client=>{selectedClient=client}})
 assert.equal(await actions.updateClient('client-1',{name:updatedClient.name}),true)
 assert.deepEqual(selectedClient,updatedClient)
 assert.deepEqual(workspace.clients,[updatedClient])

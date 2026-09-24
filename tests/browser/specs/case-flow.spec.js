@@ -1,4 +1,5 @@
 import {test,expect} from '@playwright/test'
+import fs from 'node:fs/promises'
 
 test.skip(process.env.ASH_BROWSER_LOCAL!=='true','Isolated component fixture is intentionally absent from production.')
 
@@ -86,6 +87,38 @@ test('one human question, one consent, all documents and one answer',async({page
   await page.screenshot({path:testInfo.outputPath('case-answer.png'),fullPage:true})
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
   expect(errors).toEqual([])
+})
+
+test('general case export downloads the saved complete result in all six formats',async({page})=>{
+  await begin(page)
+  await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
+  await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
+  for(const type of ['txt','pdf','docx','xlsx','pptx','csv']){
+    await page.getByLabel('Export format').selectOption(type)
+    const [download]=await Promise.all([page.waitForEvent('download'),page.getByRole('button',{name:'Export saved case',exact:true}).click()])
+    expect(await download.failure()).toBeNull()
+    expect(download.suggestedFilename()).toMatch(new RegExp(`\\.${type}$`))
+    if(type==='txt'){
+      const text=await fs.readFile(await download.path(),'utf8')
+      expect(text).toContain('Brutto minus netto: 1.000,00 EUR')
+      expect(text).toContain('Beide Auskunftsanfragen vorbereiten')
+      expect(text).toContain('Die Berechnungsanlage fehlt.')
+    }
+  }
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:2,generated:1,sent:0}))
+})
+
+test('general export blocks a saved report after its original sources change',async({page})=>{
+  await begin(page)
+  await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
+  await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
+  let downloads=0;page.on('download',()=>downloads++)
+  await page.getByRole('button',{name:'Change export source',exact:true}).click()
+  await page.getByRole('button',{name:'Export saved case',exact:true}).click()
+  await expect(page.getByTestId('export-message')).toContainText('Die Fallunterlagen haben sich geändert')
+  expect(downloads).toBe(0)
 })
 
 test('failed document is recoverable without re-reading successful documents',async({page})=>{

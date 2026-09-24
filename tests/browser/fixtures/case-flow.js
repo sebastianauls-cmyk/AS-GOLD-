@@ -10,6 +10,7 @@ import {roadmapTestCase,roadmapTestDocuments,roadmapTestRecord} from '../modules
 import {roadmapFingerprint,roadmapSource} from '../../supabase/functions/_shared/customerRoadmap.mjs'
 import {workflowErrorMessage} from '../modules/services/workflowError.mjs'
 import freeFixture from '../../scripts/fixtures/freeAnalysisSarah.json'
+import {createExportWorkflowActions} from '../modules/documents/exportWorkflow'
 
 export default function Fixture(){
   const [draft,setDraft]=useState({...emptyCase}),[started,setStarted]=useState(false),[language,setLanguage]=useState('de')
@@ -18,19 +19,25 @@ export default function Fixture(){
   const [opened,setOpened]=useState(''),[caseVisible,setCaseVisible]=useState(true)
   const [internal,setInternal]=useState(false)
   const [invocations,setInvocations]=useState(0)
+  const [exportMessage,setExportMessage]=useState(''),[exportType,setExportType]=useState('txt')
   const current=useRef({}),cache=useRef(new Map()),fail=useRef(false),reviewFailure=useRef(false),savedJob=useRef(null),savedRoadmap=useRef(null),holdJob=useRef(false)
   const item={...roadmapTestCase,title:draft.title||'Ich verstehe meine Briefe nicht.',goal:draft.goal||roadmapTestCase.goal}
   current.current={item,documents}
   async function finishBackground(){
     if(!savedJob.current||!['queued','running'].includes(savedJob.current.status))return
     if(reviewFailure.current){savedJob.current={...savedJob.current,status:'failed',error_code:'review_unresolved',issues:[{code:'source',location:'analysis.calculations',reason:'Die Berechnung passt nicht zum angegebenen Original.'},{code:'sender_role',location:'letters',reason:'Das Schreiben setzt eine unbelegte Vollmacht voraus.'}]};return}
-      const roadmap={...roadmapTestRecord(),source_fingerprint:await roadmapFingerprint(roadmapSource(current.current.item,current.current.documents,[]))}
+      const roadmap={...roadmapTestRecord(),owner_id:current.current.item.owner_id,source_fingerprint:await roadmapFingerprint(roadmapSource(current.current.item,current.current.documents,[]))}
       roadmap.result.analysis={topics:[{id:'difference',title:'Zusammensetzung der Abzüge',status:'open',conclusion:'Die Differenz ist berechnet. Wofür sie abgezogen wurde, ist noch offen.',conditions:'Die Abrechnung muss den Abzug erklären.',sources:[],step_ids:['anfragen']}],calculations:[{id:'net',title:'Brutto minus netto',inputs:[{label:'Brutto',value:'18000',kind:'document',quote:'Die einmalige Kapitalzahlung beträgt 18.000 EUR brutto und 17.000 EUR netto.'},{label:'Netto',value:'17000',kind:'document',quote:''}],expression:'gross-net',result:'1000.00',unit:'EUR',conditions:'Die Art der Abzüge ist ungeklärt.',explanation:'18.000 EUR abzüglich 17.000 EUR ergibt 1.000 EUR.'}],limitations:['Die Berechnungsanlage fehlt.'],research_sources:[]}
     savedRoadmap.current=roadmap
     savedJob.current={...savedJob.current,status:'completed',roadmap_id:roadmap.id}
   }
   const supabase=useMemo(()=>({
-    from(table){const query={select(){return this},eq(){return this},order(){return this},update(){return this},limit:async()=>({data:structuredClone(table==='case_analysis_jobs'&&savedJob.current?[savedJob.current]:table==='case_roadmaps'&&savedRoadmap.current?[savedRoadmap.current]:[]),error:null}),single:async()=>({data:{},error:null}),then(resolve,reject){return Promise.resolve({data:[],error:null}).then(resolve,reject)}};return query},
+    from(table){
+      const filters=[]
+      const read=()=>structuredClone(table==='cases'?[current.current.item]:table==='documents'?current.current.documents:table==='case_analysis_jobs'&&savedJob.current?[savedJob.current]:table==='case_roadmaps'&&savedRoadmap.current?[savedRoadmap.current]:[]).filter(row=>filters.every(([key,value])=>row[key]===value))
+      const query={select(){return this},eq(key,value){filters.push([key,value]);return this},order(){return this},update(){return this},insert(){return this},limit:async()=>({data:read(),error:null}),range:async(first,last)=>({data:read().slice(first,last+1),error:null}),maybeSingle:async()=>({data:read()[0]||null,error:null}),single:async()=>({data:{},error:null}),then(resolve,reject){return Promise.resolve({data:read(),error:null}).then(resolve,reject)}}
+      return query
+    },
     functions:{invoke:async(name,{body})=>{
       setInvocations(value=>value+1)
       if(name!=='gold-case-roadmap')return {data:null,error:null}
@@ -44,6 +51,7 @@ export default function Fixture(){
       return {data:{status:'queued',job:structuredClone(savedJob.current)},error:null}
     }}
   }),[])
+  const {doExport}=createExportWorkflowActions({supabase,user:{id:item.owner_id},access:{app_role:'owner'},data:{},outputLanguage:'de',appCopy:{export:'Export'},notices:{exportLocked:'Locked'},serverCopy:{auditFailed:'Audit unavailable'},setMessage:setExportMessage,recordLocalAction(){},recordServerAudit:async()=>true})
   async function analyze(document,{onFailure}={}){
     setStats(value=>({...value,read:value.read+1}))
     await new Promise(resolve=>setTimeout(resolve,120))
@@ -74,7 +82,10 @@ export default function Fixture(){
     <button onClick={()=>{setInternal(true);setDocuments(freeFixture.documents.map(doc=>({...doc,case_id:item.id,owner_id:item.owner_id})))}}>Use internal free mode</button>
     <button onClick={()=>{setInternal(true);setDocuments([{...freeFixture.documents[0],case_id:item.id,owner_id:item.owner_id,extracted_text:'Position Person A\nBrutto 1.000,00 EUR\nLohnsteuer -100,00 EUR\nNetto 900,00 EUR\nEnde der Abrechnung.\nPosition Person A\nGutschrift -0,01 EUR\nAnteil 1/2 -0,01 EUR\nEs fehlen keine Unterlagen.'}])}}>Use arithmetic edge cases</button>
     <button onClick={()=>setDocuments(previous=>previous.map((doc,index)=>index?doc:{...doc,extracted_text:doc.extracted_text.replace('27.930,00 EUR','27.830,00 EUR')}))}>Change a saved amount</button>
+    <button onClick={()=>setDocuments(previous=>previous.map((doc,index)=>index?doc:{...doc,voice_context:'Neue Angabe verändert die Grundlage.'}))}>Change export source</button>
     {caseVisible&&(!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail access={internal?{active:true,status:'approved',app_role:'owner'}:null} copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>setStarted(false)} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} continuation={{canContinue:true}}/>)}
     <output data-testid="stats">{JSON.stringify(stats)}</output><output data-testid="invocations">{invocations}</output><output>{opened}</output>
+    <select aria-label="Export format" value={exportType} onChange={event=>setExportType(event.target.value)}>{['txt','pdf','docx','xlsx','pptx','csv'].map(type=><option key={type}>{type}</option>)}</select>
+    <button onClick={()=>doExport({kind:'case',item},exportType)}>Export saved case</button><output data-testid="export-message">{exportMessage}</output>
   </main>
 }

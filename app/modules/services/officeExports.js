@@ -19,6 +19,37 @@ function cleanXmlText(value,maxLength=32767){
     .slice(0,maxLength)
 }
 
+// Keep all content and split before writing format-limited cells/text boxes.
+// Iterate Unicode code points so a continuation cannot split an emoji in half.
+function textChunks(value,maxLength,preferWords=false){
+  const chunks=[]
+  let chunk=''
+  for(const character of cleanXmlText(value,Infinity)){
+    if(chunk.length+character.length>maxLength){
+      const space=preferWords?chunk.lastIndexOf(' ')+1:0
+      const split=space>maxLength/2?space:chunk.length
+      chunks.push(chunk.slice(0,split));chunk=chunk.slice(split)
+    }
+    chunk+=character
+  }
+  chunks.push(chunk)
+  return chunks
+}
+
+function spreadsheetRows(rows){
+  return rows.flatMap(row=>{
+    const parts=(Array.isArray(row)?row:[row]).map(value=>textChunks(value,32767))
+    return Array.from({length:Math.max(...parts.map(part=>part.length))},(_,index)=>parts.map((part,column)=>part[index]??(column===0?part[0]:'')))
+  })
+}
+
+function slidePages(value){
+  const lines=cleanXmlText(value,Infinity).split(/\r?\n/).flatMap(line=>textChunks(line,50,true))
+  const pages=[]
+  for(let index=0;index<lines.length;index+=12)pages.push(lines.slice(index,index+12).join('\n'))
+  return pages
+}
+
 function escapeXml(value,maxLength){
   return cleanXmlText(value,maxLength)
     .replace(/&/g,'&amp;')
@@ -71,7 +102,7 @@ function columnName(index){
 
 function worksheetInlineString(value){
   const text=cleanXmlText(value,32767)
-  const parts=text.split(/([🟢🟡🔴⚪])/)
+  const parts=text.split(/(🟢|🟡|🔴|⚪)/u)
   const hasTraffic=parts.some(part=>TRAFFIC_COLORS[part])
   if(!hasTraffic) return '<t xml:space="preserve">'+escapeXml(text,32767)+'</t>'
   return parts.map(part=>{
@@ -91,7 +122,7 @@ function worksheetCell(value,rowIndex,columnIndex,styleId=0){
 
 export async function createXlsxBlob(rows){
   const zip=new JSZip()
-  const normalized=Array.isArray(rows)&&rows.length?rows:[['ASH Workspace Gold','']]
+  const normalized=spreadsheetRows(Array.isArray(rows)&&rows.length?rows:[['ASH Workspace Gold','']])
   const sheetRows=normalized.map((row,index)=>{
     const values=Array.isArray(row)?row:[row]
     const width=Math.max(2,values.length)
@@ -159,7 +190,7 @@ function slideRunProperties(fontSize,bold,color){
 
 function slideRuns(value,fontSize,bold,color){
   return cleanXmlText(value,12000).split(/\r?\n/).map((line,lineIndex)=>{
-    const parts=line.split(/([🟢🟡🔴⚪])/)
+    const parts=line.split(/(🟢|🟡|🔴|⚪)/u)
     const lineRuns=parts.map(part=>{
       const trafficColor=TRAFFIC_COLORS[part]
       if(trafficColor) return '<a:r>'+slideRunProperties(fontSize,true,trafficColor)+'<a:t xml:space="preserve">● </a:t></a:r>'
@@ -240,25 +271,20 @@ function slideLayout(){
 
 export async function createPptxBlob(rows){
   const normalized=Array.isArray(rows)&&rows.length?rows:[['ASH Workspace Gold','']]
-  const detailRows=normalized.slice(1)
-  const groups=[]
-  for(let index=0;index<detailRows.length;index+=4) groups.push(detailRows.slice(index,index+4))
-  if(!groups.length) groups.push([])
-
   const slides=[]
-  let titleShapes=textShape(2,'Title',normalized[0]?.[0]||'ASH Workspace Gold',0.7,0.7,11.8,0.7,26,true,'1F2937')
-  titleShapes+=textShape(3,'Subtitle',normalized[1]?.[1]||'',0.7,1.65,11.8,1.1,20,false,'9A7414')
-  slides.push(slideXml(1,titleShapes))
-  groups.forEach((group,groupIndex)=>{
-    let id=2
-    let shapes=textShape(id++,'Header','ASH Workspace Gold',0.6,0.35,2.5,0.4,14,true,'9A7414')
-    group.forEach((row,rowIndex)=>{
-      const y=1+1.35*rowIndex
-      shapes+=textShape(id++,'Label '+(rowIndex+1),row?.[0]||'',0.7,y,2.2,0.45,14,true,'1F2937')
-      shapes+=textShape(id++,'Value '+(rowIndex+1),row?.[1]||'',3,y,9.2,1.05,13,false,'374151')
+  for(const row of normalized){
+    const label=String(row?.[0]||'ASH Workspace Gold')
+    // An unusually long label belongs in the body too; it is never shortened.
+    const longLabel=label.length>80||label.split(/\r?\n/).length>2
+    const pages=slidePages((longLabel?label+'\n\n':'')+String(row?.[1]||''))
+    pages.forEach((page,index)=>{
+      let shapes=textShape(2,'Header','ASH Workspace Gold',0.7,0.3,10,0.4,12,true,'9A7414')
+      shapes+=textShape(3,'Label',longLabel?'ASH Workspace Gold':label,0.7,0.85,11.8,1.1,22,true)
+      shapes+=textShape(4,'Value',page,0.7,2.1,11.8,4.7,16,false,'374151')
+      shapes+=textShape(5,'Page',`${index+1} / ${pages.length}`,11.4,7,1.2,0.25,10,false,'596375')
+      slides.push(slideXml(slides.length+1,shapes))
     })
-    slides.push(slideXml(groupIndex+2,shapes))
-  })
+  }
 
   const zip=new JSZip()
   const slideOverrides=slides.map((_,index)=>
