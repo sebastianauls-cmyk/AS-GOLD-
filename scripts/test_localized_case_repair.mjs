@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
-import {resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair} from '../supabase/functions/_shared/completeCaseRepair.mjs'
+import {completeReviewLocations,resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 
 const get=(value,path)=>path.reduce((item,key)=>item[key],value)
 const issue=(location,reason='Synthetic concrete defect in this field.')=>({code:'meaning',location,reason})
@@ -29,7 +29,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       assert.equal(localizedRepairTargets(data,unresolved,schema),null)
     }
     const sourceFinding=resolveReviewIssueLocations([{...finding,code:'source'}],data,sections)
-    assert.equal(localizedRepairTargets(data,sourceFinding,schema),null,'ID normalization does not weaken source objections')
+    assert.deepEqual(localizedRepairTargets(data,sourceFinding,schema)[0].path,[...path,1],'a precisely located source finding uses the same bounded correction')
   }
   const repeatedId=structuredClone(data),sharedId=repeatedId.analysis.topics[0].id
   repeatedId.letters[0].id=sharedId
@@ -47,10 +47,64 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   assert.equal(targets.length,1,'several findings on the same item require only one replacement')
   assert.deepEqual(targets[0].path,['analysis','calculations',18])
   for(const location of ['analysis','analysis.topics','analysis.calculations[99]','analysis.topics[missing]','analysis.topics[0].not_a_field','__proto__.polluted','letters','output'])assert.equal(localizedRepairTargets(data,[issue(location)],schema),null,'ambiguous or new structure cannot trigger an automatic complete rewrite')
-  assert.equal(localizedRepairTargets(data,[{...issue('analysis.topics[0]'),code:'source'}],schema),null,'a source objection stops automatic correction')
+  assert.equal(localizedRepairTargets(data,[{...issue('analysis'),code:'source'}],schema),null,'a global source objection still stops automatic correction')
   const ambiguous=structuredClone(data);ambiguous.analysis.topics[1].id='0'
   assert.equal(localizedRepairTargets(ambiguous,[issue('analysis.topics[0].conclusion')],schema),null,'an index/ID collision must not choose the wrong item')
   assert.equal(localizedRepairTargets(data,data.analysis.topics.slice(0,9).map(t=>issue(`analysis.topics[${t.id}]`)),schema),null,'a local request has a fixed size bound')
+  const assignedLocations=completeReviewLocations(data,[{scope:'analysis',topic_ids:[data.analysis.topics[1].id]}])
+  assert(assignedLocations.includes('analysis.topics[1]'))
+  assert(!assignedLocations.includes('analysis.topics[0]'),'an unassigned full path cannot select a correction')
+  assert(!assignedLocations.includes('analysis.topics[1] und Berechnungsabdeckung'),'compound prose is not a review location')
+
+  // Replay a local unsupported eligibility detail through the actual workflow,
+  // then prove that a failed correction, fabricated quote and invalid location
+  // still cannot become an accepted customer result. No live API calls.
+  for(const outcome of ['fixed','unresolved','bad_quote','unassigned','compound','global']){
+    const previous=validateCompleteAnalysis(candidate,args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
+    const original=structuredClone(previous)
+    previous.analysis.topics[0].conditions+=' Unsupported synthetic eligibility detail.'
+    const expectedReviews=completeReviewGroups(previous).length
+    let repairCalls=0,reviewCalls=0,flaggedSource=false
+    const transport=async(url,options)=>{
+      assert.equal(url,'https://api.openai.com/v1/responses')
+      const request=JSON.parse(options.body),payloads=request.input.flatMap(message=>message.content).map(block=>{try{return JSON.parse(block.text)}catch{return {}}})
+      let output
+      if(request.text.format.name==='ash_complete_repair_v169'){
+        repairCalls++
+        assert.equal(reviewCalls,expectedReviews,'all initial mandatory reviews precede the single local correction')
+        assert.deepEqual(payloads.find(p=>p.assigned_replacements).assigned_replacements.map(t=>t.location),['analysis.topics[0]'])
+        const replacement=structuredClone((outcome==='unresolved'?previous:original).analysis.topics[0])
+        if(outcome==='bad_quote')replacement.sources=[{url:'https://example.invalid/not-fetched',quote:'A fabricated legal condition.'}]
+        output={requires_full_correction:false,reason:'',changes:{edit_0:replacement}}
+      }else{
+        assert.equal(request.text.format.name,'ash_evidence_review_v139')
+        reviewCalls++
+        const part=payloads.find(p=>p.candidate).candidate
+        const locations=request.text.format.schema.properties.issues.items.properties.location.enum
+        assert(Array.isArray(locations)&&locations.includes('analysis'),'a wider defect remains reportable')
+        const reject=part.analysis?.topics?.some(t=>t.conditions.includes('Unsupported synthetic eligibility detail.'))&&(!flaggedSource||repairCalls)
+        if(reject)flaggedSource=true
+        const location=({unassigned:'analysis.topics[99]',compound:'analysis.topics[0] und Berechnungsabdeckung',global:'analysis'})[outcome]||'analysis.topics[0]'
+        output={issues:reject?[{code:'source',location,reason:'The supplied originals and fetched text do not support this eligibility example.'}]:[]}
+      }
+      return Response.json({status:'completed',id:`source-${outcome}-${reviewCalls}-${repairCalls}`,model:request.model,output_text:JSON.stringify(output)})
+    }
+    let flow={status:'processing',state:{stage:'analysis',scope:{issues:[{id:'settlement',calculation_needed:true}],research_topics:[]},research:[],discovery_gaps:[],modelState:{stage:'review',attempt:1,candidate:previous,structuralFeedback:[],response_id:'synthetic-source-candidate'}}},failure
+    try{for(let step=0;flow.status==='processing'&&step<30;step++){
+      assert(!flow.result)
+      flow=await advanceCompleteAnalysis({...args,fetchImpl:transport,state:flow.state})
+    }}catch(error){failure=error}
+    if(outcome==='fixed'){
+      assert.equal(failure,undefined);assert.equal(flow.status,'completed');assert.equal(flow.attempts,2)
+      assert.equal(repairCalls,1);assert.equal(reviewCalls,2*expectedReviews,'changed topic dependencies invalidate all affected approvals')
+      assert.deepEqual(flow.result.analysis.topics,original.analysis.topics)
+      assert.deepEqual(flow.result.steps,original.steps);assert.deepEqual(flow.result.letters,original.letters)
+    }else{
+      assert(!flow.result)
+      assert.equal(failure?.code,['unassigned','compound'].includes(outcome)?'review_invalid':outcome==='bad_quote'?'source_unresolved':'review_unresolved')
+      assert.equal(repairCalls,['unresolved','bad_quote'].includes(outcome)?1:0)
+    }
+  }
 
   const linked=structuredClone(data)
   linked.analysis.calculations[19].inputs=[{name:'prior',label:'Vorheriger Wert',kind:'calculation',calculation_id:'difference_18',value:'1000.00'}]

@@ -826,7 +826,7 @@ for(const rejectWholeCase of [false,true]){
         fullAudits++
         assert.deepEqual(payloads.find(item=>item.retrieved_sources).retrieved_sources,research)
         assert.deepEqual(payloads.find(item=>item.related_output).related_output.topics,moduleCandidate.analysis.topics,'the independent whole-case audit can see every citation and qualification')
-        if(rejectWholeCase&&round===1)output.issues=[{code:'source',location:'analysis.topics[topic_4]',reason:'Synthetic cross-topic exception requires the full research context.'}]
+        if(rejectWholeCase&&round===1)output.issues=[{code:'source',location:'analysis',reason:'Synthetic cross-topic exception requires new topics and a wider correction.'}]
       }
     }
     return Response.json({id:`module-round-${round}-call-${calls}`,status:'completed',model:request.model,output_text:JSON.stringify(output)})

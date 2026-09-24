@@ -10,7 +10,7 @@ const own=(value,key)=>value!==null&&typeof value==='object'&&Object.hasOwn(valu
 // Reviewers may return the original item ID instead of a full-result path.
 // Resolve only exact IDs assigned by the server to this review. The same ID
 // in a different collection must never redirect a correction to that item.
-export function resolveReviewIssueLocations(issues,candidate,sections){
+export function resolveReviewIssueLocations(issues,candidate,sections,schema=null){
   const assignments={analysis:['topic_ids',['analysis','topics']],calculations:['calculation_ids',['analysis','calculations']],roadmap:['step_ids',['steps']],letters:['letter_ids',['letters']]}
   const locations=new Map()
   for(const section of sections){
@@ -29,8 +29,40 @@ export function resolveReviewIssueLocations(issues,candidate,sections){
     // collision select either the item or the overview field by accident.
     if(scalarPaths.some(path=>issue.location===label(path)))return paths?.size?{...issue,location:'ambiguous:'+issue.location}:issue
     // Unknown, ambiguous and unassigned IDs remain unresolved, not guessed.
-    return paths?.size===1?{...issue,location:[...paths][0]}:issue
+    const resolved=paths?.size===1?{...issue,location:[...paths][0]}:issue
+    // Legacy exact field/ID paths remain readable, but only server-assigned
+    // canonical locations can pass the complete-review schema below.
+    const path=schema?locate(candidate,resolved.location,schema):null
+    return path?{...resolved,location:label(path)}:resolved
   })
+}
+
+export function completeReviewLocations(candidate,sections){
+  // Collection/global markers report a missing item or a genuinely wider
+  // defect. They deliberately cannot select an automatic local replacement.
+  const locations=new Set(['output','analysis',...collections.map(label)])
+  const addItems=(prefix,ids)=>{
+    for(const [index,item] of (get(candidate,prefix)||[]).entries())if(ids===null||ids.includes(item.id))locations.add(label([...prefix,index]))
+  }
+  for(const section of sections){
+    if(section.scope==='analysis'){
+      addItems(['analysis','topics'],section.topic_ids||[])
+      if((section.topic_ids||[]).includes(candidate.analysis?.topics?.[0]?.id))locations.add('analysis.limitations')
+    }
+    if(section.scope==='calculations')addItems(['analysis','calculations'],section.calculation_ids||[])
+    if(section.scope==='letters')addItems(['letters'],section.letter_ids||[])
+    if(section.scope==='roadmap'){
+      if(section.part==='overview'){
+        scalarPaths.forEach(path=>locations.add(label(path)))
+        // The overview independently audits cross-topic source applicability.
+        addItems(['analysis','topics'],null)
+      }
+      for(const index of section.fact_indexes||[])locations.add(`facts[${index}]`)
+      for(const index of section.question_indexes||[])locations.add(`open_questions[${index}]`)
+      addItems(['steps'],section.step_ids||[])
+    }
+  }
+  return [...locations]
 }
 
 function schemaAt(schema,path){
@@ -68,9 +100,9 @@ function locate(candidate,location,schema){
 
 export function localizedRepairTargets(candidate,feedback,schema){
   if(!Array.isArray(feedback)||!feedback.length)return null
-  // A substantive source objection can invalidate applicability across the
-  // whole case, so it cannot trigger an automatic local correction.
-  if(feedback.some(issue=>issue.code==='source'))return null
+  // Source findings may correct an existing local claim. Wider source gaps
+  // still fail location/size checks; every replacement is independently
+  // reviewed again and must pass the unchanged literal-source/math gates.
   const selected=new Map()
   for(const issue of feedback){
     const path=locate(candidate,issue.location,schema)
