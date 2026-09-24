@@ -139,6 +139,8 @@ test('customers can explore every feature and the plans without signing in',asyn
 
 test('the permanent explanation is public and keeps the normal registration handoff',async({page},testInfo)=>{
   const accountRequests=[]
+  const configRequests=[]
+  page.on('request',request=>{if(new URL(request.url()).pathname==='/api/payments/config')configRequests.push(request.url())})
   page.on('request',request=>{if(/\/rest\/v1\/(?:cases|documents|clients|approvals)(?:\?|$)/.test(request.url()))accountRequests.push(request.url())})
   const response=await page.goto('/entdecken?lang=de',{waitUntil:'domcontentloaded'})
   expect(response?.status()).toBe(200)
@@ -154,6 +156,7 @@ test('the permanent explanation is public and keeps the normal registration hand
   await expect(page).toHaveURL(/\/\?start=register&lang=de$/)
   await expect(page.locator('#register-password')).toBeVisible()
   await expect(page.locator('.authCard form .primary.full')).toBeDisabled()
+  expect(configRequests,'public payment settings arrive with the page, without a request racing reload or registration').toEqual([])
 })
 
 test('interface, output and country-example choices remain independent',async({page},testInfo)=>{
