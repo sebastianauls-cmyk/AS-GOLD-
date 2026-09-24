@@ -404,7 +404,7 @@ try {
   reviewIssues=part=>part.letters?.some(letter=>letter.id===roadmapTestResult.letters.at(-1).id)?[{code:'meaning',location:'letters[0].body',reason:'Synthetic negative control: letter invents a payment suspension.'}]:[]
   job=await enqueue();const badLetter=await drain(job.id)
   assert.equal(badLetter.error_code,'review_unresolved')
-  assert.deepEqual(badLetter.issues.map(issue=>issue.location),['letters[0].body'])
+  assert.deepEqual(badLetter.issues.map(issue=>issue.location),['letters[0]'])
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0,'a defect in the new final scope still prevents result publication')
 
   reviewIssues=[{code:'meaning',location:'analysis',reason:'Synthetic negative control: unsupported conclusion.'}]
