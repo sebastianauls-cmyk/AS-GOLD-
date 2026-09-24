@@ -7,6 +7,7 @@ import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/mod
 import {completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {testCaseModelBudget} from './test_case_model_budget.mjs'
 import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
+import {testRetainedCaseWork} from './test_retained_case_work.mjs'
 
 // Real Postgres semantics, real migrations, real worker/state machine, validators
 // and encrypted checkpoints. Only dispatch transport and model responses are fake.
@@ -52,6 +53,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260922213500_approved_case_analysis_retry.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260923120225_bounded_case_model_budget.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260923134458_cache_aware_case_input_budget.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260924000301_retained_case_work.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -73,7 +75,7 @@ try {
     maybeSingle(){return this.execute(true)} then(resolve,reject){return this.execute().then(resolve,reject)}
   }
   const client={from:table=>new Query(table),rpc:async(name,args)=>{
-    const calls={finish_case_analysis_job:['p_job_id','p_lease','p_outcome'],reserve_case_model_call:['p_job_id','p_lease','p_output_tokens','p_request_bytes','p_search_calls','p_stage'],settle_case_model_call:['p_job_id','p_lease','p_reservation_id','p_input_tokens','p_output_tokens','p_cached_tokens']}
+    const calls={read_retained_case_work:['p_job_id','p_lease','p_cache_key'],save_retained_case_work:['p_job_id','p_lease','p_cache_key','p_ciphertext'],finish_case_analysis_job:['p_job_id','p_lease','p_outcome'],reserve_case_model_call:['p_job_id','p_lease','p_output_tokens','p_request_bytes','p_search_calls','p_stage'],settle_case_model_call:['p_job_id','p_lease','p_reservation_id','p_input_tokens','p_output_tokens','p_cached_tokens']}
     assert(calls[name])
     try{return {data:await scalar(`select public.${name}(${calls[name].map((_,i)=>'$'+(i+1)).join(',')})`,calls[name].map(key=>args[key])),error:null}}catch(error){return {data:null,error}}
   }}
@@ -123,7 +125,9 @@ try {
     if(localLetterScenario&&name==='ash_complete_plan_v157')output.letters=output.letters.map((letter,index)=>index?letter:{...letter,body:letter.body+' Die Anlage wurde bereits versandt.'})
     return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:JSON.stringify(output)}))
   }
-  const process=job=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only'})
+  // Independent fixtures use distinct deployments; cross-job reuse below uses
+  // one fixed deployment and the same real worker, SQL and model state machine.
+  const process=(job,cacheNamespace='synthetic-fixture-'+job.id)=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only',cacheNamespace})
   const drain=async id=>{for(let n=0;n<117;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
   const legacyJob=await enqueue()
@@ -161,6 +165,8 @@ try {
   assert.deepEqual(auditedRoadmap,expectedRoadmap,'every non-letter field is audited exactly once across overview, records and bounded action batches')
   assert.deepEqual(reviewedParts.flatMap(({part})=>part.letters||[]),expectedLetters,'every whole letter and complete translation has its own required review')
   for(const item of reviewedParts.filter(({part})=>part.steps||part.letters))assert.deepEqual(item.related.steps,roadmapTestResult.steps,'action and letter review retain every complete action for dependency/consistency checks')
+
+  await testRetainedCaseWork({db,client,owner,caseId,secret,process,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
 
   // Actual RLS/execute privileges, not a string assertion or mocked access check.
   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[owner]);await db.exec('set role authenticated')

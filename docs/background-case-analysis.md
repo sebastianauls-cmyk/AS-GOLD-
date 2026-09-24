@@ -6,6 +6,18 @@ Job status and bounded failure findings are owner-readable through RLS. Request 
 
 Each worker invocation advances one stage. Ownership, account state, entitlement, consent and original fingerprint remain required; completion rechecks access and sources. All four content-review scopes and every assigned batch remain mandatory. There are at most three substantive candidates, one mechanical input repair per candidate, and three total transport recoveries with at most one per interrupted step. The fixed one-hour job lifetime, 114 stage limit and 117 claim limit remain unchanged; the new resource limits can stop a job earlier. No partial/unreviewed customer result is saved.
 
+## Retained work after a terminal technical interruption
+
+The last successfully advanced unfinished state is also sealed in a separate AES-GCM envelope in `private.retained_case_work`. It is reusable for at most 24 hours, with one snapshot per owner/case. The existing minute dispatcher purges expired snapshots even while processing is paused. End users cannot read the private table or invoke its machine RPCs. Cancellation, successful completion, source/content failures, changed consent/access and case/account deletion discard the retained candidate.
+
+Retention never starts or renews a job. Only an explicitly submitted new job that passes the existing authorization, daily quota and processing-pause checks can load it. The current lease, ownership, source fingerprint, complete request/model context and `DENO_DEPLOYMENT_ID` must match. This includes languages, style, letter permission, model instructions and review date: crossing the review date or deploying changed code prevents reuse. Missing storage/version configuration fails closed before model generation. Invalid ciphertext is never silently replaced with a paid restart.
+
+All correction attempts, evidence, partial generations and completed review receipts remain in the encrypted state; the ordinary state machine still requires all remaining validation/review work. The original job remains terminal and its model ledger is retained. Each additional provider request must reserve against the existing job, owner and global limits. No budget, automatic retry allowance or acceptance criterion is increased.
+
+The real worker/SQL test stops a synthetic job after 11 completed provider stages, submits a new authorized job and completes the last stage: 12 total simulated calls, with all eight assigned reviews present. It also verifies budget exhaustion, context mismatch, expiry, revoked consent, private access and deletion. Already erased historical checkpoints cannot be recovered. This is a recovery-mechanism test, not a completed live Sarah case.
+
+Rollout: apply `20260924000301_retained_case_work.sql`, then deploy the worker and its relative dependencies. Keep the processing pause in place until a separate authorized live test. The migration does not modify configuration, historical jobs or budget policies. The Supabase-injected deployment identifier is documented at https://supabase.com/docs/guides/functions/secrets.
+
 ## Bounded generation after truncated output
 
 Topics are generated in batches of at most two. If the provider ends a topic or calculation response at its output-token limit, its incomplete JSON is discarded and the next worker lease receives half as many assignments, rounded down, with a minimum of one. Topic batches can shrink from two to one; calculation batches from six to three to one. Earlier validated topics, calculations, fetched sources, correction history and the exact next assignment remain in the sealed checkpoint. A single oversized item still stops the job. Outline, roadmap and review failures do not silently enter this recovery path.

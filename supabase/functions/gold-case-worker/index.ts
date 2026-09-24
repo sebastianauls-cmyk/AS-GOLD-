@@ -18,6 +18,6 @@ Deno.serve(async(req:Request)=>{
   const {data:job,error}=await client.rpc('claim_case_analysis_job',{p_job_id:input.job_id,p_token:input.token});
   if(error)return reply(503);
   if(!job)return reply(403);
-  EdgeRuntime.waitUntil(processCaseAnalysisJob({client,job,secret,providerKey:Deno.env.get('OPENAI_API_KEY')}));
+  EdgeRuntime.waitUntil(processCaseAnalysisJob({client,job,secret,providerKey:Deno.env.get('OPENAI_API_KEY'),cacheNamespace:Deno.env.get('DENO_DEPLOYMENT_ID')}));
   return reply(202);
 });

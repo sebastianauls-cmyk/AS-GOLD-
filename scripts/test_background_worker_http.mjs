@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import {transformSync} from 'next/dist/build/swc/index.js'
 let handler,claimCalls=0,processed=[],tasks=[],available=true
 const job={id:'11111111-1111-4111-8111-111111111111',owner_id:'verified-database-owner',checkpoint:'database-only'}
-const env={SUPABASE_URL:'https://synthetic.invalid',SUPABASE_SERVICE_ROLE_KEY:'synthetic-server-only-secret',OPENAI_API_KEY:'synthetic-only'}
+const env={SUPABASE_URL:'https://synthetic.invalid',SUPABASE_SERVICE_ROLE_KEY:'synthetic-server-only-secret',OPENAI_API_KEY:'synthetic-only',DENO_DEPLOYMENT_ID:'synthetic-project_function_version'}
 const createClient=()=>({rpc:async(name,args)=>{claimCalls++;assert.equal(name,'claim_case_analysis_job');assert.deepEqual(Object.keys(args).sort(),['p_job_id','p_token']);return {data:available?job:null,error:null}}})
 const source=fs.readFileSync('supabase/functions/gold-case-worker/index.ts','utf8')
 const code=transformSync(source.replace(/^import [^\n]+\n/gm,''),{filename:'worker.ts',jsc:{parser:{syntax:'typescript'},target:'es2022'},module:{type:'es6'}}).code
@@ -20,4 +20,5 @@ available=true;assert.equal((await request({...body,owner_id:'forged',checkpoint
 await Promise.all(tasks)
 assert.equal(processed.length,1);assert.equal(processed[0].job,job,'worker only sees the database-claimed payload')
 assert.equal(processed[0].job.owner_id,'verified-database-owner')
+assert.equal(processed[0].cacheNamespace,env.DENO_DEPLOYMENT_ID,'retention is bound to the deployed worker version')
 console.log('Background worker HTTP: method/origin/body limits, required one-use capability, denied claim, no caller identity/checkpoint injection and registered background task passed.')
