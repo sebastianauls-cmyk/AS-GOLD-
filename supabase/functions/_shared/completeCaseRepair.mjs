@@ -79,12 +79,17 @@ function locate(candidate,location,schema){
     const end=location.indexOf(']',start.length)
     if(end<0)return null
     let selector=location.slice(start.length,end)
-    if(/^(['"]).*\1$/.test(selector))selector=selector.slice(1,-1)
+    const quoted=/^(['"]).*\1$/.test(selector)
+    if(quoted)selector=selector.slice(1,-1)
     const items=get(candidate,prefix)
     if(!Array.isArray(items))return null
     const indexes=new Set()
-    if(/^(0|[1-9]\d*)$/.test(selector)&&Number(selector)<items.length)indexes.add(Number(selector))
-    items.forEach((item,index)=>{if(item?.id===selector)indexes.add(index)})
+    // Server-assigned canonical paths use unquoted zero-based indices.
+    // Numeric item IDs must never compete with those positions. Quoted
+    // selectors (or legacy non-numeric selectors) identify original IDs.
+    if(!quoted&&/^(0|[1-9]\d*)$/.test(selector)){
+      if(Number(selector)<items.length)indexes.add(Number(selector))
+    }else items.forEach((item,index)=>{if(item?.id===selector)indexes.add(index)})
     if(indexes.size!==1)return null
     const index=[...indexes][0],path=[...prefix,index],suffix=location.slice(end+1)
     // Unknown field names and ambiguous/global findings cannot select a patch.

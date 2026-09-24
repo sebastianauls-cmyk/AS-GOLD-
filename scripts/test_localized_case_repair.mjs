@@ -49,7 +49,27 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   for(const location of ['analysis','analysis.topics','analysis.calculations[99]','analysis.topics[missing]','analysis.topics[0].not_a_field','__proto__.polluted','letters','output'])assert.equal(localizedRepairTargets(data,[issue(location)],schema),null,'ambiguous or new structure cannot trigger an automatic complete rewrite')
   assert.equal(localizedRepairTargets(data,[{...issue('analysis'),code:'source'}],schema),null,'a global source objection still stops automatic correction')
   const ambiguous=structuredClone(data);ambiguous.analysis.topics[1].id='0'
-  assert.equal(localizedRepairTargets(ambiguous,[issue('analysis.topics[0].conclusion')],schema),null,'an index/ID collision must not choose the wrong item')
+  assert.deepEqual(localizedRepairTargets(ambiguous,[issue('analysis.topics[0].conclusion')],schema)[0].path,['analysis','topics',0],'a canonical index always selects the assigned position')
+  assert.deepEqual(localizedRepairTargets(ambiguous,[issue('analysis.topics["0"].conclusion')],schema)[0].path,['analysis','topics',1],'a quoted numeric ID selects that original ID instead of an index')
+  const numbered=structuredClone(data)
+  numbered.steps.forEach((step,index)=>{step.id=String(index+1)})
+  const numberSections=[{scope:'roadmap',part:'steps',step_ids:['5']}]
+  for(const location of ['5','steps[4]','steps["5"].after_response']){
+    const normalized=resolveReviewIssueLocations([issue(location)],numbered,numberSections,schema)
+    assert.equal(normalized[0].location,'steps[4]','original step ID and canonical location converge on the fifth step')
+    assert(completeReviewLocations(numbered,numberSections).includes(normalized[0].location))
+    const targets=localizedRepairTargets(numbered,normalized,schema)
+    assert.deepEqual(targets[0].path,['steps',4],'normalization must not reject its own canonical path')
+    const replacement={...numbered.steps[4],after_response:'Synthetic explicit follow-through after the response.'}
+    const repaired=applyLocalizedRepair({requires_full_correction:false,reason:'',changes:{edit_0:replacement}},targets,numbered,schema,value=>value)
+    assert.deepEqual(repaired.steps[4],replacement)
+    assert.deepEqual(repaired.steps[3],numbered.steps[3],'step ID 4 remains untouched')
+  }
+  numbered.steps[0].id='99'
+  assert.equal(localizedRepairTargets(numbered,[issue('steps[99]')],schema),null,'an out-of-range canonical index never falls back to an ID')
+  assert.deepEqual(localizedRepairTargets(numbered,[issue('steps["99"]')],schema)[0].path,['steps',0])
+  numbered.steps[1].id='99'
+  assert.equal(localizedRepairTargets(numbered,[issue('steps["99"]')],schema),null,'duplicate original IDs remain ambiguous')
   assert.equal(localizedRepairTargets(data,data.analysis.topics.slice(0,9).map(t=>issue(`analysis.topics[${t.id}]`)),schema),null,'a local request has a fixed size bound')
   const assignedLocations=completeReviewLocations(data,[{scope:'analysis',topic_ids:[data.analysis.topics[1].id]}])
   assert(assignedLocations.includes('analysis.topics[1]'))
