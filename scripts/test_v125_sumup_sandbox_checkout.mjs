@@ -4,9 +4,34 @@ import { paymentRuntimeConfig, publicPaymentConfig } from '../app/modules/paymen
 import { sumupCheckoutPayload, sumupCheckoutReference, verifySumupCheckout } from '../app/modules/payments/sumupCheckout.mjs'
 import { paymentTranslations } from '../app/modules/payments/paymentTranslations.mjs'
 import { isTesterAccessQuote } from '../app/modules/pricing/testerAccess.js'
+import { observePaymentConfig } from '../app/modules/services/pricingRepository.js'
 
 const read=path=>fs.readFileSync(path,'utf8')
 const languageKeys=['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
+const originalFetch=globalThis.fetch
+try{
+  const page=new EventTarget(),requests=[],observed=[]
+  globalThis.fetch=(_url,{signal})=>new Promise((resolve,reject)=>{
+    requests.push({signal,resolve})
+    signal.addEventListener('abort',()=>reject(new DOMException('Page left','AbortError')),{once:true})
+  })
+  const stop=observePaymentConfig(config=>observed.push(config),{page})
+  assert.equal(requests.length,1)
+  page.dispatchEvent(new Event('pagehide'))
+  assert.equal(requests[0].signal.aborted,true,'leaving or reloading the page aborts the pending configuration read')
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.deepEqual(observed,[],'an aborted read cannot replace current payment state')
+  page.dispatchEvent(new Event('pageshow'))
+  assert.equal(requests.length,1,'normal page events do not retry reads')
+  page.dispatchEvent(Object.assign(new Event('pageshow'),{persisted:true}))
+  assert.equal(requests.length,2,'a cached page resumes the interrupted read when restored')
+  requests[1].resolve({ok:true,json:async()=>({enabled:false,mode:'disabled',liveLocked:true})})
+  await new Promise(resolve=>setImmediate(resolve))
+  assert.equal(observed.length,1)
+  stop()
+  page.dispatchEvent(Object.assign(new Event('pageshow'),{persisted:true}))
+  assert.equal(requests.length,2,'unmounted pages never restart the request')
+}finally{globalThis.fetch=originalFetch}
 const readyEnv={
   AS_OPTIONAL_PAYMENT_ENABLED:'true',
   SUMUP_PAYMENT_MODE:'sandbox',

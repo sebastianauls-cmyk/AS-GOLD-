@@ -43,7 +43,7 @@ import { createDocumentWorkflowActions } from '../documents/documentWorkflow'
 import { createExportWorkflowActions } from '../documents/exportWorkflow'
 import { createWorkspaceAuthActions } from '../auth/workspaceAuthWorkflow'
 import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
-import { getPaymentConfig } from '../services/pricingRepository.js'
+import { observePaymentConfig } from '../services/pricingRepository.js'
 import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
@@ -283,11 +283,7 @@ export default function WorkspaceController({publicOnly=false}={}){
     supabase,upgrades,termMonths,promoCode,appliedPromoCode,quotes,promoCopy:promo,paymentCopy:payment,paymentConfig,notices:n,setQuotes,setPromoCode,setAppliedPromoCode,setPromoRevision,setQuoteLoading,setCheckoutPlan,setMessage,setAccess,setUpgrades,onTestAccessGranted:()=>setSection('dashboard'),onPaymentAccessGranted:()=>setSection('dashboard'),formatAccessEnd:value=>new Intl.DateTimeFormat(localeForLanguage[language]||'de-DE',{dateStyle:'medium'}).format(new Date(value)),recordServerAudit
   })
 
-  useEffect(()=>{
-    let cancelled=false
-    getPaymentConfig().then(config=>{if(!cancelled)setPaymentConfig(config)})
-    return ()=>{cancelled=true}
-  },[])
+  useEffect(()=>observePaymentConfig(setPaymentConfig),[])
 
   useEffect(()=>{
     if(screen!=='app'||checkoutReturnHandled.current||typeof window==='undefined')return
