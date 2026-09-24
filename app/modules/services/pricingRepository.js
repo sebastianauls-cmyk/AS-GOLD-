@@ -18,14 +18,35 @@ export function redeemTestAccessRecord(supabase,{promoCode}){
   return supabase.rpc('gold_redeem_test_access',{p_promo_code:promoCode})
 }
 
-export async function getPaymentConfig(){
+export async function getPaymentConfig({signal}={}){
   try{
-    const response=await fetch('/api/payments/config',{cache:'no-store'})
+    const response=await fetch('/api/payments/config',{cache:'no-store',signal})
     if(!response.ok)return {enabled:false,provider:'sumup',mode:'disabled',liveLocked:false}
     return await response.json()
   }catch{
     return {enabled:false,provider:'sumup',mode:'disabled',liveLocked:false}
   }
+}
+
+// A full-page reload/navigation does not always run React's unmount cleanup.
+// Abort this optional read before the browser tears down its document, and
+// resume it only if that same page returns from the back/forward cache.
+export function observePaymentConfig(onConfig,{page=window}={}){
+  let request,disposed=false
+  const load=()=>{
+    request?.abort()
+    const controller=new AbortController()
+    request=controller
+    getPaymentConfig({signal:controller.signal}).then(config=>{
+      if(!disposed&&!controller.signal.aborted)onConfig(config)
+    })
+  }
+  const hide=()=>request?.abort()
+  const show=event=>{if(event.persisted&&request?.signal.aborted&&!disposed)load()}
+  page.addEventListener('pagehide',hide)
+  page.addEventListener('pageshow',show)
+  load()
+  return ()=>{disposed=true;hide();page.removeEventListener('pagehide',hide);page.removeEventListener('pageshow',show)}
 }
 
 export async function startCheckoutRecord(supabase,{planKey,termMonths,promoCode=''}){
