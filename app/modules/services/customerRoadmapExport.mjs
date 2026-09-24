@@ -72,14 +72,16 @@ export async function createRoadmapDocx(record,options={}) {
       ...block.text.split('\n').map((line,index)=>new TextRun({text:(block.kind==='bullet'&&index===0?'• ':'')+line,break:index?1:undefined,
         bold:['title','heading','step'].includes(block.kind),size:block.kind==='title'?34:block.kind==='meta'?18:22,color:block.kind==='meta'?'5F6874':'202B3B'}))]
   })
-  const header=new Header({children:(record.style.letterhead||record.style.sender_name||'ASH Workspace Gold').split('\n').map(text=>new Paragraph({spacing:{after:50},children:[new TextRun({text,size:18,bold:true,color:'596375'})]}))})
+  // The advisor's identity belongs to the explanation, not to a letter sent by
+  // the customer. Preserve the sender supplied in the reviewed letter body.
+  const headers=options.letterId?undefined:{default:new Header({children:(record.style.letterhead||record.style.sender_name||'ASH Workspace Gold').split('\n').map(text=>new Paragraph({spacing:{after:50},children:[new TextRun({text,size:18,bold:true,color:'596375'})]}))})}
   const footer=new Footer({children:[new Paragraph({alignment:AlignmentType.RIGHT,children:[new TextRun({text:'ASH Workspace Gold · ',size:16,color:'64748B'}),new TextRun({children:[PageNumber.CURRENT],size:16})]})]})
-  return Packer.toBlob(new Document({creator:'ASH Workspace Gold',title:blocks[0]?.text,styles:{default:{document:{run:{font:'Arial',size:22}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:2300,right:1134,bottom:1200,left:1134,header:500,footer:500}}},headers:{default:header},footers:{default:footer},children:blocks.map(paragraph)}]}))
+  return Packer.toBlob(new Document({creator:'ASH Workspace Gold',title:blocks[0]?.text,styles:{default:{document:{run:{font:'Arial',size:22}}}},sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:2300,right:1134,bottom:1200,left:1134,header:500,footer:500}}},headers,footers:{default:footer},children:blocks.map(paragraph)}]}))
 }
 
 export async function createRoadmapPdf(record,options={}) {
   return createTextPdf({blocks:roadmapExportBlocks(record,options),
-    header:record.style.letterhead||record.style.sender_name||'ASH Workspace Gold',
+    header:options.letterId?'':record.style.letterhead||record.style.sender_name||'ASH Workspace Gold',
     language:options.letterId?record.reference_language:record.output_language,fonts:options.fonts})
 }
 

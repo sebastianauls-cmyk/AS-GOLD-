@@ -15,12 +15,23 @@ import {updateRoadmapProgress} from '../supabase/functions/_shared/customerRoadm
 const fonts=['DejaVuSans.ttf','DejaVuSans-Bold.ttf'].map(name=>fs.readFileSync('public/fonts/'+name).toString('base64'))
 const directory=fs.mkdtempSync(path.join(os.tmpdir(),'ash-pdf-test-'))
 const record=roadmapTestRecord()
+record.style.letterhead='SYNTHETIC-ADVISOR-LETTERHEAD'
+record.result.letters[0].body='SYNTHETIC-CUSTOMER-SENDER\n'+record.result.letters[0].body
 const handoff=buildProfessionalHandoff({title:'Übergabe: 3.000 EUR',goal:'Korrektur prüfen',summary:'Eine Zahlung ist nicht bestätigt.',documents:[{title:'Original'}],assessments:[{trafficLight:'yellow',title:'Zahlung offen',reasoning:'Keine Zahlung bestätigt.'}]})
 const copy={handoffTitle:'Professionelle Übergabe',goal:'Ziel',summary:'Sachstand',deadline:'Frist',next:'Nächster Schritt',documents:'Dokumente',assessments:'Bewertungen',timeline:'Verlauf',generated:'Synthetischer Exporttest'}
-const outputs=[['roadmap',await createRoadmapPdf(record,{fonts}),'Wird grün, sobald'],['letter',await createRoadmapPdf(record,{fonts,letterId:'kasse'}),'Sehr geehrte'],['handoff',await createHandoffPdf(handoff,copy,'de',{fonts}),'Zahlung offen']]
+const outputs=[['roadmap',await createRoadmapPdf(record,{fonts}),'Wird grün, sobald'],['letter',await createRoadmapPdf(record,{fonts,letterId:record.result.letters[0].id}),'Sehr geehrte'],['handoff',await createHandoffPdf(handoff,copy,'de',{fonts}),'Zahlung offen']]
 const samples={de:'Grüße, nächste Schritte und 3.000,00 EUR.',en:'Documents and next steps.',fr:'Échéance et pièces à vérifier.',tr:'İşlem, görüş ve sonraki adımlar.',pl:'Zażółć gęślą jaźń.',ru:'Проверка документов.',ar:'مراجعة المستندات والخطوات التالية',fa:'بررسی اسناد و مراحل بعدی',ro:'Înștiințare și următorii pași.',bg:'Проверка на документите.',vi:'Kiểm tra tài liệu và thời hạn.'}
 for(const [language,text] of Object.entries(samples))outputs.push([language,await createTextPdf({fonts,language,blocks:[{text,kind:'title'},{text:'🟡 '+text},{text:('CHECK '+text+' ').repeat(180)},{text:'END-OF-EXPORT',light:'green'}]}),text])
 const poppler=spawnSync('pdftotext',['-v'],{encoding:'utf8'}).status===0
+for(const options of [{},{letterId:record.result.letters[0].id}]){
+  const zip=await JSZip.loadAsync(await (await createRoadmapDocx(record,options)).arrayBuffer())
+  const headers=(await Promise.all(zip.file(/^word\/header\d+\.xml$/).map(file=>file.async('string')))).join('\n')
+  const document=await zip.file('word/document.xml').async('string')
+  if(options.letterId){
+    assert.doesNotMatch(headers,/SYNTHETIC-ADVISOR-LETTERHEAD/,'customer letter must not acquire the advisor letterhead')
+    assert.match(document,/SYNTHETIC-CUSTOMER-SENDER/,'reviewed customer sender is preserved')
+  }else assert.match(headers,/SYNTHETIC-ADVISOR-LETTERHEAD/,'customer explanation retains its advisor letterhead')
+}
 let reopened=roadmapTestRecord()
 for(const id of ['frist','anfragen','antworten','abschluss'])reopened={...reopened,...updateRoadmapProgress(reopened,{step_id:id,done:true,note:'Bestätigung mit Beleg abgelegt.'})}
 reopened={...reopened,...updateRoadmapProgress(reopened,{step_id:'anfragen',done:false,note:'Antwort fehlt; Anfrage korrigieren.'})}
@@ -87,6 +98,11 @@ for(const [name,blob,expected] of outputs) {
   if(poppler) {
     const text=spawnSync('pdftotext',['-raw',file,'-'],{encoding:'utf8'})
     assert.equal(text.status,0,text.stderr)
+    if(name==='roadmap')assert.match(text.stdout,/SYNTHETIC-ADVISOR-LETTERHEAD/)
+    if(name==='letter'){
+      assert.doesNotMatch(text.stdout,/SYNTHETIC-ADVISOR-LETTERHEAD/,'PDF customer letter must not acquire the advisor letterhead')
+      assert.match(text.stdout,/SYNTHETIC-CUSTOMER-SENDER/)
+    }
     if(!['ar','fa'].includes(name))assert.ok(text.stdout.includes(expected),name+' missing original Unicode text')
     else {
       // Poppler presents RTL strings in visual order. ActualText retains logical

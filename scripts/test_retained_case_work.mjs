@@ -20,6 +20,8 @@ export async function testRetainedCaseWork({db,client,owner,caseId,secret,proces
     assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
   }
   try{
+    // The production authorization service also updates this timestamp.
+    await db.exec('alter table public.account_privacy_settings add column if not exists updated_at timestamptz default now()')
     // A real terminal lifetime stop after seven successful simulated stages. The new
     // explicit job needs only the eighth stage and retains all review receipts.
     const before=modelCalls()
@@ -34,6 +36,8 @@ export async function testRetainedCaseWork({db,client,owner,caseId,secret,proces
     assert.equal(originalSpend,7)
     await stop(job)
     assert(await snapshot(),'terminal expiry preserves encrypted progress')
+    await db.query("update public.account_privacy_settings set ai_processing_enabled=true,updated_at=now()+interval '1 second' where owner_id=$1",[owner])
+    assert(await snapshot(),'reconfirming unchanged consent before retry must preserve completed work')
     assert.equal(await scalar("select count(*)::integer from public.case_analysis_jobs where owner_id=$1 and status in ('queued','running')",[owner]),0,'retention does not start another job')
     job=await fresh();assert.notEqual(job.id,originalId)
     assert.equal(new Date(job.expires_at)-new Date(job.created_at),60*60*1000)
@@ -128,14 +132,33 @@ export async function testRetainedCaseWork({db,client,owner,caseId,secret,proces
     await db.exec('update private.case_analysis_config set enabled=true')
     await cleanup()
 
-    for(const change of ['consent','access','ban','source_failure','review_failure']){
+    // Content failures retain the encrypted candidate for diagnosis only. They
+    // cannot bypass review or be restored as a valid continuation by a new job.
+    for(const code of ['review_unresolved','source_unresolved']){
+      job=await fresh();await run(await claim(job.id))
+      const candidate=await snapshot()
+      await finish(await claim(job.id),{status:'failed',code})
+      assert.equal((await stored(job.id)).error_code,code)
+      assert.equal((await snapshot()).ciphertext,candidate.ciphertext,'content failure retains encrypted diagnostic work')
+      assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
+      assert.equal(await scalar('select count(*)::integer from public.case_roadmaps where id=$1',[job.id]),0,'failed content is not published')
+      assert.equal(await scalar("select count(*)::integer from public.case_analysis_jobs where owner_id=$1 and status in ('queued','running')",[owner]),0,'retention never starts a new job')
+      const next=await fresh(),leased=await claim(next.id)
+      assert.deepEqual(await scalar('select public.read_retained_case_work($1,$2,$3)',[next.id,leased.lease,candidate.cache_key]),{},'failed content is not automatically resumed')
+      await cancel(next.id)
+      assert.equal(await snapshot(),undefined,'explicit cancellation also removes retained content-failure diagnostics')
+      await cleanup()
+    }
+
+    for(const change of ['consent','privacy_version','access','ban','source_failure','review_failure']){
       job=await fresh();await run(await claim(job.id));assert(await snapshot())
       if(change==='consent')await db.query('update public.account_privacy_settings set ai_processing_enabled=false where owner_id=$1',[owner])
+      else if(change==='privacy_version')await db.query("update public.account_privacy_settings set privacy_notice_version='changed' where owner_id=$1",[owner])
       else if(change==='access')await db.query('update private.user_access set active=false where user_id=$1',[owner])
       else if(change==='ban')await db.query("update auth.users set banned_until=now()+interval '1 day' where id=$1",[owner])
       else await finish(await claim(job.id),{status:'failed',code:change==='source_failure'?'source_changed':'review_failed'})
       assert.equal(await snapshot(),undefined,change+' deletes retained candidates')
-      await db.query('update public.account_privacy_settings set ai_processing_enabled=true where owner_id=$1',[owner])
+      await db.query("update public.account_privacy_settings set ai_processing_enabled=true,privacy_notice_version='2026-08-30-v1' where owner_id=$1",[owner])
       await db.query('update private.user_access set active=true where user_id=$1',[owner])
       await db.query('update auth.users set banned_until=null where id=$1',[owner])
       await cleanup()

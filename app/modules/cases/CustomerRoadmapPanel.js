@@ -107,6 +107,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   const [failedDocument,setFailedDocument]=useState(null)
   const [reviewIssues,setReviewIssues]=useState([])
   const [savedJob,setSavedJob]=useState(null),[jobReadError,setJobReadError]=useState(false)
+  const [jobRefresh,setJobRefresh]=useState(0)
   const job=savedJob?.case_id===item.id?savedJob:null
   const backgroundBusy=!!job&&['queued','running'].includes(job.status)
   const mountedRef=useRef(true)
@@ -169,7 +170,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     }
     refreshJob()
     return ()=>{cancelled=true;clearTimeout(timer)}
-  },[supabase,item.id,job?.id,backgroundBusy,ui.error,language])
+  },[supabase,item.id,job?.id,backgroundBusy,jobRefresh,ui.error,language])
   async function run(task) {
     if(busyRef.current)return false
     busyRef.current=true;setBusy(true);setError('');setFailedDocument(null);setReviewIssues([])
@@ -202,8 +203,10 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
       if(authorization.error)throw new Error(ui.error)
       if(!isCurrent())return false
       onPrivacyUpdate?.(authorization.data)
-      const {data,error}=await generateCustomerRoadmap(supabase,{caseId:item.id,style,outputLanguage,referenceLanguage,onProgress:({stage})=>{if(!isCurrent())throw new Error(ui.stale);setProcessingStage(stage)}})
-      if(error&&isCurrent()){
+      const {data,error}=await generateCustomerRoadmap(supabase,{caseId:item.id,style,outputLanguage,referenceLanguage})
+      if(!isCurrent())return false
+      setJobRefresh(value=>value+1)
+      if(error){
         try{
           const diagnostic=await error.context.clone().json()
           if(['source_unresolved','review_unresolved'].includes(diagnostic.code)&&Array.isArray(diagnostic.issues))setReviewIssues(diagnostic.issues.slice(0,8).map(issue=>String(issue.reason||'').slice(0,700)).filter(Boolean))

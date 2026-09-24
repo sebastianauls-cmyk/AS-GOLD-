@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import './test_background_case_request.mjs'
 import fs from 'node:fs'
 import {transformSync} from 'next/dist/build/swc/index.js'
 import * as checkpoints from '../supabase/functions/_shared/modelCheckpoint.mjs'
