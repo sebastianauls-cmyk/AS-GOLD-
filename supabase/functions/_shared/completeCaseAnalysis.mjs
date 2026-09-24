@@ -7,12 +7,11 @@ import { calculateExpression, quoteContainsNumber } from './checkedCalculations.
 import {selectCaseResearch,caseResearchManifest,reviewResearchAssignment,MODULE_RESEARCH_INSTRUCTIONS} from './caseResearchContext.mjs'
 import {localizedRepairTargets,localizedRepairSchema,localizedRepairAssignments,applyLocalizedRepair} from './completeCaseRepair.mjs'
 
-export const COMPLETE_ANALYSIS_VERSION='v168'
-const MAX_SUBSTANTIVE_CANDIDATES=3
-const planFieldPath=location=>Object.keys(ROADMAP_SCHEMA.properties).some(key=>location===key||location.startsWith(key+'.')||location.startsWith(key+'['))
+export const COMPLETE_ANALYSIS_VERSION='v170'
+const MAX_SUBSTANTIVE_CANDIDATES=2
 const MAX_TOPICS=10,MAX_CALCULATIONS=24,MAX_CALCULATION_INPUTS=24
 const MAX_FACTS=24,MAX_QUESTIONS=24,MAX_STEPS=12,MAX_LETTERS=6,MAX_REVIEW_PARTS=25
-// Keep each high-effort request within the hosted worker's wall-clock limit.
+// These are mandatory item assignments, independent of request grouping.
 // Empty numerical cases still receive the calculation-completeness review.
 export function completeReviewCoverage(candidate){
   const coverage=[]
@@ -30,6 +29,35 @@ export function completeReviewCoverage(candidate){
   for(let start=0;start<candidate.steps.length;start+=3)coverage.push(roadmapPart('steps',{step_ids:candidate.steps.slice(start,start+3).map(item=>item.id)}))
   for(let start=0;start<Math.max(candidate.letters.length,1);start++)coverage.push({scope:'letters',topic_ids:[],calculation_ids:[],letter_ids:candidate.letters.slice(start,start+1).map(item=>item.id)})
   return coverage
+}
+// Coverage remains item-exact. Several adjacent sections of the same scope
+// share one independent request, bounded by both section count and UTF-8 size.
+// A single already-bounded legacy section is never truncated to fit a group.
+const MAX_GROUP_SECTIONS=4,MAX_GROUP_BYTES=16000
+function mergedReviewSection(sections){
+  const merged={scope:sections[0].scope}
+  for(const key of ['topic_ids','calculation_ids','fact_indexes','question_indexes','step_ids','letter_ids'])merged[key]=sections.flatMap(section=>section[key]||[])
+  if(merged.scope==='roadmap')merged.part=sections.some(section=>section.part==='overview')?'overview':sections.every(section=>section.part==='steps')?'steps':'records'
+  return merged
+}
+function reviewGroupCandidate(candidate,sections,firstIndex){
+  const section=mergedReviewSection(sections),{analysis,letters,facts,open_questions,steps,...overview}=candidate
+  if(section.scope==='analysis')return {analysis:{topics:analysis.topics.filter(item=>section.topic_ids.includes(item.id)),...(firstIndex===0?{limitations:analysis.limitations}:{})}}
+  if(section.scope==='calculations')return {analysis:{calculations:analysis.calculations.filter(item=>section.calculation_ids.includes(item.id))}}
+  if(section.scope==='letters')return {letters:letters.filter(item=>section.letter_ids.includes(item.id))}
+  return {...(sections.some(item=>item.part==='overview')?overview:{}),
+    ...(sections.some(item=>item.part==='records')?{facts:facts.filter((_,i)=>section.fact_indexes.includes(i)),open_questions:open_questions.filter((_,i)=>section.question_indexes.includes(i))}:{}),
+    ...(sections.some(item=>item.part==='steps')?{steps:steps.filter(item=>section.step_ids.includes(item.id))}:{})}
+}
+export function completeReviewGroups(candidate,coverage=completeReviewCoverage(candidate)){
+  const groups=[]
+  for(let index=0;index<coverage.length;index++){
+    const previous=groups.at(-1),proposed=previous?[...previous,index]:[index]
+    const fits=previous&&previous.length<MAX_GROUP_SECTIONS&&coverage[previous[0]].scope===coverage[index].scope
+      &&new TextEncoder().encode(JSON.stringify(reviewGroupCandidate(candidate,proposed.map(i=>coverage[i]),proposed[0]))).length<=MAX_GROUP_BYTES
+    if(fits)previous.push(index);else groups.push([index])
+  }
+  return groups
 }
 const str={type:'string'},strings={type:'array',items:str}
 const object=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)})
@@ -272,28 +300,22 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
       {type:'input_text',text:JSON.stringify({retrieved_sources}),prompt_cache_breakpoint:{mode:'explicit'}},
       {type:'input_text',text:JSON.stringify({previous_candidate:previous,issues:current.modelState.feedback,previously_addressed_issues:current.correctionHistory||[]}),prompt_cache_breakpoint:{mode:'explicit'}}
     ]},{role:'user',content:[{type:'input_text',text:JSON.stringify({assigned_replacements:localizedRepairAssignments(targets,previous),mechanical_feedback:current.localizedRepair.feedback||[],previous_failed_patch:current.localizedRepair.previous||null})}]}],text:{format:{type:'json_schema',name:'ash_complete_repair_v169',strict:true,schema:indexedQuotationSchema(localizedRepairSchema(targets,previous,COMPLETE_ANALYSIS_SCHEMA))}},max_output_tokens:8000,prompt_cache_options:{mode:'explicit'},prompt_cache_key:'ash-repair:'+source.case.id}
-    let generated
-    const fullCorrection=reason=>({status:'processing',state:{...current,localizedRepair:null,fullResearch:true,reviewReceipts:null,draftAnalysis:null,analysis_response_ids:[],modelState:{...current.modelState,feedback:[...current.modelState.feedback,...(reason?[{code:'meaning',location:'output',reason}]:[])]}}})
-    try{generated=await invoke(repairRequest,'correction')}
-    catch(error){
-      // Truncated patch JSON is never applied. The same bounded candidate may
-      // use the existing component route; all reservations remain charged.
-      if(error instanceof ModelWorkflowError&&error.code==='provider_token_limit')return fullCorrection()
-      throw error
-    }
+    const fullCorrection=reason=>{throw new ModelWorkflowError('Die gezielte Korrektur reicht nicht aus. Der Auftrag wurde ohne automatische Neuberechnung beendet.',422,'review_unresolved',[...current.modelState.feedback,...(reason?[{code:'meaning',location:'output',reason}]:[])])}
+    // A failed or incomplete patch never triggers regeneration of the case.
+    const generated=await invoke(repairRequest,'correction')
     let candidate
     try{
       candidate=applyLocalizedRepair(generated.parsed,targets,previous,COMPLETE_ANALYSIS_SCHEMA,(value,pathPrefix)=>resolveQuotationIds(value,quotes,{pathPrefix}))
-      if(candidate===null)return fullCorrection(generated.parsed.reason)
+      if(candidate===null)fullCorrection(generated.parsed.reason)
       candidate=validate(candidate,current.modelState.validationContext)
     }catch(error){
-      const feedback=validationFeedback(error,'correction')
-      if(current.inputRepair?.used&&current.inputRepair.attempt===attempt)throw new ModelWorkflowError('Die gezielte Korrektur konnte noch nicht ausreichend belegt werden. Es wurde kein neues Ergebnis gespeichert.',422,'source_unresolved',feedback)
-      return {status:'processing',state:{...current,inputRepair:{used:true,attempt},localizedRepair:{feedback,previous:generated.parsed}}}
+      if(error instanceof ModelWorkflowError)throw error
+      throw new ModelWorkflowError('Die einmalige Korrektur konnte nicht ausreichend belegt werden. Der Auftrag wurde beendet.',422,'source_unresolved',validationFeedback(error,'correction'))
     }
     return {status:'processing',state:{...current,localizedRepair:null,correction_response_ids:[...(current.correction_response_ids||[]),generated.response_id],modelState:{stage:'review',attempt,candidate,structuralFeedback:[],validationContext:current.modelState.validationContext,feedback:current.modelState.feedback,model:generated.model,response_id:generated.response_id}}}
   }
   if(!current.modelState||current.modelState.stage==='generation'){
+    if(attempt>1)throw new ModelWorkflowError('Eine vollständige Neuberechnung ist in diesem Auftrag nicht zulässig.',409,'correction_invalid')
     const writingPlan=!!current.draftAnalysis
     const outline=current.analysisOutline||null
     const topicDraft=current.topicDraft||null
@@ -384,58 +406,50 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   let candidate=current.modelState.candidate,validationContext=current.modelState.validationContext
   let structuralFeedback=current.modelState.structuralFeedback||[]
   try{candidate=validate(candidate,validationContext)}catch(error){validationContext=error.repairContext||validationContext;structuralFeedback=validationFeedback(error,'output')}
+  if(structuralFeedback.length)throw new ModelWorkflowError('Das Ergebnis enthält unbelegte oder ungültige Angaben. Die kostenpflichtige Prüfung wurde nicht gestartet.',422,'source_unresolved',structuralFeedback)
   const {analysis,...plan}=candidate
   const {letters,facts,open_questions,steps,...overview}=plan
   const coverage=completeReviewCoverage(candidate)
-  if(current.reviewIds?.length&&JSON.stringify(current.reviewCoverage)!==JSON.stringify(coverage))throw new ModelWorkflowError('Die Prüfabschnitte wurden geändert. Bitte die Auswertung mit dem aktuellen Stand neu beauftragen.',409,'review_coverage_changed')
-  if(!Number.isInteger(partIndex)||partIndex<0||partIndex>=coverage.length||coverage.length>MAX_REVIEW_PARTS||(current.reviewIds||[]).length!==partIndex)throw new ModelWorkflowError('Ungültiger Prüfabschnitt.',409)
-  const section=coverage[partIndex],reviewScope=section.scope
+  const groups=completeReviewGroups(candidate,coverage)
+  if(current.reviewIds?.length&&(JSON.stringify(current.reviewCoverage)!==JSON.stringify(coverage)||JSON.stringify(current.reviewGroups)!==JSON.stringify(groups)))throw new ModelWorkflowError('Die Prüfabschnitte wurden geändert. Bitte die Auswertung mit dem aktuellen Stand neu beauftragen.',409,'review_coverage_changed')
+  if(!Number.isInteger(partIndex)||partIndex<0||partIndex>=groups.length||coverage.length>MAX_REVIEW_PARTS||(current.reviewIds||[]).length!==partIndex)throw new ModelWorkflowError('Ungültiger Prüfabschnitt.',409)
+  const sections=groups[partIndex].map(index=>coverage[index]),section=mergedReviewSection(sections),reviewScope=section.scope
   const related={topics:analysis?.topics?.map(({id,title,conclusion,conditions,step_ids})=>({id,title,conclusion,conditions,step_ids})),calculations:analysis?.calculations?.map(({id,title,result,unit,conditions,topic_ids})=>({id,title,result,unit,conditions,topic_ids})),steps:['roadmap','letters'].includes(reviewScope)?plan.steps:plan.steps?.map(({id,action,done_when})=>({id,action,done_when})),letters:letters?.map(({id,recipient,subject,document_ids})=>({id,recipient,subject,document_ids}))}
   if(['roadmap','letters'].includes(reviewScope))Object.assign(related,{overview,facts:facts.map((item,index)=>({index,text:item.text})),open_questions:open_questions.map((item,index)=>({index,...item}))})
   if(reviewScope==='roadmap'&&section.part==='overview')related.topics=analysis?.topics||[]
-  const part=reviewScope==='analysis'?{analysis:{topics:analysis?.topics?.filter(topic=>section.topic_ids.includes(topic.id)),...(partIndex===0?{limitations:analysis?.limitations}:{})}}
-    :reviewScope==='calculations'?{analysis:{calculations:analysis?.calculations?.filter(calculation=>section.calculation_ids.includes(calculation.id))}}
-    :reviewScope==='letters'?{letters:letters.filter(letter=>section.letter_ids.includes(letter.id))}
-    :section.part==='overview'?overview
-    :section.part==='records'?{facts:facts.filter((_,i)=>section.fact_indexes.includes(i)),open_questions:open_questions.filter((_,i)=>section.question_indexes.includes(i))}
-    :{steps:steps.filter(step=>section.step_ids.includes(step.id))}
+  const part=reviewGroupCandidate(candidate,sections,groups[partIndex][0])
   const roadmapFocus={
-    overview:'Review every supplied overview field, including title, opening, key points, meaning, next action, customer action and closing. Check overall case completeness and consistency against ALL originals, ALL fetched sources and related_output facts, questions, steps, complete analysis topics with their citations, checked calculations and letter identities. Independently check cross-topic legal applicability, exceptions and uncited sources against every topical conclusion; a source omitted from another module may still qualify that conclusion. Flag a material duty, useful supported outcome or necessary follow-through missing from the entire assembled result. All detailed facts/questions, action fields and letter wording receive separate mandatory reviews; do not repeat their item-by-item audit here.',
+    overview:'Review every supplied overview field, including title, opening, key points, meaning, next action, customer action and closing. Check overall case completeness and consistency against ALL originals, ALL fetched sources and related_output facts, questions, steps, complete analysis topics with their citations, checked calculations and letter identities. Independently check cross-topic legal applicability, exceptions and uncited sources against every topical conclusion; a source omitted from another module may still qualify that conclusion. Flag a material duty, useful supported outcome or necessary follow-through missing from the entire assembled result. Detailed facts/questions, action fields and letter wording have mandatory review sections. Audit every section assigned to this request; do not audit items assigned elsewhere.',
     records:'Review EVERY assigned fact with its original evidence and EVERY assigned open question, recipient and reason. Preserve supported facts and identify only genuinely missing information; do not reopen confirmed events. Other facts/questions are deliberately assigned elsewhere, not missing from the result. Use related_output to check consistency and duplicates; overall case completeness has its own overview review. Map findings to the original fact_indexes and question_indexes in assigned_review, never the batch-local index.',
     steps:'Review EVERY field of EACH assigned step: title, phase, urgency, reason, owner, action, waiting, response handling, completion condition, follow-up, dependencies, deadline and evidence. Use ALL related_output steps to check dependency ordering and consistent execution, and the complete analysis/results to check the practical meaning. Other steps receive their own mandatory batches; their absence from this candidate is not an omission. Identify each finding by the original step ID.'
   }
   const firstLetter=reviewScope==='letters'&&(!letters.length||section.letter_ids.includes(letters[0].id))
-  const focus={analysis:'Review all substantive conclusions, legal applicability and source support of EVERY topic in this assigned batch. Use related_output to check numerical coverage and linked practical actions. Flag omitted useful conditional financial scenarios when supported; do not re-audit calculation input mechanics or letter wording here. '+(partIndex===0?'Also review all limitations and overall issue completeness against the originals and the complete related_output.':'Overall issue completeness and limitations have a separate first-batch review.'),calculations:'Review EVERY calculation in this assigned batch: literal-source number, role, unit, exact arithmetic, time period, assumption, legal applicability and narrative numerical consistency. Use all related_output calculation results to check dependencies and numerical coverage. Do not re-audit calculations assigned to another batch, legal conclusions or letters.',roadmap:roadmapFocus[section.part],letters:'Review the assigned formal letter and its COMPLETE customer translation against all originals, fetched sources, related conclusions, numerical results and roadmap steps. Check every sentence for sender role, recipient, purpose, source fidelity, amounts, dates, language, translation completeness and consistency with the proposed actions. Other letter identities and purposes are supplied as context and their full texts have separate mandatory calls. '+(firstLetter?'Also check the complete related_output letter registry for a missing necessary grounded letter; an empty letters array never waives this completeness check.':'Overall letter completeness has a separate first-letter review.')+' Roadmap steps are context, not fields to re-audit here.'}[reviewScope]
+  const focus={analysis:'Review all substantive conclusions, legal applicability and source support of EVERY topic in this assigned batch. Use related_output to check numerical coverage and linked practical actions. Flag omitted useful conditional financial scenarios when supported; do not re-audit calculation input mechanics or letter wording here. '+(partIndex===0?'Also review all limitations and overall issue completeness against the originals and the complete related_output.':'Overall issue completeness and limitations have a separate first-batch review.'),calculations:'Review EVERY calculation in this assigned batch: literal-source number, role, unit, exact arithmetic, time period, assumption, legal applicability and narrative numerical consistency. Use all related_output calculation results to check dependencies and numerical coverage. Do not re-audit calculations assigned to another batch, legal conclusions or letters.',roadmap:[...new Set(sections.map(item=>item.part))].map(part=>roadmapFocus[part]).join('\n'),letters:'Review EVERY assigned formal letter and its COMPLETE customer translation against all originals, fetched sources, related conclusions, numerical results and roadmap steps. Check every sentence for sender role, recipient, purpose, source fidelity, amounts, dates, language, translation completeness and consistency with the proposed actions. Other letter identities and purposes are supplied as context and their full texts have mandatory review sections. '+(firstLetter?'Also check the complete related_output letter registry for a missing necessary grounded letter; an empty letters array never waives this completeness check.':'Overall letter completeness has a separate first-letter review.')+' Roadmap steps are context, not fields to re-audit here.'}[reviewScope]
   const selected=selectCaseResearch({research:current.research,analysis,...(!current.fullResearch&&!structuralFeedback.length?reviewResearchAssignment(section,candidate,partIndex):{})})
   if(selected.mode==='module')reviewContent[reviewOriginals.length]={type:'input_text',text:JSON.stringify({...context,retrieved_sources:selected.research,research_context:{mode:selected.mode,topic_ids:selected.topic_ids,calculation_ids:selected.calculation_ids,available_sources:await caseResearchManifest(current.research)}})}
   let review
-  try{review=await reviewModelCandidate({providerKey,candidate:part,cachePrefixLength:reviewContent.length,cacheSharedPrefixLength:reviewOriginals.length,cacheKey:'ash-case-review:'+source.case.id,reviewContent:[...reviewContent,{type:'input_text',text:JSON.stringify({related_output:related,assigned_review:section,required_reviews:coverage})}],reviewModel:model,reviewFocus:focus+' The expression function percent(x) is the exact mathematical unit conversion x/100; it does not establish that a source amount is a percentage or that its rule applies. Literal precision in round(x,2) and the square operation x^2 are mathematical operator settings; neither establishes case facts or legal applicability. Review the formula, rounding choice, source roles and conditions against the evidence. '+(selected.mode==='module'?MODULE_RESEARCH_INSTRUCTIONS:'All original documents and full fetched source texts remain supplied.')+' Every assigned batch and all four scopes are mandatory before acceptance. Fields assigned to another part are context, not missing candidate fields. Identify findings by the original topic/calculation/step/letter ID or full-result field path, not by a batch-local array index.',deadline:Date.now()+140000,callTimeoutMs:135000,fetchImpl,beforeRequest,previousReview:current.reviewReceipts?.[JSON.stringify(section)],onResponse:event=>onResponse?.({...event,review_part:partIndex+1,review_scope:reviewScope}),attempt})}
+  try{review=await reviewModelCandidate({providerKey,candidate:part,cachePrefixLength:reviewContent.length,cacheSharedPrefixLength:reviewOriginals.length,cacheKey:'ash-case-review:'+source.case.id,reviewContent:[...reviewContent,{type:'input_text',text:JSON.stringify({related_output:related,assigned_review:section,assigned_reviews:sections,required_reviews:coverage})}],reviewModel:model,reviewFocus:focus+' The expression function percent(x) is the exact mathematical unit conversion x/100; it does not establish that a source amount is a percentage or that its rule applies. Literal precision in round(x,2) and the square operation x^2 are mathematical operator settings; neither establishes case facts or legal applicability. Review the formula, rounding choice, source roles and conditions against the evidence. '+(selected.mode==='module'?MODULE_RESEARCH_INSTRUCTIONS:'All original documents and full fetched source texts remain supplied.')+' Every assigned batch and all four scopes are mandatory before acceptance. Fields assigned to another part are context, not missing candidate fields. Identify findings by the original topic/calculation/step/letter ID or full-result field path, not by a batch-local array index.',deadline:Date.now()+140000,callTimeoutMs:135000,fetchImpl,beforeRequest,previousReview:current.reviewReceipts?.[JSON.stringify(sections)],onResponse:event=>onResponse?.({...event,review_part:partIndex+1,review_scope:reviewScope}),attempt})}
   catch(error){
-    if(error instanceof ModelWorkflowError)error.issues=[...(error.issues||[]).slice(0,7),{code:'review_stage',location:`review.${reviewScope}${section.part?'.'+section.part:''}`,reason:`Prüfabschnitt ${partIndex+1} von ${coverage.length}; keine geprüfte Antwort dieses Abschnitts gespeichert.`}]
+    if(error instanceof ModelWorkflowError)error.issues=[...(error.issues||[]).slice(0,7),{code:'review_stage',location:`review.${reviewScope}${sections.length===1&&section.part?'.'+section.part:''}`,reason:`Prüfabschnitt ${partIndex+1} von ${groups.length}; keine geprüfte Antwort dieses Abschnitts gespeichert.`}]
     throw error
   }
   const feedback=[...(current.reviewFeedback||[]),...(partIndex===0?structuralFeedback:[]),...review.issues]
   const reviewIds=[...(current.reviewIds||[]),review.response_id]
-  const reviewReceipts=Object.fromEntries(coverage.map(part=>[JSON.stringify(part),current.reviewReceipts?.[JSON.stringify(part)]]).filter(([,receipt])=>receipt))
-  if(review.receipt)reviewReceipts[JSON.stringify(section)]=review.receipt
-  else delete reviewReceipts[JSON.stringify(section)]
+  const reviewReceipts=Object.fromEntries(groups.map(group=>JSON.stringify(group.map(index=>coverage[index]))).map(key=>[key,current.reviewReceipts?.[key]]).filter(([,receipt])=>receipt))
+  if(review.receipt)reviewReceipts[JSON.stringify(sections)]=review.receipt
+  else delete reviewReceipts[JSON.stringify(sections)]
   const reusedReviewIds=[...(current.reusedReviewIds||[]),...(review.reused?[review.response_id]:[])]
-  const reviewFailureScopes=partIndex===0||Array.isArray(current.reviewFailureScopes)?[...(current.reviewFailureScopes||[]),...(review.issues.length?[reviewScope]:[])]:null
-  if(partIndex<coverage.length-1)return {status:'processing',state:{...current,reviewIndex:partIndex+1,reviewFeedback:feedback,reviewIds,reviewCoverage:coverage,reviewReceipts,reusedReviewIds,reviewFailureScopes,modelState:{...current.modelState,candidate,validationContext,structuralFeedback}}}
+  const localized=feedback.length?localizedRepairTargets(candidate,feedback,COMPLETE_ANALYSIS_SCHEMA):null
+  // Stop as soon as a finding cannot be repaired within this one local pass.
+  // Do not pay for remaining audits of a candidate that cannot be accepted.
+  if(feedback.length&&(attempt>=MAX_SUBSTANTIVE_CANDIDATES||!localized))throw new ModelWorkflowError('Die Prüfung hat offene Mängel ergeben. Der Auftrag wurde ohne weitere automatische Korrekturschleife beendet.',422,'review_unresolved',feedback)
+  if(partIndex<groups.length-1)return {status:'processing',state:{...current,reviewIndex:partIndex+1,reviewFeedback:feedback,reviewIds,reviewCoverage:coverage,reviewGroups:groups,reviewReceipts,reusedReviewIds,modelState:{...current.modelState,candidate,validationContext,structuralFeedback}}}
   if(feedback.length){
-    if(attempt>=MAX_SUBSTANTIVE_CANDIDATES)throw new ModelWorkflowError('Das Ergebnis konnte noch nicht freigegeben werden. Es wurde kein neues Ergebnis gespeichert.',422,'review_unresolved',feedback)
-    // A precisely located plan/letter defect does not discard validated topics
-    // or arithmetic. Unknown/cross-analysis findings retain the full repair.
-    // Every section still needs an approval for its exact current review input.
-    const localized=!structuralFeedback.length&&localizedRepairTargets(candidate,feedback,COMPLETE_ANALYSIS_SCHEMA)
-    const planOnly=!structuralFeedback.length&&Array.isArray(reviewFailureScopes)&&reviewFailureScopes.every(scope=>['roadmap','letters'].includes(scope))&&feedback.every(issue=>typeof issue.location==='string'&&planFieldPath(issue.location))
-    // The local repair itself receives all sources. Preserve the established
-    // review routing for unchanged sections; complete-request hashes still
-    // invalidate altered content, dependencies or evidence. Source/structural
-    // failures and an already-required full review keep the conservative path.
-    return {status:'processing',state:{...current,localizedRepair:localized?{}:null,fullResearch:!!current.fullResearch||(!localized&&!planOnly)||feedback.some(issue=>issue.code==='source'),topicDraft:null,analysisOutline:null,analysis_response_ids:localized||planOnly?current.analysis_response_ids:[],reviewReceipts:localized||planOnly?reviewReceipts:null,reusedReviewIds:[],reviewFailureScopes:[],correctionHistory:[...(current.correctionHistory||[]),...(current.modelState.feedback||[])],reviewIndex:0,reviewFeedback:[],reviewIds:[],reviewCoverage:null,draftAnalysis:planOnly&&!localized?candidate.analysis:null,draftFeedback:[],modelState:{stage:'generation',attempt:attempt+1,previous:candidate,feedback,validationContext}}}
+    // One replacement request with all findings. Preserve completed analysis
+    // and byte-identical approvals; every changed review input is checked again.
+    return {status:'processing',state:{...current,localizedRepair:{},reviewReceipts,reusedReviewIds:[],reviewIndex:0,reviewFeedback:[],reviewIds:[],reviewCoverage:null,reviewGroups:null,draftAnalysis:null,draftFeedback:[],modelState:{stage:'generation',attempt:attempt+1,previous:candidate,feedback,validationContext}}}
   }
-  return {status:'completed',attempts:attempt,model:current.modelState.model,response_id:current.modelState.response_id,review_response_id:review.response_id,result:{...candidate,analysis:{...candidate.analysis,research_sources:current.research,verification:{version:COMPLETE_ANALYSIS_VERSION,search_response_id:current.search_response_id,review_response_id:review.response_id,review_response_ids:reviewIds,reused_review_response_ids:reusedReviewIds,review_scopes:coverage.map(part=>part.scope),review_coverage:coverage,analysis_response_id:current.analysis_response_id,analysis_response_ids:current.analysis_response_ids||[current.analysis_response_id],correction_response_ids:current.correction_response_ids||[],checked_at:new Date().toISOString()}}}}
+  return {status:'completed',attempts:attempt,model:current.modelState.model,response_id:current.modelState.response_id,review_response_id:review.response_id,result:{...candidate,analysis:{...candidate.analysis,research_sources:current.research,verification:{version:COMPLETE_ANALYSIS_VERSION,search_response_id:current.search_response_id,review_response_id:review.response_id,review_response_ids:reviewIds,reused_review_response_ids:reusedReviewIds,review_scopes:groups.map(group=>coverage[group[0]].scope),review_coverage:coverage,review_groups:groups,analysis_response_id:current.analysis_response_id,analysis_response_ids:current.analysis_response_ids||[current.analysis_response_id],correction_response_ids:current.correction_response_ids||[],checked_at:new Date().toISOString()}}}}
 }
 
 export function completeAnalysisStage(state){

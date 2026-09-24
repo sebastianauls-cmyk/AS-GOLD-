@@ -4,7 +4,7 @@ import {PGlite} from '@electric-sql/pglite'
 import {processCaseAnalysisJob} from '../supabase/functions/_shared/caseAnalysisWorker.mjs'
 import {roadmapFingerprint,roadmapSource,roadmapStyle} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
-import {completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {testCaseModelBudget} from './test_case_model_budget.mjs'
 import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
 import {testRetainedCaseWork} from './test_retained_case_work.mjs'
@@ -54,6 +54,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260923120225_bounded_case_model_budget.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260923134458_cache_aware_case_input_budget.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260924001546_retained_case_work.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20260924005032_grouped_case_reviews.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -155,15 +156,15 @@ try {
   const complete=await drain(job.id)
   assert.equal(complete.status,'completed');assert.equal(complete.roadmap_id,job.id)
   assert.equal(new Date(complete.expires_at).getTime(),new Date(job.expires_at).getTime(),'processing never slides the original deadline')
-  assert.equal(modelCalls,12,'page closure and worker restart do not repeat completed model stages')
+  assert.equal(modelCalls,8,'page closure and worker restart do not repeat completed model stages')
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),1)
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null,'terminal jobs erase private candidates')
-  assert.equal((await scalar('select result from case_roadmaps where id=$1',[job.id])).analysis.verification.review_response_ids.length,8)
+  assert.equal((await scalar('select result from case_roadmaps where id=$1',[job.id])).analysis.verification.review_response_ids.length,4)
   const acceptedResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
   const auditedRoadmap={...reviewedParts[2].part,...Object.fromEntries(['facts','open_questions','steps'].map(key=>[key,reviewedParts.flatMap(({part})=>part[key]||[])]))}
   const {letters:expectedLetters,...expectedRoadmap}=roadmapTestResult
   assert.deepEqual(auditedRoadmap,expectedRoadmap,'every non-letter field is audited exactly once across overview, records and bounded action batches')
-  assert.deepEqual(reviewedParts.flatMap(({part})=>part.letters||[]),expectedLetters,'every whole letter and complete translation has its own required review')
+  assert.deepEqual(reviewedParts.flatMap(({part})=>part.letters||[]),expectedLetters,'every whole letter and complete translation is included in its required group')
   for(const item of reviewedParts.filter(({part})=>part.steps||part.letters))assert.deepEqual(item.related.steps,roadmapTestResult.steps,'action and letter review retain every complete action for dependency/consistency checks')
 
   await testRetainedCaseWork({db,client,owner,caseId,secret,process,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
@@ -198,12 +199,19 @@ try {
   assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[legacy]),true,'previously completed v164 results keep their original review contract')
   legacy.analysis.verification.version='v168'
   assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[legacy]),false,'legacy whole-plan receipts cannot stand in for v168 per-part reviews')
+  const verificationFor=(result,groups=completeReviewGroups(result))=>{
+    const coverage=completeReviewCoverage(result),ids=groups.map((_,i)=>'group_'+i)
+    return {...acceptedResult.analysis.verification,review_coverage:coverage,review_groups:groups,review_scopes:groups.map(group=>coverage[group[0]]?.scope),review_response_ids:ids,review_response_id:ids.at(-1)}
+  }
+  const oldCoverage=completeReviewCoverage(acceptedResult)
+  legacy.analysis.verification={version:'v168',review_coverage:oldCoverage,review_scopes:oldCoverage.map(part=>part.scope),review_response_ids:oldCoverage.map((_,i)=>'legacy_part_'+i)}
+  assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[legacy]),true,'completed v168 results retain their full per-section contract')
   const empty=structuredClone(acceptedResult)
   empty.facts=[];empty.open_questions=[];empty.letters=[]
   const emptyCoverage=completeReviewCoverage(empty)
   assert(!emptyCoverage.some(item=>item.part==='records'))
   assert.deepEqual(emptyCoverage.filter(item=>item.scope==='letters'),[{scope:'letters',topic_ids:[],calculation_ids:[],letter_ids:[]}])
-  empty.analysis.verification={...empty.analysis.verification,review_coverage:emptyCoverage,review_scopes:emptyCoverage.map(item=>item.scope),review_response_ids:emptyCoverage.map((_,i)=>'empty_'+i)}
+  empty.analysis.verification=verificationFor(empty)
   assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[empty]),true,'empty record lists omit no work and an empty letter list still receives its completeness audit')
   for(const key of ['review_coverage','review_scopes','review_response_ids'])empty.analysis.verification[key].pop()
   assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[empty]),false,'an absent letter-completeness review is never accepted')
@@ -216,14 +224,24 @@ try {
   maximum.analysis.calculations=Array.from({length:24},(_,i)=>({id:'calculation_'+i}))
   const maximumCoverage=completeReviewCoverage(maximum)
   assert.equal(maximumCoverage.length,25)
-  maximum.analysis.verification={...maximum.analysis.verification,review_response_ids:maximumCoverage.map((_,i)=>'review_'+i),review_scopes:maximumCoverage.map(item=>item.scope),review_coverage:maximumCoverage}
-  assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[maximum]),true,'SQL independently agrees with all 25 required batches at maximum supported size')
+  maximum.analysis.verification=verificationFor(maximum)
+  assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[maximum]),true,'SQL independently requires all 25 sections inside the approved groups')
   for(const broken of [
     {...maximum.analysis.verification,review_response_ids:maximum.analysis.verification.review_response_ids.slice(1)},
     {...maximum.analysis.verification,review_coverage:maximumCoverage.map((item,i)=>i===5?{...item,calculation_ids:item.calculation_ids.slice(1)}:item)},
     {...maximum.analysis.verification,review_coverage:[maximumCoverage[1],maximumCoverage[0],...maximumCoverage.slice(2)]},
     ...['fact_indexes','question_indexes','step_ids','letter_ids'].map(key=>({...maximum.analysis.verification,review_coverage:maximumCoverage.map(item=>item[key]?.length?{...item,[key]:item[key].slice(1)}:item)})),
   ])assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[{...maximum,analysis:{...maximum.analysis,verification:broken}}]),false,'missing or reordered topic/calculation coverage cannot be published')
+  for(const groups of [
+    [],[[0],[1],[2,3,4],[6,7]],[[0],[1],[2,3,4,5],[6,6]],[[0],[1],[2,3,5,4],[6,7]],
+    [[0,1],[2,3,4,5],[6,7]],[[0],[1],[2,3,4,5,6],[7]],[[0],[1],[2,3,4,5],[6,99]],
+    [[0],[1],[2,3,4,5],['6',7]],[[0],[1],[2,3,4,5],{}],
+  ]){
+    const verification=verificationFor(acceptedResult,groups)
+    assert.equal(await scalar('select private.case_analysis_review_coverage_valid($1)',[{...acceptedResult,analysis:{...acceptedResult.analysis,verification}}]),false,'missing, duplicate, reordered, mixed-scope, oversized or malformed groups cannot publish')
+  }
+  const missingGroups={...acceptedResult.analysis.verification};delete missingGroups.review_groups
+  await assert.rejects(finish(claimed,{status:'completed',result:{...acceptedResult,analysis:{...acceptedResult.analysis,verification:missingGroups}},workflow_version:'test'}),/Invalid reviewed result/)
   await cancel(job.id)
   const callsBeforeCancel=modelCalls
   assert.equal(await claim(job.id),null)
@@ -262,8 +280,8 @@ try {
   job=await enqueue();const independentCalls=modelCalls,independentParts=reviewedParts.length
   transientStages.add('ash_complete_plan_v157');failStepsOnce=true
   assert.equal((await drain(job.id)).status,'completed')
-  assert.equal(modelCalls-independentCalls,14,'only the two independently interrupted stages repeat')
-  assert.deepEqual(reviewedParts.slice(independentParts).filter(({part})=>part.steps).map(({part})=>part.steps.map(item=>item.id)),[roadmapTestResult.steps.slice(0,3).map(item=>item.id),[roadmapTestResult.steps.at(-1).id],[roadmapTestResult.steps.at(-1).id]],'only the later interrupted action review repeats, not earlier actions')
+  assert.equal(modelCalls-independentCalls,10,'only the two independently interrupted stages repeat')
+  assert.deepEqual(reviewedParts.slice(independentParts).filter(({part})=>part.steps).map(({part})=>part.steps.map(item=>item.id)),[roadmapTestResult.steps.map(item=>item.id),roadmapTestResult.steps.map(item=>item.id)],'only the interrupted roadmap group repeats')
   assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),2)
   assert.equal(await scalar('select failures from private.case_analysis_work where job_id=$1',[job.id]),0)
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
@@ -276,7 +294,7 @@ try {
   assert.equal((await stored(job.id)).status,'queued')
   assert.ok(await scalar("select available_at>=now()+interval '90 seconds' from private.case_analysis_work where job_id=$1",[job.id]),'database does not dispatch before Retry-After')
   assert.equal((await drain(job.id)).status,'completed')
-  assert.equal(modelCalls-httpCalls,13,'only the rejected request repeats')
+  assert.equal(modelCalls-httpCalls,9,'only the rejected request repeats')
   assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),1)
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
   for(const status of [500,502,504]){
@@ -333,26 +351,26 @@ try {
   // Reproduce the live interruption at the final scope, after all prior work
   // was checkpointed. Resumption must invoke only that scope, not start over.
   job=await enqueue();const callsBeforeTimeout=modelCalls,partsBeforeTimeout=reviewedParts.length
-  for(let n=0;n<11;n++)await process(await claim(job.id))
+  for(let n=0;n<7;n++)await process(await claim(job.id))
   failLettersOnce=true;await process(await claim(job.id))
   assert.equal((await stored(job.id)).status,'queued')
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
   await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[job.id])
   assert.equal((await drain(job.id)).status,'completed')
-  assert.equal(modelCalls-callsBeforeTimeout,13,'only the timed-out final review is repeated')
-  assert.deepEqual(reviewedParts.slice(partsBeforeTimeout).map(({part})=>Object.hasOwn(part,'letters')), [false,false,false,false,false,false,true,true,true])
+  assert.equal(modelCalls-callsBeforeTimeout,9,'only the timed-out final review is repeated')
+  assert.deepEqual(reviewedParts.slice(partsBeforeTimeout).map(({part})=>Object.hasOwn(part,'letters')), [false,false,false,true,true])
 
   // A repeated failure still stops, with a content-free diagnostic identifying
   // the interrupted review instead of losing its scope with the checkpoint.
   job=await enqueue()
-  for(let n=0;n<9;n++)await process(await claim(job.id))
+  for(let n=0;n<6;n++)await process(await claim(job.id))
   failStepsOnce=true;await process(await claim(job.id))
   assert.equal((await stored(job.id)).status,'queued')
   await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[job.id])
   failStepsOnce=true;await process(await claim(job.id))
   const failedReview=await stored(job.id)
   assert.equal(failedReview.status,'failed');assert.equal(failedReview.error_code,'provider_timeout')
-  assert.deepEqual(failedReview.issues,[{code:'review_stage',location:'review.roadmap.steps',reason:'Prüfabschnitt 6 von 8; keine geprüfte Antwort dieses Abschnitts gespeichert.'}])
+  assert.deepEqual(failedReview.issues,[{code:'review_stage',location:'review.roadmap',reason:'Prüfabschnitt 3 von 4; keine geprüfte Antwort dieses Abschnitts gespeichert.'}])
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
@@ -378,8 +396,8 @@ try {
   assert.equal(locallyRepaired.status,'completed');assert.equal(localRepairCalls,1)
   const localResult=await scalar('select result from public.case_roadmaps where id=$1',[locallyRepaired.roadmap_id])
   assert.deepEqual(localResult.letters,roadmapTestResult.letters,'server-preserved letters pass through the real persistence gate')
-  assert.equal(localResult.analysis.verification.review_response_ids.length,8)
-  assert.equal(localResult.analysis.verification.reused_review_response_ids.length,7)
+  assert.equal(localResult.analysis.verification.review_response_ids.length,4)
+  assert.equal(localResult.analysis.verification.reused_review_response_ids.length,3)
   assert.equal(localResult.analysis.verification.correction_response_ids.length,1)
   localLetterScenario=false
 
@@ -394,7 +412,7 @@ try {
   assert.equal(rejected.status,'failed');assert.equal(rejected.error_code,'review_unresolved')
   assert.ok(rejected.issues.some(issue=>issue.reason.includes('unsupported conclusion')))
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0,'content rejection never becomes a customer result')
-  assert.equal((await stored(job.id)).issues.length,8,'all eight scoped findings survive page closure')
+  assert.equal((await stored(job.id)).issues.length,1,'the first unrepairable finding survives page closure; subsequent audits are not charged')
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
 
   // Actual worker + encrypted checkpoints + SQL: a later numeric call fails,
@@ -416,13 +434,13 @@ try {
       assert.equal(await scalar('select count(*)::integer from private.case_model_calls where job_id=$1 and charged_output_tokens=8000 and settled_at is not null',[job.id]),1,'the incomplete request remains fully charged')
     }else assert.equal((await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]))===numericCheckpoint,true,'a failed later provider response cannot erase the sealed earlier calculations')
     assert.equal((await drain(job.id)).status,'completed')
-    assert.equal(modelCalls-numericCallsBefore,failureKind==='truncated'?19:16,'one topic batch, one manifest, two numeric batches, plan and all nine reviews; only the failed provider call repeats')
+    assert.equal(modelCalls-numericCallsBefore,failureKind==='truncated'?13:11,'generation plus all four review scopes; only the failed provider call repeats')
     assert.deepEqual(numericRequests,failureKind==='truncated'?[Array.from({length:6},(_,i)=>'number_'+i),Array.from({length:6},(_,i)=>'number_'+(i+6)),['number_6','number_7','number_8'],['number_9','number_10','number_11'],['number_12']]:[Array.from({length:6},(_,i)=>'number_'+i),['number_6'],['number_6']])
     const numericResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
     assert.equal(numericResult.analysis.calculations.length,failureKind==='truncated'?13:7)
     assert(numericResult.analysis.calculations.every(item=>item.result==='1000.00'),'cross-batch dependencies retain exact checked values')
     assert.equal(numericResult.analysis.verification.analysis_response_ids.length,failureKind==='truncated'?6:4)
-    assert.equal(numericResult.analysis.verification.review_response_ids.length,failureKind==='truncated'?10:9)
+    assert.equal(numericResult.analysis.verification.review_response_ids.length,4)
     assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
     assert.equal(new Date((await stored(job.id)).expires_at).getTime(),new Date(job.expires_at).getTime())
     numericFixture=null

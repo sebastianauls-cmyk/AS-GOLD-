@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 
 const get=(value,path)=>path.reduce((item,key)=>item[key],value)
@@ -13,12 +13,13 @@ const cleanCalculation=item=>{
 export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topicFixture,outlineFixture}){
   const schema=COMPLETE_ANALYSIS_SCHEMA
   const data=validateCompleteAnalysis({...big,analysis:{...big.analysis,calculations:big.analysis.calculations.map(cleanCalculation)}},args.source,{scope:bigScope,research:[],outputLanguage:'de',referenceLanguage:'de'})
-  const unchanged=structuredClone(data)
+  const unchanged=structuredClone(data),groupCount=completeReviewGroups(data).length
+  assert.equal(groupCount,8,'all 25 maximum-size sections fit in eight bounded review requests')
   const targets=localizedRepairTargets(data,[issue('analysis.calculations[difference_18].explanation'),issue('analysis.calculations[18].conditions')],schema)
   assert.equal(targets.length,1,'several findings on the same item require only one replacement')
   assert.deepEqual(targets[0].path,['analysis','calculations',18])
-  for(const location of ['analysis','analysis.topics','analysis.calculations[99]','analysis.topics[missing]','analysis.topics[0].not_a_field','__proto__.polluted','letters','output'])assert.equal(localizedRepairTargets(data,[issue(location)],schema),null,'ambiguous or new structure retains the complete correction path')
-  assert.equal(localizedRepairTargets(data,[{...issue('analysis.topics[0]'),code:'source'}],schema),null,'a source objection retains the full-evidence correction')
+  for(const location of ['analysis','analysis.topics','analysis.calculations[99]','analysis.topics[missing]','analysis.topics[0].not_a_field','__proto__.polluted','letters','output'])assert.equal(localizedRepairTargets(data,[issue(location)],schema),null,'ambiguous or new structure cannot trigger an automatic complete rewrite')
+  assert.equal(localizedRepairTargets(data,[{...issue('analysis.topics[0]'),code:'source'}],schema),null,'a source objection stops automatic correction')
   const ambiguous=structuredClone(data);ambiguous.analysis.topics[1].id='0'
   assert.equal(localizedRepairTargets(ambiguous,[issue('analysis.topics[0].conclusion')],schema),null,'an index/ID collision must not choose the wrong item')
   assert.equal(localizedRepairTargets(data,data.analysis.topics.slice(0,9).map(t=>issue(`analysis.topics[${t.id}]`)),schema),null,'a local request has a fixed size bound')
@@ -97,8 +98,8 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   assert.equal(flow.status,'completed');assert.equal(flow.attempts,2)
   assert.deepEqual([counts.topics,counts.outlines,counts.numbers,counts.plans,counts.repairs],[5,1,4,1,1],'a substantive calculation correction does not regenerate topics, the numerical plan, unrelated calculations or letters')
   assert.equal(counts.total,initialCalls+2,'one targeted correction and one changed review follow the first full round')
-  assert.equal(flow.result.analysis.verification.review_response_ids.length,25)
-  assert.equal(flow.result.analysis.verification.reused_review_response_ids.length,24)
+  assert.equal(flow.result.analysis.verification.review_response_ids.length,groupCount)
+  assert.equal(flow.result.analysis.verification.reused_review_response_ids.length,groupCount-1)
   assert.equal(flow.result.analysis.verification.correction_response_ids.length,1)
   assert.deepEqual(flow.result.analysis.verification.review_coverage,completeReviewCoverage(data))
   const {research_sources,verification,...finalAnalysis}=flow.result.analysis
@@ -114,7 +115,11 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
     checked_at:'2026-09-23T00:00:00Z'
   }))
   const sourced=structuredClone(data)
+  // Force separate topical groups so this fixture still exercises module
+  // routing and unchanged scoped receipts after request consolidation.
+  sourced.analysis.topics[0].conclusion+=' '+('Fictional explanatory context. '.repeat(600))
   sourced.analysis.topics.forEach((topic,index)=>{topic.sources=[{url:research[index].url,quote:`SYNTHETIC REPAIR EVIDENCE ${index}.`}]})
+  const scopedGroupCount=completeReviewGroups(sourced).length
   let scopedCalls=0,scopedRepairs=0,scopedReviews=0,modules=0,initiallyRejected=false
   const scopedTransport=async(url,options)=>{
     assert.equal(url,'https://api.openai.com/v1/responses','this fixture never fetches real research or model output')
@@ -144,47 +149,41 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   assert.equal(scopedRun.status,'completed')
   assert(modules>0,'this regression must exercise actual scoped source contexts')
   assert.equal(scopedRepairs,1)
-  assert.equal(scopedReviews,26,'25 initial reviews plus only the changed review; unchanged scoped requests keep their approvals')
-  assert.equal(scopedRun.result.analysis.verification.reused_review_response_ids.length,24)
-  assert.equal(scopedRun.result.analysis.verification.review_response_ids.length,25)
+  assert.equal(scopedReviews,scopedGroupCount+1,'only the changed group is reviewed again; unchanged scoped requests keep their approvals')
+  assert.equal(scopedRun.result.analysis.verification.reused_review_response_ids.length,scopedGroupCount-1)
+  assert.equal(scopedRun.result.analysis.verification.review_response_ids.length,scopedGroupCount)
   assert.deepEqual(scopedRun.result.analysis.research_sources,research)
   assert.deepEqual(scopedRun.result.analysis.topics,sourced.analysis.topics)
-  console.log(`Localized correction with scoped research: ${scopedCalls} simulated requests from a generated candidate; 25 initial reviews + 1 correction + 1 changed review.`)
+  console.log(`Localized correction with scoped research: ${scopedCalls} simulated requests from a generated candidate; ${scopedGroupCount} initial reviews + 1 correction + 1 changed review.`)
 
-  // Invalid numbers never enter the final reviewers; one mechanical repair is
-  // available in this candidate, and a second bad repair stops the job.
-  for(const repeatBad of [false,true]){
+  // Every unsuccessful local correction stops after ONE request, including
+  // schema/source defects, required wider changes and incomplete output.
+  for(const defect of ['source','format','wider','truncated']){
     let repairs=0,reviews=0
     const previous=validateCompleteAnalysis(candidate,args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
+    const before=structuredClone(previous)
     const state={stage:'analysis',scope:{issues:[{id:'settlement',calculation_needed:true}],research_topics:[]},research:[],discovery_gaps:[],localizedRepair:{},modelState:{stage:'generation',attempt:2,previous,feedback:[issue('analysis.calculations[difference].explanation')]}}
     const transport=async(url,options)=>{
-      if(url!=='https://api.openai.com/v1/responses')return new Response('',{status:404})
+      assert.equal(url,'https://api.openai.com/v1/responses')
       const request=JSON.parse(options.body)
-      let output
-      if(request.text.format.name==='ash_complete_repair_v169'){
-        repairs++
-        const value=cleanCalculation(previous.analysis.calculations[0])
-        if(repairs===1||repeatBad)value.inputs[0].value='19000'
-        if(repairs===2)assert(JSON.parse(request.input.at(-1).content[0].text).mechanical_feedback.some(f=>f.reason.includes('19000')))
-        output={requires_full_correction:false,reason:'',changes:{edit_0:value}}
-      }else {reviews++;output={issues:[]}}
-      return Response.json({status:'completed',id:`source-repair-${repairs}-${reviews}`,model:request.model,output_text:JSON.stringify(output)})
+      if(request.text.format.name!=='ash_complete_repair_v169'){reviews++;throw Error('A failed patch must not reach another model call')}
+      repairs++
+      if(defect==='truncated')return Response.json({status:'incomplete',id:'truncated-patch',incomplete_details:{reason:'max_output_tokens'},output_text:'{"changes":'})
+      const value=cleanCalculation(previous.analysis.calculations[0])
+      if(defect==='source')value.inputs[0].value='19000'
+      if(defect==='format')value.id='unassigned'
+      const output=defect==='wider'?{requires_full_correction:true,reason:'An additional action is needed.',changes:null}:{requires_full_correction:false,reason:'',changes:{edit_0:value}}
+      return Response.json({status:'completed',id:'bad-patch',model:request.model,output_text:JSON.stringify(output)})
     }
-    let run={status:'processing',state},failure
-    try{for(let step=0;run.status==='processing'&&step<15;step++)run=await advanceCompleteAnalysis({...args,fetchImpl:transport,state:run.state})}catch(error){failure=error}
-    assert.equal(repairs,2)
-    if(repeatBad){assert.equal(failure?.code,'source_unresolved');assert.equal(reviews,0);assert(!run.result)}
-    else {assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(reviews,8);assert.equal(run.result.analysis.calculations[0].result,'1000.00')}
+    await assert.rejects(advanceCompleteAnalysis({...args,fetchImpl:transport,state}),error=>error.code===(defect==='truncated'?'provider_token_limit':defect==='wider'?'review_unresolved':'source_unresolved'))
+    assert.equal(repairs,1);assert.equal(reviews,0);assert.deepEqual(previous,before)
   }
-  const truncatedState={stage:'analysis',scope:bigScope,research:[],discovery_gaps:[],localizedRepair:{},reviewReceipts:{stale:{request_hash:'old'}},modelState:{stage:'generation',attempt:2,previous:data,feedback:[issue('analysis.calculations[18].explanation')]}}
-  let truncations=0
-  const truncated=await advanceCompleteAnalysis({...args,state:truncatedState,fetchImpl:async()=>{
-    truncations++
-    return Response.json({status:'incomplete',id:'truncated-patch',incomplete_details:{reason:'max_output_tokens'},output_text:'{"changes":'})
-  }})
-  assert.equal(truncations,1);assert.equal(truncated.status,'processing');assert(!truncated.result)
-  assert.equal(truncated.state.localizedRepair,null);assert.equal(truncated.state.reviewReceipts,null)
-  assert.equal(truncated.state.modelState.attempt,2,'a truncated patch does not grant another substantive candidate')
-  assert.deepEqual(truncated.state.modelState.previous,data,'incomplete patch bytes never replace the prior candidate')
-  console.log(`Localized complete-case correction: ${counts.total} simulated model requests; ${initialCalls} for the first candidate, then 1 replacement + 1 changed review; 25 current approvals retained. No live model cost measured.`)
+  let unexpectedCalls=0
+  await assert.rejects(advanceCompleteAnalysis({...args,state:{stage:'analysis',scope:bigScope,research:[],modelState:{stage:'generation',attempt:3}},fetchImpl:async()=>{unexpectedCalls++;throw Error('No third candidate')}}),/Korrekturrunde/)
+  const invalid=structuredClone(data);invalid.analysis.calculations[0].inputs[0].value='19000'
+  await assert.rejects(advanceCompleteAnalysis({...args,state:{stage:'analysis',scope:bigScope,research:[],modelState:{stage:'review',attempt:1,candidate:invalid}},fetchImpl:async()=>{unexpectedCalls++;throw Error('No paid audit of invalid source input')}}),error=>error.code==='source_unresolved')
+  assert.equal(unexpectedCalls,0)
+  assert.equal(initialCalls,20,'maximum-size no-research fixture previously needed 37 initial calls')
+  assert.equal(counts.total,22,'one local correction reduces the former 39-call scenario to 22')
+  console.log(`Grouped complete-case correction: ${counts.total} simulated requests; ${initialCalls} for the first candidate, then 1 replacement + 1 changed review; all 25 sections covered by ${groupCount} current approvals. No live model cost measured.`)
 }
