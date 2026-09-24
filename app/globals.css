@@ -774,3 +774,7 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 .roadmapSetup fieldset{min-width:0;border:0;margin:0;padding:0}.roadmapSetup fieldset>.linkBtn{margin-inline-start:16px}.caseMoreOptions{margin-top:20px}.caseReadingProgress{margin:20px 0;padding:18px;border-radius:12px;background:#edf3fa}.caseReadingProgress p{margin:8px 0}.caseReadingProgress summary{cursor:pointer}
 .caseFileList ul{padding-inline-start:20px}.simpleCaseEmpty{margin:20px 0}.simpleCaseEmpty p{max-width:55ch}
 @media(max-width:600px){.simpleCaseStart{padding:20px 16px}.simpleCaseButtons button{flex:1}.roadmapSetup fieldset>.linkBtn{display:block;margin:14px 0 0}.simpleCaseMore .caseCoreGrid{grid-template-columns:1fr}}
+
+/* File and language controls must not impose their intrinsic width on mobile. */
+.documentUploadForm>*{min-width:0}
+.documentUploadForm :where(input:not([type="checkbox"]),select,textarea){min-width:0;width:100%;max-width:100%}
