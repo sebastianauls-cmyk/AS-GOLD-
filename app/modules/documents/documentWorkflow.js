@@ -14,6 +14,7 @@ import { documentUploadReadinessMessage, parseIntakeQuality, validateDocumentUpl
 import { readDocumentAnalysisError, recordDocumentAnalysisFailure } from './documentAnalysisError.mjs'
 import { completedDocumentAnalysis, restoreDocumentAnalysis } from './documentAnalysisRecovery.mjs'
 import { readCountryContext } from '../country/countryRegistry.mjs'
+import { recordCommittedAction } from '../workspace/committedAction.mjs'
 
 export function createDocumentWorkflowActions({
   supabase,
@@ -36,6 +37,7 @@ export function createDocumentWorkflowActions({
   setSection,
   setSelectedDocument,
   uploadInFlight={current:false},
+  uploadAttempt={current:null},
   recordLocalAction,
   recordServerAudit
 }){
@@ -79,7 +81,7 @@ export function createDocumentWorkflowActions({
     const authorization=await authorizeDocumentAnalysis(supabase,{ownerId,documentId:document.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
     if(authorization.error){if(!silent)setMessage(authorization.error.message);return false}
     setPrivacySettings(authorization.privacy)
-    await recordServerAudit('document_ai_transfer_authorized',{classification:document.data_classification},'document',document.id)
+    recordCommittedAction(()=>{},recordServerAudit,'document_ai_transfer_authorized',{classification:document.data_classification},'document',document.id)
     const linkedCase=data.cases.find(item=>item.id===document.case_id)
     const referenceLanguage=normalizeOutputLanguage(document.reference_copy_language||'de')
     const customerLanguage=normalizeOutputLanguage(document.customer_copy_language||outputLanguage)
@@ -114,35 +116,39 @@ export function createDocumentWorkflowActions({
     if(classification!==current?.data_classification&&!draft.test_data_confirmed){setMessage(privacyCopy.uploadRequired);return false}
     const {data:updated,error}=await updateDocumentRecord(supabase,{ownerId,documentId,draft,expectedUpdatedAt,expectedCaseId})
     if(error){if(!stayInCase)setMessage(error.message);return false}
+    // The original is already committed. Present it even if a later, separate
+    // assessment/source entry fails, and never wait for optional activity logs.
+    setData(previous=>({...previous,documents:previous.documents.map(item=>item.id===updated.id?updated:item)}))
+    if(!stayInCase)setSelectedDocument(updated)
     const eventType=draft.analysis_generated?'document_analysis_saved':'document_reviewed'
-    recordLocalAction(eventType)
-    const auditSaved=await recordServerAudit(eventType,{status:'saved'},'document',updated.id)
+    recordCommittedAction(recordLocalAction,recordServerAudit,eventType,{status:'saved'},'document',updated.id)
     let createdAssessment=null
     let createdSource=null
     let updatedCase=null
-    let assessmentFailed=false
+    let metadataFailed=false
     if(draft.analysis_generated&&updated.case_id){
       const trafficLight=['green','yellow','red','white'].includes(draft.analysis_traffic_light)?draft.analysis_traffic_light:'yellow'
       const previous=currentAssessments(data.assessments.filter(entry=>entry.case_id===updated.case_id)).find(entry=>entry.source_document_id===updated.id)
-      const assessmentResult=await createAssessmentRecord(supabase,{caseId:updated.case_id,draft:{title:updated.title||analysisCopy.badge,traffic_light:trafficLight,reasoning:String(draft.analysis_reasoning||updated.analysis_summary||'').trim(),next_step:updated.analysis_next_step||'',source_document_id:updated.id,statement_kind:'inference',source_reviewed:false,supersedes_assessment_id:previous?.id||null}})
-      assessmentFailed=!!assessmentResult.error
+      const assessmentResult=await createAssessmentRecord(supabase,{caseId:updated.case_id,draft:{title:updated.title||analysisCopy.badge,traffic_light:trafficLight,reasoning:String(draft.analysis_reasoning||updated.analysis_summary||'').trim(),next_step:updated.analysis_next_step||'',source_document_id:updated.id,statement_kind:'inference',source_reviewed:false,supersedes_assessment_id:previous?.id||null}}).catch(error=>({error}))
+      metadataFailed=!!assessmentResult.error
       if(!assessmentResult.error){
         createdAssessment=assessmentResult.assessment||null
         updatedCase=assessmentResult.updatedCase||null
       }
-      const sourceResult=await supabase.from('source_status').insert({owner_id:ownerId,case_id:updated.case_id,source_kind:'uploaded_document',source_label:updated.title,status:'PASSENDER TREFFER – ZU BESTÄTIGEN',details:String(draft.analysis_reasoning||'KI-Dokumentanalyse gespeichert; fachliche Bestätigung erforderlich.').trim(),checked_at:new Date().toISOString()}).select().single()
+      let sourceResult
+      try{sourceResult=await supabase.from('source_status').insert({owner_id:ownerId,case_id:updated.case_id,source_kind:'uploaded_document',source_label:updated.title,status:'PASSENDER TREFFER – ZU BESTÄTIGEN',details:String(draft.analysis_reasoning||'KI-Dokumentanalyse gespeichert; fachliche Bestätigung erforderlich.').trim(),checked_at:new Date().toISOString()}).select().single()}
+      catch(error){sourceResult={error}}
       if(!sourceResult.error) createdSource=sourceResult.data
+      else metadataFailed=true
     }
-    setData(previous=>({
+    if(createdAssessment||createdSource||updatedCase)setData(previous=>({
       ...previous,
-      documents:previous.documents.map(item=>item.id===updated.id?updated:item),
       assessments:createdAssessment?[createdAssessment,...previous.assessments]:previous.assessments,
       sourceStatus:createdSource?[createdSource,...previous.sourceStatus]:previous.sourceStatus,
       cases:updatedCase?previous.cases.map(item=>item.id===updatedCase.id?updatedCase:item):previous.cases
     }))
     if(!stayInCase){
-      setSelectedDocument(updated)
-      setMessage(assessmentFailed?caseGuidanceCopy(language).partialSave:auditSaved?(draft.analysis_generated?analysisCopy.savedMessage:`${caseCopy.documentReview} ✓`):serverCopy.auditFailed)
+      setMessage(metadataFailed?caseGuidanceCopy(language).partialSave:(draft.analysis_generated?analysisCopy.savedMessage:`${caseCopy.documentReview} ✓`))
     }else setMessage('')
     return stayInCase?updated:true
   }
@@ -155,6 +161,8 @@ export function createDocumentWorkflowActions({
     setMessage('')
     const form=event.currentTarget
     let file=form.elements.file.files[0]
+    const sampleDocument=!file&&form.elements.sample_document?.value==='synthetic-v29'?'synthetic-v29':null
+    if(sampleDocument&&uploadAttempt.current?.sampleDocument===sampleDocument)file=uploadAttempt.current.file
     if(!file&&form.elements.sample_document?.value==='synthetic-v29'){
       try{
         const response=await fetch('/testdaten/ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf',{cache:'no-store'})
@@ -182,14 +190,13 @@ export function createDocumentWorkflowActions({
     if(!readiness.ok){setMessage(documentUploadReadinessMessage(language,readiness.code));return false}
     setUploading(true)
     try{
-      const {data:created,error}=await uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,documentType:form.elements.document_type?.value.trim()||extension.toUpperCase(),documentDate:form.elements.document_date?.value||null,source,sourceLanguage:form.elements.source_language?.value||null,voiceContext:form.elements.voice_context?.value.trim()||null,voiceLanguage:form.elements.voice_language?.value||null,intakeQuality})
-      if(error){setMessage(error.code==='DOCUMENT_UPLOAD_NETWORK_ERROR'?documentUploadReadinessMessage(language,'upload_network'):error.message);return false}
-      recordLocalAction('document_uploaded')
-      await recordServerAudit('document_uploaded',{classification:dataClassification},'document',created.id)
+      const {data:created,error}=await uploadWorkspaceDocument(supabase,{ownerId,file,caseId,dataClassification,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,documentType:form.elements.document_type?.value.trim()||extension.toUpperCase(),documentDate:form.elements.document_date?.value||null,source,sourceLanguage:form.elements.source_language?.value||null,voiceContext:form.elements.voice_context?.value.trim()||null,voiceLanguage:form.elements.voice_language?.value||null,intakeQuality,sampleDocument,attempt:uploadAttempt})
+      if(error){setMessage(error.code==='DOCUMENT_UPLOAD_NETWORK_ERROR'?documentUploadReadinessMessage(language,'upload_network'):error.code==='DOCUMENT_UPLOAD_CONFIRMATION_PENDING'?documentUploadReadinessMessage(language,'upload_confirmation'):error.message);return false}
       setData(previous=>({...previous,documents:[created,...previous.documents]}))
       form.reset()
       if(onUploaded)onUploaded(created)
       else {setSection('documents');setSelectedDocument(created)}
+      recordCommittedAction(recordLocalAction,recordServerAudit,'document_uploaded',{classification:dataClassification},'document',created.id)
       return true
     }catch(error){
       console.error('Document upload failed',error)
@@ -205,8 +212,7 @@ export function createDocumentWorkflowActions({
     if(!document.file_path) return
     try{
       const result=await openPrivateDocument({browser:window,getSignedUrl:()=>createWorkspaceDocumentSignedUrl(supabase,document.file_path,300)})
-      recordLocalAction('document_opened')
-      await recordServerAudit('document_opened',{},'document',document.id)
+      recordCommittedAction(recordLocalAction,recordServerAudit,'document_opened',{},'document',document.id)
       return result
     }catch(error){setMessage(error.message);return false}
   }

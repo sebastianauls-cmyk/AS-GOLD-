@@ -12,3 +12,4 @@ supabase/.temp/
 
 # Local/CI-only interaction fixture; never part of a deployed app.
 /app/qa-case-flow/
+/app/qa-document-flow/

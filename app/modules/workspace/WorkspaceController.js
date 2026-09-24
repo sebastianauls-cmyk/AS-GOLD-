@@ -98,6 +98,8 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const [selectedClient,setSelectedClient]=useState(null)
   const [selectedDocument,setSelectedDocument]=useState(null)
   const uploadInFlight=useRef(false)
+  const uploadAttempt=useRef(null)
+  useEffect(()=>{uploadAttempt.current=null},[user?.id])
   const [selectedApproval,setSelectedApproval]=useState(null)
   const [approvalDefaults,setApprovalDefaults]=useState({caseId:'',documentId:'',recipient:'',subject:'',body:''})
   const [access,setAccess]=useState(null)
@@ -256,7 +258,7 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   })
 
   const {analyzeDocument,recoverDocumentAnalysis,updateDocument,uploadDocument,openDocument}=createDocumentWorkflowActions({
-    supabase,ownerId:user?.id,data,access,language,privacyCurrent,outputLanguage,privacyCopy:v28,notices:n,uploadCopy:uui,analysisCopy:analysisUi,caseCopy:core,serverCopy:sct,setData,setMessage,setPrivacySettings,setUploading,setSection,setSelectedDocument,uploadInFlight,recordLocalAction,recordServerAudit
+    supabase,ownerId:user?.id,data,access,language,privacyCurrent,outputLanguage,privacyCopy:v28,notices:n,uploadCopy:uui,analysisCopy:analysisUi,caseCopy:core,serverCopy:sct,setData,setMessage,setPrivacySettings,setUploading,setSection,setSelectedDocument,uploadInFlight,uploadAttempt,recordLocalAction,recordServerAudit
   })
 
   const {doExport,exportMyData}=createExportWorkflowActions({

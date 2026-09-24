@@ -1,5 +1,19 @@
 const imageExtensions=new Set(['jpg','jpeg','png','webp','heic','heif','tif','tiff'])
 
+const uploadConfirmation={
+  de:'Die Datei wurde übertragen, aber das Speichern ist noch nicht bestätigt. Bitte prüfen Sie Ihre Verbindung und wiederholen Sie diesen Upload.',
+  en:'The file was transferred, but saving has not yet been confirmed. Check your connection and retry this upload.',
+  tr:'Dosya aktarıldı ancak kaydetme işlemi henüz doğrulanmadı. Bağlantınızı kontrol edip bu yüklemeyi yeniden deneyin.',
+  pl:'Plik został przesłany, ale zapis nie został jeszcze potwierdzony. Sprawdź połączenie i ponów to przesyłanie.',
+  ru:'Файл передан, но сохранение ещё не подтверждено. Проверьте соединение и повторите эту загрузку.',
+  ar:'تم نقل الملف، لكن لم يتم تأكيد الحفظ بعد. تحقق من الاتصال وأعد محاولة رفع هذا الملف.',
+  fa:'فایل منتقل شده است، اما ذخیره‌سازی هنوز تأیید نشده است. اتصال را بررسی و همین بارگذاری را دوباره امتحان کنید.',
+  fr:'Le fichier a été transféré, mais son enregistrement n’est pas encore confirmé. Vérifiez votre connexion et réessayez ce téléversement.',
+  ro:'Fișierul a fost transferat, dar salvarea nu este încă confirmată. Verificați conexiunea și reîncercați această încărcare.',
+  bg:'Файлът е прехвърлен, но запазването още не е потвърдено. Проверете връзката и повторете това качване.',
+  vi:'Tệp đã được truyền nhưng việc lưu chưa được xác nhận. Hãy kiểm tra kết nối rồi thử lại lần tải lên này.'
+}
+
 const messages={
   de:{quality_pending:'Bitte warten Sie, bis die Bildqualität vollständig geprüft wurde.',quality_bad:'Dieses Bild ist nicht zuverlässig lesbar. Bitte nehmen Sie das Dokument erneut und schärfer auf.',upload_failed:'Das Dokument konnte nicht hochgeladen werden. Bitte versuchen Sie es erneut.',upload_network:'Die Verbindung zum sicheren Dokumentenspeicher wurde unterbrochen. Die App hat den Upload sicher geprüft und einmal wiederholt. Bitte prüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.'},
   en:{quality_pending:'Please wait until the image quality check is complete.',quality_bad:'This image is not reliably readable. Please capture the document again more clearly.',upload_failed:'The document could not be uploaded. Please try again.',upload_network:'The connection to secure document storage was interrupted. The app safely checked the upload and retried once. Check your internet connection and try again.'},
@@ -35,6 +49,7 @@ export function validateDocumentUploadReadiness({fileType='',extension='',source
 }
 
 export function documentUploadReadinessMessage(language,code){
+  if(code==='upload_confirmation')return uploadConfirmation[language]||uploadConfirmation.de
   const selected=messages[language]||messages.de
   return selected[code]||messages.de[code]||messages.de.upload_failed
 }
