@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import './test_case_review_cache.mjs'
 import './test_case_research_context.mjs'
 import {calculateExpression,quoteContainsNumber} from '../supabase/functions/_shared/checkedCalculations.mjs'
-import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope,completeReviewCoverage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult,roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/lib/completeAnalysisDisplay.mjs'
@@ -347,7 +347,7 @@ for(const repeatOverflow of [false,true]){
   try{for(let i=0;run.status==='processing'&&i<16;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:boundedFetch,state:run.state})}catch(error){failure=error}
   assert.equal(generations,2,'only one mechanical repair')
   if(repeatOverflow){assert.equal(failure?.code,'source_unresolved');assert.equal(failure.issues[0].location,'analysis.calculation_plan');assert.equal(reviews,0);assert(!run.result)}
-  else {assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(reviews,8);assert.equal(run.result.analysis.calculations.length,1)}
+  else {assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(reviews,4);assert.equal(run.result.analysis.calculations.length,1)}
 }
 // Scope bounds must be sent to structured generation, not only checked after
 // spending a live planning call. Invalid provider output still fails closed.
@@ -378,12 +378,13 @@ flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.resu
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.analysisOutline);assert.equal(flow.state.draftAnalysis,null)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
-for(let part=0;part<7;part++){
+for(let part=0;part<3;part++){
   flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result,'letters still require their separate review before acceptance')
   if(part===0)for(const reviewCoverage of [undefined,[]])await assert.rejects(advanceCompleteAnalysis({...args,state:{...flow.state,reviewCoverage}}),error=>error.code==='review_coverage_changed','old review receipts cannot be reassigned after a batching change')
+  if(part===0)for(const reviewGroups of [undefined,[],[[0,1]]])await assert.rejects(advanceCompleteAnalysis({...args,state:{...flow.state,reviewGroups}}),error=>error.code==='review_coverage_changed','existing approvals cannot be reassigned to changed groups')
 }
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
-assert.equal(calls,13,'no external research is claimed for an arithmetic-only case')
+assert.equal(calls,9,'no external research is claimed for an arithmetic-only case')
 // A local letter repair must not rebuild arithmetic or pay for identical
 // independent reviews. A changed dependent action invalidates those receipts.
 for(const change of ['letter','dependent_step','unlocated']){
@@ -415,19 +416,19 @@ for(const change of ['letter','dependent_step','unlocated']){
     }
     return Response.json({id:'local-repair-'+paid,status:'completed',model:request.model,output_text:JSON.stringify(output)})
   }
-  let repaired=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch})
-  for(let step=0;repaired.status==='processing'&&step<40;step++)repaired=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repaired.state})
-  assert.equal(repaired.status,'completed');assert.equal(repaired.attempts,2)
-  assert.equal(plans,change==='letter'?1:2);assert.equal(topics,change==='letter'?1:2);assert.equal(numbers,change==='letter'?1:2)
+  let repaired=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch}),failure
+  try{for(let step=0;repaired.status==='processing'&&step<40;step++)repaired=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repaired.state})}catch(error){failure=error}
+  assert.equal(plans,1);assert.equal(topics,1);assert.equal(numbers,1,'no finding triggers full generation again')
   assert.equal(patches,change==='unlocated'?0:1)
-  assert.deepEqual(repaired.result.analysis.calculations,checked.analysis.calculations,'the exact source-bound arithmetic survives the plan repair')
-  assert.equal(repaired.result.analysis.verification.review_response_ids.length,8,'every section has a matching approval')
-  if(change==='letter'){
-    assert.equal(paid,15,'13 initial calls plus one assigned-letter repair and its changed review; no whole-plan rewrite')
-    assert.equal(reviews,9);assert.equal(repaired.result.analysis.verification.reused_review_response_ids.length,7)
+  if(change!=='letter'){
+    assert.equal(failure?.code,'review_unresolved');assert(!repaired.result)
+    assert.equal(paid,change==='unlocated'?9:10,'unrepairable findings stop without paying for a replacement analysis')
   }else{
-    assert.equal(reviews,16,'changed dependencies or unlocated defects require all current reviews')
-    assert.equal(repaired.result.analysis.verification.reused_review_response_ids.length,0)
+    assert.equal(failure,undefined);assert.equal(repaired.status,'completed');assert.equal(repaired.attempts,2)
+    assert.deepEqual(repaired.result.analysis.calculations,checked.analysis.calculations)
+    assert.equal(repaired.result.analysis.verification.review_response_ids.length,4)
+    assert.equal(paid,11,'nine initial requests plus one local repair and one changed review')
+    assert.equal(reviews,5);assert.equal(repaired.result.analysis.verification.reused_review_response_ids.length,3)
   }
 }
 const researchedTopics=[],batchedScope={...scope,research_topics:Array.from({length:8},(_,i)=>'Abstract legal topic '+i)}
@@ -457,54 +458,46 @@ const large=structuredClone(flow.result.analysis);large.calculations[0].result='
 assert(completeAnalysisBlocks(large,'de').some(block=>block.text.includes('9.999.999.999.999.999,99')),'display/export cannot lose exact cents through floating-point conversion')
 for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])for(const value of Object.values(completeAnalysisCopy(lang)))assert(value.trim())
 
-// A mechanical input repair must not consume the later content correction.
-// Reproduce both defects in one workflow, and require all four reviews again.
-for(const correctedContent of [true,false,'new_input','repeated_input']){
-  let generatedAnalyses=0,generatedPlans=0,reviewed=0
-  // This fixture exercises the full correction fallback for an unlocated
-  // cross-topic omission. Precise findings use the local-repair fixtures below.
-  const contentIssue={code:'meaning',location:'analysis.topics',reason:'Synthetic material omission: distinguish withholding from the final assessment across the analysis.'}
-  const repairBoth=async(url,options)=>{
+// An initial mechanical input repair does not consume the single local content
+// correction. A bad or repeatedly rejected patch stops without regenerating.
+for(const outcome of ['accepted','rejected','invalid_patch']){
+  let numbers=0,plans=0,patches=0,reviews=0,flagged=false
+  const finding={code:'meaning',location:'analysis.calculations[difference].explanation',reason:'Synthetic: distinguish withholding from a final assessment.'}
+  const transport=async(url,options)=>{
+    if(!options?.body)return new Response('',{status:404})
     const request=JSON.parse(options.body),name=request.text.format.name
     let output
     if(name==='ash_case_scope')output=scope
     else if(name==='ash_complete_topics_v167')output=topicFixture(candidate.analysis,request)
     else if(name==='ash_complete_outline_v166')output=outlineFixture(candidate.analysis)
     else if(name==='ash_complete_numbers_v157'){
-      generatedAnalyses++
-      output=structuredClone(candidate.analysis)
-      if(generatedAnalyses===1)output.calculations[0].inputs[0].value='19000'
-      if(generatedAnalyses===3&&['new_input','repeated_input'].includes(correctedContent)||generatedAnalyses===4&&correctedContent==='repeated_input')output.calculations[0].inputs[0].value='19000'
-      if(generatedAnalyses===3){
-        const correction=JSON.parse(request.input.at(-1).content[0].text).correction
-        assert(correction.issues.some(issue=>issue.reason===contentIssue.reason),'substantive feedback still reaches a correction after input repair')
-        assert(correction.previous_candidate.analysis,'the full prior result is available for a bounded content correction')
-      }
-      if(generatedAnalyses===4&&['new_input','repeated_input'].includes(correctedContent)){
-        const correction=JSON.parse(request.input.at(-1).content[0].text).correction
-        assert(correction.issues.some(issue=>issue.reason===contentIssue.reason))
-        assert(correction.issues.some(issue=>issue.reason.includes('19000')),'the corrected candidate receives both substantive and new mechanical feedback')
-      }
+      numbers++;output={calculations:structuredClone(candidate.analysis.calculations)}
+      if(numbers===1)output.calculations[0].inputs[0].value='19000'
     }else if(name==='ash_complete_plan_v157'){
-      generatedPlans++
-      const {analysis,...plan}=candidate
+      plans++;const {analysis,...plan}=candidate
       output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
+    }else if(name==='ash_complete_repair_v169'){
+      patches++
+      const value=structuredClone(candidate.analysis.calculations[0])
+      value.inputs=value.inputs.map(({name,label,value,kind,document_id,quote})=>({name,label,value,kind,document_id,quote}))
+      value.explanation+=' Die Differenz ist keine abschließende Steuerfestsetzung.'
+      if(outcome==='invalid_patch')value.inputs[0].value='19000'
+      output={requires_full_correction:false,reason:'',changes:{edit_0:value}}
     }else{
-      reviewed++
-      output={issues:reviewed%8===1&&(!correctedContent||reviewed<=8)?[contentIssue]:[]}
+      reviews++
+      const part=JSON.parse(request.input.at(-1).content.at(-1).text).candidate
+      const reject=part.analysis?.calculations&&(!flagged||outcome==='rejected')
+      if(reject)flagged=true
+      output={issues:reject?[finding]:[]}
     }
-    return new Response(JSON.stringify({status:'completed',id:`both-${generatedAnalyses}-${generatedPlans}-${reviewed}`,model:request.model,output_text:JSON.stringify(output)}))
+    return Response.json({status:'completed',id:`both-${numbers}-${plans}-${patches}-${reviews}`,model:request.model,output_text:JSON.stringify(output)})
   }
-  let run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth})
-  let failure
-  try{for(let i=0;run.status==='processing'&&i<44;i++)run=await advanceCompleteAnalysis({...args,fetchImpl:repairBoth,state:run.state})}catch(error){failure=error}
-  if(correctedContent===true||correctedContent==='new_input'){
-    assert.equal(failure,undefined,'a successful input repair must leave one content correction available')
-    assert.equal(run.status,'completed')
-    assert.equal(run.result.analysis.verification.review_response_ids.length,8)
-    assert(run.result.analysis.verification.review_response_ids.every(id=>Number(id.split('-').at(-1))>8),'acceptance uses only all eight final reviews')
-  }else assert.equal(failure?.code,correctedContent==='repeated_input'?'source_unresolved':'review_unresolved','a second bad input in the same candidate or final material rejection still stops')
-  assert.equal(generatedAnalyses,correctedContent===false||['new_input','repeated_input'].includes(correctedContent)?4:3);assert.equal(generatedPlans,correctedContent==='repeated_input'?1:correctedContent===false?3:2);assert.equal(reviewed,correctedContent==='repeated_input'?8:correctedContent===false?24:16)
+  let run=await advanceCompleteAnalysis({...args,fetchImpl:transport}),failure
+  try{for(let step=0;run.status==='processing'&&step<30;step++)run=await advanceCompleteAnalysis({...args,fetchImpl:transport,state:run.state})}catch(error){failure=error}
+  assert.equal(numbers,2);assert.equal(plans,1);assert.equal(patches,1)
+  if(outcome==='accepted'){assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(run.result.analysis.verification.review_response_ids.length,4)}
+  else {assert.equal(failure?.code,outcome==='invalid_patch'?'source_unresolved':'review_unresolved');assert(!run.result)}
+  assert.equal(reviews,outcome==='invalid_patch'?4:5,'unchanged approvals are reused, and a rejected correction stops at the failing group')
 }
 
 // Wrong source numbers are repaired before generating a plan. This remains
@@ -554,8 +547,8 @@ for(const repairOutcome of ['complete','partial','none']){
   }
   while(repairFlow.status==='processing')repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
   assert.equal(repairFlow.result.analysis.calculations[0].result,'1000.00')
-  assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,8)
-  assert.equal(stages.length,14,'one source correction, one plan and all eight reviews')
+  assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,4)
+  assert.equal(stages.length,10,'one source correction, one plan and all four grouped reviews')
 }
 // A provider may not omit, rename, reorder or reassign the stored work plan.
 for(const defect of ['missing','extra','renamed','topic','forward_dependency']){
@@ -586,8 +579,8 @@ for(const defect of ['missing','extra','renamed','topic','forward_dependency']){
 }
 
 // Maximum supported case: every topic and calculation is audited exactly once
-// per round. A timed-out middle batch resumes alone; a material finding still
-// triggers a full correction and a fresh complete set of final reviews.
+// in grouped requests. Timed-out topic, numeric and review requests resume
+// alone. Independent local-correction tests below exercise material defects.
 const big=structuredClone(candidate)
 big.facts=Array.from({length:24},()=>structuredClone(candidate.facts[0]))
 big.open_questions=Array.from({length:24},()=>structuredClone(candidate.open_questions[0]))
@@ -597,7 +590,15 @@ big.analysis.topics=Array.from({length:10},(_,i)=>({...candidate.analysis.topics
 big.analysis.calculations=Array.from({length:24},(_,i)=>({...structuredClone(candidate.analysis.calculations[0]),id:'difference_'+i,topic_ids:['topic_'+(i%10)]}))
 const bigScope={issues:big.analysis.topics.map(({id,title})=>({id,title,reason:'Synthetic coverage boundary',calculation_needed:true})),research_topics:[]}
 const expectedCoverage=completeReviewCoverage(big),observedBatches=[]
+const bigChecked=validateCompleteAnalysis(big,source,{...options,scope:bigScope})
+const expectedGroups=completeReviewGroups(bigChecked,expectedCoverage)
 assert.equal(expectedCoverage.length,25)
+assert.deepEqual(expectedGroups.flat(),expectedCoverage.map((_,i)=>i),'grouping retains every required section exactly once')
+const unicodeCase=structuredClone(bigChecked)
+unicodeCase.letters[0].body='ä'.repeat(9000)
+const unicodeGroups=completeReviewGroups(unicodeCase)
+const firstLetterSection=expectedCoverage.findIndex(section=>section.scope==='letters')
+assert.deepEqual(unicodeGroups.find(group=>group.includes(firstLetterSection)),[firstLetterSection],'a large multibyte letter stays whole and alone; a character count cannot bypass the UTF-8 bound')
 assert.deepEqual(expectedCoverage.filter(p=>p.part==='records').flatMap(p=>p.fact_indexes),Array.from({length:24},(_,i)=>i))
 assert.deepEqual(expectedCoverage.filter(p=>p.part==='records').flatMap(p=>p.question_indexes),Array.from({length:24},(_,i)=>i))
 assert.deepEqual(expectedCoverage.filter(p=>p.part==='steps').flatMap(p=>p.step_ids),big.steps.map(s=>s.id))
@@ -651,8 +652,6 @@ const bigFetch=async(url,options)=>{
     }
     output={calculations:structuredClone(big.analysis.calculations.filter(item=>assigned.some(plan=>plan.id===item.id)))}
     if(!badInputRounds.has(bigRound)){badInputRounds.add(bigRound);output.calculations[0].inputs[0].value='19000'}
-    if(bigRound>1)assert(component.correction.issues.some(issue=>issue.location==='analysis.calculations'))
-    if(bigRound===3)assert(component.correction.previously_addressed_issues.some(issue=>issue.reason.endsWith('round 1.')),'the third candidate must retain the previously addressed findings')
   }else if(name==='ash_complete_plan_v157'){
     const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
   }else{
@@ -661,15 +660,18 @@ const bigFetch=async(url,options)=>{
     const payloads=request.input.filter(message=>message.role==='user').flatMap(message=>message.content).flatMap(item=>{try{return [JSON.parse(item.text)]}catch{return []}})
     const assignment=payloads.find(item=>item.assigned_review).assigned_review,part=payloads.find(item=>item.candidate).candidate
     assert.deepEqual(payloads.find(item=>item.required_reviews).required_reviews,expectedCoverage)
-    assert((part.analysis?.topics?.length||0)<=3);assert((part.analysis?.calculations?.length||0)<=6)
-    assert((part.facts?.length||0)<=4);assert((part.open_questions?.length||0)<=4);assert((part.steps?.length||0)<=3);assert((part.letters?.length||0)<=1)
+    const sections=payloads.find(item=>item.assigned_reviews).assigned_reviews
+    assert(sections.length<=4);assert(sections.every(item=>item.scope===assignment.scope))
+    if(sections.length>1)assert(Buffer.byteLength(JSON.stringify(part))<=16000,'grouped content has a UTF-8 byte bound')
+    assert.deepEqual(sections.flatMap(item=>item.topic_ids),part.analysis?.topics?.map(item=>item.id)||[])
+    assert.deepEqual(sections.flatMap(item=>item.calculation_ids),part.analysis?.calculations?.map(item=>item.id)||[])
     if(assignment.scope==='roadmap'||assignment.scope==='letters'){
       assert.deepEqual(payloads.find(item=>item.related_output).related_output.steps,big.steps,'every action/letter audit retains complete cross-step context')
-      if(assignment.part==='overview')assert.deepEqual(Object.keys(part).sort(),Object.keys(big).filter(k=>!['analysis','facts','open_questions','steps','letters'].includes(k)).sort(),'all remaining customer fields belong to the overview audit')
+      if(assignment.part==='overview')for(const key of Object.keys(big).filter(k=>!['analysis','facts','open_questions','steps','letters'].includes(k)))assert.deepEqual(part[key],big[key],'every overview field is reviewed')
     }
-    observedBatches.push({round:bigRound,...assignment})
-    if(assignment.calculation_ids[0]==='difference_6'&&!batchTimedOut){batchTimedOut=true;throw new DOMException('Synthetic middle-batch timeout','TimeoutError')}
-    output={issues:bigRound<3&&assignment.calculation_ids.includes('difference_18')?[{code:'meaning',location:'analysis.calculations',reason:`Synthetic unlocated numerical coverage defect, round ${bigRound}.`}]:[]}
+    observedBatches.push(sections)
+    if(assignment.calculation_ids.includes('difference_6')&&!batchTimedOut){batchTimedOut=true;throw new DOMException('Synthetic middle-batch timeout','TimeoutError')}
+    output={issues:[]}
   }
   return new Response(JSON.stringify({status:'completed',id:`batch-round-${bigRound}-call-${bigCalls}`,model:request.model,output_text:JSON.stringify(output)}))
 }
@@ -679,22 +681,21 @@ for(let i=0;bigFlow.status==='processing'&&i<120;i++){
   try{bigFlow=await advanceCompleteAnalysis({...bigArgs,state:bigFlow.state})}
   catch(error){if(error.code!=='provider_timeout')throw error;assert(++transportFailures<=3)}
 }
-assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,115);assert.equal(bigGenerated,16);assert.equal(bigFlow.attempts,3)
+assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,16+expectedGroups.length);assert.equal(bigGenerated,6);assert.equal(bigFlow.attempts,1)
 assert.equal(transportFailures,3)
-assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,10,'each topic batch, manifest and final numeric batch has a separate receipt')
-for(const round of [1,2,3]){
-  const expected=Array.from({length:5},(_,i)=>big.analysis.topics.slice(i*2,i*2+2).map(item=>item.id))
-  if(round===1)expected.splice(2,0,expected[1])
-  assert.deepEqual(generatedTopics.filter(item=>item.round===round).map(item=>item.ids),expected,'each topic batch is generated once per candidate; only the interrupted batch repeats')
-}
-for(const round of [1,2,3])assert.deepEqual([...new Set(generatedAssignments.filter(item=>item.round===round).flatMap(item=>item.ids))],big.analysis.calculations.map(item=>item.id),'every planned calculation is generated in every complete candidate')
+assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,10)
+const expectedTopicBatches=Array.from({length:5},(_,i)=>big.analysis.topics.slice(i*2,i*2+2).map(item=>item.id))
+expectedTopicBatches.splice(2,0,expectedTopicBatches[1])
+assert.deepEqual(generatedTopics.map(item=>item.ids),expectedTopicBatches,'only the interrupted topic request repeats')
+assert.deepEqual([...new Set(generatedAssignments.flatMap(item=>item.ids))],big.analysis.calculations.map(item=>item.id))
 assert.deepEqual(bigFlow.result.analysis.verification.review_coverage,expectedCoverage)
-assert.equal(bigFlow.result.analysis.verification.review_response_ids.length,25)
-assert(bigFlow.result.analysis.verification.review_response_ids.every(id=>id.startsWith('batch-round-3-')))
-assert.deepEqual(observedBatches.filter(item=>item.round===2).map(({round,...item})=>item),expectedCoverage,'all batches repeat after substantive correction')
-assert.deepEqual(observedBatches.filter(item=>item.round===3).map(({round,...item})=>item),expectedCoverage,'a second correction also requires every batch again')
-const firstRound=observedBatches.filter(item=>item.round===1).map(({round,...item})=>item)
-assert.deepEqual(firstRound,[...expectedCoverage.slice(0,6),expectedCoverage[5],...expectedCoverage.slice(6)],'only the interrupted middle batch is repeated')
+assert.deepEqual(bigFlow.result.analysis.verification.review_groups,expectedGroups)
+assert.equal(bigFlow.result.analysis.verification.review_response_ids.length,expectedGroups.length)
+const expectedAudits=expectedGroups.map(group=>group.map(index=>expectedCoverage[index]))
+const interrupted=expectedAudits.findIndex(group=>group.some(section=>section.calculation_ids.includes('difference_6')))
+expectedAudits.splice(interrupted+1,0,expectedAudits[interrupted])
+assert.deepEqual(observedBatches,expectedAudits,'all 25 required sections are audited; only the interrupted group repeats')
+assert(expectedGroups.length<25,'grouping must actually reduce paid reviews')
 // The one input repair is shared across batches, not reset after each success.
 {
   let outlines=0,numbers=0,plans=0
@@ -832,20 +833,23 @@ for(const rejectWholeCase of [false,true]){
   }
   const moduleArgs={...args,fetchImpl:transport,baseReviewContent:[{type:'input_text',text:JSON.stringify({originals:source})}]}
   let run={status:'processing',state:{stage:'analysis',scope:bigScope,research,discovery_gaps:[],modelState:{stage:'generation',attempt:1,feedback:[],previous:null}}}
-  for(let i=0;run.status==='processing'&&i<80;i++){
+  let failure
+  try{for(let i=0;run.status==='processing'&&i<80;i++){
     round=run.state.modelState?.attempt||1
     run=await advanceCompleteAnalysis({...moduleArgs,state:run.state})
-  }
-  assert.equal(run.status,'completed');assert.equal(run.attempts,rejectWholeCase?2:1)
-  assert.equal(fullAudits,rejectWholeCase?2:1)
-  assert(scopedRequests>0)
-  assert.deepEqual(run.result.analysis.research_sources,research,'saved evidence and exports retain all research')
-  assert.deepEqual(run.result.analysis.verification.review_coverage,expectedCoverage)
-  assert(run.result.analysis.verification.review_response_ids.every(id=>id.startsWith(`module-round-${rejectWholeCase?2:1}-`)),'a whole-case objection prevents every first-round approval from completing the result')
-  if(!rejectWholeCase){
-    assert.equal(calls,36,'two-topic generation plus complete 24-calculation and 25-review coverage')
+  }}catch(error){failure=error}
+  assert.equal(fullAudits,1);assert(scopedRequests>0)
+  if(rejectWholeCase){
+    assert.equal(failure?.code,'review_unresolved');assert(!run.result)
+    assert.equal(round,1,'a cross-source objection never restarts the whole case')
+  }else{
+    assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(run.attempts,1)
+    assert.deepEqual(run.result.analysis.research_sources,research)
+    assert.deepEqual(run.result.analysis.verification.review_coverage,expectedCoverage)
+    assert.equal(calls,11+run.result.analysis.verification.review_groups.length)
+    assert(calls<36,'full review coverage requires fewer requests than the previous workflow')
     console.log(JSON.stringify({synthetic_module_payload:{requests:calls,scoped_requests:scopedRequests,bytes,full_context_bytes:fullBytes,reduction_percent:Number((100*(1-bytes/fullBytes)).toFixed(1))}}))
-    assert(bytes<fullBytes,'source manifests and routing must not increase the complete request payload')
+    assert(bytes<fullBytes)
   }
 }
 // A provider token-limit response shrinks only a divisible generation batch.
@@ -887,4 +891,4 @@ for(const component of ['topics','calculations']){
   await assert.rejects(advanceCompleteAnalysis({...args,state:{...base,generationBatchSizes:{[component]:0}}}),e=>e.code==='generation_batch_invalid')
 }
 await runLocalizedRepairChecks({args,candidate,big,bigScope,topicFixture,outlineFixture})
-console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete batched reviews, single-batch transport resumption, local/full correction coverage and display/export parity passed (provider mocked).')
+console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete grouped reviews, isolated transport resumption, one local correction, early failure stops and display/export parity passed (provider mocked).')
