@@ -26,4 +26,17 @@ const dependencyCopy={
  bg:{prerequisites:'Необходимо е първо да се изпълни',reopenedAfter:'Отворено отново автоматично след повторното отваряне на'},
  vi:{prerequisites:'Cần hoàn thành trước',reopenedAfter:'Tự động mở lại sau khi mở lại bước'}
 }
-export function roadmapUi(language='de') {return {...Object.fromEntries(keys.map((key,index)=>[key,(rows[language]||rows.de)[index]])),...(dependencyCopy[language]||dependencyCopy.de)}}
+const changedElsewhere={
+ de:'Der gespeicherte Fahrplan wurde inzwischen ersetzt oder entfernt. Bitte den Fall neu öffnen, um den aktuellen Stand zu laden.',
+ en:'The saved roadmap has since been replaced or removed. Reopen the case to load the current version.',
+ fr:'Le plan enregistré a été remplacé ou supprimé. Rouvrez le dossier pour charger la version actuelle.',
+ tr:'Kaydedilen yol haritası değiştirilmiş veya kaldırılmış. Güncel sürümü yüklemek için dosyayı yeniden açın.',
+ pl:'Zapisany plan został zastąpiony lub usunięty. Otwórz ponownie sprawę, aby wczytać aktualną wersję.',
+ ru:'Сохранённый план был заменён или удалён. Откройте дело заново, чтобы загрузить актуальную версию.',
+ ar:'تم استبدال الخطة المحفوظة أو حذفها. أعد فتح القضية لتحميل النسخة الحالية.',
+ fa:'برنامه ذخیره‌شده جایگزین یا حذف شده است. برای بارگذاری نسخه فعلی، پرونده را دوباره باز کنید.',
+ ro:'Planul salvat a fost înlocuit sau șters. Redeschideți cazul pentru a încărca versiunea actuală.',
+ bg:'Запазеният план е заменен или премахнат. Отворете случая отново, за да заредите текущата версия.',
+ vi:'Lộ trình đã lưu đã được thay thế hoặc xóa. Hãy mở lại vụ việc để tải phiên bản hiện tại.'
+}
+export function roadmapUi(language='de') {return {...Object.fromEntries(keys.map((key,index)=>[key,(rows[language]||rows.de)[index]])),...(dependencyCopy[language]||dependencyCopy.de),changedElsewhere:changedElsewhere[language]||changedElsewhere.de}}

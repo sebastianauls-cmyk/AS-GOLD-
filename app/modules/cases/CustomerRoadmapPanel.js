@@ -9,6 +9,7 @@ import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLangua
 import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, authorizeRoadmap, roadmapErrorMessage, latestCustomerRoadmapJob, cancelCustomerRoadmapJob } from '../services/customerRoadmap'
 import { workflowErrorMessage } from '../services/workflowError.mjs'
 import { createRoadmapExport } from '../services/customerRoadmapExport.mjs'
+import { loadRoadmapExportData } from '../services/workspaceExportData.mjs'
 import { downloadExportArtifact } from '../services/exportService'
 import { ResultContinuation } from './ResultContinuation'
 import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
@@ -129,6 +130,8 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   const caseRecords=records.filter(entry=>entry.case_id===item.id)
   const record=caseRecords.find(entry=>entry.id===activeId)||caseRecords[0]
   const stale=!!record&&(!fingerprint||record.source_fingerprint!==fingerprint||record.id!==caseRecords[0]?.id)
+  const exportViewRef=useRef(null)
+  exportViewRef.current={caseId:item.id,roadmapId:record?.id,fingerprint,stale}
   const canCreate=continuation.canContinue!==false
   const ownDocuments=caseDocuments(item,documents)
   const context=preparationContext(item,documents,outputLanguage,referenceLanguage)
@@ -244,7 +247,14 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   })
   const exportFile=(type,letterId)=>run(async()=>{
     if(stale)throw new Error(ui.stale)
-    downloadExportArtifact(await createRoadmapExport(record,type,{letterId}));return true
+    const requested=exportViewRef.current
+    const isCurrent=()=>mountedRef.current&&!exportViewRef.current.stale&&['caseId','roadmapId','fingerprint'].every(key=>exportViewRef.current[key]===requested[key])
+    const saved=await loadRoadmapExportData(supabase,{ownerId,caseId:item.id,roadmapId:record.id,language})
+    if(!isCurrent())return false
+    setRecords(previous=>previous.map(entry=>entry.id===saved.id?saved:entry))
+    const artifact=await createRoadmapExport(saved,type,{letterId})
+    if(!isCurrent())return false
+    downloadExportArtifact(artifact);return true
   })
   function expandForm() {setShowForm(true);requestAnimationFrame(()=>formRef.current?.scrollIntoView({behavior:'smooth',block:'start'}))}
   return <section className="customerRoadmapPanel" id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>

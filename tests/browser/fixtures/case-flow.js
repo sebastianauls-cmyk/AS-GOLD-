@@ -7,7 +7,7 @@ import {CaseDetail,getV24Copy} from '../modules/cases/CaseWorkspace'
 import {getV26AnalysisCopy} from '../modules/documents/DocumentAnalysis'
 import {emptyCase} from '../modules/workspace/stateConfig'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestRecord} from '../modules/testing/customerRoadmapFixture.mjs'
-import {roadmapFingerprint,roadmapSource} from '../../supabase/functions/_shared/customerRoadmap.mjs'
+import {roadmapFingerprint,roadmapSource,updateRoadmapProgress} from '../../supabase/functions/_shared/customerRoadmap.mjs'
 import {workflowErrorMessage} from '../modules/services/workflowError.mjs'
 import freeFixture from '../../scripts/fixtures/freeAnalysisSarah.json'
 import {createExportWorkflowActions} from '../modules/documents/exportWorkflow'
@@ -21,6 +21,7 @@ export default function Fixture(){
   const [invocations,setInvocations]=useState(0)
   const [exportMessage,setExportMessage]=useState(''),[exportType,setExportType]=useState('txt')
   const current=useRef({}),cache=useRef(new Map()),fail=useRef(false),reviewFailure=useRef(false),savedJob=useRef(null),savedRoadmap=useRef(null),holdJob=useRef(false)
+  const remoteDocuments=useRef(null)
   const item={...roadmapTestCase,title:draft.title||'Ich verstehe meine Briefe nicht.',goal:draft.goal||roadmapTestCase.goal}
   current.current={item,documents}
   async function finishBackground(){
@@ -34,7 +35,7 @@ export default function Fixture(){
   const supabase=useMemo(()=>({
     from(table){
       const filters=[]
-      const read=()=>structuredClone(table==='cases'?[current.current.item]:table==='documents'?current.current.documents:table==='case_analysis_jobs'&&savedJob.current?[savedJob.current]:table==='case_roadmaps'&&savedRoadmap.current?[savedRoadmap.current]:[]).filter(row=>filters.every(([key,value])=>row[key]===value))
+      const read=()=>structuredClone(table==='cases'?[current.current.item]:table==='documents'?(remoteDocuments.current||current.current.documents):table==='case_analysis_jobs'&&savedJob.current?[savedJob.current]:table==='case_roadmaps'&&savedRoadmap.current?[savedRoadmap.current]:[]).filter(row=>filters.every(([key,value])=>row[key]===value))
       const query={select(){return this},eq(key,value){filters.push([key,value]);return this},order(){return this},update(){return this},insert(){return this},limit:async()=>({data:read(),error:null}),range:async(first,last)=>({data:read().slice(first,last+1),error:null}),maybeSingle:async()=>({data:read()[0]||null,error:null}),single:async()=>({data:{},error:null}),then(resolve,reject){return Promise.resolve({data:read(),error:null}).then(resolve,reject)}}
       return query
     },
@@ -83,6 +84,9 @@ export default function Fixture(){
     <button onClick={()=>{setInternal(true);setDocuments([{...freeFixture.documents[0],case_id:item.id,owner_id:item.owner_id,extracted_text:'Position Person A\nBrutto 1.000,00 EUR\nLohnsteuer -100,00 EUR\nNetto 900,00 EUR\nEnde der Abrechnung.\nPosition Person A\nGutschrift -0,01 EUR\nAnteil 1/2 -0,01 EUR\nEs fehlen keine Unterlagen.'}])}}>Use arithmetic edge cases</button>
     <button onClick={()=>setDocuments(previous=>previous.map((doc,index)=>index?doc:{...doc,extracted_text:doc.extracted_text.replace('27.930,00 EUR','27.830,00 EUR')}))}>Change a saved amount</button>
     <button onClick={()=>setDocuments(previous=>previous.map((doc,index)=>index?doc:{...doc,voice_context:'Neue Angabe verändert die Grundlage.'}))}>Change export source</button>
+    <button onClick={()=>{remoteDocuments.current=current.current.documents.map((doc,index)=>index?doc:{...doc,voice_context:'In einem anderen Fenster gespeicherte Ergänzung.'})}}>Change source in another window</button>
+    <button onClick={()=>{savedRoadmap.current={...savedRoadmap.current,...updateRoadmapProgress(savedRoadmap.current,{step_id:'frist',done:true,note:'REMOTE-CONFIRMATION: Eingang im anderen Fenster bestätigt.'})}}}>Confirm progress in another window</button>
+    <button onClick={()=>{savedRoadmap.current={...savedRoadmap.current,id:'newer-remote-report',created_at:'2026-09-24T12:00:00Z'}}}>Replace report in another window</button>
     {caseVisible&&(!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail access={internal?{active:true,status:'approved',app_role:'owner'}:null} copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>setStarted(false)} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} continuation={{canContinue:true}}/>)}
     <div style={{display:'grid',gap:4,overflowWrap:'anywhere'}}>
       <output data-testid="stats">{JSON.stringify(stats)}</output>

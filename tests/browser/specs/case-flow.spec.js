@@ -124,6 +124,47 @@ test('general export blocks a saved report after its original sources change',as
   expect(downloads).toBe(0)
 })
 
+async function openDirectExports(page){
+  await begin(page)
+  await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
+  await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
+  await page.getByRole('button',{name:'Nächste Schritte anzeigen',exact:true}).click()
+  await expect(page.locator('.roadmapCurrentStatus')).toContainText('0 / 4')
+  const letter=page.locator('.roadmapLetters > details').first()
+  await letter.locator('summary').first().click()
+  return {report:page.locator('.customerRoadmapView > .roadmapActions'),letter}
+}
+
+test('direct report and letter downloads use saved progress from another window',async({page})=>{
+  const {report,letter}=await openDirectExports(page)
+  await page.getByRole('button',{name:'Confirm progress in another window',exact:true}).click()
+  await expect(page.locator('.roadmapCurrentStatus')).toContainText('0 / 4')
+  for(const target of [report,letter])for(const [label,type] of [['Word','docx'],['PDF','pdf']]){
+    const [download]=await Promise.all([page.waitForEvent('download'),target.getByRole('button',{name:label,exact:true}).click()])
+    expect(await download.failure()).toBeNull()
+    expect(download.suggestedFilename()).toContain(target===report?'Kundenfahrplan':'Anschreiben_versorgung')
+    expect(download.suggestedFilename()).toMatch(new RegExp(`\\.${type}$`))
+    await expect(page.locator('.roadmapCurrentStatus')).toContainText('1 / 4')
+  }
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:2,generated:1,sent:0}))
+})
+
+for(const [change,message] of [['Change source in another window','Die Fallunterlagen haben sich geändert'],['Replace report in another window','inzwischen ersetzt oder entfernt']]){
+  test('direct exports reject '+change,async({page})=>{
+    const {report,letter}=await openDirectExports(page)
+    let downloads=0;page.on('download',()=>downloads++)
+    await page.getByRole('button',{name:change,exact:true}).click()
+    for(const target of [report,letter])for(const label of ['Word','PDF']){
+      await expect(target.getByRole('button',{name:label,exact:true})).toBeEnabled()
+      await target.getByRole('button',{name:label,exact:true}).click()
+      await expect(page.locator('.roadmapError[role=alert]')).toContainText(message)
+    }
+    expect(downloads).toBe(0)
+    await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:2,generated:1,sent:0}))
+  })
+}
+
 test('failed document is recoverable without re-reading successful documents',async({page})=>{
   await begin(page)
   await page.getByRole('button',{name:'Simulate one failed read'}).click()
