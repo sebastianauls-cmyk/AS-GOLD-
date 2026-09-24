@@ -5,10 +5,12 @@ import path from 'node:path'
 import vm from 'node:vm'
 import {spawnSync} from 'node:child_process'
 import JSZip from 'jszip'
-import {loadCaseExportData,loadAccountExportData} from '../app/modules/services/workspaceExportData.mjs'
+import {loadCaseExportData,loadAccountExportData,loadRoadmapExportData} from '../app/modules/services/workspaceExportData.mjs'
+import {createRoadmapExport} from '../app/modules/services/customerRoadmapExport.mjs'
+import {roadmapUi} from '../app/modules/cases/lib/customerRoadmapCopy.mjs'
 import {buildWorkspaceExportRows,createWorkspaceExportArtifact,createAccountDataArtifact} from '../app/modules/services/exportService.js'
 import {createPptxBlob,createXlsxBlob} from '../app/modules/services/officeExportsUnicode.js'
-import {roadmapFingerprint,roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
+import {roadmapFingerprint,roadmapSource,updateRoadmapProgress} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {recordCommittedAction} from '../app/modules/workspace/committedAction.mjs'
 import {normalizeCasePayload} from '../app/modules/cases/casePayload.mjs'
 
@@ -88,6 +90,22 @@ try{
       }else text=await blob.text()
       for(const value of expected)assert.ok(compact(text).includes(compact(value)),`${fixture.item.id} ${type} lost ${value}`)
     }
+    const changed=structuredClone(fixture.tables),note='REMOTE-CONFIRMATION-'+fixture.item.id
+    Object.assign(changed.case_roadmaps[0],updateRoadmapProgress(changed.case_roadmaps[0],{step_id:'clarify',done:true,note}))
+    const fresh=await loadRoadmapExportData(database(changed),{ownerId:owner,caseId:fixture.item.id,roadmapId:fixture.record.id})
+    assert.deepEqual(fixture.record.progress,{},'the open cached report still has the old progress')
+    for(const type of ['docx','pdf']){
+      const {blob}=await createRoadmapExport(fresh,type)
+      let text
+      if(type==='docx')text=xmlText(await (await unzip(blob)).file('word/document.xml').async('string'))
+      else{
+        const file=path.join(directory,fixture.item.id+'-fresh.pdf');fs.writeFileSync(file,Buffer.from(await blob.arrayBuffer()))
+        if(!poppler)continue
+        const result=spawnSync('pdftotext',['-raw',file,'-'],{encoding:'utf8'});assert.equal(result.status,0);text=result.stdout
+      }
+      assert.ok(text.includes(note),type+' must include the server-confirmed progress')
+      assert.match(text,/1\s*\/\s*1/,type+' must count the newly completed step')
+    }
   }
 }finally{globalThis.fetch=originalFetch}
 
@@ -100,6 +118,32 @@ for(const change of [
 ]){
   const tables=structuredClone(fixture.tables);change(tables)
   await assert.rejects(loadCaseExportData(database(tables),{ownerId:owner,caseId:fixture.item.id}),/geändert/)
+  await assert.rejects(loadRoadmapExportData(database(tables),{ownerId:owner,caseId:fixture.item.id,roadmapId:fixture.record.id}),/geändert/)
+}
+const directOptions={ownerId:owner,caseId:fixture.item.id,roadmapId:fixture.record.id}
+for(const table of ['cases','documents','assessments','case_roadmaps'])await assert.rejects(loadRoadmapExportData(database(fixture.tables,{failTable:table}),directOptions),/Read unavailable/)
+await assert.rejects(loadRoadmapExportData(database(fixture.tables),{...directOptions,ownerId:foreign}))
+for(const missing of ['ownerId','caseId','roadmapId'])await assert.rejects(loadRoadmapExportData(database(fixture.tables),{...directOptions,[missing]:''}))
+for(const replacement of ['deleted','newer']){
+  const tables=structuredClone(fixture.tables)
+  tables.case_roadmaps=replacement==='deleted'?[]:[{...fixture.record,id:'newer-report',created_at:'2026-09-24T12:00:00Z'},fixture.record]
+  await assert.rejects(loadRoadmapExportData(database(tables),directOptions),/ersetzt oder entfernt/,'never silently substitute another report or letter')
+}
+// Exercise the actual panel callback, including leaving/changing the view while
+// either the saved record or the export writer is still pending.
+const exportCallback=fs.readFileSync('app/modules/cases/CustomerRoadmapPanel.js','utf8').match(/const exportFile=([\s\S]*?)\n  function expandForm/)[1]
+for(const scenario of ['fresh','read-error','leave-during-read','change-during-write']){
+  const tables=structuredClone(fixture.tables),downloads=[],updates=[],mountedRef={current:true}
+  Object.assign(tables.case_roadmaps[0],updateRoadmapProgress(fixture.record,{step_id:'clarify',done:true,note:'SERVER CONFIRMED'}))
+  const exportViewRef={current:{caseId:fixture.item.id,roadmapId:fixture.record.id,fingerprint:fixture.record.source_fingerprint,stale:false}}
+  const context={run:task=>task(),stale:false,ui:roadmapUi('de'),exportViewRef,mountedRef,supabase:database(tables,{failTable:scenario==='read-error'?'case_roadmaps':undefined}),ownerId:owner,item:fixture.item,record:fixture.record,language:'de',
+    loadRoadmapExportData:async(...args)=>{const fresh=await loadRoadmapExportData(...args);if(scenario==='leave-during-read')mountedRef.current=false;return fresh},
+    setRecords:update=>updates.push(update([fixture.record])),createRoadmapExport:async(record,type,options)=>{assert.equal(record.progress.clarify.note,'SERVER CONFIRMED');assert.equal(options.letterId,'selected-letter');if(scenario==='change-during-write')exportViewRef.current={...exportViewRef.current,fingerprint:'changed'};return {record,type}},downloadExportArtifact:artifact=>downloads.push(artifact)}
+  const action=new Function(...Object.keys(context),'return '+exportCallback)(...Object.values(context))
+  if(scenario==='read-error')await assert.rejects(action('docx','selected-letter'),/Read unavailable/)
+  else assert.equal(await action('docx','selected-letter'),scenario==='fresh')
+  assert.equal(downloads.length,scenario==='fresh'?1:0,scenario+' must never download the old cached record')
+  assert.equal(updates.length,['fresh','change-during-write'].includes(scenario)?1:0)
 }
 await assert.rejects(loadCaseExportData(database(fixture.tables,{failTable:'case_roadmaps'}),{ownerId:owner,caseId:fixture.item.id}),/Read unavailable/,'read failure must never produce a partial success')
 await assert.rejects(loadCaseExportData(database(fixture.tables),{ownerId:foreign,caseId:fixture.item.id}))

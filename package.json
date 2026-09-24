@@ -119,7 +119,7 @@
     "test:document-analysis": "node scripts/test_document_request_flow.mjs && node scripts/test_document_recovery.mjs && node scripts/test_document_failure.mjs",
     "test:workspace-overview": "node scripts/test_workspace_overview.mjs && node scripts/test_simple_case_flow.mjs",
     "test:public-product-tour": "node scripts/test_public_product_tour.mjs && node scripts/test_public_case_start.mjs",
-    "test:product-deliverables": "node --import ./scripts/offline/noNetwork.mjs scripts/test_analysis_traceability.mjs && node scripts/test_product_deliverables.mjs",
+    "test:product-deliverables": "node --import ./scripts/offline/noNetwork.mjs scripts/test_analysis_traceability.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_customer_notes.mjs && node scripts/test_product_deliverables.mjs",
     "test:offline": "node --import ./scripts/offline/noNetwork.mjs scripts/offline/run.mjs"
   },
   "dependencies": {
