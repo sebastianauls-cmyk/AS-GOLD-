@@ -778,3 +778,5 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 /* File and language controls must not impose their intrinsic width on mobile. */
 :is(.documentUploadForm,.documentReviewForm,.documentLanguagePair)>*{min-width:0}
 :is(.documentUploadForm,.documentReviewForm,.documentLanguagePair) :where(input:not([type="checkbox"]),select,textarea){min-width:0;width:100%;max-width:100%}
+.analysisHead>*{min-width:0}
+.analysisStatus{max-width:100%;white-space:normal;overflow-wrap:anywhere}
