@@ -138,7 +138,9 @@ function withExplicitWaitDependencies(raw){
   const steps=raw.steps.map((step,index)=>{
     const positions=explicitWaitPositions(step.waiting_for)
     if(!positions.length||!Array.isArray(step.depends_on))return step
-    if(positions.some(position=>position>index))throw new Error('Eine ausdrücklich genannte Wartebedingung muss sich auf Antworten aus vorherigen Schritten beziehen.')
+    // A step can describe the reply to its own request. Such wording is not a
+    // prerequisite on a preceding step and must not become a self/future edge.
+    if(positions.some(position=>position>index))return step
     const missing=positions.map(position=>raw.steps[position-1].id).filter(id=>!step.depends_on.includes(id))
     if(!missing.length)return step
     changed=true

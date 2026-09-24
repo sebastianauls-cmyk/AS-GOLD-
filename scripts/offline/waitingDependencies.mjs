@@ -39,7 +39,7 @@ export function testWaitingDependencies(){
   }
   for(const text of ['Antworten aus Schritten 2 bis 5.','Replies from steps 2 through 6.']){
     missing.steps[4].waiting_for=text
-    assert.throws(()=>validateRoadmapResult(missing,fixture.source,fixture.context),/vorherigen Schritten/,'self/future references must not create a cycle')
+    assert.deepEqual(validateRoadmapResult(missing,fixture.source,fixture.context).steps[4].depends_on,['orders','application'],'self/future references are not inferred graph edges')
   }
   for(const id of ['invoice','deposit','insurance','bilingual']){
     const other=offlineFixtures.find(item=>item.id===id),reply=structuredClone(other.reply)
