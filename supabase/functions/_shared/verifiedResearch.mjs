@@ -57,6 +57,18 @@ export function researchSourceCandidates(proposed,searched,domains) {
   return candidates
 }
 
+// Normalize BEFORE prioritizing and applying the fetch cap. In particular,
+// #section links and their canonical URL identify the same requested text.
+// Deferred hits were never fetched and are not network failures.
+export function researchRetrievalPlan(proposed,searched,domains,{existing=[],maxSources=8}={}){
+  const candidates=researchSourceCandidates(proposed,searched,domains)
+  const selected=[...new Set((Array.isArray(proposed)?proposed:[]).map(item=>officialUrl(item?.url,domains)).filter(Boolean))]
+  const available=new Set(existing.map(item=>officialUrl(item.url,domains)).filter(Boolean))
+  const pending=[...new Set([...selected,...candidates.keys()])].filter(url=>!available.has(url))
+  const requested=pending.slice(0,Math.min(Math.max(0,maxSources),20))
+  return {items:requested.map(url=>candidates.get(url)),requested,selected,available:[...available],deferred:pending.slice(requested.length)}
+}
+
 export function primarySourceCatalogue(domains,now=Date.now(),records=PRIMARY_SOURCE_CACHE) {
   // Compare UTC dates because the refresh runner and edge clocks can differ.
   // A failed scheduled refresh never renews a source's observed date.

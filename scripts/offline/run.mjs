@@ -10,6 +10,7 @@ import {offlineFixtures} from './fixtures.mjs'
 const {evaluateOfflineResponse,applyCounterexample}=await import('./evaluate.mjs')
 const {roadmapSteps,updateRoadmapProgress}=await import('../../supabase/functions/_shared/customerRoadmap.mjs')
 const {testWaitingDependencies}=await import('./waitingDependencies.mjs')
+const {testSourceActionChecks}=await import('./sourceActionChecks.mjs')
 
 const args=process.argv.slice(2)
 let selected,responseFile,json=false
@@ -32,6 +33,7 @@ assert.throws(()=>net.createConnection({host:'offline-probe.invalid',port:443}),
 assert.throws(()=>childProcess.spawn('curl',['https://offline-probe.invalid']),blocked)
 const probeCount=offlineNetworkAttempts().length
 testWaitingDependencies()
+await testSourceActionChecks()
 
 const cases=[],failures=[]
 for(const fixture of fixtures){
@@ -74,6 +76,7 @@ const report={version:1,status:failures.length?'failed':'passed',mode:responseFi
   cases_checked:cases.length,counterexamples_checked:counterexamples.length,counterexamples_detected:counterexamples.filter(item=>item.detected).length,
   counterexamples_corrected:counterexamples.filter(item=>item.corrected).length,
   network_guard:'enabled',blocked_self_test_probes:probeCount,unexpected_network_attempts:extraAttempts.length,live_model_calls:0,
+  source_action_regressions:'passed',
   model_generation_quality:'not_measured',product_acceptance:'pending',
   production_validation_gaps:counterexamples.filter(item=>item.production_validation==='passed'&&!item.corrected).map(({id,expected_issue})=>({id,expected_issue})),
   cases,failures}
@@ -82,6 +85,7 @@ else{
   for(const entry of cases)console.log(`${entry.reference==='passed'?'OK':'FEHLER'} ${entry.id}: ${entry.title} (${entry.counterexamples.filter(item=>item.detected).length}/${entry.counterexamples.length} Gegenproben erkannt)`)
   console.log(`\n${report.cases_checked} Referenzfälle; ${report.counterexamples_detected}/${report.counterexamples_checked} Fehlvarianten erkannt oder regelbasiert korrigiert; ${report.live_model_calls} Live-Modellaufrufe.`)
   console.log('Neue KI-Qualität: nicht gemessen. Produktabnahme: offen.')
+  console.log('Quellenauswahl und verbundene Korrekturen: bestanden (Antworten simuliert).')
   if(report.production_validation_gaps.length)console.log(`${report.production_validation_gaps.length} Fehlvarianten bestehen die reine Produktions-Strukturprüfung. Der feste lokale Prüfauftrag erkennt sie; die unabhängige inhaltliche Produktionsprüfung bleibt erforderlich.`)
   for(const failure of failures)console.error(JSON.stringify(failure))
 }

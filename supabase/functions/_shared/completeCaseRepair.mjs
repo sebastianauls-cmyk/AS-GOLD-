@@ -108,11 +108,12 @@ export function localizedRepairTargets(candidate,feedback,schema){
   // Source findings may correct an existing local claim. Wider source gaps
   // still fail location/size checks; every replacement is independently
   // reviewed again and must pass the unchanged literal-source/math gates.
-  const selected=new Map()
+  const selected=new Map(),sourceTopicIds=new Set()
   for(const issue of feedback){
     const path=locate(candidate,issue.location,schema)
     if(!path||!schemaAt(schema,path)||get(candidate,path)===undefined)return null
     selected.set(label(path),path)
+    if(issue.code==='source'&&path[0]==='analysis'&&path[1]==='topics')sourceTopicIds.add(get(candidate,path).id)
   }
   // A changed computed value cannot leave a later calculation using its old
   // result. Include every transitive consumer in original dependency order.
@@ -123,9 +124,20 @@ export function localizedRepairTargets(candidate,feedback,schema){
       const path=['analysis','calculations',index];selected.set(label(path),path)
     }
   }
-  const paths=[...selected.values()].sort((a,b)=>a.slice(0,-1).join('.')===b.slice(0,-1).join('.')&&typeof a.at(-1)==='number'?a.at(-1)-b.at(-1):label(a).localeCompare(label(b)))
   // This is one bounded request, not another unbounded generation loop.
-  if(paths.length>8||JSON.stringify(paths.map(path=>get(candidate,path))).length>20000)return null
+  const fits=paths=>paths.length<=8&&JSON.stringify(paths.map(path=>get(candidate,path))).length<=20000
+  if(!fits([...selected.values()]))return null
+  // Correcting a source-based conclusion can also require changing its actual
+  // request or follow-through. Previously these explicitly linked steps were
+  // immutable, forcing a needless full-correction stop or an inconsistent plan.
+  // Include existing linked steps only within the SAME size budget. No new
+  // steps, guessed links or additional repair calls are authorized here.
+  const linkedSteps=new Set((candidate.analysis?.topics||[]).filter(topic=>sourceTopicIds.has(topic.id)).flatMap(topic=>topic.step_ids||[]))
+  for(const [index,step] of (candidate.steps||[]).entries())if(linkedSteps.has(step.id)){
+    const path=['steps',index],key=label(path)
+    if(!selected.has(key)&&fits([...selected.values(),path]))selected.set(key,path)
+  }
+  const paths=[...selected.values()].sort((a,b)=>a.slice(0,-1).join('.')===b.slice(0,-1).join('.')&&typeof a.at(-1)==='number'?a.at(-1)-b.at(-1):label(a).localeCompare(label(b)))
   return paths.map((path,index)=>({key:'edit_'+index,path,location:label(path)}))
 }
 

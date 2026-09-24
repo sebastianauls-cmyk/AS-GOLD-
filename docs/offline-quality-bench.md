@@ -63,3 +63,16 @@ Die Ableitung gilt nur für vollständige, eindeutige Antwortlisten auf vorherig
 4. Eine neue Modellantwort ist erst nötig, wenn das veränderte Generierungsverhalten beurteilt werden soll. Dafür einen kleinen passenden Referenzfall und ein vorher festgelegtes Kostenlimit verwenden; den geprüften anonymisierten Rücklauf dauerhaft als Regression aufnehmen.
 
 Die bestehenden Verbrauchsgrenzen und die Kostenpause bleiben bestehen. Dieser Prüfstand schaltet keine automatischen kostenpflichtigen Tests frei.
+
+## Ergänzung: Quellenabruf und verbundene Folgehandlungen
+
+Der zusätzliche Prüflauf `sourceActionChecks.mjs` verwendet die produktive Recherche- und Korrektursteuerung mit ausschließlich simulierten Antworten. Vier Rechercheabläufe prüfen:
+
+- Eine ausdrücklich ausgewählte URL mit `#Abschnitt` behält nach Normalisierung ihren Vorrang vor beiläufigen Suchtreffern.
+- Das Abruflimit bleibt bei acht Quellen. Nicht angefragte Treffer werden als ungelesen geführt; sie sind keine Netzwerkfehler und lösen allein keine Recherchewiederholung aus.
+- Eine fehlgeschlagene ausdrücklich ausgewählte Quelle wird nicht durch sieben erfolgreich gelesene beiläufige Treffer als erledigt behandelt. Bereits vorhandene Quellen werden nicht nochmals angefragt.
+- Eine im nächsten Rechercheabschnitt nachträglich gelesene Quelle beseitigt den offenen Abrufstatus; alte Fehlerkennzeichen lösen keine weitere Recherche aus.
+
+Ein rekonstruierter Versicherungsfall prüft anschließend einen Quellenfehler mit einer davon abhängigen falschen Handlungsanweisung. Die einmalige gezielte Korrektur darf nun auch die ausdrücklich mit dieser Fallfrage verbundenen vorhandenen Schritte ändern, soweit sie innerhalb der unveränderten Grenze von acht Abschnitten/20.000 Zeichen liegen. Unveränderte Schritte sollen unverändert zurückgegeben werden. Neue Schritte, unzugewiesene Abschnitte und weitere Korrekturschleifen bleiben ausgeschlossen. Die Gegenprobe lässt die falsche Handlung absichtlich stehen: Die anschließende Prüfung stoppt dann ohne freigegebenes Ergebnis und ohne zweite Korrektur.
+
+Das belegt die verbesserte Quellenauswahl und die Möglichkeit einer konsistenten begrenzten Korrektur. Es belegt nicht, dass ein echtes Modell künftig jede Quellenbedeutung und jede Folgehandlung richtig erkennt.
