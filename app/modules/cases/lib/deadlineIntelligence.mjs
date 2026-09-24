@@ -19,14 +19,36 @@ function sentenceContext(text,index,length){
   let start=index,end=index+length
   while(start>0&&!boundary(start-1))start--
   while(end<text.length&&!boundary(end))end++
-  return text.slice(start,end).trim()
+  return text.slice(start,end+(text[end]==='?'?1:0)).trim()
 }
 
 const PAYMENT=/zahl|restbetrag|forderung|mahnung|fällig/iu
 const REPLACEMENT=/ersetzt|zurückgezogen|aufgehoben|verlängert|stattdessen|anstelle/iu
 const CONDITIONAL=/\b(?:nicht|falls|wenn|würde|könnte)\b/iu
+const unconfirmedRelation=context=>context.includes('?')||CONDITIONAL.test(context)||/\b(?:kein\w*|soll|sollte|beantragt|bitten|gebeten|möglich)\b/iu.test(context)
+function explicitDeadlineShift(context){
+  if(unconfirmedRelation(context))return null
+  const dates=[...context.matchAll(new RegExp(DATE_RE.source,'g'))]
+  if(dates.length!==2)return null
+  const [oldDate,newDate]=dates
+  const before=context.slice(0,oldDate.index)
+  const between=context.slice(oldDate.index+oldDate[0].length,newDate.index)
+  const after=context.slice(newDate.index+newDate[0].length)
+  // The first date must itself name the old deadline, not e.g. the date of a
+  // letter mentioned elsewhere in a sentence about a deadline.
+  if(!/(?:frist(?:\s+(?:(?:wird|wurde|ist)\s+)?(?:bis(?:\s+zum)?|vom|von))?|(?:zahlbar|fällig)(?:\s+am)?|bis(?:\s+zum)?)\s*$/iu.test(before))return null
+  if(!/^\s*(?:(?:wird|wurde|ist)\s+)?(?:(?:hiermit|nun|jetzt)\s+)?(?:(?:verlängert|verschoben)\s+)?(?:auf|bis)(?:\s+(?:den|zum))?\s*$/iu.test(between))return null
+  if(!/\b(?:verlängert|verschoben)\b/iu.test(between)&&!/^\s*(?:verlängert|verschoben)\b/iu.test(after))return null
+  const oldValue=dateFromParts(oldDate[1],oldDate[2],oldDate[3])
+  const newValue=dateFromParts(newDate[1],newDate[2],newDate[3])
+  if(!oldValue||!newValue||oldValue.getTime()===newValue.getTime())return null
+  if(/verlängert/iu.test(between+after)&&newValue<oldValue)return null
+  return {old:oldDate[0],next:newDate[0]}
+}
 function dateState(context,token){
-  if(!REPLACEMENT.test(context)||CONDITIONAL.test(context))return 'active'
+  const shift=explicitDeadlineShift(context)
+  if(shift)return token===shift.old?'superseded':'active'
+  if(!REPLACEMENT.test(context)||unconfirmedRelation(context))return 'active'
   const before=context.slice(0,context.indexOf(token)),after=context.slice(context.indexOf(token)+token.length)
   // Explicit old/new date relation, never simply the newest date in the file.
   if(/(?:früher|bisher|alt|ursprünglich|anstelle|statt der)/iu.test(before)&&!/(?:neu|nun|stattdessen)[^.!?]*$/iu.test(before))return 'superseded'
@@ -65,7 +87,8 @@ export function extractDeadlineDates(value){
     const localCue=earlier?before.slice(earlier.index+earlier[0].length):before
     const strong=STRONG_DEADLINE_CUES.test(localCue)
     const ordinary=ORDINARY_DATE_CUES.test(context)
-    if(!strong&&!(/frist/iu.test(localCue)&&REPLACEMENT.test(context))) continue
+    const shift=explicitDeadlineShift(context)
+    if(!strong&&!(/frist/iu.test(localCue)&&REPLACEMENT.test(context))&&!shift) continue
     matches.push({
       date,
       confidence:ordinary?'medium':'high',

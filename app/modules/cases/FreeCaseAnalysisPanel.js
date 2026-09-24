@@ -74,6 +74,10 @@ export function FreeCaseAnalysisPanel({item,documents,language='de',onOpenDocume
         <h5>{doc.title}</h5><Status light={doc.has_text?'green':'yellow'}>{doc.has_text?ui.available:ui.missing}</Status>
         {doc.truncated&&<p>{ui.truncated}</p>}
         {source(doc)}
+        {(doc.limitations||[]).map((limitation,index)=><div key={index} className="freeAnalysisCheck">
+          <Status light="yellow">{ui.limitations[limitation.code]}</Status>
+          <details><summary>{ui.source}</summary>{limitation.sources.map((row,i)=><blockquote key={i}><small>{doc.title} · {ui.line} {row.line_start}</small><p>{row.quote}</p></blockquote>)}</details>
+        </div>)}
         {doc.checks.length>0&&<section><h5>{ui.checks}</h5>{doc.checks.map((check,index)=><div key={index} className="freeAnalysisCheck">
           <b>{freeCheckTitle(check,language)}</b><p><Status light={check.matches?'green':'red'}>{check.matches?ui.mathOk:ui.mathDiff}</Status></p>
           <p>{freeCheckEquation(check,language)}</p>

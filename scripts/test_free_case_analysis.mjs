@@ -57,6 +57,32 @@ try{
   assert.deepEqual(noLabels[0].columns,[null,null],'ambiguous identity labels are not invented')
   const invalidDate=analyzeFreeCase({...input,documents:[{...input.documents[0],text:'Datum 30. Februar 2026.'}]})
   assert.equal(invalidDate.documents[0].dates.length,0)
+  const analyzeText=text=>analyzeFreeCase({...input,documents:[{...input.documents[0],text}]})
+  // A source that explicitly denies a gap must not receive an unresolved marker.
+  const noGaps='Es fehlen keine Unterlagen. Es fehlt nichts. Die Belege fehlen nicht mehr. Der Betrag ist nicht unbekannt. Die Herkunft ist nicht mehr ungeklärt.'
+  assert.equal(analyzeText(noGaps).summary.open,0)
+  const mixedGap='Es fehlen keine Unterlagen, aber das Datum des Zugangs ist unbekannt.'
+  assert.deepEqual(analyzeText(mixedGap).documents[0].open,[{quote:mixedGap}],'a negated clause does not hide another actual gap')
+  for(const text of ['Die Abrechnung fehlt.','Die Abrechnung liegt nicht vor.','Der Zugang ist nicht dokumentiert.','Die Herkunft ist ungeklärt.'])assert.equal(analyzeText(text).summary.open,1)
+
+  for(const [amount,share,expected] of [['0,01','0,01',1],['-0,01','-0,01',-1],['-0,03','-0,02',-2],['-0,02','-0,01',-1]]){
+    const rounded=analyzeText(`Position Person A\nGutschrift ${amount} EUR\nAnteil 1/2 ${share} EUR`).documents[0].checks[0]
+    assert.equal(rounded.expected,expected,'half cents use symmetric commercial rounding')
+    assert(rounded.matches)
+  }
+  for(const net of ['900,00','1.100,00']){
+    const signed=analyzeText(`Position Person A\nBrutto 1.000,00 EUR\nLohnsteuer -100,00 EUR\nNetto ${net} EUR`)
+    assert.equal(signed.summary.checks,0,'a signed deduction does not invent either a refund or a subtraction convention')
+    assert.equal(signed.summary.differences,0)
+    assert.equal(signed.documents[0].limitations[0].code,'signed_deductions')
+    assert.equal(signed.documents[0].limitations[0].sources[0].quote,'Lohnsteuer -100,00 EUR')
+    const warning=freeAnalysisBlocks(signed,'de').find(block=>block.text.includes('Brutto/Netto nicht geprüft'))
+    assert.equal(warning.light,'yellow','the skipped arithmetic stays visibly unreviewed in exports')
+    const signedWord=await createFreeAnalysisExport(signed,'docx')
+    const signedZip=await JSZip.loadAsync(await signedWord.blob.arrayBuffer())
+    const signedXml=await signedZip.file('word/document.xml').async('string')
+    assert(signedXml.includes('Brutto/Netto nicht geprüft')&&signedXml.includes('Lohnsteuer -100,00 EUR'))
+  }
   const renamed={...input,title:'Ein anderer Testfall',documents:input.documents.map((doc,index)=>({...doc,title:`Unterlage ${index+1}`}))}
   assert.deepEqual(analyzeFreeCase(renamed).summary,result.summary,'no special case name triggers or prewritten result')
 

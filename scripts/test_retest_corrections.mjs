@@ -8,6 +8,31 @@ import {mapDocumentLanguageWorkflowResult,readableDocumentSummary} from '../app/
 import {roadmapSource,roadmapModelSource,roadmapFingerprint} from '../supabase/functions/_shared/customerRoadmap.mjs'
 const fixture=JSON.parse(fs.readFileSync(new URL('./fixtures/retest-september.json',import.meta.url)))
 const {item,documents,assessments}=fixture,now=new Date('2026-09-20T12:00:00Z')
+for(const text of [
+  'Die Frist bis 24.09.2026 wurde auf den 02.10.2026 verlängert.',
+  'Die Frist 24.09.2026 wird bis zum 02.10.2026 verlängert.',
+  'Die Frist bis 24.09.2026 wird verlängert bis zum 02.10.2026.',
+  'Die Frist wird vom 24.09.2026 auf den 02.10.2026 verschoben.'
+]){
+  const shifted=extractDeadlineDates(text)
+  assert.deepEqual(shifted.map(entry=>[entry.date.toISOString().slice(0,10),entry.state]),[['2026-09-24','superseded'],['2026-10-02','active']])
+  assert.equal(analyzeDeadlines({text,now}).primary.date,'2026-10-02')
+  assert.equal(analyzeDeadlines({text,caseDeadline:'2026-09-24',now}).primary.date,'2026-09-24','an extracted extension never overrides a manually confirmed deadline')
+}
+for(const text of [
+  'Falls die Frist bis 24.09.2026 auf den 02.10.2026 verlängert wird, melden wir uns.',
+  'Die Frist bis 24.09.2026 wurde nicht auf den 02.10.2026 verlängert.',
+  'Die Frist bis 24.09.2026 soll auf den 02.10.2026 verlängert werden.',
+  'Wird die Frist bis 24.09.2026 auf den 02.10.2026 verlängert?',
+  'Die Frist bis 24.09.2026 wird verlängert bis zum 02.10.2026?',
+  'Die Frist bis 24.09.2026 soll ersetzt werden durch die Frist bis 02.10.2026.',
+  'Die Frist bis 24.09.2026 wurde auf den 31.02.2026 verlängert.'
+])assert.equal(analyzeDeadlines({text,now}).primary.date,'2026-09-24','a request, condition, denial, question or invalid date cannot silently retire the old deadline')
+assert(!extractDeadlineDates('Die Frist für das Schreiben vom 24.09.2026 wurde auf den 02.10.2026 verlängert.').some(entry=>entry.state==='superseded'),'a referenced letter date is not evidence of the old deadline')
+const shiftOriginal={...documents[0],id:'shift-original',extracted_text:'Rechnung SHIFT-100. Zahlung bis 24.09.2026.'}
+const shiftReply={...documents[0],id:'shift-reply',extracted_text:'Rechnung SHIFT-100. Die Zahlungsfrist bis 24.09.2026 wurde auf den 02.10.2026 verlängert.'}
+assert.equal(analyzeCaseDeadlines(item,[shiftOriginal,shiftReply],now).primary.date,'2026-10-02','explicit extensions reconcile across documents with matching references')
+assert.equal(analyzeCaseDeadlines(item,[shiftOriginal,{...shiftReply,extracted_text:shiftReply.extracted_text.replace('SHIFT-100','OTHER-100')}],now).primary.date,'2026-09-24','another invoice never replaces this deadline')
 assert.equal(analyzeCaseDeadlines(item,documents.slice(0,1),now).primary.date,'2026-09-24')
 assert.equal(analyzeCaseDeadlines(item,documents,now).primary.date,'2026-10-02')
 assert.equal(analyzeDeadlines({text:documents[1].extracted_text,now}).primary.date,'2026-10-02')
