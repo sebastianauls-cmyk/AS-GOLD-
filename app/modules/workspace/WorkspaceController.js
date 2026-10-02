@@ -147,8 +147,8 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const registerReady=acceptedLegal&&confirmedTestData&&passwordPolicy.valid&&passwordMatches
   const recoveryReady=passwordPolicy.valid&&passwordMatches
   const localizedPlans=plans.map((plan,index)=>{
-    const translated=(planText[language]||{})[plan.key]
-    const journey=(planJourney[language]||planJourney.de)[plan.key]||{}
+    const translated=(planText[language]||{})[plan.key]||(planText.de||{})[plan.key]
+    const journey=(planJourney[language]||{})[plan.key]||planJourney.de[plan.key]||{}
     const base=translated?{...plan,audience:translated[0],checks:translated[1],result:translated[2],excluded:translated[3]}:plan
     return {...base,...journey,level:index+1}
   })
@@ -165,7 +165,8 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
     onContinue:()=>{const linked=selectedCase||data.cases.find(item=>item.id===selectedDocument?.case_id);if(linked){setSelectedDocument(null);setSelectedCase(linked);requestAnimationFrame(()=>document.getElementById('customer-roadmap')?.scrollIntoView({behavior:'smooth'}))}else{document.querySelector('.documentReviewForm textarea[id$="analysis-next"]')?.scrollIntoView({behavior:'smooth',block:'center'})}}
   }
   const currentPlan=useMemo(()=>plans.find(plan=>plan.key===currentTier)||plans[0],[currentTier])
-  const dg=(dashboardGuide[language]||dashboardGuide.de)[currentTier]||dashboardGuide.de.free
+  const dashboardTier=currentTier==='professional'?'analyse':currentTier
+  const dg=(dashboardGuide[language]||dashboardGuide.de)[dashboardTier]||dashboardGuide.de[dashboardTier]||dashboardGuide.de.free
   const rt=recommendationText[language]||recommendationText.de
   const tt=transparencyText[language]||transparencyText.de
   const lt=launchTrustText[language]||launchTrustText.de
@@ -202,8 +203,8 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const publicT=ui[publicLanguage]||ui.de
   const publicA=appText[publicLanguage]||appText.de
   const publicLocalizedPlans=plans.map((plan,index)=>{
-    const translated=(planText[publicLanguage]||{})[plan.key]
-    const journey=(planJourney[publicLanguage]||planJourney.de)[plan.key]||{}
+    const translated=(planText[publicLanguage]||{})[plan.key]||(planText.de||{})[plan.key]
+    const journey=(planJourney[publicLanguage]||{})[plan.key]||planJourney.de[plan.key]||{}
     const base=translated?{...plan,audience:translated[0],checks:translated[1],result:translated[2],excluded:translated[3]}:plan
     return {...base,...journey,level:index+1}
   })
