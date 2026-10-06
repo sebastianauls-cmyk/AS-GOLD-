@@ -71,6 +71,17 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   numbered.steps[1].id='99'
   assert.equal(localizedRepairTargets(numbered,[issue('steps["99"]')],schema),null,'duplicate original IDs remain ambiguous')
   assert.equal(localizedRepairTargets(data,data.analysis.topics.slice(0,9).map(t=>issue(`analysis.topics[${t.id}]`)),schema),null,'a local request has a fixed size bound')
+  // Expanded, verified quotations can dominate four otherwise small topic
+  // replacements. The model returns passage IDs, never those literal texts.
+  const heavilyCited=structuredClone(data)
+  const longPassage='A long previously verified statutory passage. '.repeat(300)
+  for(const topic of heavilyCited.analysis.topics.slice(0,4))topic.sources=[{url:'https://www.gesetze-im-internet.de/estg/__22.html',quote:longPassage}]
+  const citedFindings=[0,1,2,3].map(index=>issue(`analysis.topics[${index}]`))
+  assert(JSON.stringify(heavilyCited.analysis.topics.slice(0,4)).length>20000)
+  assert.deepEqual(localizedRepairTargets(heavilyCited,citedFindings,schema)?.map(target=>target.path),[0,1,2,3].map(index=>['analysis','topics',index]),'verified quote expansion must not block four bounded local corrections')
+  assert(heavilyCited.analysis.topics.slice(0,4).every(topic=>topic.sources[0].quote===longPassage),'size accounting never truncates the evidence used by validation or review')
+  heavilyCited.analysis.topics[0].conclusion='An oversized editable conclusion. '.repeat(800)
+  assert.equal(localizedRepairTargets(heavilyCited,citedFindings,schema),null,'editable narrative still has the same size limit')
   const assignedLocations=completeReviewLocations(data,[{scope:'analysis',topic_ids:[data.analysis.topics[1].id]}])
   assert(assignedLocations.includes('analysis.topics[1]'))
   assert(!assignedLocations.includes('analysis.topics[0]'),'an unassigned full path cannot select a correction')

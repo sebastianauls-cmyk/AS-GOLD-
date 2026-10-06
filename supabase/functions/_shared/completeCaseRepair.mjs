@@ -124,8 +124,14 @@ export function localizedRepairTargets(candidate,feedback,schema){
       const path=['analysis','calculations',index];selected.set(label(path),path)
     }
   }
-  // This is one bounded request, not another unbounded generation loop.
-  const fits=paths=>paths.length<=8&&JSON.stringify(paths.map(path=>get(candidate,path))).length<=20000
+  // Bound the editable replacement, not expanded evidence. The correction
+  // schema returns passage IDs in quote fields; the server resolves them back
+  // to the complete verified text. Counting those full passages here rejected
+  // small local corrections solely because their citations were long.
+  // This projection is for size accounting only: prompts, validation, review
+  // and stored evidence still receive the original complete quotations.
+  const fits=paths=>paths.length<=8&&JSON.stringify(paths.map(path=>get(candidate,path)),
+    (key,value)=>key==='quote'&&typeof value==='string'?'@verified-passage-reference':value).length<=20000
   if(!fits([...selected.values()]))return null
   // Correcting a source-based conclusion can also require changing its actual
   // request or follow-through. Previously these explicitly linked steps were
