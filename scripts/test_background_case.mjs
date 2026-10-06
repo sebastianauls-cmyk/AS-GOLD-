@@ -1,3 +1,4 @@
+import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
 import {PGlite} from '@electric-sql/pglite'
@@ -123,7 +124,7 @@ try {
       return Response.json({id:'synthetic-'+modelCalls,status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:JSON.stringify({calculations:analysis.calculations.filter(item=>assigned.includes(item.id))})})
     }
     const output=name==='ash_case_scope'?{issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:!!numericFixture}],research_topics:[]}
-      :name==='ash_complete_topics_v167'?{topics:analysis.topics,limitations:analysis.limitations}:name==='ash_complete_outline_v166'?{calculation_plan:analysis.calculations.map(item=>({id:item.id,title:item.title,topic_ids:item.topic_ids,purpose:item.explanation,depends_on:item.inputs.filter(input=>input.kind==='calculation').map(input=>input.calculation_id)}))}:name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:{issues}
+      :name==='ash_complete_topics_v167'?{topics:analysis.topics,limitations:analysis.limitations}:name==='ash_complete_outline_v166'?{calculation_plan:analysis.calculations.map(item=>({id:item.id,title:item.title,topic_ids:item.topic_ids,purpose:item.explanation,depends_on:item.inputs.filter(input=>input.kind==='calculation').map(input=>input.calculation_id)}))}:name==='ash_complete_reconciliation_v170'?reconciliationFixture(request):name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:{issues}
     if(localLetterScenario&&name==='ash_complete_plan_v157')output.letters=output.letters.map((letter,index)=>index?letter:{...letter,body:letter.body+' Die Anlage wurde bereits versandt.'})
     return new Response(JSON.stringify({id:'synthetic-'+modelCalls,status:'completed',usage:{input_tokens:100,output_tokens:100,input_tokens_details:{cached_tokens:20}},output_text:JSON.stringify(output)}))
   }
@@ -157,7 +158,7 @@ try {
   const complete=await drain(job.id)
   assert.equal(complete.status,'completed');assert.equal(complete.roadmap_id,job.id)
   assert.equal(new Date(complete.expires_at).getTime(),new Date(job.expires_at).getTime(),'processing never slides the original deadline')
-  assert.equal(modelCalls,8,'page closure and worker restart do not repeat completed model stages')
+  assert.equal(modelCalls,9,'page closure and worker restart do not repeat completed model stages')
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),1)
   assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null,'terminal jobs erase private candidates')
   assert.equal((await scalar('select result from case_roadmaps where id=$1',[job.id])).analysis.verification.review_response_ids.length,4)
@@ -281,7 +282,7 @@ try {
   job=await enqueue();const independentCalls=modelCalls,independentParts=reviewedParts.length
   transientStages.add('ash_complete_plan_v157');failStepsOnce=true
   assert.equal((await drain(job.id)).status,'completed')
-  assert.equal(modelCalls-independentCalls,10,'only the two independently interrupted stages repeat')
+  assert.equal(modelCalls-independentCalls,11,'only the two independently interrupted stages repeat')
   assert.deepEqual(reviewedParts.slice(independentParts).filter(({part})=>part.steps).map(({part})=>part.steps.map(item=>item.id)),[roadmapTestResult.steps.map(item=>item.id),roadmapTestResult.steps.map(item=>item.id)],'only the interrupted roadmap group repeats')
   assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),2)
   assert.equal(await scalar('select failures from private.case_analysis_work where job_id=$1',[job.id]),0)
@@ -295,7 +296,7 @@ try {
   assert.equal((await stored(job.id)).status,'queued')
   assert.ok(await scalar("select available_at>=now()+interval '90 seconds' from private.case_analysis_work where job_id=$1",[job.id]),'database does not dispatch before Retry-After')
   assert.equal((await drain(job.id)).status,'completed')
-  assert.equal(modelCalls-httpCalls,9,'only the rejected request repeats')
+  assert.equal(modelCalls-httpCalls,10,'only the rejected request repeats')
   assert.equal(await scalar('select transport_retries from private.case_analysis_work where job_id=$1',[job.id]),1)
   await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
   for(const status of [500,502,504]){
@@ -352,19 +353,19 @@ try {
   // Reproduce the live interruption at the final scope, after all prior work
   // was checkpointed. Resumption must invoke only that scope, not start over.
   job=await enqueue();const callsBeforeTimeout=modelCalls,partsBeforeTimeout=reviewedParts.length
-  for(let n=0;n<7;n++)await process(await claim(job.id))
+  for(let n=0;n<8;n++)await process(await claim(job.id))
   failLettersOnce=true;await process(await claim(job.id))
   assert.equal((await stored(job.id)).status,'queued')
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0)
   await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[job.id])
   assert.equal((await drain(job.id)).status,'completed')
-  assert.equal(modelCalls-callsBeforeTimeout,9,'only the timed-out final review is repeated')
+  assert.equal(modelCalls-callsBeforeTimeout,10,'only the timed-out final review is repeated')
   assert.deepEqual(reviewedParts.slice(partsBeforeTimeout).map(({part})=>Object.hasOwn(part,'letters')), [false,false,false,true,true])
 
   // A repeated failure still stops, with a content-free diagnostic identifying
   // the interrupted review instead of losing its scope with the checkpoint.
   job=await enqueue()
-  for(let n=0;n<6;n++)await process(await claim(job.id))
+  for(let n=0;n<7;n++)await process(await claim(job.id))
   failStepsOnce=true;await process(await claim(job.id))
   assert.equal((await stored(job.id)).status,'queued')
   await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[job.id])
@@ -435,12 +436,12 @@ try {
       assert.equal(await scalar('select count(*)::integer from private.case_model_calls where job_id=$1 and charged_output_tokens=8000 and settled_at is not null',[job.id]),1,'the incomplete request remains fully charged')
     }else assert.equal((await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]))===numericCheckpoint,true,'a failed later provider response cannot erase the sealed earlier calculations')
     assert.equal((await drain(job.id)).status,'completed')
-    assert.equal(modelCalls-numericCallsBefore,failureKind==='truncated'?13:11,'generation plus all four review scopes; only the failed provider call repeats')
+    assert.equal(modelCalls-numericCallsBefore,failureKind==='truncated'?14:12,'generation plus all four review scopes; only the failed provider call repeats')
     assert.deepEqual(numericRequests,failureKind==='truncated'?[Array.from({length:6},(_,i)=>'number_'+i),Array.from({length:6},(_,i)=>'number_'+(i+6)),['number_6','number_7','number_8'],['number_9','number_10','number_11'],['number_12']]:[Array.from({length:6},(_,i)=>'number_'+i),['number_6'],['number_6']])
     const numericResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
     assert.equal(numericResult.analysis.calculations.length,failureKind==='truncated'?13:7)
     assert(numericResult.analysis.calculations.every(item=>item.result==='1000.00'),'cross-batch dependencies retain exact checked values')
-    assert.equal(numericResult.analysis.verification.analysis_response_ids.length,failureKind==='truncated'?6:4)
+    assert.equal(numericResult.analysis.verification.analysis_response_ids.length,failureKind==='truncated'?7:5)
     assert.equal(numericResult.analysis.verification.review_response_ids.length,4)
     assert.equal(await scalar('select checkpoint from private.case_analysis_work where job_id=$1',[job.id]),null)
     assert.equal(new Date((await stored(job.id)).expires_at).getTime(),new Date(job.expires_at).getTime())

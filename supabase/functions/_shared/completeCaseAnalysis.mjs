@@ -63,6 +63,7 @@ const str={type:'string'},strings={type:'array',items:str}
 const object=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)})
 const array=items=>({type:'array',items})
 const enumeration=values=>({type:'string',enum:values})
+const ESTABLISHED_FINDINGS_RULES='A document-reported receipt remains an established reported fact with its exact attribution; do not turn it into an independently bank-verified fact, but do not require a bank statement merely to reconfirm that same reported receipt or its documented amounts. Distinguish genuinely missing account identity, allocation or a documented contradiction from a missing receipt. Likewise, completed server-checked arithmetic is no longer a future task. Preserve its established result and reserve open questions only for the specific remaining factual or legal predicate. Apply this distinction to conclusions, conditions, questions, actions and letters.'
 const citation=object({url:str,quote:str})
 const scopeSchema=object({
   issues:{...array(object({id:{type:'string',pattern:'^[-a-zA-Z0-9_]{1,50}$'},title:str,reason:str,calculation_needed:{type:'boolean'}})),minItems:1,maxItems:MAX_TOPICS},
@@ -127,6 +128,19 @@ const PLAN_SCHEMA=object({...ROADMAP_SCHEMA.properties,
 const normalized=value=>String(value||'').replace(/\s+/gu,' ').trim()
 const fail=message=>{throw new Error(message)}
 const validationFeedback=(error,location)=>error.analysisIssues||[{code:'source',location,reason:error.message}]
+function reconciledTopicsSchema(topics){
+  return object({topics:{...array(object({id:enumeration(topics.map(topic=>topic.id)),status:analysisSchema.properties.topics.items.properties.status,conclusion:str,conditions:str})),minItems:topics.length,maxItems:topics.length}})
+}
+function applyReconciledTopics(raw,analysis){
+  const fields=['id','status','conclusion','conditions']
+  if(!raw||Object.keys(raw).length!==1||!Array.isArray(raw.topics)||raw.topics.length!==analysis.topics.length)componentFailure('analysis.topics','Der Abgleich muss genau alle vorhandenen Fallfragen enthalten.')
+  const topics=analysis.topics.map((topic,index)=>{
+    const update=raw.topics[index]
+    if(!update||Object.keys(update).length!==fields.length||fields.some(key=>typeof update[key]!=='string')||update.id!==topic.id)componentFailure(`analysis.topics[${index}]`,'Der Abgleich darf nur Status, Schlussfolgerung und Bedingungen der zugewiesenen Fallfrage ändern; ID und Reihenfolge müssen gleich bleiben.')
+    return {...topic,status:update.status,conclusion:update.conclusion,conditions:update.conditions}
+  })
+  return {...analysis,topics}
+}
 
 export function completeResearchScope(source){
   const codes=[...new Set([source.case.home_country,source.case.target_country].filter(Boolean))]
@@ -301,7 +315,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     ...(unreadSources.length?{unread_source_urls:unreadSources}:{}),
     ...(missingSources.length?{unavailable_selected_source_urls:missingSources}:{}),
     country_scope:countryScope.countries.map(({code,caveat})=>({code,caveat})),unconfigured:countryScope.unconfigured}
-  const baseInstructions=baseRequest.instructions.replace(/No external research has been performed in this workflow\.[^\n]+/,'External research is supplied below. Only those retrieved texts may support external claims.');
+  const baseInstructions=baseRequest.instructions.replace(/No external research has been performed in this workflow\.[^\n]+/,'External research is supplied below. Only those retrieved texts may support external claims.')+'\n'+ESTABLISHED_FINDINGS_RULES;
   const request={...baseRequest,model,reasoning:{effort:'low'},instructions:baseInstructions+'\n'+FULL_INSTRUCTIONS+'\nQuotation contract: originals and research are supplied as indexed passages. In every quote field, return ONLY the exact passage ID (for example @d0_2 or @s1_3); the server inserts BOTH its original document_id or URL and the literal text from that single indexed passage. Do not output a separate document_id or URL alongside a quote. Document evidence, fact evidence and deadlines require @d IDs. Research citations and source inputs require @s IDs. The letter document_ids list still uses the original document IDs. Choose a passage containing the claimed number or date. Never invent a passage ID or rewrite its text. Use short concise fields; include all decisive supported financial comparisons, including gross/net differences and allocations, even when the final legal classification remains open.',input:[{role:'user',content:[{type:'input_text',text:JSON.stringify({style,source:indexed.source,...context,retrieved_sources:indexed.research})}]}],text:{format:{type:'json_schema',name:'ash_complete_case_v157',strict:true,schema:indexedQuotationSchema(COMPLETE_ANALYSIS_SCHEMA)}},max_output_tokens:22000}
   const validate=(raw,repair={})=>{if(!draftLetters)raw.letters=[];return validateCompleteAnalysis(resolveQuotationIds(raw,quotes),source,{outputLanguage,referenceLanguage,scope:current.scope,research:current.research,...repair})}
   const reviewOriginals=baseReviewContent.map(item=>item.type==='input_text'?{...item,text:item.text.replace('Original evidence only; no external research was performed.','Original documents plus the separately supplied fetched sources and checked calculations.')} :item)
@@ -334,6 +348,26 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   }
   if(!current.modelState||current.modelState.stage==='generation'){
     if(attempt>1)throw new ModelWorkflowError('Eine vollständige Neuberechnung ist in diesem Auftrag nicht zulässig.',409,'correction_invalid')
+    if(current.draftAnalysis&&!current.reconciliation_response_id){
+      // Initial topical drafts precede arithmetic. Finalize their narrative only
+      // after every result is checked, before any roadmap/question/letter uses it.
+      // One bounded synthesis, never another content-repair loop. Sources, IDs,
+      // calculations and limitations remain immutable and every review still runs.
+      const validation={scope:current.scope,research:current.research}
+      let checkedAnalysis
+      try{checkedAnalysis=validateAnalysisContent(current.draftAnalysis,source,validation)}
+      catch(error){throw new ModelWorkflowError('Der Schlussabgleich enthält ungültige Grundlagen. Kein neues Ergebnis gespeichert.',422,'source_unresolved',validationFeedback(error,'analysis'))}
+      const {retrieved_sources,...originals}=JSON.parse(request.input[0].content[0].text)
+      const reconciliationRequest={...request,reasoning:{effort:'medium'},instructions:request.instructions+'\nFinalize ONLY status, conclusion and conditions for EVERY checked_analysis topic, preserving its ID and order. This is one bounded reconciliation after ALL arithmetic, before the roadmap. The prior topic text was drafted before calculations and is untrusted draft material, not evidence. Use every linked checked result, with its conditions and exact attribution, to replace stale statements that a completed calculation is still pending. Check each requested factual confirmation against the original documents: retain a reported receipt as reported, retaining what the original does and does not establish. Separate answered sub-findings from real remaining questions inside each topic. Preserve unchanged supported wording, all legal qualifications, exceptions and relevant conditional outcomes. Do not compute new amounts, introduce new legal propositions, remove required duties or treat an assumption as a fact. Sources, formulas, results, titles, limitations and step links are read-only. Keep conclusions concise and complete. Return exactly the assigned fields; this synthesis is not final approval and the independent reviews remain mandatory.',input:[{role:'user',content:[
+        {type:'input_text',text:JSON.stringify(originals),prompt_cache_breakpoint:{mode:'explicit'}},
+        {type:'input_text',text:JSON.stringify({retrieved_sources}),prompt_cache_breakpoint:{mode:'explicit'}}
+      ]},{role:'user',content:[{type:'input_text',text:JSON.stringify({checked_analysis:checkedAnalysis})}]}],text:{format:{type:'json_schema',name:'ash_complete_reconciliation_v170',strict:true,schema:reconciledTopicsSchema(checkedAnalysis.topics)}},max_output_tokens:9000,prompt_cache_options:{mode:'explicit'},prompt_cache_key:'ash-reconcile:'+source.case.id}
+      const reconciled=await invoke(reconciliationRequest,'analysis_generation')
+      let analysis
+      try{analysis=validateAnalysisContent(applyReconciledTopics(reconciled.parsed,checkedAnalysis),source,validation)}
+      catch(error){throw new ModelWorkflowError('Der einmalige Schlussabgleich ist ungültig. Kein neues Ergebnis gespeichert.',422,'source_unresolved',validationFeedback(error,'analysis'))}
+      return {status:'processing',state:{...current,draftAnalysis:analysis,reconciliation_response_id:reconciled.response_id,analysis_response_id:reconciled.response_id,analysis_response_ids:[...(current.analysis_response_ids||[]),reconciled.response_id]}}
+    }
     const writingPlan=!!current.draftAnalysis
     const outline=current.analysisOutline||null
     const topicDraft=current.topicDraft||null

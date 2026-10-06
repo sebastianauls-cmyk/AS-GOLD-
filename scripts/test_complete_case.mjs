@@ -1,3 +1,5 @@
+import './test_case_reconciliation.mjs'
+import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
 import './test_case_review_cache.mjs'
 import './test_case_research_context.mjs'
@@ -311,7 +313,7 @@ const fetchImpl=async(url,options)=>{
     assert.equal(fields.key_points.minItems,1);assert.equal(fields.steps.minItems,1)
   }
   const {analysis,...plan}=candidate
-  const output=name==='ash_case_scope'?scope:name==='ash_complete_topics_v167'?topicFixture(analysis,request):name==='ash_complete_outline_v166'?outlineFixture(analysis):name==='ash_complete_numbers_v157'?{calculations:structuredClone(analysis.calculations)}:name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
+  const output=name==='ash_case_scope'?scope:name==='ash_complete_topics_v167'?topicFixture(analysis,request):name==='ash_complete_outline_v166'?outlineFixture(analysis):name==='ash_complete_numbers_v157'?{calculations:structuredClone(analysis.calculations)}:name==='ash_complete_reconciliation_v170'?reconciliationFixture(request):name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
   if(name==='ash_complete_numbers_v157')for(const calculation of output.calculations)for(const input of calculation.inputs){
     const passage=[...quotationIndex(source,[]).values()].find(entry=>entry.document_id===input.document_id&&entry.quote.includes(input.quote))
     assert(passage,'integration fixture must select a real containing passage')
@@ -338,6 +340,7 @@ for(const repeatOverflow of [false,true]){
       }
       output=generations===1||repeatOverflow?outlineFixture(overBudget.analysis):outlineFixture(candidate.analysis)
     }else if(name==='ash_complete_numbers_v157')output={calculations:structuredClone(candidate.analysis.calculations)}
+    else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       const {analysis,...plan}=candidate;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else {reviews++;output={issues:[]}}
@@ -377,6 +380,7 @@ let flow=await advanceCompleteAnalysis(args);assert.equal(flow.state.stage,'anal
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.topicDraft);assert.equal(flow.state.draftAnalysis,null)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.analysisOutline);assert.equal(flow.state.draftAnalysis,null)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
+flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.reconciliation_response_id);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
 for(let part=0;part<3;part++){
   flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result,'letters still require their separate review before acceptance')
@@ -384,7 +388,7 @@ for(let part=0;part<3;part++){
   if(part===0)for(const reviewGroups of [undefined,[],[[0,1]]])await assert.rejects(advanceCompleteAnalysis({...args,state:{...flow.state,reviewGroups}}),error=>error.code==='review_coverage_changed','existing approvals cannot be reassigned to changed groups')
 }
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'completed');assert.equal(flow.result.analysis.calculations[0].result,'1000.00');assert.equal(flow.result.analysis.verification.search_response_id,null)
-assert.equal(calls,9,'no external research is claimed for an arithmetic-only case')
+assert.equal(calls,10,'no external research is claimed for an arithmetic-only case')
 // A local letter repair must not rebuild arithmetic or pay for identical
 // independent reviews. A changed dependent action invalidates those receipts.
 for(const change of ['letter','dependent_step','unlocated']){
@@ -398,6 +402,7 @@ for(const change of ['letter','dependent_step','unlocated']){
     else if(name==='ash_complete_topics_v167'){topics++;output=topicFixture(candidate.analysis,request)}
     else if(name==='ash_complete_outline_v166')output=outlineFixture(candidate.analysis)
     else if(name==='ash_complete_numbers_v157'){numbers++;output={calculations:structuredClone(candidate.analysis.calculations)}}
+    else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       plans++
       const {analysis,...plan}=structuredClone(candidate)
@@ -422,12 +427,12 @@ for(const change of ['letter','dependent_step','unlocated']){
   assert.equal(patches,change==='unlocated'?0:1)
   if(change!=='letter'){
     assert.equal(failure?.code,'review_unresolved');assert(!repaired.result)
-    assert.equal(paid,change==='unlocated'?9:10,'unrepairable findings stop without paying for a replacement analysis')
+    assert.equal(paid,change==='unlocated'?10:11,'unrepairable findings stop without paying for a replacement analysis')
   }else{
     assert.equal(failure,undefined);assert.equal(repaired.status,'completed');assert.equal(repaired.attempts,2)
     assert.deepEqual(repaired.result.analysis.calculations,checked.analysis.calculations)
     assert.equal(repaired.result.analysis.verification.review_response_ids.length,4)
-    assert.equal(paid,11,'nine initial requests plus one local repair and one changed review')
+    assert.equal(paid,12,'ten initial requests plus one local repair and one changed review')
     assert.equal(reviews,5);assert.equal(repaired.result.analysis.verification.reused_review_response_ids.length,3)
   }
 }
@@ -473,7 +478,8 @@ for(const outcome of ['accepted','rejected','invalid_patch']){
     else if(name==='ash_complete_numbers_v157'){
       numbers++;output={calculations:structuredClone(candidate.analysis.calculations)}
       if(numbers===1)output.calculations[0].inputs[0].value='19000'
-    }else if(name==='ash_complete_plan_v157'){
+    }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    else if(name==='ash_complete_plan_v157'){
       plans++;const {analysis,...plan}=candidate
       output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else if(name==='ash_complete_repair_v169'){
@@ -523,7 +529,8 @@ for(const repairOutcome of ['complete','partial','none']){
         assert.deepEqual(feedback.map(issue=>issue.location),['analysis.calculations[0].inputs[0].value','analysis.calculations[0].inputs[1].value'])
         assert(feedback.every(issue=>issue.reason.includes('steht nicht im angegebenen Beleg')))
       }
-    }else if(name==='ash_complete_plan_v157'){
+    }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    else if(name==='ash_complete_plan_v157'){
       const component=JSON.parse(request.input.at(-1).content[0].text)
       assert.equal(component.analysis.calculations[0].result,'1000.00','plan receives only successfully checked arithmetic')
       const {analysis,...plan}=candidate
@@ -548,7 +555,7 @@ for(const repairOutcome of ['complete','partial','none']){
   while(repairFlow.status==='processing')repairFlow=await advanceCompleteAnalysis({...args,fetchImpl:repairFetch,state:repairFlow.state})
   assert.equal(repairFlow.result.analysis.calculations[0].result,'1000.00')
   assert.equal(repairFlow.result.analysis.verification.review_response_ids.length,4)
-  assert.equal(stages.length,10,'one source correction, one plan and all four grouped reviews')
+  assert.equal(stages.length,11,'one source correction, one reconciliation, one plan and all four grouped reviews')
 }
 // A provider may not omit, rename, reorder or reassign the stored work plan.
 for(const defect of ['missing','extra','renamed','topic','forward_dependency']){
@@ -652,7 +659,8 @@ const bigFetch=async(url,options)=>{
     }
     output={calculations:structuredClone(big.analysis.calculations.filter(item=>assigned.some(plan=>plan.id===item.id)))}
     if(!badInputRounds.has(bigRound)){badInputRounds.add(bigRound);output.calculations[0].inputs[0].value='19000'}
-  }else if(name==='ash_complete_plan_v157'){
+  }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+  else if(name==='ash_complete_plan_v157'){
     const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
   }else{
     assert.equal(request.reasoning.effort,'high')
@@ -681,9 +689,9 @@ for(let i=0;bigFlow.status==='processing'&&i<120;i++){
   try{bigFlow=await advanceCompleteAnalysis({...bigArgs,state:bigFlow.state})}
   catch(error){if(error.code!=='provider_timeout')throw error;assert(++transportFailures<=3)}
 }
-assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,16+expectedGroups.length);assert.equal(bigGenerated,6);assert.equal(bigFlow.attempts,1)
+assert.equal(bigFlow.status,'completed');assert.equal(bigCalls,17+expectedGroups.length);assert.equal(bigGenerated,6);assert.equal(bigFlow.attempts,1)
 assert.equal(transportFailures,3)
-assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,10)
+assert.equal(bigFlow.result.analysis.verification.analysis_response_ids.length,11)
 const expectedTopicBatches=Array.from({length:5},(_,i)=>big.analysis.topics.slice(i*2,i*2+2).map(item=>item.id))
 expectedTopicBatches.splice(2,0,expectedTopicBatches[1])
 assert.deepEqual(generatedTopics.map(item=>item.ids),expectedTopicBatches,'only the interrupted topic request repeats')
@@ -815,7 +823,8 @@ for(const rejectWholeCase of [false,true]){
     else if(name==='ash_complete_outline_v166')output=outlineFixture(moduleCandidate.analysis)
     else if(name==='ash_complete_numbers_v157'){
       output={calculations:moduleCandidate.analysis.calculations.filter(item=>component.assigned_calculations.some(assigned=>assigned.id===item.id))}
-    }else if(name==='ash_complete_plan_v157'){
+    }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    else if(name==='ash_complete_plan_v157'){
       const {analysis,...plan}=moduleCandidate;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else{
       const assignment=payloads.find(item=>item.assigned_review).assigned_review
@@ -846,7 +855,7 @@ for(const rejectWholeCase of [false,true]){
     assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(run.attempts,1)
     assert.deepEqual(run.result.analysis.research_sources,research)
     assert.deepEqual(run.result.analysis.verification.review_coverage,expectedCoverage)
-    assert.equal(calls,11+run.result.analysis.verification.review_groups.length)
+    assert.equal(calls,12+run.result.analysis.verification.review_groups.length)
     assert(calls<36,'full review coverage requires fewer requests than the previous workflow')
     console.log(JSON.stringify({synthetic_module_payload:{requests:calls,scoped_requests:scopedRequests,bytes,full_context_bytes:fullBytes,reduction_percent:Number((100*(1-bytes/fullBytes)).toFixed(1))}}))
     assert(bytes<fullBytes)

@@ -1,3 +1,4 @@
+import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
 import './test_background_case_request.mjs'
 import fs from 'node:fs'
@@ -75,11 +76,11 @@ globalThis.fetch=async(url,options)=>{
   assert.equal(url,'https://api.openai.com/v1/responses','unexpected external request')
   state.modelCalls++
   const request=JSON.parse(options.body)
-  const generation=['ash_customer_roadmap_v136','ash_complete_topics_v167','ash_complete_outline_v166','ash_complete_plan_v157'].includes(request.text.format.name)
+  const generation=['ash_customer_roadmap_v136','ash_complete_topics_v167','ash_complete_outline_v166','ash_complete_reconciliation_v170','ash_complete_plan_v157'].includes(request.text.format.name)
   if(request.text.format.name==='ash_case_scope')return new Response(JSON.stringify({id:'scope-test',status:'completed',output_text:JSON.stringify({issues:[{id:'source',title:'Auszahlung',reason:'Originale prüfen',calculation_needed:false}],research_topics:[]})}))
   if(!generation&&state.reviewGate)await state.reviewGate()
   const analysis={topics:[{id:'source',title:'Auszahlung',status:'open',conclusion:'Die Anlage fehlt.',conditions:'Anlage beschaffen.',sources:[],step_ids:[]}],calculations:[],limitations:[]}
-  const output=request.text.format.name==='ash_complete_topics_v167'?{topics:analysis.topics,limitations:analysis.limitations}:request.text.format.name==='ash_complete_outline_v166'?{calculation_plan:[]}:request.text.format.name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:generation?roadmapTestResult:{issues:state.issues}
+  const output=request.text.format.name==='ash_complete_topics_v167'?{topics:analysis.topics,limitations:analysis.limitations}:request.text.format.name==='ash_complete_outline_v166'?{calculation_plan:[]}:request.text.format.name==='ash_complete_reconciliation_v170'?reconciliationFixture(request):request.text.format.name==='ash_complete_plan_v157'?{...roadmapTestResult,topic_steps:[{id:'source',step_ids:['anfragen']}]}:generation?roadmapTestResult:{issues:state.issues}
   return new Response(JSON.stringify({id:'synthetic-'+state.modelCalls,status:'completed',output_text:JSON.stringify(output)}))
 }
 async function call(body=baseBody){

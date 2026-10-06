@@ -23,17 +23,17 @@ export async function testRetainedCaseWork({db,client,owner,caseId,secret,proces
     // The production authorization service also updates this timestamp.
     await db.exec('alter table public.account_privacy_settings add column if not exists updated_at timestamptz default now()')
     // A real terminal lifetime stop after seven successful simulated stages. The new
-    // explicit job needs only the eighth stage and retains all review receipts.
+    // explicit job needs only the ninth stage and retains all review receipts.
     const before=modelCalls()
     let job=await fresh()
-    for(let i=0;i<7;i++)await run(await claim(job.id))
+    for(let i=0;i<8;i++)await run(await claim(job.id))
     const encrypted=await snapshot()
     assert(encrypted?.ciphertext)
     assert.doesNotMatch(encrypted.ciphertext,/Auszahlung|Anlage|topics|reviewIds/)
     assert.equal(new Date(encrypted.expires_at)-new Date(encrypted.saved_at),24*60*60*1000)
     const originalId=job.id,originalExpiry=job.expires_at
     const originalSpend=await scalar('select count(*)::integer from private.case_model_calls where job_id=$1',[job.id])
-    assert.equal(originalSpend,7)
+    assert.equal(originalSpend,8)
     await stop(job)
     assert(await snapshot(),'terminal expiry preserves encrypted progress')
     await db.query("update public.account_privacy_settings set ai_processing_enabled=true,updated_at=now()+interval '1 second' where owner_id=$1",[owner])
@@ -43,7 +43,7 @@ export async function testRetainedCaseWork({db,client,owner,caseId,secret,proces
     assert.equal(new Date(job.expires_at)-new Date(job.created_at),60*60*1000)
     await run(await claim(job.id))
     assert.equal((await stored(job.id)).status,'completed')
-    assert.equal(modelCalls()-before,8,'completed stages are not paid for again after terminal interruption')
+    assert.equal(modelCalls()-before,9,'completed stages are not paid for again after terminal interruption')
     const result=await scalar('select result from public.case_roadmaps where id=$1',[job.id])
     assert.equal(result.analysis.verification.review_response_ids.length,4)
     assert.deepEqual([...new Set(result.analysis.verification.review_scopes)],['analysis','calculations','roadmap','letters'])
@@ -171,6 +171,6 @@ export async function testRetainedCaseWork({db,client,owner,caseId,secret,proces
     assert.equal(modelCalls(),beforeUnavailable)
     assert.equal((await stored(job.id)).error_code,'retained_work_unavailable')
     await cleanup()
-    console.log('Retained work: terminal interruption resumes 7 completed stages with only 1 remaining model call; 4 grouped reviews, unchanged accounting, private access, expiry, context binding and deletion verified. All provider responses simulated.')
+    console.log('Retained work: terminal interruption resumes 8 completed stages with only 1 remaining model call; 4 grouped reviews, unchanged accounting, private access, expiry, context binding and deletion verified. All provider responses simulated.')
   }finally{await db.exec('reset role');await cleanup()}
 }

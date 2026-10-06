@@ -1,3 +1,4 @@
+import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
 import {advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {completeReviewLocations,resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair} from '../supabase/functions/_shared/completeCaseRepair.mjs'
@@ -184,7 +185,8 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       counts.numbers++
       const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations
       output={calculations:big.analysis.calculations.filter(c=>assigned.some(a=>a.id===c.id)).map(cleanCalculation)}
-    }else if(name==='ash_complete_plan_v157'){
+    }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    else if(name==='ash_complete_plan_v157'){
       counts.plans++
       const {analysis,...plan}=structuredClone(big);output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else if(name==='ash_complete_repair_v169'){
@@ -299,7 +301,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   const invalid=structuredClone(data);invalid.analysis.calculations[0].inputs[0].value='19000'
   await assert.rejects(advanceCompleteAnalysis({...args,state:{stage:'analysis',scope:bigScope,research:[],modelState:{stage:'review',attempt:1,candidate:invalid}},fetchImpl:async()=>{unexpectedCalls++;throw Error('No paid audit of invalid source input')}}),error=>error.code==='source_unresolved')
   assert.equal(unexpectedCalls,0)
-  assert.equal(initialCalls,20,'maximum-size no-research fixture previously needed 37 initial calls')
-  assert.equal(counts.total,22,'one local correction reduces the former 39-call scenario to 22')
+  assert.equal(initialCalls,21,'maximum-size no-research fixture previously needed 37 initial calls')
+  assert.equal(counts.total,23,'one local correction reduces the former 39-call scenario to 23')
   console.log(`Grouped complete-case correction: ${counts.total} simulated requests; ${initialCalls} for the first candidate, then 1 replacement + 1 changed review; all 25 sections covered by ${groupCount} current approvals. No live model cost measured.`)
 }
