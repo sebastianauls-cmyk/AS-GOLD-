@@ -5,6 +5,7 @@ import * as recovery from '../app/modules/auth/passwordRecoveryFlow.mjs'
 import { resolveWorkspaceEntry } from '../app/modules/workspace/sessionEntry.mjs'
 import { isAnonymousTestSession } from '../app/modules/auth/sessionIdentity.mjs'
 import { passwordRecoveryUi } from '../app/modules/auth/passwordUi.js'
+import { createAuthFetch } from '../app/modules/services/authTransport.mjs'
 
 const member={user:{id:'synthetic-member',email:'member@example.invalid',is_anonymous:false}}
 const guest={user:{id:'synthetic-guest',is_anonymous:true}}
@@ -134,7 +135,7 @@ for(const session of [null,guest]){
   const browser=fakeBrowser('https://app.example/#type=recovery')
   let capturedBeforeClient=false
   const source=fs.readFileSync('app/modules/services/supabaseClient.js','utf8').replace(/^import .*$/gm,'').replace('export const supabase','const supabase')
-  const context={capturePasswordRecovery:()=>recovery.capturePasswordRecovery(browser),SUPABASE_PUBLISHABLE_KEY:'synthetic-public-key',SUPABASE_URL:'https://app.example',
+  const context={createAuthFetch,capturePasswordRecovery:()=>recovery.capturePasswordRecovery(browser),SUPABASE_PUBLISHABLE_KEY:'synthetic-public-key',SUPABASE_URL:'https://app.example',
     createClient:()=>{capturedBeforeClient=recovery.isPasswordRecoveryActive();return {}}}
   vm.createContext(context);vm.runInContext(source,context)
   assert.equal(capturedBeforeClient,true)
