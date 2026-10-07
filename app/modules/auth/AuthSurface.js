@@ -9,6 +9,7 @@ import { TeamAccountLoginNotice } from '../team-account/TeamAccountLoginNotice'
 import { getTeamAccountCopy, isTeamLoginScreen } from '../team-account/teamAccountConfig.mjs'
 import { APP_VERSION } from '../release/appRelease.mjs'
 import { finishPasswordRecovery } from './passwordRecoveryFlow.mjs'
+import { getSignInProgressCopy } from './signInProgressCopy.mjs'
 
 const v131AuthCopy={
   de:{badge:'Stand v131',headline:'Mehr als nur anmelden – Ihr digitaler Arbeitsbereich',lead:'Fälle verstehen, Dokumente auswerten, Länder vergleichen und Ergebnisse verständlich ausgeben.',features:[['📄','Dokumente & Fotos','Hochladen, erkennen, strukturieren und fallbezogen auswerten.'],['🌍','Sprachen & Länder','Mehrsprachige Eingabe und Ausgabe sowie Rechtsraumvergleich nach Zielland.'],['🚦','Analyse mit Ampel','Ergebnisse, Risiken, fehlende Unterlagen und nächste Schritte sofort erkennen.'],['✉️','Zweisprachige Schreiben','Kunden- und Empfängerschreiben auf Wunsch in zwei Sprachen ausgeben.'],['🎙️','Eingabe per Sprache','Sachverhalte auch per Mikrofon erfassen und weiterverarbeiten.'],['📤','Ausgabe & Freigabe','PDF/Word-Workflows, Vorschau und Freigabe vor der Weitergabe.']],hint:'Noch keinen Zugang? Kostenlos registrieren oder zuerst die Erklärung ansehen.',explain:'Erklärung ansehen'},
@@ -32,9 +33,11 @@ const v131CurrentHighlights=[
   ['🎟️','Promo-Code / promo code']
 ]
 
-export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setDisplayName,email,setEmail,password,setPassword,password2,setPassword2,showPassword,setShowPassword,showPassword2,setShowPassword2,pui,recoveryCopy,v28,acceptedLegal,setAcceptedLegal,confirmedTestData,setConfirmedTestData,registerReady,recoveryReady,register,signIn,signInTeam,resetPassword,completePasswordRecovery,message,lt,setScreen}){
+export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setDisplayName,email,setEmail,password,setPassword,password2,setPassword2,showPassword,setShowPassword,showPassword2,setShowPassword2,pui,recoveryCopy,v28,acceptedLegal,setAcceptedLegal,confirmedTestData,setConfirmedTestData,registerReady,recoveryReady,register,signIn,signInStatus='idle',signInTeam,resetPassword,completePasswordRecovery,message,lt,setScreen}){
   const isTeamLogin=isTeamLoginScreen(screen)
   const team=getTeamAccountCopy(language)
+  const signInCopy=getSignInProgressCopy(language)
+  const signInPending=signInStatus!=='idle'
   const resetSensitiveFields=()=>{
     finishPasswordRecovery()
     setShowPassword(false)
@@ -87,11 +90,13 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
       <small className="authHelp">{lt.passwordResetHelp}</small>
     </form>
   }else{
-    authForm=<form onSubmit={signIn}>
-      <label>{a.email}<input type="email" value={email} onChange={event=>setEmail(event.target.value)} autoComplete="username" required/></label>
-      <PasswordField id="login-password" label={a.password} value={password} onChange={event=>setPassword(event.target.value)} visible={showPassword} onToggle={()=>setShowPassword(value=>!value)} labels={pui} autoComplete="current-password"/>
-      <button className="primary full">{isTeamLogin?team.login:t.login}</button>
-      <button type="button" className="linkBtn full" onClick={openResetRequest}>{lt.passwordReset}</button>
+    authForm=<form method="post" onSubmit={signIn} aria-busy={signInPending}>
+      <label>{a.email}<input type="email" name="email" value={email} onChange={event=>setEmail(event.target.value)} autoComplete="username" readOnly={signInPending} required/></label>
+      <PasswordField id="login-password" name="password" label={a.password} value={password} onChange={event=>setPassword(event.target.value)} visible={showPassword} onToggle={()=>setShowPassword(value=>!value)} labels={pui} autoComplete="current-password" readOnly={signInPending}/>
+      <button type="submit" className="primary full" disabled={signInPending}>{signInPending?signInCopy.pending:t.login}</button>
+      {signInPending&&<div className="note" role="status" aria-live="polite">{signInStatus==='slow'?signInCopy.slow:signInStatus==='loading-workspace'?signInCopy.loading:signInCopy.pending}</div>}
+      {signInStatus==='slow'&&<button type="button" className="linkBtn full" onClick={()=>window.location.reload()}>{signInCopy.reload}</button>}
+      <button type="button" className="linkBtn full" disabled={signInPending} onClick={openResetRequest}>{lt.passwordReset}</button>
       <small className="authHelp">{lt.passwordResetHelp}</small>
     </form>
   }
@@ -118,17 +123,18 @@ export function AuthSurface({screen,t,a,language,setLanguage,tt,displayName,setD
             {v131CurrentHighlights.map(([icon,label])=><span key={label} style={{fontSize:'12px',padding:'5px 8px',borderRadius:'999px',background:'var(--card, #fff)',border:'1px solid var(--line, #e3e7ee)'}}>{icon} {label}</span>)}
           </div>
           <p className="muted" style={{marginBottom:'8px',fontSize:'13px'}}>{c.hint}</p>
-          <button type="button" className="linkBtn full" onClick={()=>{resetSensitiveFields();setScreen('public')}}>{c.explain}</button>
+          <button type="button" className="linkBtn full" disabled={signInPending} onClick={()=>{resetSensitiveFields();setScreen('public')}}>{c.explain}</button>
         </div>}
         {isTeamLogin?<TeamAccountLoginNotice language={language}/>:null}
         <p className="muted">{title}</p>
         {screen==='register'&&<div className="registerTransparency"><b>{tt.registerTitle}</b><p>{tt.registerNote}</p><span>✓ {a.noSubscription}</span></div>}
         {authForm}
         {message&&<div className="note" role="status">{message}</div>}
-        {isTeamLogin?<a className="linkBtn full btn" href="/insider">{team.back}</a>:<button className="linkBtn full" onClick={()=>{resetSensitiveFields();setScreen(returnToLogin?'login':'register')}}>{returnToLogin?recoveryCopy.back:a.newHere}</button>}
-        <button className="backBtn full authBackBtn" data-persistent-back type="button" onClick={()=>{resetSensitiveFields();setScreen('public')}}>{a.backExplanation}</button>
+        {isTeamLogin?<a className="linkBtn full btn" href="/insider">{team.back}</a>:<button className="linkBtn full" disabled={signInPending} onClick={()=>{resetSensitiveFields();setScreen(returnToLogin?'login':'register')}}>{returnToLogin?recoveryCopy.back:a.newHere}</button>}
+        <button className="backBtn full authBackBtn" data-persistent-back type="button" disabled={signInPending} onClick={()=>{resetSensitiveFields();setScreen('public')}}>{a.backExplanation}</button>
       </section>
     </main>
     <LegalFooter language={language}/>
   </>
 }
+

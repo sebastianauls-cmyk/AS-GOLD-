@@ -44,6 +44,7 @@ export function createWorkspaceAuthActions({
   acceptedLegal,
   confirmedTestData,
   validatePassword,
+  setEmail,
   setPassword,
   setPassword2,
   setAcceptedLegal,
@@ -57,7 +58,9 @@ export function createWorkspaceAuthActions({
   setUser,
   setScreen,
   setMessage,
-  sessionLoadRef
+  sessionLoadRef,
+  signInAttemptRef={current:null},
+  setSignInStatus=()=>{}
 }){
   async function performLoadApp(session,request){
     const recoveryAtStart=request.recoveryRevision
@@ -142,15 +145,36 @@ export function createWorkspaceAuthActions({
 
   async function signIn(event){
     event.preventDefault()
+    if(signInAttemptRef.current)return false
+    // Password managers may fill the DOM before React has received a change event.
+    // Capture the submitted fields synchronously, before any render or await.
+    const fields=event.currentTarget?.elements
+    const submittedEmail=(fields?.namedItem('email')?.value??email).trim()
+    const submittedPassword=fields?.namedItem('password')?.value??password
+    if(!submittedEmail||!submittedPassword){
+      setMessage(getAuthErrorMessage({code:'invalid_credentials'},language))
+      return false
+    }
+    const attempt={}
+    signInAttemptRef.current=attempt
+    setEmail?.(submittedEmail)
+    setPassword?.(submittedPassword)
+    setSignInStatus('submitting')
     setMessage('')
     try{
-      const {data:authData,error}=await signInSession(supabase,{email:email.trim(),password})
+      const {data:authData,error}=await signInSession(supabase,{email:submittedEmail,password:submittedPassword})
       if(error){setMessage(getAuthErrorMessage(error,language));return false}
       if(!authData?.session?.user?.id){setMessage(getAuthErrorMessage({code:'auth_unavailable'},language));return false}
+      setSignInStatus('loading-workspace')
       return await loadApp(authData.session)
     }catch{
       setMessage(getAuthErrorMessage({code:'auth_unavailable'},language))
       return false
+    }finally{
+      if(signInAttemptRef.current===attempt){
+        signInAttemptRef.current=null
+        setSignInStatus('idle')
+      }
     }
   }
 
@@ -234,3 +258,4 @@ export function createWorkspaceAuthActions({
 
   return {loadApp,retryWorkspace,signIn,signInTeam,startGuestTest,resetPassword,completePasswordRecovery,register}
 }
+

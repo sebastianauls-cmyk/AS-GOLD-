@@ -89,6 +89,13 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const [acceptedLegal,setAcceptedLegal]=useState(false)
   const [confirmedTestData,setConfirmedTestData]=useState(false)
   const [message,setMessage]=useState('')
+  const [signInStatus,setSignInStatus]=useState('idle')
+  const signInAttemptRef=useRef(null)
+  useEffect(()=>{
+    if(signInStatus!=='submitting')return
+    const timer=setTimeout(()=>setSignInStatus('slow'),25_000)
+    return ()=>clearTimeout(timer)
+  },[signInStatus])
   const [user,setUser]=useState(null)
   const [privacySettings,setPrivacySettings]=useState(null)
   const [privacyBusy,setPrivacyBusy]=useState(false)
@@ -270,7 +277,7 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   })
 
   const {loadApp,retryWorkspace,signIn,signInTeam,startGuestTest,resetPassword,completePasswordRecovery,register}=createWorkspaceAuthActions({
-    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,guestCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage,sessionLoadRef
+    supabase,language,pendingMessages:accessPendingMessages,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION,legalCopy:v28,passwordCopy:v29Password,notices:n,trustCopy:lt,recoveryCopy,guestCopy,email,password,password2,displayName,acceptedLegal,confirmedTestData,validatePassword:validateV29Password,setEmail,setPassword,setPassword2,setAcceptedLegal,setConfirmedTestData,setAccess,setUpgrades,setData,setServerAudit,setDeletionRequests,setPrivacySettings,setUser,setScreen,setMessage,sessionLoadRef,signInAttemptRef,setSignInStatus
   })
 
   useEffect(()=>{
@@ -377,7 +384,7 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
 
   if(screen==='guest-test') return <LoadingSurface language={language} checking={guestCopy.starting}/>
 
-  if(screen==='team-login'||screen==='login'||screen==='register'||screen==='recovery'||screen==='request-reset') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signIn={signIn} signInTeam={signInTeam} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={navigateToScreen}/>
+  if(screen==='team-login'||screen==='login'||screen==='register'||screen==='recovery'||screen==='request-reset') return <AuthSurface screen={screen} t={t} a={a} language={language} setLanguage={setLanguage} tt={tt} displayName={displayName} setDisplayName={setDisplayName} email={email} setEmail={setEmail} password={password} setPassword={setPassword} password2={password2} setPassword2={setPassword2} showPassword={showPassword} setShowPassword={setShowPassword} showPassword2={showPassword2} setShowPassword2={setShowPassword2} pui={pui} recoveryCopy={recoveryCopy} v28={v28} acceptedLegal={acceptedLegal} setAcceptedLegal={setAcceptedLegal} confirmedTestData={confirmedTestData} setConfirmedTestData={setConfirmedTestData} registerReady={registerReady} recoveryReady={recoveryReady} register={register} signInStatus={signInStatus} signIn={signIn} signInTeam={signInTeam} resetPassword={resetPassword} completePasswordRecovery={completePasswordRecovery} message={message} lt={lt} setScreen={navigateToScreen}/>
 
   if(screen==='app'&&!privacyCurrent) return protectedWorkspace(<LegalAcceptance copy={v28} onAccept={acknowledgeCurrentLegal} busy={privacyBusy}/>)
 
@@ -418,3 +425,4 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
 
   return <PublicLanding t={publicT} a={publicA} payment={payment} paymentConfig={paymentConfig} language={language} setLanguage={setLanguage} outputLanguage={outputLanguage} setOutputLanguage={setOutputLanguage} setScreen={navigateToScreen} onStartLanguageCase={startLanguageCase} cd={publicCd} testerLinkText={testerLinkText} pa={publicPa} activePublicCase={publicActivePublicCase} setSelectedPublicCase={setSelectedPublicCase} tt={publicTt} jl={publicJl} localizedPlans={publicLocalizedPlans} rt={publicRt} selectedGoal={selectedGoal} setSelectedGoal={setSelectedGoal} setShowRecommendation={setShowRecommendation} showRecommendation={showRecommendation} recommendedPlan={publicRecommendedPlan} recommendedTier={recommendedTier} eur={eur} period={publicPeriod} terms={terms} monthsLabel={publicMonthsLabel}/>
 }
+
