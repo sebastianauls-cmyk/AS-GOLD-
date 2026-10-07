@@ -2,6 +2,7 @@ import {formatEuro} from './freeCaseAnalysis.mjs'
 
 const de={
   title:'Kostenlose Analyse',mode:'Analysemodus',local:'Kostenlos · ohne KI-Aufruf',paid:'KI-Auswertung öffnen',paidHint:'Die KI-Auswertung kann API-Kosten verursachen und benötigt eine eigene Bestätigung.',
+  saved:'Gespeichertes Ergebnis',savedHint:'Ansehen und Herunterladen lösen keinen neuen KI-Aufruf aus. Eine neue Auswertung benötigt eine eigene Bestätigung.',savedReadError:'Vorhandene Ergebnisse konnten nicht geprüft werden. Über „KI-Auswertung öffnen“ können Sie es erneut versuchen.',
   lead:'Unterlagen ordnen, erkennbare Abrechnungen nachrechnen und offene Angaben finden – direkt auf diesem Gerät.',
   scope:'Erkennt deutschsprachige Texte und EUR-Tabellen im deutschen Zahlenformat. Verwendet nur gespeicherte Dokumenttexte. Keine neue Rechtsrecherche, KI-Bewertung oder automatische Texterkennung.',
   start:'Kostenlos auswerten',refresh:'Erneut kostenlos auswerten',result:'Ergebnis der kostenlosen Analyse',boundary:'Die Ampeln bewerten nur Textverfügbarkeit und Rechenproben. Ansprüche, Steuern und Rechtsfristen bleiben ungeprüft.',
@@ -20,6 +21,7 @@ const de={
 }
 const en={
   title:'Free analysis',mode:'Analysis mode',local:'Free · no AI request',paid:'Open AI analysis',paidHint:'AI analysis can incur API costs and requires a separate confirmation.',
+  saved:'Saved result',savedHint:'Viewing and downloading do not start a new AI request. A new analysis requires a separate confirmation.',savedReadError:'Existing results could not be checked. Select “Open AI analysis” to try again.',
   lead:'Organise documents, check supported calculations and find missing information directly on this device.',
   scope:'Recognises German text and EUR tables using German number formatting. Uses saved document text only. No new legal research, AI assessment or automatic text extraction.',
   start:'Analyse for free',refresh:'Analyse again for free',result:'Free analysis result',boundary:'The status indicators cover text availability and arithmetic only. Entitlements, tax and legal deadlines remain unreviewed.',

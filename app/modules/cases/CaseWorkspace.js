@@ -136,7 +136,7 @@ export function CaseDetail({copy:on, analysis, access=null, language='de', outpu
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
     <div className="caseTitleRow"><div><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2>{item.title}</h2><p>{client?.name||on.clientUnknown}{item.reference_no?` · ${item.reference_no}`:''}</p></div><button className="secondary" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button></div>
-    <CaseAnalysisModes access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
+    <CaseAnalysisModes supabase={supabase} access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
     {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} continuation={continuation}/>}
     </CaseAnalysisModes>
     <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>

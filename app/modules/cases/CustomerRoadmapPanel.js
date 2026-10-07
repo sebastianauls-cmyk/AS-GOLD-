@@ -52,6 +52,7 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   return <div className="customerRoadmapView" lang={record.output_language} dir={rtl?'rtl':'ltr'}>
     <div className="roadmapLetterhead">{record.style.letterhead||record.style.sender_name}</div>
     <h3>{result.title}</h3><p className="roadmapMeta">{ui.draft}</p>
+    {onExport&&continuation.canContinue!==false&&<div className="roadmapActions"><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('docx')}>Word</button><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('pdf')}>PDF</button></div>}
     {record.style.salutation&&<p>{record.style.salutation}</p>}
     {current.historical?<details className="roadmapOriginalAssessment"><summary>{currentCopy.original}</summary>{assessment}</details>:assessment}
     <div className="roadmapCurrentStatus" role="status" aria-live="polite"><b>{currentCopy.current}</b><Dot light={current.light} label={current.label}/>{!stale&&<span>{currentCopy.confirmed}: {current.completed} / {current.total}</span>}</div>
@@ -63,7 +64,6 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
     {!result.analysis&&<p className="roadmapMeta">{completeAnalysisCopy(record.output_language).legacy}</p>}
     {full&&<>
       <div className="roadmapLegend">{['green','yellow','red','white'].map(light=><Dot key={light} light={light} label={ui[light]}/>)}</div>
-      <div className="roadmapActions"><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('docx')}>Word</button><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('pdf')}>PDF</button></div>
       {result.facts.length>0&&<section><h4>{ui.facts}</h4>{result.facts.map((fact,index)=><div key={index}><p>{fact.text}</p><Evidence items={fact.evidence} documents={documents} ui={ui} onOpenDocument={onOpenDocument}/></div>)}</section>}
       {result.open_questions.length>0&&<section><h4>{ui.questions}</h4><ul>{result.open_questions.map((question,index)=><li key={index}><b>{question.question}</b><p>{ui.owner}: {question.who}<br/>{ui.reason}: {question.why}</p></li>)}</ul></section>}
       {result.analysis&&<section className="roadmapCompleteAnalysis">{completeAnalysisBlocks(result.analysis,record.output_language,{steps:result.steps,documents:record.source_documents}).map((block,index)=>{

@@ -11,17 +11,35 @@ function Status({light,children}){
   return <span className="freeAnalysisStatus"><span className={`freeAnalysisDot ${light}`} aria-hidden="true"/>{children}</span>
 }
 
-export function CaseAnalysisModes({access,item,documents,language='de',onOpenDocument,children}){
-  const [paid,setPaid]=useState(false)
+export function CaseAnalysisModes({supabase,access,item,documents,language='de',onOpenDocument,children}){
+  const [choice,setChoice]=useState(null)
+  const [savedResult,setSavedResult]=useState(null)
   const allowed=hasFreeAnalysisAccess(access)
   const ui=freeAnalysisCopy(language)
+  const scope=JSON.stringify([item.owner_id,item.id])
+  const saved=savedResult?.scope===scope?savedResult:null
+  const paid=choice?.scope===scope?choice.paid:!!saved?.found
+  useEffect(()=>{
+    let cancelled=false
+    if(!allowed||!supabase||!item.id||!item.owner_id)return
+    async function readSavedResult(){
+      try{
+        const {data,error}=await supabase.from('case_roadmaps').select('id').eq('case_id',item.id).eq('owner_id',item.owner_id).limit(1)
+        if(error)throw error
+        if(!cancelled)setSavedResult({scope,found:!!data?.length,error:false})
+      }catch{if(!cancelled)setSavedResult({scope,found:false,error:true})}
+    }
+    readSavedResult()
+    return()=>{cancelled=true}
+  },[supabase,allowed,scope,item.id,item.owner_id])
   if(!allowed)return children
   return <div className="caseAnalysisModes">
     <div className="freeAnalysisModes" role="group" aria-label={ui.mode}>
-      <button type="button" className={paid?'secondary':'primary'} aria-pressed={!paid} onClick={()=>setPaid(false)}>{ui.local}</button>
-      <button type="button" className={paid?'primary':'secondary'} aria-pressed={paid} onClick={()=>setPaid(true)}>{ui.paid}</button>
+      <button type="button" className={paid?'secondary':'primary'} aria-pressed={!paid} onClick={()=>setChoice({scope,paid:false})}>{ui.local}</button>
+      <button type="button" className={paid?'primary':'secondary'} aria-pressed={paid} onClick={()=>setChoice({scope,paid:true})}>{saved?.found?ui.saved:ui.paid}</button>
     </div>
-    {paid?<><p className="roadmapMeta">{ui.paidHint}</p>{children}</>:<FreeCaseAnalysisPanel key={`${item.owner_id}:${item.id}`} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}/>}
+    {saved?.error&&<p role="status">{ui.savedReadError}</p>}
+    {paid?<><p className="roadmapMeta">{saved?.found?ui.savedHint:ui.paidHint}</p>{children}</>:<FreeCaseAnalysisPanel key={`${item.owner_id}:${item.id}`} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}/>}
   </div>
 }
 
