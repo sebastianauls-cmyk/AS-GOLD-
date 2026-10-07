@@ -72,7 +72,9 @@ const scopeSchema=object({
   research_topics:{...array({type:'string',pattern:'^[^@]{1,1200}$'}),maxItems:8}
 })
 const discoverySchema=object({sources:array(object({url:str,title:str})),gaps:strings})
-const valueFields={name:str,label:str,value:{type:'string',description:'For document/source inputs, preserve the printed numeric scale: 84.0 for 84.0 percent, never 0.84. Convert explicitly with percent(name) in the expression.'}}
+const INPUT_NAME_PATTERN='^[a-zA-Z][a-zA-Z0-9_]{0,39}$'
+const RESERVED_INPUT_NAMES=['min','max','round','floor']
+const valueFields={name:{type:'string',pattern:INPUT_NAME_PATTERN,description:'Unique within this calculation. Use only ASCII letters, digits and underscores, starting with a letter, at most 40 characters. Never use the reserved function names min, max, round or floor. Use this exact identifier in the expression; the separate label carries the readable description.'},label:str,value:{type:'string',description:'For document/source inputs, preserve the printed numeric scale: 84.0 for 84.0 percent, never 0.84. Convert explicitly with percent(name) in the expression.'}}
 const inputSchema={anyOf:[
   object({...valueFields,kind:enumeration(['document']),document_id:str,quote:str}),
   object({...valueFields,kind:enumeration(['source']),url:str,quote:str}),
@@ -182,6 +184,21 @@ function validateAnalysisContent(analysis,source,{scope,research,stepIds=null}){
     for(const [sourceIndex,item] of topic.sources.entries())exactQuote(sources.get(item.url)?.source_text,item.quote,`analysis.topics[${topicIndex}].sources[${sourceIndex}].quote`)
   }
   if(scope.issues.some(issue=>!seen.has(issue.id)))fail('Eine wesentliche Fallfrage aus dem Prüfauftrag wurde ausgelassen.')
+  // Name failures used to hide the offending input behind a generic analysis
+  // error. Collect every invalid name before arithmetic so the one bounded
+  // input repair can update its exact variable and dependent expression.
+  const nameIssues=[]
+  for(const [calculationIndex,calculation] of analysis.calculations.entries()){
+    const names=new Set()
+    for(const [inputIndex,input] of (Array.isArray(calculation?.inputs)?calculation.inputs:[]).entries()){
+      const name=input?.name,location=`analysis.calculations[${calculationIndex}].inputs[${inputIndex}].name`
+      const shown=JSON.stringify(name)?.slice(0,100)??'undefined'
+      const problem=typeof name!=='string'||!new RegExp(INPUT_NAME_PATTERN).test(name)?'Format ungültig':RESERVED_INPUT_NAMES.includes(name)?'reservierter Funktionsname':names.has(name)?'Name in dieser Berechnung doppelt':null
+      if(problem)nameIssues.push(shapeIssue(location,`Berechnung ${calculation.id}: ${shown} – ${problem}. Eindeutigen Namen mit 1–40 ASCII-Buchstaben/Ziffern/Unterstrichen, beginnend mit einem Buchstaben, verwenden; min, max, round und floor sind reserviert. Die expression passend aktualisieren; belegte Werte und Quellen unverändert lassen.`))
+      names.add(name)
+    }
+  }
+  if(nameIssues.length)rejectShape(nameIssues)
   const calculationIds=new Set()
   const prepared=analysis.calculations.map((calculation,calculationIndex)=>{
     if(!/^[a-zA-Z][a-zA-Z0-9_-]{0,49}$/.test(calculation.id)||calculationIds.has(calculation.id)||!normalized(calculation.title)||!normalized(calculation.explanation))fail('Ungültige Berechnung.')
@@ -190,7 +207,6 @@ function validateAnalysisContent(analysis,source,{scope,research,stepIds=null}){
     if(!Array.isArray(calculation.inputs)||calculation.inputs.length<1||calculation.inputs.length>MAX_CALCULATION_INPUTS)rejectShape([shapeIssue(`analysis.calculations[${calculationIndex}].inputs`,`Eine Berechnung braucht 1 bis ${MAX_CALCULATION_INPUTS} Rechenwerte; übergeben: ${Array.isArray(calculation.inputs)?calculation.inputs.length:'keine Liste'}.`)])
     const values={}
     for(const [inputIndex,input] of calculation.inputs.entries()){
-      if(!/^[a-zA-Z][a-zA-Z0-9_]{0,39}$/.test(input.name)||['min','max','round','floor'].includes(input.name)||Object.hasOwn(values,input.name))fail('Rechenwerte müssen eindeutig benannt sein.')
       if(!normalized(input.label))fail('Rechenwert ohne Erklärung.')
       if(input.kind==='document'||input.kind==='source'){
         const location=`analysis.calculations[${calculationIndex}].inputs[${inputIndex}]`

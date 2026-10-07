@@ -24,6 +24,10 @@ The 2026-10-07 live retest stopped after 30 provider calls and the single local 
 
 The complete worker/SQL and retained-work fixtures include the new stage. Current simulated counts are 9 requests for the small non-numerical worker case, 21 for the maximum-size no-research case and 23 with one local calculation correction. Earlier measurements below describe the workflow before this additional synthesis. No live runtime, invoice saving or completed Sarah output is claimed.
 
+## Precise calculation identifiers (2026-10-07)
+
+A subsequent live test stopped during numerical generation because an input name violated the existing identifier/uniqueness rules. The schema had allowed any string, while the validator returned only a generic analysis-level message. Every input kind now has the same ASCII identifier pattern as the existing arithmetic gate. Reserved function names and within-calculation uniqueness remain enforced. Validation returns all offending calculation/input paths, the rejected names, the precise reason and an instruction to update the matching expression without changing sourced values. The existing single input-repair allowance is unchanged. Regression cases cover reserved, duplicate, non-ASCII, leading-digit, hyphenated and overlong names; valid original calculations still pass unchanged.
+
 ## Retained work after a terminal technical interruption
 
 The last successfully advanced unfinished state is also sealed in a separate AES-GCM envelope in `private.retained_case_work`. It is reusable for at most 24 hours, with one snapshot per owner/case. The existing minute dispatcher purges expired snapshots even while processing is paused. End users cannot read the private table or invoke its machine RPCs. Cancellation, successful completion, source/content failures, changed consent/access and case/account deletion discard the retained candidate.

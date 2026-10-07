@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import './test_case_review_cache.mjs'
 import './test_case_research_context.mjs'
 import {calculateExpression,quoteContainsNumber} from '../supabase/functions/_shared/checkedCalculations.mjs'
-import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope,completeReviewCoverage,completeReviewGroups,COMPLETE_ANALYSIS_SCHEMA} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult,roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/lib/completeAnalysisDisplay.mjs'
@@ -205,6 +205,20 @@ const overInputs=structuredClone(candidate)
 overInputs.analysis.calculations[0].inputs=Array.from({length:25},(_,i)=>({...value('value_'+i,'18000')}))
 assert.throws(()=>validateCompleteAnalysis(overInputs,source,options),error=>error.analysisIssues?.[0]?.location==='analysis.calculations[0].inputs'&&error.analysisIssues[0].reason.includes('25'),'input overflow identifies the calculation and actual count')
 const roundedCase=structuredClone(candidate)
+for(const name of ['gross-value','bruttö','1gross','a'.repeat(41),'min','max','round','floor','gross']){
+  const badName=structuredClone(candidate)
+  badName.analysis.calculations[0].inputs[1].name=name
+  assert.throws(()=>validateCompleteAnalysis(badName,source,options),error=>error.analysisIssues?.[0]?.location==='analysis.calculations[0].inputs[1].name'&&error.analysisIssues[0].reason.includes(name)&&error.analysisIssues[0].reason.includes('expression'),'invalid or duplicate variables identify the exact input and the required formula update')
+}
+const manyNames=structuredClone(candidate)
+manyNames.analysis.calculations[0].inputs[0].name='min'
+manyNames.analysis.calculations[0].inputs[1].name='gross-net'
+assert.throws(()=>validateCompleteAnalysis(manyNames,source,options),error=>error.analysisIssues?.length===2&&error.analysisIssues.every(issue=>issue.location.endsWith('.name')),'all name defects are returned together for the single allowed input repair')
+for(const variant of COMPLETE_ANALYSIS_SCHEMA.properties.analysis.properties.calculations.items.properties.inputs.items.anyOf){
+  const name=variant.properties.name
+  assert(new RegExp(name.pattern).test('gross_A1'))
+  for(const invalid of ['gross-A1','ümlaut','1gross','a'.repeat(41)])assert(!new RegExp(name.pattern).test(invalid),'every input kind constrains identifier syntax before generation')
+}
 roundedCase.analysis.calculations[0].expression='round(gross-net,2)'
 assert.equal(validateCompleteAnalysis(roundedCase,source,options).analysis.calculations[0].result,'1000.00','rounding syntax still runs through original-input validation')
 roundedCase.analysis.calculations[0].expression='(gross-net)^2'
