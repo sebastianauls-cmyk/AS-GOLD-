@@ -30,12 +30,17 @@ export function createPricingWorkflowActions({
 }){
   async function loadQuotes({isCancelled=()=>false}={}){
     setQuoteLoading(true)
-    const nextQuotes=await getUpgradeQuotes(supabase,{upgrades,termMonths,promoCode:appliedPromoCode})
-    if(!isCancelled()){
-      setQuotes(nextQuotes)
-      setQuoteLoading(false)
+    try{
+      const nextQuotes=await getUpgradeQuotes(supabase,{upgrades,termMonths,promoCode:appliedPromoCode})
+      if(!isCancelled())setQuotes(nextQuotes)
+      return nextQuotes
+    }catch{
+      // A failed request must not leave a spinner or an obsolete payable quote.
+      if(!isCancelled())setQuotes({})
+      return {}
+    }finally{
+      if(!isCancelled())setQuoteLoading(false)
     }
-    return nextQuotes
   }
 
   function applyPromo(event){
@@ -82,43 +87,49 @@ export function createPricingWorkflowActions({
   }
 
   async function requestUpgrade(plan){
-    setMessage('')
-    const selectedQuote=quotes[plan.plan_key]
-    if(appliedPromoCode&&selectedQuote?.promo_code_state!=='valid'){
-      setMessage(promoCopy.invalid)
-      return false
-    }
-    if(isTesterAccessQuote({planKey:plan.plan_key,termMonths,quote:selectedQuote,promoCode:appliedPromoCode})){
-      return activateTesterAccess()
-    }
-
-    if(!paymentConfig?.enabled){
-      setMessage(paymentCopy.unavailable)
-      return false
-    }
-
-    setCheckoutPlan(plan.plan_key)
-    setMessage(paymentCopy.starting)
-    const {data,error}=await startCheckoutRecord(supabase,{planKey:plan.plan_key,termMonths,promoCode:appliedPromoCode})
-    if(error){
-      setCheckoutPlan('')
-      const errorCopy={
-        permanent_account_required:paymentCopy.permanentAccountRequired,
-        checkout_already_pending:paymentCopy.alreadyPending,
-        promo_invalid:promoCopy.invalid,
-        payment_not_configured:paymentCopy.unavailable,
-        live_payments_locked:paymentCopy.unavailable,
-        sumup_key_invalid:paymentCopy.unavailable,
-        sumup_checkout_not_allowed:paymentCopy.unavailable,
-        sumup_merchant_mismatch:paymentCopy.unavailable,
-        sumup_currency_mismatch:paymentCopy.unavailable,
-        sumup_sandbox_required:paymentCopy.unavailable
+    try{
+      setMessage('')
+      const selectedQuote=quotes[plan.plan_key]
+      if(appliedPromoCode&&selectedQuote?.promo_code_state!=='valid'){
+        setMessage(promoCopy.invalid)
+        return false
       }
-      setMessage(errorCopy[error.code]||paymentCopy.failed)
+      if(isTesterAccessQuote({planKey:plan.plan_key,termMonths,quote:selectedQuote,promoCode:appliedPromoCode})){
+        return await activateTesterAccess()
+      }
+
+      if(!paymentConfig?.enabled){
+        setMessage(paymentCopy.unavailable)
+        return false
+      }
+
+      setCheckoutPlan(plan.plan_key)
+      setMessage(paymentCopy.starting)
+      const {data,error}=await startCheckoutRecord(supabase,{planKey:plan.plan_key,termMonths,promoCode:appliedPromoCode})
+      if(error){
+        setCheckoutPlan('')
+        const errorCopy={
+          permanent_account_required:paymentCopy.permanentAccountRequired,
+          checkout_already_pending:paymentCopy.alreadyPending,
+          promo_invalid:promoCopy.invalid,
+          payment_not_configured:paymentCopy.unavailable,
+          live_payments_locked:paymentCopy.unavailable,
+          sumup_key_invalid:paymentCopy.unavailable,
+          sumup_checkout_not_allowed:paymentCopy.unavailable,
+          sumup_merchant_mismatch:paymentCopy.unavailable,
+          sumup_currency_mismatch:paymentCopy.unavailable,
+          sumup_sandbox_required:paymentCopy.unavailable
+        }
+        setMessage(errorCopy[error.code]||paymentCopy.failed)
+        return false
+      }
+      redirectToCheckout(data.checkoutUrl)
+      return true
+    }catch{
+      setCheckoutPlan('')
+      setMessage(paymentCopy.failed)
       return false
     }
-    redirectToCheckout(data.checkoutUrl)
-    return true
   }
 
   async function handleCheckoutReturn({requestId,cancelled=false,cleanUrl=()=>{}}={}){

@@ -12,7 +12,22 @@ const AUTH_MESSAGES=Object.freeze({
   vi:{invalidCredentials:'Địa chỉ email hoặc mật khẩu không đúng. Nếu tài khoản đã tồn tại, hãy dùng “Đặt lại mật khẩu”.',emailNotConfirmed:'Địa chỉ email của bạn chưa được xác nhận. Trước tiên, hãy mở liên kết xác nhận trong email.',tooManyRequests:"Dịch vụ đăng nhập đang tạm thời giới hạn các yêu cầu mới. Chưa có thời gian chờ chính xác. Vui lòng thử lại sau.",emailRateLimited:"Đã đạt giới hạn gửi email. Dịch vụ đăng nhập hiện chưa thể gửi thêm thư. Chưa có thời điểm chính xác để gửi lại. Hãy kiểm tra email đặt lại mật khẩu mới nhất hoặc thử lại sau.",resetDeliveryFailed:'Không thể gửi email đặt lại mật khẩu. Vui lòng tải lại ứng dụng và thử lại.',generic:'Không thể hoàn tất xác thực. Vui lòng thử lại hoặc đặt lại mật khẩu.'}
 })
 
+const AUTH_UNAVAILABLE=Object.freeze({
+  de:'Der Anmeldedienst ist momentan nicht erreichbar. Bitte versuchen Sie es erneut.',
+  en:'The sign-in service is currently unavailable. Please try again.',
+  fr:'Le service de connexion est actuellement indisponible. Veuillez réessayer.',
+  tr:'Giriş hizmetine şu anda ulaşılamıyor. Lütfen tekrar deneyin.',
+  pl:'Usługa logowania jest obecnie niedostępna. Spróbuj ponownie.',
+  ru:'Сервис входа сейчас недоступен. Повторите попытку.',
+  ar:'خدمة تسجيل الدخول غير متاحة حالياً. يرجى المحاولة مرة أخرى.',
+  fa:'سرویس ورود در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.',
+  ro:'Serviciul de autentificare nu este disponibil momentan. Încercați din nou.',
+  bg:'Услугата за вход в момента е недостъпна. Опитайте отново.',
+  vi:'Dịch vụ đăng nhập hiện không khả dụng. Vui lòng thử lại.'
+})
+
 export function getAuthErrorMessage(error,language='de'){
+  if(error?.code==='auth_unavailable'||error?.name==='AuthRetryableFetchError')return AUTH_UNAVAILABLE[language]||AUTH_UNAVAILABLE.de
   const messages=AUTH_MESSAGES[language]||AUTH_MESSAGES.de
   if(error?.code==='invalid_credentials')return messages.invalidCredentials
   if(error?.code==='email_not_confirmed')return messages.emailNotConfirmed

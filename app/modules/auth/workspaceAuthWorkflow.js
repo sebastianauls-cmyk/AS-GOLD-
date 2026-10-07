@@ -143,21 +143,33 @@ export function createWorkspaceAuthActions({
   async function signIn(event){
     event.preventDefault()
     setMessage('')
-    const {data:authData,error}=await signInSession(supabase,{email:email.trim(),password})
-    if(error){setMessage(getAuthErrorMessage(error,language));return false}
-    return loadApp(authData.session)
+    try{
+      const {data:authData,error}=await signInSession(supabase,{email:email.trim(),password})
+      if(error){setMessage(getAuthErrorMessage(error,language));return false}
+      if(!authData?.session?.user?.id){setMessage(getAuthErrorMessage({code:'auth_unavailable'},language));return false}
+      return await loadApp(authData.session)
+    }catch{
+      setMessage(getAuthErrorMessage({code:'auth_unavailable'},language))
+      return false
+    }
   }
 
   async function signInTeam(event){
     event.preventDefault()
     setMessage('')
     const feedback=teamLoginFeedback[language]||teamLoginFeedback.de
-    const {data:authData,error}=await signInTeamAccount(supabase,{password})
-    if(error){
-      setMessage(error.code==='too_many_requests'?feedback.limited:error.code==='team_credentials_invalid'?feedback.invalid:feedback.unavailable)
+    try{
+      const {data:authData,error}=await signInTeamAccount(supabase,{password})
+      if(error){
+        setMessage(error.code==='too_many_requests'?feedback.limited:error.code==='team_credentials_invalid'?feedback.invalid:feedback.unavailable)
+        return false
+      }
+      if(!authData?.session?.user?.id){setMessage(feedback.unavailable);return false}
+      return await loadApp(authData.session)
+    }catch{
+      setMessage(feedback.unavailable)
       return false
     }
-    return loadApp(authData.session)
   }
 
   async function startGuestTest(){
