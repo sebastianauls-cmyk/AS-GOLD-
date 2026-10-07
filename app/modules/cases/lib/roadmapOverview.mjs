@@ -36,9 +36,6 @@ export function roadmapOverviewBlocks(record,{today=new Date().toISOString().sli
     if(light!=='white'||count)add(`${copy[light]}: ${count}`,'heading',light)
   }
   if(stale)add(ui.stale,'body','white')
-  add(currentCopy.original,'heading')
-  add(record.result.opening)
-  for(const point of record.result.key_points)add(point,'bullet')
   add(copy.next,'heading')
   const next=stale?[]:steps.filter(step=>!step.done&&!step.blocked)
     .sort((a,b)=>Number(b.light==='red')-Number(a.light==='red')||Number(a.phase==='waiting')-Number(b.phase==='waiting')).slice(0,3)
@@ -50,6 +47,9 @@ export function roadmapOverviewBlocks(record,{today=new Date().toISOString().sli
   const dated=steps.filter(step=>!step.done&&step.deadline?.date).sort((a,b)=>a.deadline.date.localeCompare(b.deadline.date))
   add(copy.deadline,'heading')
   add(dated.length?`${date(dated[0].deadline.date)} · ${dated[0].title}`:copy.noDate)
+  add(currentCopy.original,'heading')
+  add(record.result.opening)
+  for(const point of record.result.key_points)add(point,'bullet')
   add(copy.details,'meta')
   return blocks
 }
