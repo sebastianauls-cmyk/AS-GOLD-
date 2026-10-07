@@ -35,17 +35,26 @@ export function successfulSumupTransaction(checkout){
     :null
 }
 
+function matchingPaymentAmount(value,expected){
+  const numeric=amount=>typeof amount==='number'
+    ?amount
+    :typeof amount==='string'&&/^\d+(?:\.\d+)?$/.test(amount)?Number(amount):NaN
+  const actual=numeric(value)
+  const wanted=numeric(expected)
+  return Number.isFinite(actual)&&Number.isFinite(wanted)&&actual>0&&wanted>0&&Math.abs(actual-wanted)<=0.001
+}
+
 export function verifySumupCheckout(checkout,expected){
   if(!checkout||checkout.id!==expected.checkoutId)return {valid:false,reason:'checkout_id_mismatch'}
   if(checkout.checkout_reference!==expected.checkoutReference)return {valid:false,reason:'checkout_reference_mismatch'}
   if(checkout.merchant_code!==expected.merchantCode)return {valid:false,reason:'merchant_mismatch'}
   if(String(checkout.currency||'').toUpperCase()!==String(expected.currency||'').toUpperCase())return {valid:false,reason:'currency_mismatch'}
-  if(Math.abs(Number(checkout.amount)-Number(expected.amount))>0.001)return {valid:false,reason:'amount_mismatch'}
+  if(!matchingPaymentAmount(checkout.amount,expected.amount))return {valid:false,reason:'amount_mismatch'}
   if(checkout.status!=='PAID')return {valid:true,paid:false,status:checkout.status||'PENDING',transaction:null}
   const transaction=successfulSumupTransaction(checkout)
   if(!transaction)return {valid:false,reason:'successful_transaction_missing'}
   if(String(transaction.currency||'').toUpperCase()!==String(expected.currency||'').toUpperCase())return {valid:false,reason:'transaction_currency_mismatch'}
-  if(Math.abs(Number(transaction.amount)-Number(expected.amount))>0.001)return {valid:false,reason:'transaction_amount_mismatch'}
+  if(!matchingPaymentAmount(transaction.amount,expected.amount))return {valid:false,reason:'transaction_amount_mismatch'}
   if(transaction.merchant_code!==expected.merchantCode)return {valid:false,reason:'transaction_merchant_mismatch'}
   return {valid:true,paid:true,status:'PAID',transaction}
 }

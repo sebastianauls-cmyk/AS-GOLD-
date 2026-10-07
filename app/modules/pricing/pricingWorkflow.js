@@ -133,35 +133,57 @@ export function createPricingWorkflowActions({
   }
 
   async function handleCheckoutReturn({requestId,cancelled=false,cleanUrl=()=>{}}={}){
-    cleanUrl()
-    if(cancelled){
-      if(requestId)await cancelCheckoutRecord(supabase,{requestId})
+    // Keep the return URL until the outcome is confirmed, so reloading can
+    // reconcile this same checkout without starting another payment.
+    try{
+      if(!requestId){
+        setMessage(paymentCopy.statusUnconfirmed)
+        return false
+      }
+      if(cancelled){
+        const cancellation=await cancelCheckoutRecord(supabase,{requestId})
+        if(!cancellation.error&&cancellation.data?.cancelled===true){
+          cleanUrl()
+          setMessage(paymentCopy.cancelled)
+          return false
+        }
+        if(cancellation.error?.code!=='checkout_already_applied'){
+          setMessage(paymentCopy.statusUnconfirmed)
+          return false
+        }
+      }
+
+      setMessage(paymentCopy.successPending)
+      const result=await awaitCheckoutApplied(supabase,{requestId})
+      if(result.error){
+        if(result.error.code==='checkout_cancelled'){
+          cleanUrl()
+          setMessage(paymentCopy.cancelled)
+        }else{
+          setMessage(result.error.code==='checkout_status_timeout'?paymentCopy.statusTimeout:paymentCopy.statusUnconfirmed)
+        }
+        return false
+      }
+
+      const accessSnapshot=await getWorkspaceAccess(supabase)
+      if(accessSnapshot.error||!accessSnapshot.access){
+        setMessage(paymentCopy.statusUnconfirmed)
+        return false
+      }
+      setAccess(accessSnapshot.access)
+      setUpgrades(accessSnapshot.upgrades||[])
+      setQuotes({})
+      onPaymentAccessGranted()
+      const end=accessSnapshot.access.permissions?.paid_access_ends_at
+      setMessage(paymentCopy.success.replace('{date}',end?formatAccessEnd(end):''))
+      cleanUrl()
+      return true
+    }catch{
+      setMessage(paymentCopy.statusUnconfirmed)
+      return false
+    }finally{
       setCheckoutPlan('')
-      setMessage(paymentCopy.cancelled)
-      return false
     }
-    if(!requestId)return false
-
-    setMessage(paymentCopy.successPending)
-    const result=await awaitCheckoutApplied(supabase,{requestId})
-    if(result.error){
-      setMessage(result.error.code==='checkout_status_timeout'?paymentCopy.statusTimeout:paymentCopy.failed)
-      return false
-    }
-
-    const accessSnapshot=await getWorkspaceAccess(supabase)
-    if(accessSnapshot.error){
-      setMessage(accessSnapshot.error.message)
-      return false
-    }
-    setAccess(accessSnapshot.access)
-    setUpgrades(accessSnapshot.upgrades||[])
-    setQuotes({})
-    setCheckoutPlan('')
-    onPaymentAccessGranted()
-    const end=accessSnapshot.access?.permissions?.paid_access_ends_at
-    setMessage(paymentCopy.success.replace('{date}',end?formatAccessEnd(end):''))
-    return true
   }
 
   return {loadQuotes,applyPromo,clearPromo,requestUpgrade,handleCheckoutReturn}

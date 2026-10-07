@@ -18,64 +18,43 @@ export function redeemTestAccessRecord(supabase,{promoCode}){
   return supabase.rpc('gold_redeem_test_access',{p_promo_code:promoCode})
 }
 
-export async function startCheckoutRecord(supabase,{planKey,termMonths,promoCode=''}){
-  const {data:{session},error:sessionError}=await supabase.auth.getSession()
-  const token=session?.access_token
-  if(sessionError||!token)return {data:null,error:{code:'authentication_required'}}
-
+async function paymentRequest(supabase,path,body,failureCode){
   try{
-    const response=await fetch('/api/payments/checkout',{
+    const sessionResult=await supabase.auth.getSession()
+    const token=sessionResult?.data?.session?.access_token
+    if(sessionResult?.error||!token)return {data:null,error:{code:'authentication_required'}}
+    const response=await fetch(path,{
       method:'POST',
       cache:'no-store',
       headers:{'content-type':'application/json',authorization:`Bearer ${token}`},
-      body:JSON.stringify({planKey,termMonths,promoCode})
+      body:JSON.stringify(body),
+      signal:AbortSignal.timeout(15_000)
     })
-    const result=await response.json().catch(()=>({ok:false,code:'checkout_failed'}))
-    return result?.ok?{data:result,error:null}:{data:null,error:{code:result?.code||'checkout_failed'}}
+    const result=await response.json().catch(()=>null)
+    if(!response.ok||result?.ok!==true)return {data:null,error:{code:result?.code||failureCode}}
+    return {data:result,error:null}
   }catch{
-    return {data:null,error:{code:'checkout_failed'}}
+    return {data:null,error:{code:failureCode}}
   }
 }
 
+export function startCheckoutRecord(supabase,{planKey,termMonths,promoCode=''}){
+  return paymentRequest(supabase,'/api/payments/checkout',{planKey,termMonths,promoCode},'checkout_failed')
+}
+
 export async function awaitCheckoutApplied(supabase,{requestId,attempts=12,intervalMs=1000}){
-  const {data:{session},error:sessionError}=await supabase.auth.getSession()
-  const token=session?.access_token
-  if(sessionError||!token)return {data:null,error:{code:'authentication_required'}}
   for(let attempt=0;attempt<attempts;attempt+=1){
-    let response
-    try{
-      response=await fetch('/api/payments/status',{
-        method:'POST',
-        cache:'no-store',
-        headers:{'content-type':'application/json',authorization:`Bearer ${token}`},
-        body:JSON.stringify({requestId})
-      })
-    }catch{
-      return {data:null,error:{code:'checkout_status_failed'}}
-    }
-    const result=await response.json().catch(()=>({ok:false,code:'checkout_status_failed'}))
-    if(result?.applied)return {data:result,error:null}
-    if(result?.code==='checkout_cancelled')return {data:result,error:{code:'checkout_cancelled'}}
-    if(!response.ok)return {data:null,error:{code:result?.code||'checkout_status_failed'}}
+    const result=await paymentRequest(supabase,'/api/payments/status',{requestId},'checkout_status_failed')
+    if(result.error)return result
+    if(result.data.applied===true)return result
+    if(result.data.applied!==false)return {data:null,error:{code:'checkout_status_failed'}}
     if(attempt<attempts-1)await new Promise(resolve=>setTimeout(resolve,intervalMs))
   }
   return {data:null,error:{code:'checkout_status_timeout'}}
 }
 
 export async function cancelCheckoutRecord(supabase,{requestId}){
-  const {data:{session},error:sessionError}=await supabase.auth.getSession()
-  const token=session?.access_token
-  if(sessionError||!token)return {data:null,error:{code:'authentication_required'}}
-  try{
-    const response=await fetch('/api/payments/cancel',{
-      method:'POST',
-      cache:'no-store',
-      headers:{'content-type':'application/json',authorization:`Bearer ${token}`},
-      body:JSON.stringify({requestId})
-    })
-    const result=await response.json().catch(()=>({ok:false,code:'cancellation_failed'}))
-    return result?.ok?{data:result,error:null}:{data:null,error:{code:result?.code||'cancellation_failed'}}
-  }catch{
-    return {data:null,error:{code:'cancellation_failed'}}
-  }
+  const result=await paymentRequest(supabase,'/api/payments/cancel',{requestId},'cancellation_failed')
+  if(result.error)return result
+  return result.data.cancelled===true?result:{data:null,error:{code:'cancellation_failed'}}
 }

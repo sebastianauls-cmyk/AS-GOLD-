@@ -54,6 +54,17 @@ export async function reconcileSumupCheckout({record,config,service}){
       p_event_type:`CHECKOUT_${verification.status}`
     })
     if(cancelled.error)throw cancelled.error
+    // Fulfillment may have committed while the provider reply was in flight.
+    // The cancellation RPC alone does not distinguish that concurrent outcome.
+    const confirmed=await service.from('upgrade_requests').select('status')
+      .eq('id',record.id).eq('owner_id',record.owner_id).maybeSingle()
+    if(confirmed.error)throw confirmed.error
+    if(confirmed.data?.status==='applied')return {ok:true,applied:true,status:'applied'}
+    if(confirmed.data?.status!=='cancelled'){
+      const error=new Error('Checkout cancellation was not confirmed')
+      error.code='cancellation_failed'
+      throw error
+    }
     return {ok:false,code:'checkout_cancelled',status:'cancelled'}
   }
 

@@ -113,11 +113,12 @@ export function retrieveSumupCheckout(checkoutId,config=getPaymentServerConfig()
 }
 
 export async function deactivateSumupCheckout(checkoutId,config=getPaymentServerConfig()){
-  if(!/^[0-9a-f-]{36}$/i.test(String(checkoutId||'')))return null
-  try{
-    return await sumupRequest(`/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{method:'DELETE',config})
-  }catch(error){
-    if(error?.status===404||error?.status===409)return null
+  if(!/^[0-9a-f-]{36}$/i.test(String(checkoutId||'')))throw new Error('Invalid SumUp checkout id')
+  const checkout=await sumupRequest(`/v0.1/checkouts/${encodeURIComponent(checkoutId)}`,{method:'DELETE',config})
+  if(checkout?.id!==checkoutId||!['PENDING','FAILED','EXPIRED'].includes(checkout.status)||checkout.transactions?.some(transaction=>transaction?.status==='SUCCESSFUL')){
+    const error=new Error('SumUp checkout deactivation was not confirmed')
+    if(checkout?.status==='PAID')error.status=409
     throw error
   }
+  return checkout
 }
