@@ -22,31 +22,42 @@ export function roadmapOverviewCopy(language='de') {
 
 // This is a reading aid over the reviewed result and confirmed progress, not
 // another model assessment. Never shorten source sentences or infer completion.
-export function roadmapOverviewBlocks(record,{today=new Date().toISOString().slice(0,10),stale=false}={}) {
+export function roadmapOverview(record,{today=new Date().toISOString().slice(0,10),stale=false}={}) {
+  const steps=roadmapSteps(record,{today,stale})
+  const current=roadmapCurrentStatus(record,{today,stale})
+  const counts=Object.fromEntries(['red','yellow','green','white'].map(light=>[light,steps.filter(step=>step.light===light).length]))
+  const next=stale?[]:steps.filter(step=>!step.done&&!step.blocked)
+    .sort((a,b)=>Number(b.light==='red')-Number(a.light==='red')||Number(a.phase==='waiting')-Number(b.phase==='waiting')).slice(0,3)
+  const deadline=steps.filter(step=>!step.done&&step.deadline?.date).sort((a,b)=>a.deadline.date.localeCompare(b.deadline.date))[0]||null
+  return {today,stale,steps,current,counts,next,deadline}
+}
+
+export function roadmapOverviewDate(value,language='de') {
+  return new Intl.DateTimeFormat(language||'de',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'))
+}
+
+export function roadmapOverviewBlocks(record,options={}) {
+  const {today,stale,steps,current,counts,next,deadline}=roadmapOverview(record,options)
   const language=record.output_language,copy=roadmapOverviewCopy(language),ui=roadmapUi(language)
-  const currentCopy=roadmapCurrentCopy(language),current=roadmapCurrentStatus(record,{today,stale})
-  const steps=roadmapSteps(record,{today,stale}),blocks=[]
-  const date=value=>new Intl.DateTimeFormat(language||'de',{day:'2-digit',month:'2-digit',year:'numeric',timeZone:'UTC'}).format(new Date(value+'T12:00:00Z'))
+  const currentCopy=roadmapCurrentCopy(language),blocks=[]
+  const date=value=>roadmapOverviewDate(value,language)
   const add=(text,kind='body',light=null)=>blocks.push({text,kind,light,compact:true})
   add(copy.title,'title')
   add(record.result.title,'heading')
   add(`${copy.asOf} ${date(today)} · ${ui.draft}`,'meta')
   for(const light of ['red','yellow','green','white']) {
-    const count=steps.filter(step=>step.light===light).length
+    const count=counts[light]
     if(light!=='white'||count)add(`${copy[light]}: ${count}`,'heading',light)
   }
   if(stale)add(ui.stale,'body','white')
   add(copy.next,'heading')
-  const next=stale?[]:steps.filter(step=>!step.done&&!step.blocked)
-    .sort((a,b)=>Number(b.light==='red')-Number(a.light==='red')||Number(a.phase==='waiting')-Number(b.phase==='waiting')).slice(0,3)
   for(const step of next) {
     const index=steps.findIndex(entry=>entry.id===step.id)+1
     add(`${index}. ${step.title} · ${ui.owner}: ${step.owner}${step.phase==='waiting'?' · '+ui.waiting:''}`)
   }
   if(!next.length)add(current.next)
-  const dated=steps.filter(step=>!step.done&&step.deadline?.date).sort((a,b)=>a.deadline.date.localeCompare(b.deadline.date))
   add(copy.deadline,'heading')
-  add(dated.length?`${date(dated[0].deadline.date)} · ${dated[0].title}`:copy.noDate)
+  add(deadline?`${date(deadline.deadline.date)} · ${deadline.title}`:copy.noDate)
   add(currentCopy.original,'heading')
   add(record.result.opening)
   for(const point of record.result.key_points)add(point,'bullet')

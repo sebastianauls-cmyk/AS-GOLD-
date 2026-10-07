@@ -1,9 +1,11 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { roadmapStyle, roadmapSource, roadmapFingerprint, roadmapSteps, ROADMAP_COLORS, validateRoadmapInput } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
+import { roadmapStyle, roadmapSource, roadmapFingerprint, ROADMAP_COLORS, validateRoadmapInput } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
 import { readableStepText, roadmapProgressLabel, roadmapStepReference } from './lib/roadmapDisplay.mjs'
-import { roadmapCurrentCopy, roadmapCurrentStatus } from './lib/roadmapCurrentStatus.mjs'
+import { roadmapCurrentCopy } from './lib/roadmapCurrentStatus.mjs'
+import { roadmapOverview } from './lib/roadmapOverview.mjs'
+import { RoadmapOverview } from './RoadmapOverview'
 import { roadmapUi } from './lib/customerRoadmapCopy.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage'
 import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, authorizeRoadmap, roadmapErrorMessage, latestCustomerRoadmapJob, cancelCustomerRoadmapJob } from '../services/customerRoadmap'
@@ -35,8 +37,8 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   const [focusStep,setFocusStep]=useState('')
   const stepRefs=useRef(new Map())
   const result=record.result
-  const steps=roadmapSteps(record,{stale})
-  const current=roadmapCurrentStatus(record,{stale})
+  const overview=roadmapOverview(record,{stale})
+  const {steps,current}=overview
   const currentCopy=roadmapCurrentCopy(record.output_language)
   const controlCopy=roadmapCurrentCopy(language)
   useEffect(()=>{
@@ -45,7 +47,8 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
     if(element){element.scrollIntoView({behavior:'smooth',block:'start'});element.focus({preventScroll:true})}
     setFocusStep('')
   },[full,focusStep])
-  function openCurrentStep(){if(current.step)setFocusStep(current.step.id);onFull?.()}
+  function openStep(id){setFocusStep(id);onFull?.()}
+  function openCurrentStep(){if(current.step)openStep(current.step.id);else onFull?.()}
   const rtl=['ar','fa'].includes(record.output_language)
   const safeExport=type=>onExport?.(type)
   const assessment=<><p className="roadmapOpening">{result.opening}</p><ul>{result.key_points.map((point,index)=><li key={index}>{point}</li>)}</ul><p><b>{ui.meaning}</b><br/>{result.meaning}</p></>
@@ -54,13 +57,14 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
     <h3>{result.title}</h3><p className="roadmapMeta">{ui.draft}</p>
     {onExport&&continuation.canContinue!==false&&<div className="roadmapActions"><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('docx')}>Word</button><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('pdf')}>PDF</button></div>}
     {record.style.salutation&&<p>{record.style.salutation}</p>}
-    {current.historical?<details className="roadmapOriginalAssessment"><summary>{currentCopy.original}</summary>{assessment}</details>:assessment}
+    <RoadmapOverview overview={overview} language={record.output_language} onOpenStep={onFull&&continuation.canContinue!==false?openStep:undefined} busy={busy}/>
     <div className="roadmapCurrentStatus" role="status" aria-live="polite"><b>{currentCopy.current}</b><Dot light={current.light} label={current.label}/>{!stale&&<span>{currentCopy.confirmed}: {current.completed} / {current.total}</span>}</div>
     <div className="roadmapSummary" data-roadmap-state={current.state}>
       <div><b>{ui.next}</b><p>{current.next}</p>{current.step&&onFull&&continuation.canContinue!==false&&<button type="button" className="secondary" disabled={busy} onClick={openCurrentStep}>{controlCopy.open}</button>}</div>
       <div><b>{ui.action}</b><p>{current.action}</p>{current.step&&<p className="roadmapMeta">{ui.owner}: {current.step.owner}</p>}</div>
     </div>
     <ResultContinuation {...continuation} language={language} onContinue={openCurrentStep}/>
+    <details className="roadmapOriginalAssessment"><summary>{currentCopy.original}</summary>{assessment}</details>
     {!result.analysis&&<p className="roadmapMeta">{completeAnalysisCopy(record.output_language).legacy}</p>}
     {full&&<>
       <div className="roadmapLegend">{['green','yellow','red','white'].map(light=><Dot key={light} light={light} label={ui[light]}/>)}</div>
