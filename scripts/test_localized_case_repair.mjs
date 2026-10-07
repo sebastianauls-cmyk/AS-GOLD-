@@ -191,7 +191,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       const {analysis,...plan}=structuredClone(big);output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else if(name==='ash_complete_repair_v169'){
       counts.repairs++;initialCalls=counts.total-1
-      assert.equal(request.reasoning.effort,'medium');assert.equal(request.max_output_tokens,8000)
+      assert.equal(request.reasoning.effort,'high');assert.equal(request.max_output_tokens,8000)
       assert(request.prompt_cache_key.length<=64)
       const payload=JSON.parse(request.input.at(-1).content[0].text)
       assert.deepEqual(payload.assigned_replacements.map(t=>t.location),['analysis.calculations[18]'])

@@ -11,7 +11,7 @@ doc.owner_id=roadmapTestCase.owner_id;doc.case_id=roadmapTestCase.id
 const source=roadmapSource({...roadmapTestCase,title:'Interner Nettoabgleich',goal:'Beide Nettobeträge abgleichen; Eingang beibehalten und nur Konto/Zuordnung klären.',summary:'Nur erfundene Unterlagen.'},[doc],[])
 const scope={issues:[{id:'payout',title:'Nettoabgleich und Eingang',reason:'Abgleich beider Zahlungen.',calculation_needed:true}],research_topics:[]}
 const stale={id:'payout',title:'Nettoabgleich und Eingang',status:'open',conclusion:'Die Nettoauszahlungen sollen im nächsten Rechenschritt geprüft werden. Der tatsächlich gutgeschriebene Betrag ist noch zu bestätigen.',conditions:'Kontoauszug anfordern, um den Zahlungseingang und die Beträge zu bestätigen.',sources:[],step_ids:[]}
-const fixed={id:'payout',status:'open',conclusion:'Der Nettoabgleich ist für beide Kinder rechnerisch abgeschlossen: Kind A 27.930,00 EUR, Kind B 28.421,00 EUR. Laut Mandantenangabe ist die Auszahlung im August 2026 eingegangen.',conditions:'Offen sind nur Empfangskonto und Zuordnung der beiden Beträge. Eine Kontoangabe soll diese Zuordnung klären; Eingang und Beträge werden nicht erneut angefordert.'}
+const fixed={id:'payout',sources:[],status:'open',conclusion:'Der Nettoabgleich ist für beide Kinder rechnerisch abgeschlossen: Kind A 27.930,00 EUR, Kind B 28.421,00 EUR. Laut Mandantenangabe ist die Auszahlung im August 2026 eingegangen.',conditions:'Offen sind nur Empfangskonto und Zuordnung der beiden Beträge. Eine Kontoangabe soll diese Zuordnung klären; Eingang und Beträge werden nicht erneut angefordert.'}
 const calculations=[['a','31200','3000','270'],['b','31800','3100','279']].map(([id,gross,tax,church])=>({id:'net_'+id,title:'Netto Kind '+id.toUpperCase(),topic_ids:['payout'],inputs:[['gross',gross],['tax',tax],['church',church]].map(([name,value])=>({name,value,label:name,kind:'document',document_id:doc.id,quote:doc.extracted_text})),expression:'gross-tax-church',decimal_places:2,unit:'EUR',conditions:'',explanation:'Brutto abzüglich Lohnsteuer und Kirchensteuer.'}))
 const plan={...structuredClone(roadmapTestResult),title:'Interner Zahlungsabgleich',opening:fixed.conclusion,key_points:['Beide Nettobeträge sind rechnerisch abgeglichen.','Der Eingang ist laut Mandantenangabe bestätigt.','Konto und Zuordnung bleiben offen.'],meaning:fixed.conclusion,next:'Empfangskonto und Zuordnung intern klären.',customer_action:'Nur die Kontoangabe und Zuordnung ergänzen.',facts:[{text:'Eingang laut Mandantenangabe im August 2026.',evidence:[{document_id:doc.id,quote:'Die Auszahlung ist laut Mandantenangabe im August 2026 eingegangen.'}]}],open_questions:[{question:'Auf welchem Konto sind die beiden Beträge zugeordnet?',who:'Testkundin',why:'Nur Empfangskonto und Zuordnung sind noch offen.'}],steps:[{id:'account',title:'Kontozuordnung intern klären',phase:'now',light:'yellow',reason:'Die Kontoangabe fehlt.',owner:'Interner Test',action:'Im Test Empfangskonto und Zuordnung ergänzen.',waiting_for:'Kontoangabe und Zuordnung.',after_response:'Angaben intern zuordnen.',done_when:'Beide Beträge sind einem Konto zugeordnet.',follow_up:'Offene Zuordnung intern nachfragen.',depends_on:[],deadline:null,evidence:[{document_id:doc.id,quote:'Das Empfangskonto und die Zuordnung sind noch offen.'}]}],letters:[],closing:'Interner Test abgeschlossen, sobald die Zuordnung geklärt ist.'}
 const checked=validateCompleteAnalysis({...plan,analysis:{topics:[{...stale,step_ids:['account']}],calculations,limitations:[]}},source,{scope,research:[],outputLanguage:'de',referenceLanguage:'de'})
@@ -29,7 +29,7 @@ const transport=async(url,options)=>{
     const payload=JSON.parse(request.input.at(-1).content[0].text)
     assert.deepEqual(payload.checked_analysis.calculations.map(item=>item.result),['27930.00','28421.00'])
     assert(request.input.some(message=>message.content.some(item=>item.text.includes('Die Auszahlung ist laut Mandantenangabe im August 2026 eingegangen.'))))
-    assert.deepEqual(Object.keys(request.text.format.schema.properties.topics.items.properties),['id','status','conclusion','conditions'])
+    assert.deepEqual(Object.keys(request.text.format.schema.properties.topics.items.properties),['id','status','conclusion','conditions','sources'])
     assert.match(request.instructions,/document-reported receipt/i)
     return reply(request,{topics:[fixed]},'reconciled-net-and-receipt')
   }
@@ -69,7 +69,7 @@ for(const defect of ['missing','id','extra','empty','truncated']){
     if(defect==='truncated')return Response.json({status:'incomplete',id:'truncated-reconciliation',incomplete_details:{reason:'max_output_tokens'},output_text:'{"topics":'})
     const topic=structuredClone(fixed)
     if(defect==='id')topic.id='unassigned'
-    if(defect==='extra')topic.sources=[{url:'https://invented.example',quote:'Invented source'}]
+    if(defect==='extra')topic.title='Unassigned title'
     if(defect==='empty')topic.conclusion=''
     return reply(request,{topics:defect==='missing'?[]:[topic]},'invalid-reconciliation')
   }}),error=>error.code===(defect==='truncated'?'provider_token_limit':'source_unresolved'))
@@ -86,7 +86,7 @@ assert.equal(unexpected,0)
 let rejectedReviews=0,repairs=0
 const rejectionTransport=async(url,options)=>{
   const request=JSON.parse(options.body),name=request.text.format.name
-  if(name==='ash_complete_reconciliation_v170')return reply(request,{topics:[{id:stale.id,status:stale.status,conclusion:stale.conclusion,conditions:stale.conditions}]},'bad-meaning')
+  if(name==='ash_complete_reconciliation_v170')return reply(request,{topics:[{id:stale.id,status:stale.status,conclusion:stale.conclusion,conditions:stale.conditions,sources:stale.sources}]},'bad-meaning')
   if(name==='ash_complete_plan_v157')return reply(request,{...plan,topic_steps:[{id:'payout',step_ids:['account']}]},'bad-plan')
   if(name==='ash_complete_repair_v169'){
     repairs++
@@ -101,4 +101,60 @@ const rejectionTransport=async(url,options)=>{
 let rejected={status:'processing',state:structuredClone(start)}
 await assert.rejects(async()=>{for(let n=0;rejected.status==='processing'&&n<16;n++)rejected=await advanceCompleteAnalysis({...args,fetchImpl:rejectionTransport,state:rejected.state})},error=>error.code==='review_unresolved')
 assert.equal(repairs,1);assert(!rejected.result)
-console.log('Case reconciliation: both payout results and reported receipt reach the final plan; exact source/math checks, all review groups, immutable fields and one-correction stop passed. Model responses simulated; no live model cost.')
+
+// A later regression adds a future first due date and two deliberately
+// different benefit categories. These are invented rules, not legal advice.
+const temporalSource=structuredClone(source)
+temporalSource.documents[0].extracted_text+=' Die erste Zahlung für September ist am 15. Oktober 2099 fällig. Die Kinder beziehen eine gesetzliche Halbwaisenrente. Die Jahresbescheinigung fehlt.'
+const research=[
+  {url:'https://authority.example/contract',title:'Fiktive Vertragsregel',source_text:'SYNTHETISCHE REGEL: Nur ein Anbieter eines privaten Altersvorsorgevertrags erteilt die hier beschriebene Mitteilung.',checked_at:new Date().toISOString()},
+  {url:'https://authority.example/statutory',title:'Fiktive gesetzliche Rentenregel',source_text:'SYNTHETISCHE REGEL: Die gesetzliche Rentenversicherung stellt für die gesetzliche Halbwaisenrente eine Jahresbescheinigung bereit.',checked_at:new Date().toISOString()}
+]
+const temporalStart=structuredClone(start)
+temporalStart.research=research
+temporalStart.draftAnalysis.topics[0].conclusion='Mögliche Rückstände sind nicht dokumentiert. Die Jahresbescheinigung bei der gesetzlichen Rentenversicherung anfordern.'
+temporalStart.draftAnalysis.topics[0].sources=[{url:research[0].url,quote:research[0].source_text}]
+const temporalFixed={...fixed,conclusion:fixed.conclusion+' Die erste Zahlung ist erst am 15. Oktober 2099 fällig; aus dieser Forderung besteht bis zum Prüfdatum kein Rückstand. Die fehlende Jahresbescheinigung bei der gesetzlichen Rentenversicherung anfordern.',sources:[{quote:'@s1_0'}]}
+let temporalCalls=0
+const temporal=await advanceCompleteAnalysis({...args,source:temporalSource,state:temporalStart,fetchImpl:async(url,options)=>{
+  temporalCalls++
+  const request=JSON.parse(options.body)
+  assert.equal(request.text.format.name,'ash_complete_reconciliation_v170')
+  assert.equal(request.reasoning.effort,'high')
+  assert.equal(request.max_output_tokens,12000)
+  const originals=JSON.parse(request.input[0].content[0].text)
+  assert.equal(originals.review_date,new Date().toISOString().slice(0,10))
+  assert.match(request.instructions,/first due date is still in the future/)
+  assert.match(request.instructions,/payer or institution, benefit\/product category/)
+  assert.equal(request.text.format.schema.properties.topics.items.properties.sources.items.properties.url,undefined)
+  return reply(request,{topics:[temporalFixed]},'temporal-and-source-synthesis')
+}})
+assert.equal(temporalCalls,1)
+assert.equal(temporal.status,'processing')
+assert.deepEqual(temporal.state.draftAnalysis.topics[0].sources,[{url:research[1].url,quote:research[1].source_text}],'a mismatched citation can be replaced by a verbatim passage from the supplied appropriate source')
+assert.deepEqual(temporal.state.draftAnalysis.calculations,draft.calculations,'citation correction does not alter checked arithmetic')
+assert.deepEqual(temporalStart.draftAnalysis.topics[0].sources,[{url:research[0].url,quote:research[0].source_text}],'the old checkpoint is immutable')
+let planSawReconciled=false
+await advanceCompleteAnalysis({...args,source:temporalSource,state:temporal.state,fetchImpl:async(url,options)=>{
+  const request=JSON.parse(options.body)
+  assert.equal(request.text.format.name,'ash_complete_plan_v157')
+  const analysis=JSON.parse(request.input.at(-1).content[0].text).analysis
+  assert.equal(analysis.topics[0].conclusion,temporalFixed.conclusion)
+  assert.equal(analysis.topics[0].sources[0].url,research[1].url)
+  planSawReconciled=true
+  return reply(request,{...plan,topic_steps:[{id:'payout',step_ids:['account']}]},'temporal-plan')
+}})
+assert(planSawReconciled,'the practical plan sees both the revised due-date status and corrected source')
+for(const invalidSource of [
+  {quote:'@s99_0'},
+  {quote:'@d0_0'},
+  {url:'https://authority.example/unfetched',quote:research[1].source_text},
+  {url:research[1].url,quote:'An invented statement absent from this source.'}
+]){
+  let calls=0
+  await assert.rejects(advanceCompleteAnalysis({...args,source:temporalSource,state:structuredClone(temporalStart),fetchImpl:async(url,options)=>{
+    calls++;return reply(JSON.parse(options.body),{topics:[{...temporalFixed,sources:[invalidSource]}]},'invalid-citation')
+  }}),error=>error.code==='source_unresolved')
+  assert.equal(calls,1,'unknown, wrong-kind and fabricated citations stop before plan generation')
+}
+console.log('Case reconciliation: checked payouts, reported receipt, due-date context and source replacement reach the plan; literal source/math gates, all reviews, immutable fields and one-correction stop passed. Model responses simulated; no live model cost.')

@@ -281,7 +281,7 @@ const fetchImpl=async(url,options)=>{
   assert.equal(request.model,'gpt-5.6-sol','complete planning, generation and independent review use the higher-capability model')
   if(name==='ash_evidence_review_v139')assert.equal(request.reasoning.effort,'high','the complete assembled result retains the full independent review')
   if(name.startsWith('ash_complete_')){
-    assert.equal(request.reasoning.effort,'medium','separate bounded analysis and plan calls get substantive reasoning; review remains independent and high')
+    assert.equal(request.reasoning.effort,name==='ash_complete_reconciliation_v170'||name==='ash_complete_repair_v169'?'high':'medium','final synthesis and local repair get high reasoning; independent review stays high')
     assert(!request.instructions.includes('No external research has been performed in this workflow.'))
     const inspect=schema=>{if(!schema||typeof schema!=='object')return;if(schema.properties?.quote){assert.equal(schema.properties.document_id,undefined);assert.equal(schema.properties.url,undefined);assert(schema.properties.quote.pattern)};Object.values(schema).forEach(inspect)}
     inspect(request.text.format.schema)
