@@ -48,11 +48,11 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
   }
   const prepared=pdfTextBlocks(blocks).map(block=>{
     const heading=['title','heading','step'].includes(block.kind)
-    const size=block.kind==='title'?17:block.kind==='meta'?9:11,lineHeight=size*1.45
+    const size=block.kind==='title'?17:block.kind==='meta'?9:block.compact?10.5:11,lineHeight=size*(block.compact?1.25:1.45)
     const inset=block.light?15:block.kind==='bullet'?10:0
     font(size,heading)
     const lines=pdf.splitTextToSize((block.kind==='bullet'?'• ':'')+block.text,contentWidth-inset)
-    const blank=!block.text.trim(),after=block.kind==='meta'?7:10
+    const blank=!block.text.trim(),after=block.compact?4:block.kind==='meta'?7:10
     return {...block,heading,size,lineHeight,inset,lines,blank,after,
       height:blank?8:(heading?5:0)+lines.length*lineHeight+after}
   })
@@ -78,7 +78,7 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
     if(heading)y+=5
     for(let index=0;index<lines.length;index++) {
       if(y+lineHeight>maxY)page()
-      font(size,heading);pdf.setTextColor(block.kind==='meta'?'#596375':'#202B3B')
+      font(size,heading);pdf.setTextColor(block.compact&&heading?'#000000':block.kind==='meta'?'#596375':'#202B3B')
       if(block.light&&index===0) {
         const color=PDF_LIGHT_COLORS[block.light]||PDF_LIGHT_COLORS.white
         pdf.setDrawColor(color);pdf.setFillColor(block.light==='white'?'#FFFFFF':color)

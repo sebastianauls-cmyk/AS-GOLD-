@@ -4,10 +4,12 @@ import { createTextPdf } from './textPdf.mjs'
 import { roadmapSteps, ROADMAP_COLORS } from '../../../supabase/functions/_shared/customerRoadmap.mjs'
 import { roadmapUi } from '../cases/lib/customerRoadmapCopy.mjs'
 import { roadmapCurrentCopy,roadmapCurrentStatus } from '../cases/lib/roadmapCurrentStatus.mjs'
+import { roadmapOverviewBlocks } from '../cases/lib/roadmapOverview.mjs'
 
 // One semantic document model drives both Word and PDF. Letters have no status
 // points and are exported individually, never concatenated with customer advice.
-export function roadmapExportBlocks(record,{letterId}={}) {
+export function roadmapExportBlocks(record,options={}) {
+  const {letterId}=options
   const ui=roadmapUi(record.output_language)
   const letter=letterId?record.result.letters.find(entry=>entry.id===letterId):null
   if(letterId&&!letter) throw new Error('Anschreiben nicht gefunden.')
@@ -42,10 +44,11 @@ export function roadmapExportBlocks(record,{letterId}={}) {
   const addEvidence=items=>{
     if(items?.length)add(`${ui.evidence}: ${items.map(entry=>`${titles.get(entry.document_id)||entry.document_id}: „${entry.quote}“`).join('\n')}`,'meta')
   }
-  add(record.result.title,'title')
+  blocks.push(...roadmapOverviewBlocks(record,options))
+  blocks.push({text:record.result.title,kind:'title',light:null,pageBreakBefore:true})
   add(ui.draft,'meta')
   add(record.style.salutation)
-  const current=roadmapCurrentStatus(record),currentCopy=roadmapCurrentCopy(record.output_language)
+  const current=roadmapCurrentStatus(record,options),currentCopy=roadmapCurrentCopy(record.output_language)
   add(currentCopy.current,'heading')
   add(`${current.label} · ${currentCopy.confirmed}: ${current.completed} / ${current.total}`,'body',current.light)
   for(const [key,value] of [['next',current.next],['action',current.action]]) {add(ui[key],'heading');add(value)}
@@ -60,7 +63,7 @@ export function roadmapExportBlocks(record,{letterId}={}) {
     for(const question of record.result.open_questions) add(`${question.question}\n${ui.owner}: ${question.who}\n${ui.reason}: ${question.why}`)
   }
   blocks.push(...completeAnalysisBlocks(record.result.analysis,record.output_language,{steps:record.result.steps,documents:record.source_documents}))
-  roadmapSteps(record).forEach((step,index)=>{
+  roadmapSteps(record,options).forEach((step,index)=>{
     add(`${index+1}. ${step.title}`,'step',step.light)
     add(`${ui[step.phase]} · ${ui[step.light]}`,'meta')
     for(const [key,value] of [['owner',step.owner],['reason',step.reason],['action',step.action],['waitFor',step.waiting_for],['afterReply',step.after_response],['doneWhen',step.done_when],['followUp',step.follow_up],['deadline',step.deadline?.date]]) if(value) add(`${ui[key]}: ${readableStepText(value,record.result.steps,record.result.letters)}`)
@@ -80,11 +83,12 @@ export async function createRoadmapDocx(record,options={}) {
   const blocks=roadmapExportBlocks(record,options)
   const rtl=['ar','fa'].includes(options.letterId?record.reference_language:record.output_language)
   const paragraph=block=>new Paragraph({
+    style:block.compact&&block.kind==='title'?'Title':undefined,
     bidirectional:block.language?['ar','fa'].includes(block.language):rtl,pageBreakBefore:!!block.pageBreakBefore,keepNext:!!block.keepWithNext||['title','heading','step'].includes(block.kind),
-    spacing:{before:['heading','step'].includes(block.kind)?200:0,after:block.kind==='meta'?110:150,line:290},
+    spacing:block.compact?{before:block.kind==='heading'?80:0,after:70,line:block.kind==='title'?350:260}:{before:['heading','step'].includes(block.kind)?200:0,after:block.kind==='meta'?110:150,line:290},
     children:[...(block.light?[new TextRun({text:'● ',font:'Arial',color:ROADMAP_COLORS[block.light].slice(1),size:21})]:[]),
       ...block.text.split('\n').map((line,index)=>new TextRun({text:(block.kind==='bullet'&&index===0?'• ':'')+line,break:index?1:undefined,
-        bold:['title','heading','step'].includes(block.kind),size:block.kind==='title'?34:block.kind==='meta'?18:22,color:block.kind==='meta'?'5F6874':'202B3B'}))]
+        bold:['title','heading','step'].includes(block.kind),size:block.kind==='title'?34:block.kind==='meta'?18:block.compact?21:22,color:block.compact&&['title','heading','step'].includes(block.kind)?'000000':block.kind==='meta'?'5F6874':'202B3B'}))]
   })
   // The advisor's identity belongs to the explanation, not to a letter sent by
   // the customer. Preserve the sender supplied in the reviewed letter body.
