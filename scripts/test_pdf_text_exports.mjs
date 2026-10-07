@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import './test_monthly_calculation_summary.mjs'
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
@@ -23,6 +24,28 @@ const outputs=[['roadmap',await createRoadmapPdf(record,{fonts}),'Wird grün, so
 const samples={de:'Grüße, nächste Schritte und 3.000,00 EUR.',en:'Documents and next steps.',fr:'Échéance et pièces à vérifier.',tr:'İşlem, görüş ve sonraki adımlar.',pl:'Zażółć gęślą jaźń.',ru:'Проверка документов.',ar:'مراجعة المستندات والخطوات التالية',fa:'بررسی اسناد و مراحل بعدی',ro:'Înștiințare și următorii pași.',bg:'Проверка на документите.',vi:'Kiểm tra tài liệu và thời hạn.'}
 for(const [language,text] of Object.entries(samples))outputs.push([language,await createTextPdf({fonts,language,blocks:[{text,kind:'title'},{text:'🟡 '+text},{text:('CHECK '+text+' ').repeat(180)},{text:'END-OF-EXPORT',light:'green'}]}),text])
 const poppler=spawnSync('pdftotext',['-v'],{encoding:'utf8'}).status===0
+// The closing must remain with the signature at the actual page boundary.
+const closingPdf=await createTextPdf({fonts,blocks:[
+  ...Array.from({length:26},(_,index)=>({text:'PARAGRAPH-'+index})),
+  {text:'CLOSING-MARKER',keepWithNext:true},{text:' ',keepWithNext:true},{text:'SIGNATURE-MARKER'}
+]})
+const closingFile=path.join(directory,'closing-boundary.pdf')
+fs.writeFileSync(closingFile,Buffer.from(await closingPdf.arrayBuffer()))
+if(poppler){
+  const extracted=spawnSync('pdftotext',['-raw',closingFile,'-'],{encoding:'utf8'})
+  assert.equal(extracted.status,0,extracted.stderr)
+  const pages=extracted.stdout.split('\f')
+  const closingPage=pages.findIndex(page=>page.includes('CLOSING-MARKER'))
+  assert.ok(closingPage>=0)
+  assert.equal(pages.findIndex(page=>page.includes('SIGNATURE-MARKER')),closingPage,'closing and signature stay on the same rendered page')
+  assert.ok(extracted.stdout.includes('PARAGRAPH-25'),'pagination preserves the preceding content')
+}
+const closingRecord=roadmapTestRecord()
+closingRecord.result.letters[0].body='Sehr geehrte Damen und Herren,\n\nBriefinhalt.\n\nMit freundlichen Grüßen\n\nSYNTHETIC-SIGNATURE'
+const closingDocx=await createRoadmapDocx(closingRecord,{letterId:closingRecord.result.letters[0].id})
+const closingXml=await (await JSZip.loadAsync(await closingDocx.arrayBuffer())).file('word/document.xml').async('string')
+const closingParagraph=[...closingXml.matchAll(/<w:p[ >][\s\S]*?<\/w:p>/g)].find(match=>match[0].includes('Mit freundlichen Grüßen'))?.[0]
+assert.match(closingParagraph,/<w:keepNext\/>/,'Word keeps the closing with the following signature')
 for(const options of [{},{letterId:record.result.letters[0].id}]){
   const zip=await JSZip.loadAsync(await (await createRoadmapDocx(record,options)).arrayBuffer())
   const headers=(await Promise.all(zip.file(/^word\/header\d+\.xml$/).map(file=>file.async('string')))).join('\n')

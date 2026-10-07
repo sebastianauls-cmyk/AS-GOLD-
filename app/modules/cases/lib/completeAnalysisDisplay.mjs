@@ -1,3 +1,6 @@
+import {monthlyCalculationSummaries} from './monthlyCalculationSummary.mjs'
+
+const monthlyLabels={de:'Rechnerische Monatssumme',en:'Calculated monthly total',fr:'Total mensuel calculé',tr:'Hesaplanan aylık toplam',pl:'Obliczona suma miesięczna',ru:'Расчётная месячная сумма',ar:'المجموع الشهري المحسوب',fa:'مجموع ماهانه محاسبه‌شده',ro:'Total lunar calculat',bg:'Изчислена месечна сума',vi:'Tổng hàng tháng được tính'}
 const labels={
  de:['Auswertung','Berechnungen','Voraussetzungen','Noch offen','Quellen','Rechenweg','Angenommen','Beantwortet','Bedingt','Offen','Fallfragen werden geprüft …','Passende Quellen werden recherchiert …','Diese ältere Auswertung enthält noch keine verbundene Recherche und Berechnung. Mit „Neu erstellen“ erhältst du die erweiterte Prüfung.'],
  en:['Analysis','Calculations','Conditions','Still unresolved','Sources','Calculation','Assumed','Answered','Conditional','Open','Checking the case questions …','Researching relevant sources …','This older analysis does not include the connected research and calculations. Create it again for the expanded review.'],
@@ -54,6 +57,13 @@ export function completeAnalysisBlocks(analysis,language='de',{steps=[],document
     for(const id of topic.step_ids||[])add(ui.relatedSteps+': '+(stepTitles.get(id)||id),'meta',{stepId:id})
   }
   if(analysis.calculations.length)add(ui.calculations,'heading')
+  for(const summary of monthlyCalculationSummaries(analysis)){
+    add((monthlyLabels[language]||monthlyLabels.de)+': '+number(summary.result,language)+' '+summary.unit,'heading')
+    add(summary.parts.map(part=>part.title+': '+number(part.result,language)+' '+part.unit).join('\n'))
+    add(ui.formula+': '+summary.parts.map(part=>number(part.result,language)).join(' + ')+' = '+number(summary.result,language)+' '+summary.unit,'meta')
+    add(ui.derived+': '+summary.total.title,'meta')
+    if(summary.total.conditions)add(ui.conditions+': '+summary.total.conditions)
+  }
   for(const calculation of analysis.calculations){
     add(calculation.title+': '+number(calculation.result,language)+' '+calculation.unit,'heading')
     add(calculation.explanation)

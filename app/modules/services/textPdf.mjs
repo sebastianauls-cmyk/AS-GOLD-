@@ -46,15 +46,32 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
     for(const line of pdf.splitTextToSize(String(header),contentWidth)) {text(line,rtl?width-margin:margin,y,rtl?'right':'left');y+=13}
     pdf.setDrawColor('#D8DFE6');pdf.line(margin,y+1,width-margin,y+1);y+=28
   }
-  page(true)
-  for(const block of pdfTextBlocks(blocks)) {
-    if(block.pageBreakBefore)page()
-    const blockRtl=block.language?['ar','fa'].includes(block.language):rtl
+  const prepared=pdfTextBlocks(blocks).map(block=>{
     const heading=['title','heading','step'].includes(block.kind)
     const size=block.kind==='title'?17:block.kind==='meta'?9:11,lineHeight=size*1.45
     const inset=block.light?15:block.kind==='bullet'?10:0
     font(size,heading)
     const lines=pdf.splitTextToSize((block.kind==='bullet'?'• ':'')+block.text,contentWidth-inset)
+    const blank=!block.text.trim(),after=block.kind==='meta'?7:10
+    return {...block,heading,size,lineHeight,inset,lines,blank,after,
+      height:blank?8:(heading?5:0)+lines.length*lineHeight+after}
+  })
+  page(true)
+  const pageStartY=y
+  for(let blockIndex=0;blockIndex<prepared.length;blockIndex++) {
+    const block=prepared[blockIndex]
+    if(block.pageBreakBefore)page()
+    const blockRtl=block.language?['ar','fa'].includes(block.language):rtl
+    const {heading,size,lineHeight,inset,lines}=block
+    if(block.keepWithNext){
+      let groupHeight=block.height,next=blockIndex
+      while(prepared[next].keepWithNext&&prepared[next+1]&&!prepared[next+1].pageBreakBefore){
+        next++;groupHeight+=prepared[next].height
+      }
+      // Oversized groups still flow normally, so long letters cannot loop or clip.
+      if(groupHeight<=maxY-pageStartY&&y+groupHeight>maxY&&y>pageStartY)page()
+    }
+    if(block.blank){if(y>pageStartY)y=Math.min(maxY,y+block.height);continue}
     // Reserve the heading's top/bottom spacing as well as the first body line.
     // Otherwise a heading can fit while its entire paragraph moves off-page.
     if(heading&&y+5+lineHeight*Math.min(lines.length,3)+10+17*1.45>maxY)page()
@@ -69,7 +86,7 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
       }
       text(lines[index],blockRtl?width-margin-inset:margin+inset,y,blockRtl?'right':'left',blockRtl);y+=lineHeight
     }
-    y+=block.kind==='meta'?7:10
+    y+=block.after
   }
   const count=pdf.getNumberOfPages()
   for(let index=1;index<=count;index++) {

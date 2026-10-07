@@ -13,14 +13,28 @@ export function roadmapExportBlocks(record,{letterId}={}) {
   if(letterId&&!letter) throw new Error('Anschreiben nicht gefunden.')
   const blocks=[]
   const add=(text,kind='body',light=null)=>{if(text)blocks.push({text:String(text),kind,light})}
+  const addLetterBody=(body,language)=>{
+    const lines=body.split(/\r?\n/),paragraphs=[]
+    let start=0
+    for(let index=0;index<=lines.length;index++)if(index===lines.length||!lines[index].trim()){
+      if(index>start)paragraphs.push({start,end:index-1})
+      start=index+1
+    }
+    // Keep the final two paragraphs (usually closing and signature) together.
+    // This also works for translated letters without guessing greeting words.
+    const tail=paragraphs.slice(-2),keepTo=tail.at(-1)?.end??-1
+    const keepFrom=tail.length===2?tail[0].start:tail.length?Math.max(tail[0].start,keepTo-1):-1
+    lines.forEach((line,index)=>blocks.push({text:line||' ',kind:'body',light:null,language,
+      keepWithNext:keepFrom>=0&&index>=keepFrom&&index<keepTo}))
+  }
   if(letter) {
     add(letter.recipient)
     add(letter.subject,'title')
-    for(const line of letter.body.split(/\r?\n/)) add(line||' ','body')
     for(const block of blocks)block.language=record.reference_language
+    addLetterBody(letter.body,record.reference_language)
     if(letter.customer_translation?.trim()) {
       blocks.push({text:ui.translation,kind:'heading',language:record.output_language,pageBreakBefore:true})
-      for(const line of letter.customer_translation.split(/\r?\n/))blocks.push({text:line||' ',kind:'body',language:record.output_language})
+      addLetterBody(letter.customer_translation,record.output_language)
     }
     return blocks
   }
@@ -66,7 +80,7 @@ export async function createRoadmapDocx(record,options={}) {
   const blocks=roadmapExportBlocks(record,options)
   const rtl=['ar','fa'].includes(options.letterId?record.reference_language:record.output_language)
   const paragraph=block=>new Paragraph({
-    bidirectional:block.language?['ar','fa'].includes(block.language):rtl,pageBreakBefore:!!block.pageBreakBefore,keepNext:['title','heading','step'].includes(block.kind),
+    bidirectional:block.language?['ar','fa'].includes(block.language):rtl,pageBreakBefore:!!block.pageBreakBefore,keepNext:!!block.keepWithNext||['title','heading','step'].includes(block.kind),
     spacing:{before:['heading','step'].includes(block.kind)?200:0,after:block.kind==='meta'?110:150,line:290},
     children:[...(block.light?[new TextRun({text:'● ',font:'Arial',color:ROADMAP_COLORS[block.light].slice(1),size:21})]:[]),
       ...block.text.split('\n').map((line,index)=>new TextRun({text:(block.kind==='bullet'&&index===0?'• ':'')+line,break:index?1:undefined,
