@@ -1,8 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "functions": {
-    "app/api/primary-sources/route.js": {
-      "regions": ["fra1"]
-    }
-  }
+  "regions": ["fra1"]
 }
