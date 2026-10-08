@@ -1,6 +1,8 @@
 const DAY_MS=86400000
 const DATE_RE=/\b([0-3]?\d)\.(0?\d|1[0-2])\.(20\d{2})\b/g
-const STRONG_DEADLINE_CUES=/\b(bis(?:\s+zum|\s+spätestens)?|spätestens|frist(?:\s+bis|ende)?|fristablauf|einzureichen|einreichen|eingehen|eingang|vorzulegen|vorlegen|zahlbar|fällig)\b/i
+// A receipt ("Eingang") records an event, not a deadline on its own.
+// Receipt deadlines still need an explicit cue such as "bis" or "spätestens".
+const STRONG_DEADLINE_CUES=/\b(bis(?:\s+zum|\s+spätestens)?|spätestens|frist(?:\s+bis|ende)?|fristablauf|einzureichen|einreichen|eingehen|vorzulegen|vorlegen|zahlbar|fällig)\b/i
 const ORDINARY_DATE_CUES=/\b(besprechung|termin|geburtstag|veranstaltung|meeting|gespräch|anhörungstermin|telefonat)\b/i
 
 function atNoonUtc(date){

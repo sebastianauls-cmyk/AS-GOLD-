@@ -17,6 +17,21 @@ const caseWins=analyzeDeadlines({text:'Weitere Besprechung am 20.09.2026.',caseD
 const multipleDeadlines=analyzeDeadlines({text:'Zahlung bis 08.09.2026. Stellungnahme bis 04.09.2026.',now});assert.equal(multipleDeadlines.primary.date,'2026-09-04');assert.equal(multipleDeadlines.candidates,2)
 const noDeadline=analyzeDeadlines({text:'Dieses Schreiben enthält kein konkretes Fristdatum.',now});assert.equal(noDeadline.status,'uncertain');assert.equal(noDeadline.primary,null);assert.match(noDeadline.message,/Keine sichere Frist/);assert.match(noDeadline.consequence,/Keine Rechtsfolge behauptet/)
 
+// A confirmed past receipt must not overtake a separate, actual payment date.
+const receiptDate=new Date('2026-10-08T12:00:00Z')
+const receipt='Wir bestätigen den Eingang Ihrer Teilzahlung von 300,00 EUR am 05.10.2026.'
+for(const text of [receipt,'Der Eingang Ihres Antrags am 05.10.2026 ist bestätigt.','Eingang: 05.10.2026.']){
+  assert.equal(analyzeDeadlines({text,now:receiptDate}).primary,null,'a receipt date alone is not a deadline')
+}
+const paymentDate=analyzeDeadlines({text:receipt+' Bitte zahlen Sie den noch offenen Rechnungsbetrag bis zum 16.10.2026.',now:receiptDate})
+assert.equal(paymentDate.primary.date,'2026-10-16')
+assert.equal(paymentDate.status,'normal')
+assert.equal(paymentDate.candidates,1)
+assert.equal(analyzeDeadlines({text:receipt,caseDeadline:'2026-10-05',now:receiptDate}).status,'overdue','an explicit case deadline must remain active')
+for(const text of ['Bitte bestätigen Sie den Eingang bis spätestens 16.10.2026.','Eingang der Unterlagen bis 16.10.2026.','Ihre Stellungnahme muss bis 16.10.2026 eingehen.']){
+  assert.equal(analyzeDeadlines({text,now:receiptDate}).primary.date,'2026-10-16','explicit receipt deadlines remain recognized')
+}
+
 const card=fs.readFileSync(new URL('../app/modules/cases/DeadlineCard.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 const directCases=fs.readFileSync(new URL('../app/modules/cases/CaseWorkspace.js',import.meta.url),'utf8')
