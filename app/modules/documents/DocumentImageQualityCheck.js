@@ -2,6 +2,7 @@
 
 import { useEffect,useMemo,useState } from 'react'
 import { isImageDocument } from './documentUploadReadiness.mjs'
+import { assessDocumentImage } from './documentImageQuality.mjs'
 
 const copy={
   de:{title:'Bildqualität',good:'Bildqualität ausreichend',dark:'Foto ist zu dunkel',bright:'Foto ist sehr hell',blur:'Foto wirkt unscharf',cropped:'Dokument könnte abgeschnitten sein',skew:'Dokument wirkt schief fotografiert',resolution:'Auflösung zu niedrig',retake:'Bitte neu fotografieren: Dokument vollständig, gerade und gut beleuchtet aufnehmen.',notImage:'Qualitätsprüfung ist nur bei Bildern nötig.'},
@@ -17,9 +18,6 @@ const copy={
   vi:{title:'Chất lượng ảnh',good:'Chất lượng ảnh đạt yêu cầu',dark:'Ảnh quá tối',bright:'Ảnh quá sáng',blur:'Ảnh có vẻ bị mờ',cropped:'Tài liệu có thể bị cắt mất phần',skew:'Tài liệu có vẻ bị chụp lệch',resolution:'Độ phân giải quá thấp',retake:'Hãy chụp lại toàn bộ tài liệu, thẳng và đủ sáng.',notImage:'Chỉ cần kiểm tra chất lượng đối với ảnh.'}
 }
 
-function luminance(data){let sum=0;for(let i=0;i<data.length;i+=4)sum+=(data[i]*0.2126+data[i+1]*0.7152+data[i+2]*0.0722);return sum/(data.length/4||1)}
-function edgeVariance(data,width,height){let sum=0,sumSq=0,n=0;for(let y=1;y<height-1;y+=2){for(let x=1;x<width-1;x+=2){const i=(y*width+x)*4;const left=data[i-4],right=data[i+4],up=data[i-width*4],down=data[i+width*4];const g=Math.abs(right-left)+Math.abs(down-up);sum+=g;sumSq+=g*g;n++}}const mean=sum/(n||1);return sumSq/(n||1)-mean*mean}
-
 export default function DocumentImageQualityCheck({file,language='de',onResult}){
   const c=copy[language]||copy.de
   const [result,setResult]=useState(null)
@@ -33,14 +31,7 @@ export default function DocumentImageQualityCheck({file,language='de',onResult})
       if(!active)return
       const max=900;const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const width=Math.max(1,Math.round(img.naturalWidth*scale));const height=Math.max(1,Math.round(img.naturalHeight*scale));
       const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,width,height);const data=ctx.getImageData(0,0,width,height).data
-      const lum=luminance(data);const variance=edgeVariance(data,width,height);const issues=[]
-      if(Math.min(img.naturalWidth,img.naturalHeight)<800||Math.max(img.naturalWidth,img.naturalHeight)<1200)issues.push('resolution')
-      if(lum<55)issues.push('dark'); else if(lum>225)issues.push('bright')
-      if(variance<350)issues.push('blur')
-      const ratio=img.naturalWidth/img.naturalHeight;if(ratio<0.45||ratio>2.2)issues.push('cropped')
-      if(ratio>0.72&&ratio<1.05)issues.push('skew')
-      const severe=issues.includes('dark')||issues.includes('blur')||issues.includes('cropped')
-      const next={status:issues.length?(severe?'bad':'warn'):'good',issues,width:img.naturalWidth,height:img.naturalHeight,luminance:Math.round(lum),sharpness:Math.round(variance)}
+      const next=assessDocumentImage({data,width,height,naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight})
       setResult(next);onResult?.(next);URL.revokeObjectURL(url)
     }
     img.onerror=()=>{if(!active)return;const next={status:'bad',issues:['blur']};setResult(next);onResult?.(next);URL.revokeObjectURL(url)};img.src=url
@@ -52,5 +43,5 @@ export default function DocumentImageQualityCheck({file,language='de',onResult})
   if(!isImage)return <div className="analysisFacts"><b>{c.title}</b><p>🟢 {c.notImage}</p></div>
   if(!result)return <div className="analysisFacts"><b>{c.title}</b><p>🟡 …</p></div>
   const dot=result.status==='good'?'🟢':result.status==='warn'?'🟡':'🔴'
-  return <div className="analysisFacts"><b>{c.title}</b><p><strong>{dot} {result.status==='good'?c.good:c.retake}</strong></p>{rows.length?<div>{rows.map(key=><span key={key}><small>{key}</small><strong>{result.status==='bad'?'🔴':'🟡'} {c[key]}</strong></span>)}</div>:null}</div>
+  return <div className="analysisFacts"><b>{c.title}</b><p><strong>{dot} {result.status==='good'?c.good:c.retake}</strong></p>{rows.length?<div>{rows.map(key=><span key={key}><strong>{result.status==='bad'?'🔴':'🟡'} {c[key]}</strong></span>)}</div>:null}</div>
 }
