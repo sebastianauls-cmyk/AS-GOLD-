@@ -15,8 +15,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   refresh:
-    # The hosted Linux runner cannot currently connect to the official source.
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
