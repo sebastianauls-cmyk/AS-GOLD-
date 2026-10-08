@@ -71,10 +71,13 @@ export default function DocumentFileIntake({language='de',documentMode='upload',
 
   const serialized=JSON.stringify({...(fileInfo||{}),...quality,checked_at:fileInfo?new Date().toISOString():null})
   return <section className="detailCard documentFileIntake">
-    <DocumentPickerActions language={language} allowedUploadAccept={allowedUploadAccept} onSelect={inspect} disabled={disabled}/>
+    <details className="documentReplaceFile" open={!fileInfo}>
+      <summary hidden={!fileInfo}>{picker.change}</summary>
+      <DocumentPickerActions language={language} allowedUploadAccept={allowedUploadAccept} onSelect={inspect} disabled={disabled}/>
+    </details>
     <div className="documentSelection" role="status">{fileInfo?<><strong>{picker.selected}</strong><span>{fileInfo.name}</span></>:<p>{picker.empty}</p>}</div>
     {preview&&<img className="documentPhotoPreview" src={preview} alt={picker.preview}/>}
-    <details><summary>{simpleCaseCopy(language).options}</summary><label>{c.sourceLanguage}<select value={sourceLanguage} onChange={e=>setSourceLanguage(e.target.value)}><option value="">{c.auto}</option>{documentIntakeLanguages.map(item=><option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
+    <details className="documentIntakeOptions"><summary>{simpleCaseCopy(language).options}</summary><label>{c.sourceLanguage}<select value={sourceLanguage} onChange={e=>setSourceLanguage(e.target.value)}><option value="">{c.auto}</option>{documentIntakeLanguages.map(item=><option key={item.key} value={item.key}>{item.label}</option>)}</select></label>
     {fileInfo&&<div className="analysisFacts"><b>{c.quality}</b><div><span><small>{c.size}</small><strong>{formatBytes(fileInfo.size)}</strong></span><span><small>{c.type}</small><strong>{fileInfo.type}</strong></span></div></div>}
     {documentMode==='upload'?<button type="button" className="secondary" disabled={disabled} onClick={selectSample}>{sampleLabels[language]||sampleLabels.de}</button>:null}
     </details>

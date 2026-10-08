@@ -9,7 +9,7 @@ async function expectDocumentLayout(page,selector){
 async function prepare(page,{sample=false}={}){
   await page.goto('/qa-document-flow')
   if(sample){
-    await page.locator('.documentFileIntake details > summary').click()
+    await page.locator('.documentIntakeOptions > summary').click()
     await page.getByRole('button',{name:'Synthetische Musterdatei auswählen',exact:true}).click()
   }else{
     const chooser=page.waitForEvent('filechooser')
