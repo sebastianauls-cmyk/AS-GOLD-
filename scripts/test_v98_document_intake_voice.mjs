@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 
 const intake=fs.readFileSync('app/modules/documents/DocumentFileIntake.js','utf8')
-const quality=fs.readFileSync('app/modules/documents/DocumentImageQualityCheck.js','utf8')
+const quality=fs.readFileSync('app/modules/documents/DocumentImageQualityCheck.js','utf8')+fs.readFileSync('app/modules/documents/documentImageQuality.mjs','utf8')
 const voice=fs.readFileSync('app/modules/documents/VoiceContextInput.js','utf8')
 const surface=fs.readFileSync('app/modules/documents/DocumentsSurface.js','utf8')
 const workflow=fs.readFileSync('app/modules/documents/documentWorkflow.js','utf8')
@@ -23,7 +23,7 @@ must(intake,"documentMode==='scan'?'image/*'",'scan mode restricts camera intake
 must(intake,"capture={documentMode==='scan'?'environment':undefined}",'rear-camera capture hint')
 must(intake,"./DocumentImageQualityCheck",'intake delegates image quality to standalone component')
 must(intake,'name="intake_quality"','quality result submitted separately')
-must(quality,"Math.min(img.naturalWidth,img.naturalHeight)<800||Math.max(img.naturalWidth,img.naturalHeight)<1200",'image resolution threshold in quality module')
+must(quality,"Math.min(naturalWidth,naturalHeight)<800||Math.max(naturalWidth,naturalHeight)<1200",'image resolution threshold in quality module')
 must(quality,"issues.push('dark')",'dark-image detection')
 must(quality,"issues.push('blur')",'blur detection')
 must(quality,"issues.push('cropped')",'cropping warning')
