@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react'
 import { getAuthSession, signOutSession, watchAuthState } from '../services/authRepository'
+import { reportSessionCheckFailure } from '../services/authDiagnostics.mjs'
 import { getWorkspaceAccess } from '../services/workspaceRepository'
 import { clearGuestTestRequest, isGuestTestRequest } from '../auth/guestTestRequest.mjs'
 import { isAnonymousTestSession } from '../auth/sessionIdentity.mjs'
@@ -56,6 +57,7 @@ export function useWorkspaceSession({supabase,publicOnly=false,loadApp,setScreen
     function showSessionUnavailable(){
       finishSessionCheck()
       sessionCheckExpired=true
+      reportSessionCheckFailure()
       setScreen('session-unavailable')
     }
 

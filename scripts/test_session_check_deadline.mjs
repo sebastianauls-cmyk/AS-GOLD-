@@ -21,6 +21,7 @@ function mount({publicOnly=false,recovery=false}={}){
     capturePasswordRecovery(){},enterPasswordRecovery(){recovery=true},
     isPasswordRecoveryActive:()=>recovery,isPasswordRecoveryLocation:()=>false,
     isGuestTestRequest:()=>false,clearGuestTestRequest(){},
+    reportSessionCheckFailure(){},
     setTimeout(callback,ms){const id=++nextId;timers.set(id,{callback,at:now+ms});return id},
     clearTimeout:id=>timers.delete(id),setInterval(){throw new Error('No guest timer expected')},clearInterval(){}
   }

@@ -135,7 +135,7 @@ for(const session of [null,guest]){
   const browser=fakeBrowser('https://app.example/#type=recovery')
   let capturedBeforeClient=false
   const source=fs.readFileSync('app/modules/services/supabaseClient.js','utf8').replace(/^import .*$/gm,'').replace('export const supabase','const supabase')
-  const context={createAuthFetch,capturePasswordRecovery:()=>recovery.capturePasswordRecovery(browser),SUPABASE_PUBLISHABLE_KEY:'synthetic-public-key',SUPABASE_URL:'https://app.example',
+  const context={createAuthFetch,recordAuthDiagnostic(){},capturePasswordRecovery:()=>recovery.capturePasswordRecovery(browser),SUPABASE_PUBLISHABLE_KEY:'synthetic-public-key',SUPABASE_URL:'https://app.example',
     createClient:()=>{capturedBeforeClient=recovery.isPasswordRecoveryActive();return {}}}
   vm.createContext(context);vm.runInContext(source,context)
   assert.equal(capturedBeforeClient,true)
