@@ -42,7 +42,22 @@ export function useWorkspaceSession({supabase,publicOnly=false,loadApp,setScreen
     let guestExpiryTimer=null
     let guestAccessCheckTimer=null
     let authEventHandled=false
+    let sessionCheckExpired=false
     capturePasswordRecovery()
+
+    // getSession may wait on SDK initialization, refresh or a browser lock.
+    // Never treat a missing response as a signed-in or signed-out session.
+    const sessionCheckTimer=setTimeout(()=>{
+      if(alive&&!authEventHandled)showSessionUnavailable()
+    },20_000)
+
+    function finishSessionCheck(){clearTimeout(sessionCheckTimer)}
+
+    function showSessionUnavailable(){
+      finishSessionCheck()
+      sessionCheckExpired=true
+      setScreen('session-unavailable')
+    }
 
     function showRecovery(session){
       clearGuestExpiryGuards()
@@ -88,9 +103,11 @@ export function useWorkspaceSession({supabase,publicOnly=false,loadApp,setScreen
     }
 
     getAuthSession(supabase).then(({data,error})=>{
-      if(!alive||authEventHandled)return
+      if(!alive||authEventHandled||sessionCheckExpired)return
+      finishSessionCheck()
       const session=error?null:data?.session
       if(isPasswordRecoveryActive()||isPasswordRecoveryUrl()){showRecovery(session);return}
+      if(error){showSessionUnavailable();return}
       const entry=resolveWorkspaceEntry(session,requestedPublicScreen())
       if(entry.kind==='guest-test'){setScreen('guest-test');return}
       if(entry.kind==='session'){
@@ -101,15 +118,17 @@ export function useWorkspaceSession({supabase,publicOnly=false,loadApp,setScreen
       }
       setScreen(entry.screen)
     }).catch(()=>{
-      if(!alive||authEventHandled)return
+      if(!alive||authEventHandled||sessionCheckExpired)return
+      finishSessionCheck()
       if(isPasswordRecoveryActive()||isPasswordRecoveryUrl()){showRecovery(null);return}
-      setScreen('login')
+      showSessionUnavailable()
     })
 
     const subscription=watchAuthState(supabase,(event,session)=>{
-      if(!alive) return
-      if(event==='PASSWORD_RECOVERY'){authEventHandled=true;showRecovery(session);return}
+      if(!alive||sessionCheckExpired) return
+      if(event==='PASSWORD_RECOVERY'){finishSessionCheck();authEventHandled=true;showRecovery(session);return}
       if(event==='SIGNED_IN'&&session){
+        finishSessionCheck()
         if(isPasswordRecoveryActive()||isPasswordRecoveryUrl()){authEventHandled=true;showRecovery(session);return}
         if(isGuestTestRequest()&&isAnonymousTestSession(session))return
         authEventHandled=true
@@ -119,6 +138,7 @@ export function useWorkspaceSession({supabase,publicOnly=false,loadApp,setScreen
       }
       if(event==='SIGNED_OUT'){
         if(isGuestTestRequest())return
+        finishSessionCheck()
         if(isPasswordRecoveryActive()){
           authEventHandled=true
           clearGuestExpiryGuards()
@@ -134,6 +154,7 @@ export function useWorkspaceSession({supabase,publicOnly=false,loadApp,setScreen
 
     return ()=>{
       alive=false
+      finishSessionCheck()
       clearGuestExpiryGuards()
       subscription.unsubscribe()
     }

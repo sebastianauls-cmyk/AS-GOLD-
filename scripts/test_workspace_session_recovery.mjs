@@ -175,7 +175,8 @@ for(const publicOnly of [true,false]){
     watchAuthState:()=>{calls.watch++;return {unsubscribe(){}}},
     capturePasswordRecovery(){},clearGuestTestRequest(){},
     isPasswordRecoveryActive:()=>false,isPasswordRecoveryLocation:()=>false,
-    isAnonymousTestSession:()=>false,resolveWorkspaceEntry
+    isAnonymousTestSession:()=>false,resolveWorkspaceEntry,
+    setTimeout,clearTimeout
   }
   vm.createContext(context)
   vm.runInContext(`${sessionSource}\nthis.useSession=useWorkspaceSession`,context)

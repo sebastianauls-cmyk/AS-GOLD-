@@ -11,6 +11,7 @@ import { ui } from '../public/publicUi'
 import { passwordRecoveryUi, passwordUi } from '../auth/passwordUi'
 import { ProtectedWorkspaceShell } from './ProtectedWorkspaceShell'
 import { LoadingSurface } from './LoadingSurface'
+import { getSessionCheckCopy } from '../auth/sessionCheckCopy.mjs'
 import { WorkspaceConnectionSurface } from '../auth/WorkspaceConnectionSurface'
 import { AuthSurface } from '../auth/AuthSurface'
 import { PublicLanding } from '../public/PublicLanding'
@@ -381,6 +382,11 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   }
 
   if(screen==='loading') return <LoadingSurface language={language} checking={a.checking}/>
+
+  if(screen==='session-unavailable'){
+    const copy=getSessionCheckCopy(language)
+    return <LoadingSurface language={language} checking={copy.unavailable} retryLabel={copy.retry} onRetry={()=>window.location.reload()}/>
+  }
 
   if(screen==='workspace-connecting'||screen==='workspace-unavailable') return <WorkspaceConnectionSurface language={language} busy={screen==='workspace-connecting'} onRetry={retryWorkspace} onSignOut={()=>signOutSession(supabase)}/>
 
