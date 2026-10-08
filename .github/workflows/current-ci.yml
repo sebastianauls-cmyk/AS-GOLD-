@@ -20,6 +20,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Verify complete primary-source refresh
+        run: python3 scripts/test_primary_refresh_atomicity.py
       - name: Run current release gates
         run: npm run prebuild
       - name: Build production bundle

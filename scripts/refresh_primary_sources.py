@@ -64,7 +64,11 @@ def fetch(pair):
             parser = Text(); parser.feed(data.decode(encoding))
         text = re.sub(r'\s+', ' ', ' '.join(parser.parts)).strip()
         title = ' '.join(parser.title).strip()
-        if len(text) < 100 or not re.search(r'§\s*' + re.escape(section) + r'\b', text) or re.search('verifying your browser|security check|access denied', title, re.I):
+        provision_pattern = r'§\s*' + re.escape(section) + r'\b'
+        if (len(text) < 100
+                or not re.search(provision_pattern, text)
+                or not re.search(provision_pattern, title)
+                or re.search('verifying your browser|security check|access denied', title, re.I)):
             return unavailable('expected readable provision not found')
         return {'url': url, 'final_url': url, 'title': title, 'source_text': text,
                 'checked_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
@@ -81,7 +85,7 @@ def main():
     pairs = [(act, section) for act, sections in PROVISIONS.items() for section in sections]
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
         refreshed = [item for item in pool.map(fetch, pairs) if item]
-    if len(refreshed) < len(pairs) // 2:
+    if len(refreshed) != len(pairs):
         raise SystemExit(f'Refresh incomplete ({len(refreshed)}/{len(pairs)}); existing snapshot dates remain unchanged.')
     records.update({item['url']: item for item in refreshed})
     TARGET.write_text('// Public original statutory texts. Refreshed independently; never a case answer.\nexport const PRIMARY_SOURCE_CACHE=' + json.dumps(list(records.values()), ensure_ascii=False, separators=(',', ':')) + ';\n')
