@@ -5,6 +5,7 @@ import hashlib
 import json
 import pathlib
 import re
+import sys
 import urllib.request
 from html.parser import HTMLParser
 
@@ -47,25 +48,30 @@ class Text(HTMLParser):
 def fetch(pair):
     act, section = pair
     url = f'https://www.gesetze-im-internet.de/{act}/__{section}.html'
+    def unavailable(reason):
+        print(f'Primary text unavailable: {url}: {reason}', file=sys.stderr, flush=True)
+        return None
     try:
         request = urllib.request.Request(url, headers={'User-Agent': 'ASHWorkspaceGold/1.0 (public statutory text refresh)', 'Accept': 'text/html'})
         with urllib.request.urlopen(request, timeout=18) as response:
-            if response.status != 200 or response.url != url: return None
+            if response.status != 200 or response.url != url:
+                return unavailable(f'HTTP {response.status} or unexpected redirect')
             data = response.read(1500001)
-            if len(data) > 1500000: return None
+            if len(data) > 1500000: return unavailable('response exceeds byte limit')
             head = data[:4096].decode('latin-1')
             declared = re.search(r'charset\s*=\s*["\']?([\w-]+)', response.headers.get('content-type', '') + ' ' + head, re.I)
             encoding = declared.group(1) if declared else 'utf-8'
             parser = Text(); parser.feed(data.decode(encoding))
         text = re.sub(r'\s+', ' ', ' '.join(parser.parts)).strip()
         title = ' '.join(parser.title).strip()
-        if len(text) < 100 or not re.search(r'§\s*' + re.escape(section) + r'\b', text) or re.search('verifying your browser|security check|access denied', title, re.I): return None
+        if len(text) < 100 or not re.search(r'§\s*' + re.escape(section) + r'\b', text) or re.search('verifying your browser|security check|access denied', title, re.I):
+            return unavailable('expected readable provision not found')
         return {'url': url, 'final_url': url, 'title': title, 'source_text': text,
                 'checked_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
                 'content_sha256': hashlib.sha256(text.encode()).hexdigest(), 'truncated': False,
                 'retrieval_mode': 'verified_snapshot'}
-    except Exception:
-        return None
+    except Exception as error:
+        return unavailable(f'{type(error).__name__}: {str(error)[:180]}')
 
 def main():
     old = []
@@ -76,7 +82,7 @@ def main():
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
         refreshed = [item for item in pool.map(fetch, pairs) if item]
     if len(refreshed) < len(pairs) // 2:
-        raise SystemExit('Refresh incomplete; existing snapshot dates remain unchanged.')
+        raise SystemExit(f'Refresh incomplete ({len(refreshed)}/{len(pairs)}); existing snapshot dates remain unchanged.')
     records.update({item['url']: item for item in refreshed})
     TARGET.write_text('// Public original statutory texts. Refreshed independently; never a case answer.\nexport const PRIMARY_SOURCE_CACHE=' + json.dumps(list(records.values()), ensure_ascii=False, separators=(',', ':')) + ';\n')
     TARGET.with_suffix('.json').write_text(json.dumps(list(records.values()), ensure_ascii=False, separators=(',', ':')) + '\n')

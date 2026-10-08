@@ -1,5 +1,10 @@
 name: Refresh public primary texts
 on:
+  push:
+    branches: [main]
+    paths:
+      - scripts/refresh_primary_sources.py
+      - .github/workflows/refresh-primary-sources.yml
   schedule:
     - cron: '15 4 * * *'
   workflow_dispatch:
@@ -17,7 +22,23 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Check official source connectivity
+        run: |
+          python3 - <<'PY'
+          from scripts.refresh_primary_sources import fetch
+          if fetch(('bgb', '631')) is None:
+              raise SystemExit('Official source cannot currently be fetched from this runner; existing snapshot dates remain unchanged.')
+          PY
       - run: python3 scripts/refresh_primary_sources.py
+      - name: Diagnose a failed public connection
+        if: failure()
+        run: |
+          python3 - <<'PY'
+          import json, subprocess
+          for family in ('-4', '-6'):
+              result = subprocess.run(['curl', family, '--silent', '--show-error', '--head', '--connect-timeout', '8', '--max-time', '18', 'https://www.gesetze-im-internet.de/bgb/__631.html'], capture_output=True, text=True)
+              print(json.dumps({'family': family, 'exit_code': result.returncode, 'response': result.stdout[:1500], 'error': result.stderr[:500]}))
+          PY
       - name: Commit only successfully fetched public source snapshots
         run: |
           git config user.name 'ASH source refresh'
