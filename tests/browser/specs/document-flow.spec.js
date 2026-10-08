@@ -8,8 +8,15 @@ async function expectDocumentLayout(page,selector){
 }
 async function prepare(page,{sample=false}={}){
   await page.goto('/qa-document-flow')
-  if(sample)await page.getByRole('button',{name:'Synthetische Musterdatei auswählen',exact:true}).click()
-  else await page.locator('input[name=file]').setInputFiles({name:'Erfundene_Rechnung.txt',mimeType:'text/plain',buffer:Buffer.from('ERFUNDENE RECHNUNG: 900 EUR offen.')})
+  if(sample){
+    await page.locator('.documentFileIntake details > summary').click()
+    await page.getByRole('button',{name:'Synthetische Musterdatei auswählen',exact:true}).click()
+  }else{
+    const chooser=page.waitForEvent('filechooser')
+    await page.getByRole('button',{name:'Datei auswählen',exact:true}).click()
+    await (await chooser).setFiles({name:'Erfundene_Rechnung.txt',mimeType:'text/plain',buffer:Buffer.from('ERFUNDENE RECHNUNG: 900 EUR offen.')})
+  }
+  await expect(page.locator('.documentSelection')).toContainText(sample?'ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf':'Erfundene_Rechnung.txt')
   await page.locator('select[name=data_classification]').selectOption('synthetic')
   await page.locator('input[name=test_data_confirmed]').check()
   await expectDocumentLayout(page,'.documentUploadForm')
@@ -18,7 +25,7 @@ for(const audit of ['pending','rejected'])test('document upload and save survive
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
   await prepare(page)
   if(audit==='rejected')await page.getByRole('button',{name:'Reject optional audit',exact:true}).click()
-  await page.getByRole('button',{name:'Hochladen',exact:true}).click()
+  await page.getByRole('button',{name:'Dokument hochladen',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Dokument prüfen',exact:true})).toBeVisible()
   expect(await page.locator('[id]').evaluateAll(elements=>elements.map(element=>element.id).filter((id,index,ids)=>ids.indexOf(id)!==index)),'Document fields and navigation targets need unique IDs').toEqual([])
   await page.getByLabel(/^Ausgelesener Inhalt/).fill('ERFUNDENE RECHNUNG: 900 EUR; Zahlungsstand noch zu klären.')
@@ -33,12 +40,12 @@ for(const audit of ['pending','rejected'])test('document upload and save survive
 for(const [failure,inserts,sample] of [['Lose save confirmation',1,false],['Lose first save request',2,true]])test('retry reuses the original file after '+failure,async({page})=>{
   await prepare(page,{sample})
   await page.getByRole('button',{name:failure,exact:true}).click()
-  await page.getByRole('button',{name:'Hochladen',exact:true}).click()
+  await page.getByRole('button',{name:'Dokument hochladen',exact:true}).click()
   await expect(page.getByTestId('document-message')).toContainText('Speichern ist noch nicht bestätigt')
   if(sample)await expect(page.locator('input[name=sample_document]')).toHaveValue('synthetic-v29')
-  else await expect(page.locator('input[name=file]')).not.toHaveValue('')
+  else await expect(page.locator('.documentSelection')).toContainText('Erfundene_Rechnung.txt')
   await page.getByRole('button',{name:'Restore connection',exact:true}).click()
-  await page.getByRole('button',{name:'Hochladen',exact:true}).click()
+  await page.getByRole('button',{name:'Dokument hochladen',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Dokument prüfen',exact:true})).toBeVisible()
   await expect(page.getByTestId('document-counts')).toHaveText(JSON.stringify({uploads:1,inserts,updates:0,removals:0,rows:1}))
   await expect(page.getByTestId('saved-document')).toContainText(sample?'ASH_Workspace_Gold_Synthetischer_Testfall_V29.pdf':'900 EUR offen.')

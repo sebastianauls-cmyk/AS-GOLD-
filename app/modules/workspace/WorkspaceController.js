@@ -388,7 +388,7 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
     return <LoadingSurface language={language} checking={copy.unavailable} retryLabel={copy.retry} onRetry={()=>window.location.reload()}/>
   }
 
-  if(screen==='workspace-connecting'||screen==='workspace-unavailable') return <WorkspaceConnectionSurface language={language} busy={screen==='workspace-connecting'} onRetry={retryWorkspace} onSignOut={()=>signOutSession(supabase)}/>
+  if(screen==='workspace-connecting'||screen==='workspace-unavailable'||screen==='workspace-denied') return <WorkspaceConnectionSurface language={language} busy={screen==='workspace-connecting'} denied={screen==='workspace-denied'} onRetry={retryWorkspace} onSignOut={()=>signOutSession(supabase)}/>
 
   if(screen==='guest-test') return <LoadingSurface language={language} checking={guestCopy.starting}/>
 

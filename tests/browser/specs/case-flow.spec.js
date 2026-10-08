@@ -83,6 +83,8 @@ test('one human question, one consent, all documents and one answer',async({page
   await start.click()
   await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
   await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:2,generated:1,sent:0}))
+  await expect(page.locator('.roadmapOriginalAssessment')).not.toHaveAttribute('open')
+  await page.getByText('Einordnung bei Erstellung',{exact:true}).click()
   await expect(page.getByText('Das bedeutet',{exact:true})).toBeVisible()
   await page.screenshot({path:testInfo.outputPath('case-answer.png'),fullPage:true})
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)

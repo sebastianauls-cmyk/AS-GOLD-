@@ -19,7 +19,7 @@ for(const home of COUNTRY_CATALOG)for(const target of COUNTRY_CATALOG)for(const 
   const stored=JSON.parse(storage.getItem(PUBLIC_CASE_START_KEY))
   assert.deepEqual(Object.keys(stored).sort(),['createdAt','home','output','target'])
   const reloaded=queue()
-  for(const screen of ['loading','public','login','register','recovery','workspace-connecting','workspace-unavailable']){
+  for(const screen of ['loading','public','login','register','recovery','workspace-connecting','workspace-unavailable','workspace-denied']){
     assert.equal(reloaded.resume({...ready,screen}),false)
     assert.ok(storage.getItem(PUBLIC_CASE_START_KEY),'auth retry must retain the choices')
   }
