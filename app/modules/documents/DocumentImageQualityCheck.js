@@ -3,6 +3,7 @@
 import { useEffect,useMemo,useState } from 'react'
 import { isImageDocument } from './documentUploadReadiness.mjs'
 import { assessDocumentImage } from './documentImageQuality.mjs'
+import { imageQualityGuidance } from './imageQualityGuidance.mjs'
 
 const copy={
   de:{title:'Bildqualität',good:'Bildqualität ausreichend',dark:'Foto ist zu dunkel',bright:'Foto ist sehr hell',blur:'Foto wirkt unscharf',cropped:'Dokument könnte abgeschnitten sein',skew:'Dokument wirkt schief fotografiert',resolution:'Auflösung zu niedrig',retake:'Bitte neu fotografieren: Dokument vollständig, gerade und gut beleuchtet aufnehmen.',notImage:'Qualitätsprüfung ist nur bei Bildern nötig.'},
@@ -20,21 +21,27 @@ const copy={
 
 export default function DocumentImageQualityCheck({file,language='de',onResult}){
   const c=copy[language]||copy.de
-  const [result,setResult]=useState(null)
+  const guidance=imageQualityGuidance(language)
+  const [checked,setChecked]=useState(null)
+  const result=checked?.file===file?checked.result:null
   const extension=file?.name?.includes('.')?file.name.split('.').pop().toLowerCase():''
   const isImage=!!file&&isImageDocument({fileType:file.type,extension})
   useEffect(()=>{
-    if(!file||!isImage){setResult(file?{status:'not-image',issues:[]} : null);return}
+    if(!file||!isImage){setChecked(null);return}
     let active=true
     const url=URL.createObjectURL(file);const img=new Image()
+    function complete(next){if(!active)return;setChecked({file,result:next});onResult?.(next);URL.revokeObjectURL(url)}
+    function fail(){complete({status:'bad',issues:['unreadable']})}
     img.onload=()=>{
       if(!active)return
+      try{
       const max=900;const scale=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));const width=Math.max(1,Math.round(img.naturalWidth*scale));const height=Math.max(1,Math.round(img.naturalHeight*scale));
       const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.drawImage(img,0,0,width,height);const data=ctx.getImageData(0,0,width,height).data
       const next=assessDocumentImage({data,width,height,naturalWidth:img.naturalWidth,naturalHeight:img.naturalHeight})
-      setResult(next);onResult?.(next);URL.revokeObjectURL(url)
+      complete(next)
+      }catch{fail()}
     }
-    img.onerror=()=>{if(!active)return;const next={status:'bad',issues:['blur']};setResult(next);onResult?.(next);URL.revokeObjectURL(url)};img.src=url
+    img.onerror=fail;img.src=url
     return()=>{active=false;URL.revokeObjectURL(url)}
   },[file,isImage,language])
 
@@ -43,5 +50,5 @@ export default function DocumentImageQualityCheck({file,language='de',onResult})
   if(!isImage)return <div className="analysisFacts"><b>{c.title}</b><p>🟢 {c.notImage}</p></div>
   if(!result)return <div className="analysisFacts"><b>{c.title}</b><p>🟡 …</p></div>
   const dot=result.status==='good'?'🟢':result.status==='warn'?'🟡':'🔴'
-  return <div className="analysisFacts"><b>{c.title}</b><p><strong>{dot} {result.status==='good'?c.good:c.retake}</strong></p>{rows.length?<div>{rows.map(key=><span key={key}><strong>{result.status==='bad'?'🔴':'🟡'} {c[key]}</strong></span>)}</div>:null}</div>
+  return <div className="analysisFacts"><b>{c.title}</b><p><strong>{dot} {result.status==='good'?c.good:result.status==='warn'?guidance.warn:result.issues.includes('unreadable')?guidance.unreadable:c.retake}</strong></p>{result.status==='warn'&&<p>{guidance.help}</p>}{rows.length?<div>{rows.filter(key=>key!=='unreadable').map(key=><span key={key}><strong>{result.status==='bad'?'🔴':'🟡'} {guidance[key]||c[key]}</strong></span>)}</div>:null}</div>
 }

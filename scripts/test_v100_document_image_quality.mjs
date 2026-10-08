@@ -1,6 +1,8 @@
 import fs from 'node:fs'
 import assert from 'node:assert/strict'
 import { assessDocumentImage } from '../app/modules/documents/documentImageQuality.mjs'
+import { validateDocumentUploadReadiness } from '../app/modules/documents/documentUploadReadiness.mjs'
+import { imageQualityGuidance } from '../app/modules/documents/imageQualityGuidance.mjs'
 
 const component=fs.readFileSync('app/modules/documents/DocumentImageQualityCheck.js','utf8')
 const quality=component+fs.readFileSync('app/modules/documents/documentImageQuality.mjs','utf8')
@@ -14,14 +16,14 @@ need(quality,"issues.push('resolution')",'resolution check')
 need(quality,"issues.push('dark')",'darkness check')
 need(quality,"issues.push('bright')",'brightness check')
 need(quality,"issues.push('blur')",'blur check')
-need(quality,"issues.push('cropped')",'cropping check')
-need(quality,"issues.push('skew')",'skew check')
+need(quality,"issues.push('low_contrast')",'almost uniform images remain blocked')
+assert.doesNotMatch(quality,/issues\.push\('(?:cropped|skew)'\)/,'frame dimensions must not claim page crop or angle')
 need(quality,'🟢','green quality state')
 need(quality,'🟡','yellow quality state')
 need(quality,'🔴','red quality state')
 for(const language of ['de','en','pl','tr','ru','ar','fr','fa','ro','bg','vi']) need(quality,`${language}:{`,`${language} quality copy`)
 if(quality.includes('uploadWorkspaceDocument')||quality.includes('invokeDocumentAnalysis')) throw new Error('V100 quality guard: quality module must remain separate from upload and AI analysis')
-console.log('V100 document image-quality guard passed: isolated resolution, brightness, blur, crop and skew checks are wired in 11 languages.')
+console.log('V100 quality guard passed: isolated resolution, exposure, sharpness hints, absent image detail and decoding failure; no unsupported page-geometry claims.')
 
 // Document-like raster with small dark glyph strokes on a mostly white page.
 // This reproduces the live scan warning without browser, network or AI calls.
@@ -47,8 +49,30 @@ for(const input of [page({text:false}),page({foreground:245})]){
 }
 assert.ok(assessDocumentImage(page({background:20,foreground:0})).issues.includes('dark'))
 assert.ok(assessDocumentImage({...page(),naturalWidth:600,naturalHeight:900}).issues.includes('resolution'))
-assert.ok(assessDocumentImage({...page(),naturalWidth:800,naturalHeight:2400}).issues.includes('cropped'))
-assert.ok(assessDocumentImage({...page(),naturalWidth:1200,naturalHeight:1500}).issues.includes('skew'))
+for(const [naturalWidth,naturalHeight] of [[1200,1600],[1600,1200],[1200,1200],[1200,3600],[3600,1200]]){
+  const result=assessDocumentImage({...page(),naturalWidth,naturalHeight})
+  assert.equal(result.status,'good','portrait, landscape, square and receipt formats do not establish tilt or cropping')
+  assert.ok(!result.issues.includes('skew')&&!result.issues.includes('cropped'))
+}
+const pencil=assessDocumentImage({...page({foreground:135,background:175}),naturalWidth:1200,naturalHeight:1600})
+assert.ok(pencil.sharpness<350,'regression fixture reaches the old automatic blocking threshold')
+assert.equal(pencil.status,'warn','low edge energy in visible handwriting is a hint, not proof of unreadability')
+assert.deepEqual(pencil.issues,['blur'])
+assert.equal(validateDocumentUploadReadiness({fileType:'image/jpeg',intakeQuality:{state:'weak',...pencil}}).ok,true)
+for(const background of [0,30,170,255]){
+  const result=assessDocumentImage(page({background,text:false}))
+  assert.equal(result.status,'bad','blank dark, gray and white images remain blocked')
+  assert.ok(result.issues.includes('low_contrast'))
+  assert.equal(validateDocumentUploadReadiness({fileType:'image/jpeg',intakeQuality:{state:'bad',...result}}).ok,false)
+}
+const speck=page({text:false});speck.data[0]=speck.data[1]=speck.data[2]=0
+assert.equal(assessDocumentImage(speck).status,'bad','one contrasting speck must not make an empty image usable')
+for(const malformed of [{data:new Uint8ClampedArray(),width:0,height:0},{data:new Uint8ClampedArray(4),width:300,height:450}])assert.deepEqual(assessDocumentImage(malformed),{status:'bad',issues:['unreadable']})
+for(const language of ['de','en','pl','tr','ru','ar','fr','fa','ro','bg','vi']){
+  const guidance=imageQualityGuidance(language)
+  for(const key of ['warn','help','low_contrast','unreadable'])assert.ok(guidance[key],language+': '+key)
+  if(language!=='de')assert.notEqual(guidance.warn,imageQualityGuidance('de').warn)
+}
 assert.ok(component.includes('assessDocumentImage({data,width,height,'),'the mounted component uses the tested pixel classifier')
 assert.ok(!component.includes('<small>{key}</small>'),'internal quality codes are not shown to customers')
-console.log('Live-scan regression passed: white text pages accepted; blank, washed-out, dark, low-resolution, cropped and skewed controls retained.')
+console.log('Phone-photo regression passed: visible pencil handwriting stays yellow and uploadable; ordinary frame shapes create no geometry warnings; blank/washed-out/invalid images stay red; 11-language guidance. Original handset image and live OCR not claimed.')

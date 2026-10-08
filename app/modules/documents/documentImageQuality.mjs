@@ -13,14 +13,26 @@ function hasDocumentContrast(data){
   return foreground>=Math.max(16,data.length/4*0.001)
 }
 
+// Ignore isolated specks when checking for an almost uniform image. This only
+// detects absent tonal detail; neither this nor edge variance measures OCR.
+function tonalRange(data){
+  const histogram=new Uint32Array(256),pixels=data.length/4
+  for(let i=0;i<data.length;i+=4)histogram[Math.round(data[i]*0.2126+data[i+1]*0.7152+data[i+2]*0.0722)]++
+  const percentile=fraction=>{let count=0;for(let value=0;value<256;value++){count+=histogram[value];if(count>=pixels*fraction)return value}return 255}
+  return percentile(0.995)-percentile(0.005)
+}
+
 export function assessDocumentImage({data,width,height,naturalWidth=width,naturalHeight=height}){
-  const lum=luminance(data);const variance=edgeVariance(data,width,height);const issues=[]
+  if(!Number.isInteger(width)||!Number.isInteger(height)||width<3||height<3||!data||data.length!==width*height*4||!Number.isFinite(naturalWidth)||!Number.isFinite(naturalHeight)||naturalWidth<=0||naturalHeight<=0)return {status:'bad',issues:['unreadable']}
+  const lum=luminance(data);const variance=edgeVariance(data,width,height);const contrast=tonalRange(data);const issues=[]
   if(Math.min(naturalWidth,naturalHeight)<800||Math.max(naturalWidth,naturalHeight)<1200)issues.push('resolution')
   if(lum<55)issues.push('dark'); else if(lum>225&&!hasDocumentContrast(data))issues.push('bright')
   if(variance<350)issues.push('blur')
-  const ratio=naturalWidth/naturalHeight;if(ratio<0.45||ratio>2.2)issues.push('cropped')
-  if(ratio>0.72&&ratio<1.05)issues.push('skew')
-  const severe=issues.includes('dark')||issues.includes('blur')||issues.includes('cropped')
-  const next={status:issues.length?(severe?'bad':'warn'):'good',issues,width:naturalWidth,height:naturalHeight,luminance:Math.round(lum),sharpness:Math.round(variance)}
+  // Frame shape says nothing about document angle or missing page edges.
+  // Low global edge energy also occurs with legible pencil handwriting and
+  // empty margins: warn without calling it unreadable or silently approving it.
+  const severe=variance<350&&contrast<16
+  if(severe)issues.push('low_contrast')
+  const next={status:issues.length?(severe?'bad':'warn'):'good',issues,width:naturalWidth,height:naturalHeight,luminance:Math.round(lum),sharpness:Math.round(variance),contrast}
   return next
 }
