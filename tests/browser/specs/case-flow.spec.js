@@ -10,6 +10,27 @@ async function begin(page){
   await expect(page.getByRole('heading',{name:'Ihre Antwort',exact:true})).toBeVisible()
 }
 
+test('empty case starts with its letter and keeps actual deadlines visible',async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message))
+  await begin(page)
+  await page.getByRole('button',{name:'Use empty case',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Brief oder Foto hinzufügen',exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'Foto aufnehmen',exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'Datei auswählen',exact:true})).toBeVisible()
+  await expect(page.getByRole('button',{name:'Kostenlos auswerten',exact:true})).toBeHidden()
+  await expect(page.getByRole('heading',{name:'Fristen-Warnung',exact:true})).toBeHidden()
+  await page.locator('.simpleCaseMore > summary').click()
+  await expect(page.getByRole('button',{name:'Kostenlos auswerten',exact:true})).toBeVisible()
+  await expect(page.getByRole('heading',{name:'Fristen-Warnung',exact:true})).toBeVisible()
+  await page.locator('.simpleCaseMore > summary').click()
+  await page.getByRole('button',{name:'Add known case deadline',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Fristen-Warnung',exact:true})).toBeVisible()
+  await expect(page.locator('.simpleCaseMore')).not.toHaveAttribute('open')
+  await expect(page.getByTestId('invocations')).toHaveText('0')
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true)
+  expect(errors).toEqual([])
+})
+
 test('internal free analysis calculates Sarah without any AI invocation and exports the result',async({page},testInfo)=>{
   const errors=[],providerRequests=[]
   page.on('pageerror',error=>errors.push(error.message))

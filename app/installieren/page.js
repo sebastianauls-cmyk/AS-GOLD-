@@ -18,7 +18,7 @@ export default function InstallierenPage(){
         <p className="installLandingLead">Tippen Sie auf den gelben Button. Danach können Sie ASH Workspace direkt vom Startbildschirm öffnen – ohne den Link erneut suchen zu müssen.</p>
         <InstallAppButton language="de" surface="install"/>
         <p className="installLandingHelp">Falls Ihr Browser nicht direkt installiert, erscheint automatisch die passende Anleitung für dieses Gerät.</p>
-        <Link href="/" className="installLandingContinue">Ohne Installation zur normalen Startseite</Link>
+        <Link href="/" className="installLandingContinue" data-persistent-back>← Ohne Installation zur normalen Startseite</Link>
       </section>
     </main>
     <LegalFooter language="de"/>

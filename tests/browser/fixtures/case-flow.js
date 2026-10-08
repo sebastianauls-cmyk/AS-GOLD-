@@ -18,11 +18,12 @@ export default function Fixture(){
   const [stats,setStats]=useState({read:0,saved:0,generated:0,sent:0})
   const [opened,setOpened]=useState(''),[caseVisible,setCaseVisible]=useState(true)
   const [internal,setInternal]=useState(false)
+  const [emptyEntry,setEmptyEntry]=useState(false),[manualDeadline,setManualDeadline]=useState('')
   const [invocations,setInvocations]=useState(0)
   const [exportMessage,setExportMessage]=useState(''),[exportType,setExportType]=useState('txt')
   const current=useRef({}),cache=useRef(new Map()),fail=useRef(false),reviewFailure=useRef(false),savedJob=useRef(null),savedRoadmap=useRef(null),holdJob=useRef(false)
   const remoteDocuments=useRef(null)
-  const item={...roadmapTestCase,title:draft.title||'Ich verstehe meine Briefe nicht.',goal:draft.goal||roadmapTestCase.goal}
+  const item={...roadmapTestCase,...(emptyEntry?{deadline_at:manualDeadline}:{}),title:draft.title||'Ich verstehe meine Briefe nicht.',goal:draft.goal||roadmapTestCase.goal}
   current.current={item,documents}
   async function finishBackground(){
     if(!savedJob.current||!['queued','running'].includes(savedJob.current.status))return
@@ -74,6 +75,8 @@ export default function Fixture(){
   return <main style={{maxWidth:880,margin:'0 auto',padding:16}}>
     <p>Prüfansicht · erfundene Daten · simulierte Antworten</p>
     <label>Test language<select aria-label="Test language" value={language} onChange={event=>setLanguage(event.target.value)}>{['de','en','fa'].map(key=><option key={key}>{key}</option>)}</select></label>
+    <button onClick={()=>{setEmptyEntry(true);setInternal(true);setDocuments([]);setManualDeadline('')}}>Use empty case</button>
+    <button onClick={()=>setManualDeadline('2026-12-01T12:00:00Z')}>Add known case deadline</button>
     <button onClick={()=>{fail.current=true}}>Simulate one failed read</button>
     <button onClick={()=>{fail.current='quota'}}>Simulate exhausted provider credits</button>
     <button onClick={()=>{reviewFailure.current=true}}>Simulate unresolved content review</button>

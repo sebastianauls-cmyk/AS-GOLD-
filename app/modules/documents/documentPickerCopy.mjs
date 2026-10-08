@@ -12,4 +12,18 @@ const copy={
   vi:{photo:'Chụp ảnh',file:'Chọn tệp',selected:'Đã chọn – chưa tải lên',empty:'Chụp ảnh hoặc chọn một tệp có sẵn.',save:'Tải tài liệu lên',preview:'Xem trước ảnh đã chọn'}
 }
 
-export function documentPickerCopy(language='de'){return copy[language]||copy.de}
+const guidance={
+  de:{start:'Brief oder Foto hinzufügen',startHelp:'Wählen Sie Ihren Brief aus. Anschließend können Sie die Datei prüfen und im Fall speichern.',change:'Andere Datei auswählen'},
+  en:{start:'Add a letter or photo',startHelp:'Choose your letter. You can then check the file and save it to this case.',change:'Choose another file'},
+  pl:{start:'Dodaj pismo lub zdjęcie',startHelp:'Wybierz pismo. Następnie możesz sprawdzić plik i zapisać go w tej sprawie.',change:'Wybierz inny plik'},
+  tr:{start:'Mektup veya fotoğraf ekle',startHelp:'Mektubunuzu seçin. Ardından dosyayı kontrol edip bu vakaya kaydedebilirsiniz.',change:'Başka dosya seç'},
+  ru:{start:'Добавить письмо или фото',startHelp:'Выберите письмо. Затем можно проверить файл и сохранить его в этом деле.',change:'Выбрать другой файл'},
+  ar:{start:'إضافة خطاب أو صورة',startHelp:'اختر خطابك. يمكنك بعدها مراجعة الملف وحفظه في هذه الحالة.',change:'اختيار ملف آخر'},
+  fa:{start:'افزودن نامه یا عکس',startHelp:'نامه خود را انتخاب کنید. سپس می‌توانید فایل را بررسی و در این پرونده ذخیره کنید.',change:'انتخاب فایل دیگر'},
+  fr:{start:'Ajouter un courrier ou une photo',startHelp:'Choisissez votre courrier. Vous pourrez ensuite vérifier le fichier et l’enregistrer dans ce dossier.',change:'Choisir un autre fichier'},
+  ro:{start:'Adaugă o scrisoare sau o fotografie',startHelp:'Alegeți scrisoarea. Apoi puteți verifica fișierul și îl puteți salva în acest caz.',change:'Alege alt fișier'},
+  bg:{start:'Добавете писмо или снимка',startHelp:'Изберете писмото си. След това можете да проверите файла и да го запазите към този случай.',change:'Изберете друг файл'},
+  vi:{start:'Thêm thư hoặc ảnh',startHelp:'Chọn thư của bạn. Sau đó, bạn có thể kiểm tra tệp và lưu vào hồ sơ này.',change:'Chọn tệp khác'}
+}
+
+export function documentPickerCopy(language='de'){return {...(copy[language]||copy.de),...(guidance[language]||guidance.de)}}

@@ -26,6 +26,7 @@ import { DocumentDeadlineCandidates } from './DocumentDeadlineCandidates'
 import { CustomerRoadmapPanel } from './CustomerRoadmapPanel'
 import { CaseAnalysisModes } from './FreeCaseAnalysisPanel'
 import DocumentPickerActions from '../documents/DocumentPickerActions'
+import { documentPickerCopy } from '../documents/documentPickerCopy.mjs'
 import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
 import { SimpleCaseStart } from './SimpleCaseStart'
 import { ResultContinuation } from './ResultContinuation'
@@ -134,17 +135,23 @@ export function CaseDetail({copy:on, analysis, access=null, language='de', outpu
   }
   const client=clients.find(entry=>entry.id===item.client_id)
   const readiness=!documents.length?on.notAssessable:evidenceState.complete?evidenceCopy.reviewed:evidenceCopy.pending
+  const needsDocument=documents.length===0
+  const intakeCopy=documentPickerCopy(language)
+  const deadlineResult=analyzeCaseDeadlines(item,documents)
+  const analysisPanel=<CaseAnalysisModes supabase={supabase} access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
+    {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} continuation={continuation}/>}
+  </CaseAnalysisModes>
+  const deadlinePanel=<DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={deadlineResult}/>
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
     <div className="caseTitleRow caseIntakeHeader">
       <div className="caseIntakeTitle"><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2 title={item.title}>{item.title}</h2>{(client||item.reference_no)&&<p>{client?.name}{client&&item.reference_no?' · ':''}{item.reference_no}</p>}</div>
+      {needsDocument&&<div className="caseIntakePrompt"><h3>{intakeCopy.start}</h3><p>{intakeCopy.startHelp}</p></div>}
       <DocumentPickerActions language={language} onSelect={(file,mode)=>onAddDocument(item.id,mode,file)}/>
       <button className="secondary caseIntakeEdit" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button>
     </div>
-    <CaseAnalysisModes supabase={supabase} access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
-    {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} continuation={continuation}/>}
-    </CaseAnalysisModes>
-    <DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={analyzeCaseDeadlines(item,documents)}/>
+    {!needsDocument&&analysisPanel}
+    {(!needsDocument||deadlineResult.primary)&&deadlinePanel}
     {editing&&<form className="actionCard coreForm" onSubmit={event=>{event.preventDefault();onSave(item.id,draft).then(saved=>{if(saved)setEditing(false)})}}>
       <label htmlFor={fieldId(item.id,'title')}>{on.title}<input id={fieldId(item.id,'title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
       <label htmlFor={fieldId(item.id,'client')}>{on.client}<select id={fieldId(item.id,'client')} value={draft.client_id} onChange={event=>setDraft({...draft,client_id:event.target.value})}><option value="">{on.noClient}</option>{clients.map(entry=><option value={entry.id} key={entry.id}>{entry.name}</option>)}</select></label>
@@ -158,6 +165,8 @@ export function CaseDetail({copy:on, analysis, access=null, language='de', outpu
       <button className="primary full">{on.saveChanges}</button>
     </form>}
     <details ref={moreRef} className="simpleCaseMore"><summary>{simple.more}</summary>
+    {needsDocument&&analysisPanel}
+    {needsDocument&&!deadlineResult.primary&&deadlinePanel}
     <PrimaryNextStepCard language={language} item={item} documents={documents} assessments={assessments} onAction={nextAction}/>
     <section className="caseCoreGrid"><article><b>{on.homeCountry}</b><p>{localizedCountryName(item.home_country||'DE',language)}</p></article><article><b>{on.targetCountry}</b><p>{localizedCountryName(item.target_country||'DE',language)}</p></article><article><b>{on.goal}</b><p>{item.goal||'—'}</p></article><article><b>{on.summary}</b><p>{item.summary||'—'}</p></article><article><b>{on.deadline}</b><p>{item.deadline_at?new Date(item.deadline_at).toLocaleString():'—'}</p></article><article><b>{on.nextAction}</b><p>{item.next_action||'—'}</p></article></section>
     {supabase&&ownerId&&<LegalComparisonPanel supabase={supabase} ownerId={ownerId} language={language} outputLanguage={outputLanguage} item={item} workspaceCopy={on} onPrivacyUpdate={onPrivacyUpdate}/>}

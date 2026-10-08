@@ -24,6 +24,7 @@ export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode
   const interfaceLanguage=useActiveInterfaceLanguage(language)
   const simple=simpleCaseCopy(interfaceLanguage)
   const linkedCase=cases.find(item=>item.id===uploadCaseId)
+  const visibleDocuments=uploadCaseId?documents.filter(item=>item.case_id===uploadCaseId):documents
   const [intakeRevision,setIntakeRevision]=useState(0)
   const [selectedFile,setSelectedFile]=useState(initialFile)
   async function submitDocument(event){
@@ -37,18 +38,18 @@ export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode
       <div className="formIntro"><h3>{simple.add}</h3>{linkedCase&&<p className="documentLinkedCase" title={linkedCase.title}>{linkedCase.title}</p>}</div>
       <DocumentFileIntake key={`file-${intakeRevision}`} language={interfaceLanguage} documentMode={documentMode} allowedUploadAccept={allowedUploadAccept} initialFile={intakeRevision===0?initialFile:null} onFileChange={setSelectedFile} onModeChange={setDocumentMode} disabled={uploading}/>
       {linkedCase?<input type="hidden" name="case_id" value={linkedCase.id}/>:<label htmlFor="document-case">{core.selectCase}<select id="document-case" name="case_id" defaultValue={uploadCaseId||''}><option value="">{core.withoutCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>}
-      <VoiceContextInput key={`voice-${intakeRevision}`} language={interfaceLanguage}/>
-      <details className="simpleUploadOptions"><summary>{simple.options}</summary>
-      <label htmlFor="document-type">{core.documentType}<input id="document-type" name="document_type"/></label>
-      <label htmlFor="document-date">{core.documentDate}<input id="document-date" name="document_date" type="date"/></label>
-      <DeviceReadinessPanel language={interfaceLanguage}/>
-      </details>
-      <div className="documentPrivacyIntro"><b>{v28.classification}</b><p>{v28.uploadHelp}</p><a href="/datenschutz" target="_blank" rel="noreferrer">{v28.privacy} →</a></div>
       <label htmlFor="document-classification">{v28.classification}<select id="document-classification" name="data_classification" defaultValue="" required><option value="" disabled>—</option><option value="synthetic">{v28.synthetic}</option><option value="anonymized">{v28.anonymized}</option></select></label>
       <label className="documentPrivacyConfirm"><input name="test_data_confirmed" type="checkbox" required/><span>{v28.uploadConfirm}</span></label>
       <input type="hidden" name="source" value={documentMode}/>
       <button className="primary full" disabled={uploading}>{uploading?core.uploading:documentPickerCopy(interfaceLanguage).save}</button>
+      <details className="simpleUploadOptions"><summary>{simple.options}</summary>
+      <label htmlFor="document-type">{core.documentType}<input id="document-type" name="document_type"/></label>
+      <label htmlFor="document-date">{core.documentDate}<input id="document-date" name="document_date" type="date"/></label>
+      <DeviceReadinessPanel language={interfaceLanguage}/>
+      <div className="documentPrivacyIntro"><b>{v28.classification}</b><p>{v28.uploadHelp}</p><a href="/datenschutz" target="_blank" rel="noreferrer">{v28.privacy} →</a></div>
+      </details>
+      <VoiceContextInput key={`voice-${intakeRevision}`} language={interfaceLanguage}/>
     </form>
-    {documents.length?<div className="itemList">{documents.map(item=><button className="itemRow buttonRow" type="button" onClick={()=>setSelectedDocument(item)} key={item.id}><div><b>{item.title}</b><p>{item.document_type||core.documentType}{item.document_date?` · ${item.document_date}`:''}{item.source_language?` · ${item.source_language.toUpperCase()}`:''}{item.voice_context?' · 🎤':''}</p></div><span className="chev">›</span></button>)}</div>:null}
+    {visibleDocuments.length?<div className="itemList">{visibleDocuments.map(item=><button className="itemRow buttonRow" type="button" onClick={()=>setSelectedDocument(item)} key={item.id}><div><b>{item.title}</b><p>{item.document_type||core.documentType}{item.document_date?` · ${item.document_date}`:''}{item.source_language?` · ${item.source_language.toUpperCase()}`:''}{item.voice_context?' · 🎤':''}</p></div><span className="chev">›</span></button>)}</div>:null}
   </>
 }
