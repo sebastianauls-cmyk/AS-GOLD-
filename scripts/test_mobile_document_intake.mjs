@@ -78,6 +78,13 @@ assert.equal(find(tree,Voice).key,voiceNode.key,'failed uploads preserve confirm
 const intake=mount(Intake,intakeNode.props)
 let intakeTree=intake()
 assert.ok(nodes(intakeTree).some(node=>node.props.role==='status'))
+const qualityState=tree=>JSON.parse(nodes(tree).find(node=>node.props.name==='intake_quality').props.value).state
+assert.equal(qualityState(intakeTree),'checking','a camera handoff requires its own quality check')
+const Quality=load('app/modules/documents/DocumentImageQualityCheck.js').default
+find(intakeTree,Quality).props.onResult({status:'good',issues:[]})
+assert.equal(qualityState(intake()),'good')
+find(intake(),Picker).props.onSelect(new File(['NEXT PHOTO'],'Next.jpg',{type:'image/jpeg'}),'scan')
+assert.equal(qualityState(intake()),'checking','a replacement photo cannot reuse the old quality result')
 find(intakeTree,Picker).props.onSelect(replacement,'upload')
 tree=surface({documentMode:mode})
 assert.equal(mode,'upload')
