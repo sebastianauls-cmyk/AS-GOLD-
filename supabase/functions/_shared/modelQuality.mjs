@@ -1,5 +1,6 @@
 // Server-only generation and review. Nothing is persisted before both checks pass.
 import {DOCUMENT_ATTRIBUTION_RULES,CASE_LEGAL_SCOPE_RULES} from './caseEvidenceRules.mjs'
+import {modelUsageReceipt} from './modelUsageReceipt.mjs'
 export const MODEL_QUALITY_VERSION = 'v157'
 export class ModelWorkflowError extends Error {
   constructor(message,status=422,code='model_workflow_failed',issues=[]) { super(message); this.name='ModelWorkflowError'; this.status=status; this.code=code; this.issues=issues.slice(0,8).map(({code,location,reason})=>({code,location:String(location||'').slice(0,120),reason:String(reason||'').slice(0,700)})) }
@@ -86,6 +87,9 @@ const quotaCodes=new Set(['insufficient_quota','credit_balance_exhausted','organ
 // background worker interprets this server-owned phase as a recoverable envelope.
 const providerEnvelopeError=()=>Object.assign(new ModelWorkflowError('Die KI-Antwort hatte kein auswertbares Format.',502,'provider_invalid_json'),{provider_response_phase:'envelope'})
 export async function callModel(providerKey,request,{deadline,fetchImpl,onResponse,beforeRequest,stage,attempt,callTimeoutMs=90000}) {
+  // Explicitly retain the API's default routing, so its response reports the
+  // tier actually used. This does not force a different project service tier.
+  request={...request,service_tier:request.service_tier??'auto'}
   const remaining=deadline-Date.now()
   if(remaining<1000) throw new ModelWorkflowError('Die Prüfung hat zu lange gedauert. Es wurde kein ungeprüftes Ergebnis gespeichert.',502,'provider_timeout')
   await beforeRequest?.(request,{stage,attempt})
@@ -120,7 +124,7 @@ export async function callModel(providerKey,request,{deadline,fetchImpl,onRespon
     throw timedOut?new ModelWorkflowError('Die aktuelle Prüfung hat ihr Zeitlimit erreicht.',502,'provider_timeout'):providerEnvelopeError()
   }
   if(!response||typeof response!=='object'||Array.isArray(response))throw providerEnvelopeError()
-  if(onResponse) await onResponse({stage,attempt,reasoning_effort:request.reasoning?.effort,response_id:response.id,model:response.model,status:response.status,usage:response.usage,output:providerText(response)??null})
+  if(onResponse) await onResponse({stage,attempt,reasoning_effort:request.reasoning?.effort,response_id:response.id,model:response.model,status:response.status,usage:response.usage,billing_receipt:modelUsageReceipt(response,request),output:providerText(response)??null})
   if(response.status!=='completed') throw new ModelWorkflowError('Die KI-Ausgabe war unvollständig. Es wurde kein ungeprüftes Ergebnis gespeichert.',502,response.incomplete_details?.reason==='max_output_tokens'?'provider_token_limit':'provider_incomplete')
   let parsed
   try { parsed=JSON.parse(providerText(response)) } catch { throw new ModelWorkflowError('Die KI-Ausgabe hatte kein auswertbares Format.',502,'provider_invalid_json') }

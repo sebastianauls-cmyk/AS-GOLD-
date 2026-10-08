@@ -57,6 +57,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260924001546_retained_case_work.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260924005032_grouped_case_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260924120132_retain_failed_case_diagnostics.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20261008162652_case_model_billing_receipts.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -79,6 +80,7 @@ try {
   }
   const client={from:table=>new Query(table),rpc:async(name,args)=>{
     const calls={read_retained_case_work:['p_job_id','p_lease','p_cache_key'],save_retained_case_work:['p_job_id','p_lease','p_cache_key','p_ciphertext'],finish_case_analysis_job:['p_job_id','p_lease','p_outcome'],reserve_case_model_call:['p_job_id','p_lease','p_output_tokens','p_request_bytes','p_search_calls','p_stage'],settle_case_model_call:['p_job_id','p_lease','p_reservation_id','p_input_tokens','p_output_tokens','p_cached_tokens']}
+    calls.settle_case_model_call_with_receipt=[...calls.settle_case_model_call,'p_receipt']
     assert(calls[name])
     try{return {data:await scalar(`select public.${name}(${calls[name].map((_,i)=>'$'+(i+1)).join(',')})`,calls[name].map(key=>args[key])),error:null}}catch(error){return {data:null,error}}
   }}
