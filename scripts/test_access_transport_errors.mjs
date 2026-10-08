@@ -57,7 +57,7 @@ await check('provider rejection remains localized and does not grant access',asy
 })
 await check('valid sign-in still checks approval before reading case data',async()=>{
   const denied=authHarness(async()=>({data:{session},error:null}),{allowed:false})
-  assert.equal(await denied.actions.signIn(event),false);assert.equal(denied.state.screen,'login');assert.equal(denied.state.bundleReads,0)
+  assert.equal(await denied.actions.signIn(event),false);assert.equal(denied.state.screen,'workspace-denied');assert.equal(denied.state.bundleReads,0)
   const accepted=authHarness(async()=>({data:{session},error:null}))
   assert.equal(await accepted.actions.signIn(event),true);assert.equal(accepted.state.screen,'app');assert.equal(accepted.state.accessReads,1);assert.equal(accepted.state.bundleReads,1)
 })

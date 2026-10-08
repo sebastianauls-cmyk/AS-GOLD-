@@ -87,7 +87,7 @@ await check('valid authentication still requires approved workspace access',asyn
   state.response={data:{session:member},error:null}
   state.access={access:{active:false,status:'pending'}}
   assert.equal(await actions.signIn(event()),false)
-  assert.equal(state.screens.at(-1),'login')
+  assert.equal(state.screens.at(-1),'workspace-denied')
   assert.equal(state.users.length,0)
 })
 await check('successful authentication and data loading finish at the real workspace gate',async()=>{

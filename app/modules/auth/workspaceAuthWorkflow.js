@@ -66,15 +66,14 @@ export function createWorkspaceAuthActions({
     const recoveryAtStart=request.recoveryRevision
     const interrupted=()=>isPasswordRecoveryActive()||passwordRecoveryRevision()!==recoveryAtStart||(sessionLoadRef&&sessionLoadRef.current!==request)
     if(interrupted())return false
-    setMessage('')
-    if(!request.background)setScreen('workspace-connecting')
+    if(!request.background){setMessage('');setScreen('workspace-connecting')}
     const accessSnapshot=await getWorkspaceAccess(supabase)
     if(interrupted())return false
     if(accessSnapshot.error){setMessage(getWorkspaceConnectionCopy(language).unavailable);setScreen('workspace-unavailable');return false}
     const row=accessSnapshot.access
     if(!row?.active||row?.status!=='approved'){
       setMessage(pendingMessages[language]||pendingMessages.de)
-      setScreen('login')
+      setScreen('workspace-denied')
       return false
     }
     setAccess(row)
@@ -98,15 +97,21 @@ export function createWorkspaceAuthActions({
     return true
   }
 
-  function loadApp(session){
+  function loadApp(session,{retry=false}={}){
     if(isPasswordRecoveryActive())return Promise.resolve(false)
+    if(!session?.user?.id){
+      if(sessionLoadRef)sessionLoadRef.current={key:null,promise:null}
+      setScreen('login')
+      return Promise.resolve(false)
+    }
     const key=`${session?.user?.id||''}:${session?.access_token||''}`
     const active=sessionLoadRef?.current
-    if(key&&active?.key===key&&active.promise)return active.promise
+    if(key&&active?.key===key&&active.promise&&(!retry||!active.settled))return active.promise
     // A refreshed token for the same signed-in person must not unmount editors.
     // Access is still checked; a denied or failed check keeps its existing gate.
     const ownerId=session?.user?.id
-    const request={key,ownerId,promise:null,loaded:false,background:!!(active?.loaded&&active.ownerId===ownerId),recoveryRevision:passwordRecoveryRevision()}
+    const background=!!(active?.ownerId===ownerId&&(active.loaded||(!active.settled&&active.background)))
+    const request={key,ownerId,promise:null,loaded:false,settled:false,background,recoveryRevision:passwordRecoveryRevision()}
     if(sessionLoadRef)sessionLoadRef.current=request
     const promise=Promise.resolve().then(()=>performLoadApp(session,request)).catch(()=>{
       if(isPasswordRecoveryActive()||passwordRecoveryRevision()!==request.recoveryRevision||(sessionLoadRef&&sessionLoadRef.current!==request))return false
@@ -115,8 +120,9 @@ export function createWorkspaceAuthActions({
       return false
     }).then(loaded=>{
       request.loaded=loaded
-      // Failed requests must not poison later attempts with the same valid token.
-      if(!loaded&&sessionLoadRef?.current===request)sessionLoadRef.current={key:null,promise:null}
+      request.settled=true
+      // A repeated SIGNED_IN on refocus must not flash a failed connection.
+      // Keep the outcome until an explicit retry or a changed session arrives.
       return loaded
     })
     request.promise=promise
@@ -132,8 +138,9 @@ export function createWorkspaceAuthActions({
     try{
       const {data,error}=await getAuthSession(supabase)
       if(interrupted())return false
-      if(error||!data?.session){setScreen('login');return false}
-      return loadApp(data.session)
+      if(error){setMessage(getWorkspaceConnectionCopy(language).unavailable);setScreen('workspace-unavailable');return false}
+      if(!data?.session){setScreen('login');return false}
+      return loadApp(data.session,{retry:true})
     }catch{
       if(!interrupted()){
         setMessage(getWorkspaceConnectionCopy(language).unavailable)
@@ -166,7 +173,7 @@ export function createWorkspaceAuthActions({
       if(error){setMessage(getAuthErrorMessage(error,language));return false}
       if(!authData?.session?.user?.id){setMessage(getAuthErrorMessage({code:'auth_unavailable'},language));return false}
       setSignInStatus('loading-workspace')
-      return await loadApp(authData.session)
+      return await loadApp(authData.session,{retry:true})
     }catch{
       setMessage(getAuthErrorMessage({code:'auth_unavailable'},language))
       return false
@@ -189,7 +196,7 @@ export function createWorkspaceAuthActions({
         return false
       }
       if(!authData?.session?.user?.id){setMessage(feedback.unavailable);return false}
-      return await loadApp(authData.session)
+      return await loadApp(authData.session,{retry:true})
     }catch{
       setMessage(feedback.unavailable)
       return false

@@ -20,7 +20,7 @@ function harness(){
     getWorkspaceAccess:async()=>{state.accessCalls++;return typeof state.access==='function'?state.access():state.access},
     loadWorkspaceBundle:async()=>{state.dataLoads++;return state.bundle},
     signInSession:async()=>{state.authCalls++;return {data:{session:state.session},error:state.authError}},
-    getAuthSession:async()=>{state.sessionReads++;return {data:{session:state.session}}},
+    getAuthSession:async()=>{state.sessionReads++;return {data:{session:state.session},error:state.sessionError}},
     getAuthErrorMessage:()=> 'credential error',getWorkspaceConnectionCopy,
     isPasswordRecoveryActive:()=>state.recovering,passwordRecoveryRevision:()=>state.revision
   }
@@ -66,7 +66,7 @@ for(const error of [clockError,{code:'42501',message:'permission denied'},{code:
   assert.equal(state.screens.at(-1),'workspace-unavailable')
   assert.equal(state.screens.includes('login'),false)
   assert.equal(state.dataLoads,0)
-  assert.equal(ref.current.promise,null,'a failed promise cannot be cached for this token')
+  assert.equal(!!ref.current.loaded,false,'a failed request must not count as an open workspace')
   state.access=ready
   assert.equal(await actions.retryWorkspace(),true)
   assert.equal(state.screens.at(-1),'app')
@@ -75,6 +75,61 @@ for(const error of [clockError,{code:'42501',message:'permission denied'},{code:
   assert.equal(state.accessCalls,2)
   assert.equal(state.users.length,1)
   assert.doesNotMatch(state.messages.join(' '),/JWT|synthetic-session-only/)
+}
+
+// Returning from the camera may emit SIGNED_IN again. A failed connection
+// must remain readable until an explicit retry, not flash back through loading.
+{
+  const {state,actions}=harness()
+  state.access={error:clockError}
+  await actions.loadApp(member)
+  state.screens.length=0
+  for(let i=0;i<4;i++)assert.equal(await actions.loadApp(member),false)
+  assert.deepEqual(state.screens,[],'repeated session confirmations must not restart a failed connection')
+  assert.equal(state.accessCalls,1)
+  state.access=ready
+  assert.equal(await actions.retryWorkspace(),true,'an explicit retry must reuse the existing valid session')
+  assert.equal(state.authCalls,0)
+}
+
+// An explicit sign-in remains able to retry after a failed workspace load.
+{
+  const {state,actions}=harness()
+  state.access={error:clockError}
+  await actions.loadApp(member)
+  state.access=ready
+  assert.equal(await actions.signIn({preventDefault(){}}),true)
+  assert.equal(state.authCalls,1)
+  assert.equal(state.screens.at(-1),'app')
+}
+
+// A session transport error is not evidence that the person has signed out.
+{
+  const {state,actions}=harness()
+  state.sessionError={code:'fetch_failed',message:'synthetic transport interruption'}
+  assert.equal(await actions.retryWorkspace(),false)
+  assert.equal(state.screens.at(-1),'workspace-unavailable')
+  assert.equal(state.screens.includes('login'),false)
+  assert.equal(state.accessCalls,0,'an unverified session must not open the workspace')
+}
+
+// Two overlapping token renewals must retain the already-mounted case/upload.
+{
+  const {state,actions}=harness(),first=deferred(),second=deferred()
+  await actions.loadApp(member)
+  state.screens.length=0
+  let checks=0
+  state.access=()=>++checks===1?first.promise:second.promise
+  const renewal=actions.loadApp({...member,access_token:'synthetic-renewal-one'})
+  await Promise.resolve()
+  const latest=actions.loadApp({...member,access_token:'synthetic-renewal-two'})
+  await Promise.resolve()
+  assert.deepEqual(state.screens,[],'overlapping refreshes must not unmount the open case or file input')
+  second.resolve(ready)
+  assert.equal(await latest,true)
+  first.resolve({access:{active:false,status:'pending'}})
+  assert.equal(await renewal,false,'an older reply cannot replace the current access result')
+  assert.deepEqual(state.screens,['app'])
 }
 
 // Deduplication remains effective while two SIGNED_IN paths are in flight.
@@ -106,7 +161,7 @@ for(const error of [clockError,{code:'42501',message:'permission denied'},{code:
   await actions.loadApp(member)
   state.access={access:{active:false,status:'pending'}}
   assert.equal(await actions.loadApp({...member,access_token:'renewed-but-denied'}),false)
-  assert.equal(state.screens.at(-1),'login','preserving the editor must not bypass revoked access')
+  assert.equal(state.screens.at(-1),'workspace-denied','revoked access stays blocked without pretending the session ended')
 }
 
 // An unavailable module cannot be displayed as an empty successful workspace.
@@ -125,12 +180,24 @@ for(const error of [clockError,{code:'42501',message:'permission denied'},{code:
   const {state,actions}=harness()
   state.access={access:{active:false,status:'pending'}}
   assert.equal(await actions.loadApp(member),false)
-  assert.equal(state.screens.at(-1),'login')
+  assert.equal(state.screens.at(-1),'workspace-denied')
   assert.equal(state.dataLoads,0)
+  state.screens.length=0
+  assert.equal(await actions.loadApp(member),false)
+  assert.deepEqual(state.screens,[],'a denied session must remain on its stable access gate')
+  assert.equal(state.accessCalls,1)
   state.session=null
   assert.equal(await actions.retryWorkspace(),false)
   assert.equal(state.screens.at(-1),'login')
   assert.equal(state.accessCalls,1)
+}
+
+{
+  const {state,actions}=harness()
+  assert.equal(await actions.loadApp(null),false)
+  assert.equal(state.screens.at(-1),'login')
+  assert.equal(state.accessCalls,0)
+  assert.equal(state.dataLoads,0)
 }
 
 // A thrown network failure remains recoverable and does not escape as an unhandled rejection.
@@ -160,7 +227,7 @@ for(const interrupt of ['signout','recovery']){
 
 for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
   const text=getWorkspaceConnectionCopy(language)
-  for(const key of ['title','connecting','unavailable','retry','signOut'])assert.ok(text[key],`${language}.${key}`)
+  for(const key of ['title','connecting','unavailable','retry','deniedTitle','denied','deniedRetry','signOut'])assert.ok(text[key],`${language}.${key}`)
   if(language!=='de')assert.notEqual(text.unavailable,getWorkspaceConnectionCopy('de').unavailable)
 }
 // A signed-in visitor can inspect the permanent public page without an account
@@ -185,4 +252,4 @@ for(const publicOnly of [true,false]){
   await Promise.resolve();await Promise.resolve()
   assert.deepEqual(calls,publicOnly?{session:0,watch:0,workspace:0,screen:0}:{session:1,watch:1,workspace:1,screen:0})
 }
-console.log('Workspace recovery passed: bounded SDK read retries, preserved session, retry after failure, no approval bypass, no partial success, concurrent sign-in deduplication, logout/recovery races, public explanation with an existing session and 11 languages.')
+console.log('Workspace recovery passed: stable failure/denial screens on refocus, explicit retry, transport errors without false sign-out, overlapping token renewals without unmount, missing/revoked access gates, account changes, logout/recovery races and 11 languages. No network or model calls.')
