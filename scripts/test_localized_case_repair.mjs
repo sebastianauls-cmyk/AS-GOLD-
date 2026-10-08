@@ -79,7 +79,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   for(const topic of heavilyCited.analysis.topics.slice(0,4))topic.sources=[{url:'https://www.gesetze-im-internet.de/estg/__22.html',quote:longPassage}]
   const citedFindings=[0,1,2,3].map(index=>issue(`analysis.topics[${index}]`))
   assert(JSON.stringify(heavilyCited.analysis.topics.slice(0,4)).length>20000)
-  assert.deepEqual(localizedRepairTargets(heavilyCited,citedFindings,schema)?.map(target=>target.path),[0,1,2,3].map(index=>['analysis','topics',index]),'verified quote expansion must not block four bounded local corrections')
+  assert.deepEqual(localizedRepairTargets(heavilyCited,citedFindings,schema)?.map(target=>target.path),[...[0,1,2,3].map(index=>['analysis','topics',index]),['steps',0]],'verified quote expansion must not block four bounded topic corrections and their existing linked step')
   assert(heavilyCited.analysis.topics.slice(0,4).every(topic=>topic.sources[0].quote===longPassage),'size accounting never truncates the evidence used by validation or review')
   heavilyCited.analysis.topics[0].conclusion='An oversized editable conclusion. '.repeat(800)
   assert.equal(localizedRepairTargets(heavilyCited,citedFindings,schema),null,'editable narrative still has the same size limit')
@@ -91,10 +91,12 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   // Replay a local unsupported eligibility detail through the actual workflow,
   // then prove that a failed correction, fabricated quote and invalid location
   // still cannot become an accepted customer result. No live API calls.
-  for(const outcome of ['fixed','unresolved','bad_quote','unassigned','compound','global']){
+  for(const defect of ['source','meaning'])for(const outcome of ['fixed','unresolved','bad_quote','unassigned','compound','global']){
     const previous=validateCompleteAnalysis(candidate,args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
     const original=structuredClone(previous)
-    previous.analysis.topics[0].conditions+=' Unsupported synthetic eligibility detail.'
+    const defectText=defect==='meaning'?' Missing a concrete follow-up action for the documented payment question.':' Unsupported synthetic eligibility detail.'
+    previous.analysis.topics[0].conditions+=defectText
+    if(defect==='meaning')previous.steps[1].action='Wait indefinitely without a concrete next action.'
     const expectedReviews=completeReviewGroups(previous).length
     let repairCalls=0,reviewCalls=0,flaggedSource=false
     const transport=async(url,options)=>{
@@ -115,10 +117,10 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
         const part=payloads.find(p=>p.candidate).candidate
         const locations=request.text.format.schema.properties.issues.items.properties.location.enum
         assert(Array.isArray(locations)&&locations.includes('analysis'),'a wider defect remains reportable')
-        const reject=part.analysis?.topics?.some(t=>t.conditions.includes('Unsupported synthetic eligibility detail.'))&&(!flaggedSource||repairCalls)
+        const reject=part.analysis?.topics?.some(t=>t.conditions.includes(defectText.trim()))&&(!flaggedSource||repairCalls)
         if(reject)flaggedSource=true
         const location=({unassigned:'analysis.topics[99]',compound:'analysis.topics[0] und Berechnungsabdeckung',global:'analysis'})[outcome]||'analysis.topics[0]'
-        output={issues:reject?[{code:'source',location,reason:'The supplied originals and fetched text do not support this eligibility example.'}]:[]}
+        output={issues:reject?[{code:defect,location,reason:defect==='meaning'?'The linked step lacks a concrete action to resolve the stated payment question.':'The supplied originals and fetched text do not support this eligibility example.'}]:[]}
       }
       return Response.json({status:'completed',id:`source-${outcome}-${reviewCalls}-${repairCalls}`,model:request.model,output_text:JSON.stringify(output)})
     }

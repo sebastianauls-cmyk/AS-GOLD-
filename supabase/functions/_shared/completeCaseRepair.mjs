@@ -108,12 +108,12 @@ export function localizedRepairTargets(candidate,feedback,schema){
   // Source findings may correct an existing local claim. Wider source gaps
   // still fail location/size checks; every replacement is independently
   // reviewed again and must pass the unchanged literal-source/math gates.
-  const selected=new Map(),sourceTopicIds=new Set()
+  const selected=new Map(),affectedTopicIds=new Set()
   for(const issue of feedback){
     const path=locate(candidate,issue.location,schema)
     if(!path||!schemaAt(schema,path)||get(candidate,path)===undefined)return null
     selected.set(label(path),path)
-    if(issue.code==='source'&&path[0]==='analysis'&&path[1]==='topics')sourceTopicIds.add(get(candidate,path).id)
+    if(['source','meaning'].includes(issue.code)&&path[0]==='analysis'&&path[1]==='topics')affectedTopicIds.add(get(candidate,path).id)
   }
   // A changed computed value cannot leave a later calculation using its old
   // result. Include every transitive consumer in original dependency order.
@@ -133,12 +133,12 @@ export function localizedRepairTargets(candidate,feedback,schema){
   const fits=paths=>paths.length<=8&&JSON.stringify(paths.map(path=>get(candidate,path)),
     (key,value)=>key==='quote'&&typeof value==='string'?'@verified-passage-reference':value).length<=20000
   if(!fits([...selected.values()]))return null
-  // Correcting a source-based conclusion can also require changing its actual
+  // Correcting a source or meaning defect can also require changing its actual
   // request or follow-through. Previously these explicitly linked steps were
   // immutable, forcing a needless full-correction stop or an inconsistent plan.
   // Include existing linked steps only within the SAME size budget. No new
   // steps, guessed links or additional repair calls are authorized here.
-  const linkedSteps=new Set((candidate.analysis?.topics||[]).filter(topic=>sourceTopicIds.has(topic.id)).flatMap(topic=>topic.step_ids||[]))
+  const linkedSteps=new Set((candidate.analysis?.topics||[]).filter(topic=>affectedTopicIds.has(topic.id)).flatMap(topic=>topic.step_ids||[]))
   for(const [index,step] of (candidate.steps||[]).entries())if(linkedSteps.has(step.id)){
     const path=['steps',index],key=label(path)
     if(!selected.has(key)&&fits([...selected.values(),path]))selected.set(key,path)
