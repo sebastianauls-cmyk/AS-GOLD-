@@ -51,6 +51,8 @@ function load(file){
   return mod.exports
 }
 const {DashboardSurface}=load('app/modules/workspace/DashboardSurface.js')
+const Picker=load('app/modules/documents/DocumentPickerActions.js').default
+const {SimpleCaseStart}=load('app/modules/cases/SimpleCaseStart.js')
 const {ProtectedWorkspaceShell}=load('app/modules/workspace/ProtectedWorkspaceShell.js')
 const {appText}=load('app/modules/workspace/workspaceText.js')
 Object.assign(appText,load('app/modules/language/languageRegistry.mjs').pageTranslations.appText)
@@ -85,4 +87,20 @@ assert.deepEqual(events.pop(),['approval','approval'],'a pending letter opens it
 tree=nodes(DashboardSurface({...props,data:{cases:[],documents:[],approvals:[],clients:[]}}))
 tree.find(node=>node.type==='button'&&node.props.className==='primary').props.onClick()
 assert.deepEqual(events.pop(),['quick','case'])
+const older={...item,id:'older-case',title:'Second existing case',updated_at:'2026-09-19T10:00:00Z'}
+const intakeProps={...props,caseStart:{draft:{title:'Unfinished draft'},setDraft(){},onSubmit(){}},data:{...data,cases:[older,item]},onAddDocument:(...args)=>events.push(['intake',...args])}
+tree=nodes(DashboardSurface(intakeProps))
+assert.ok(!tree.some(node=>node.type===SimpleCaseStart),'an existing user reaches their cases before a new-case form')
+const recent=tree.find(node=>node.props.className==='workspaceRecent')
+assert.ok(tree.indexOf(recent)<tree.findIndex(node=>node.props.className==='workspaceNext'),'recent cases precede the suggested next task')
+const caseCards=nodes(recent).filter(node=>node.type==='article')
+assert.deepEqual(caseCards.map(node=>node.props['aria-label']),[item.title,older.title])
+const photo=new File(['SYNTHETIC PHOTO'],'Phone.jpg',{type:'image/jpeg'})
+nodes(caseCards[1]).find(node=>node.type===Picker).props.onSelect(photo,'scan')
+assert.deepEqual(events.pop(),['intake',older.id,'scan',photo],'the original File goes to the selected case, never the first or suggested case')
+tree.find(node=>node.props.className==='secondary workspaceNewCase').props.onClick()
+assert.deepEqual(events.pop(),['quick','case'],'new-case creation remains explicit and uses the existing workflow')
+assert.equal(intakeProps.caseStart.draft.title,'Unfinished draft','hiding the form does not clear a draft')
+tree=nodes(DashboardSurface({...intakeProps,data:{cases:[],documents:[],approvals:[],clients:[]}}))
+assert.ok(tree.some(node=>node.type===SimpleCaseStart),'the first case can still be entered directly')
 console.log('Workspace overview passed: real pending tasks, unchanged evidence gates, no invented deadlines, direct document/case/approval navigation, empty state and actual React rendering in 11 languages with collapsed settings. Browser viewport acceptance remains separate.')

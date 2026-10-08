@@ -4,6 +4,7 @@ import { workspaceOverview } from './workspaceOverview.mjs'
 import { workspaceOverviewCopy } from './workspaceOverviewCopy.mjs'
 import { SimpleCaseStart } from '../cases/SimpleCaseStart'
 import { simpleCaseCopy } from '../cases/lib/simpleCaseCopy.mjs'
+import DocumentPickerActions from '../documents/DocumentPickerActions'
 
 const insiderEntryCopy={
   de:{label:'PASSWORT 1 · VOLLZUGRIFF AUF ALLES',title:'Gemeinsamer Team-Arbeitsbereich',lead:'Auf das gesamte ASH Workspace zugreifen und jede Änderung vorbereiten. Passwort 2 gibt die neue Live-Version frei.',action:'Änderungszentrale öffnen',landing:'Interne Startfläche'},
@@ -20,7 +21,7 @@ const insiderEntryCopy={
 }
 
 
-export function DashboardSurface({caseStart,core,handleQuickAction,onOpenDocument,onOpenApproval,onStartSyntheticCase,onBack,a,user,currentTier,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
+export function DashboardSurface({caseStart,core,handleQuickAction,onAddDocument,onOpenDocument,onOpenApproval,onStartSyntheticCase,onBack,a,user,currentTier,setSection,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,currentSufficient,currentPlan,access,data,lt,promo,testAccessEnd,guestCopy}){
   const language=Object.entries(appText).find(([,value])=>value===a)?.[0]||'de'
   const ux=workspaceOverviewCopy(language)
   const simple=simpleCaseCopy(language)
@@ -49,16 +50,20 @@ export function DashboardSurface({caseStart,core,handleQuickAction,onOpenDocumen
   return <div className="workspaceOverview" dir={language==='ar'||language==='fa'?'rtl':'ltr'}>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backExplanation}</button>
     <h1 className={caseStart?'simpleCasePageTitle':undefined}>{ux.title}</h1>
-    {caseStart&&<SimpleCaseStart {...caseStart} language={language} copy={core}/>}
+    {overview.recentCases.length>0&&<section className="workspaceRecent" aria-labelledby="workspace-recent-title">
+      <div className="workspaceRecentHead"><h2 id="workspace-recent-title">{ux.recent}</h2><button type="button" className="linkBtn" onClick={()=>setSection('cases')}>{ux.allCases}</button></div>
+      {overview.recentCases.map(item=><article className="workspaceRecentCard" key={item.id} aria-label={item.title}>
+        <button type="button" className="workspaceRecentCase" onClick={()=>handleQuickAction('open-case',item)}><span>{item.title}</span><span className="workspaceRecentOpen">{ux.openCase} <span aria-hidden="true">→</span></span></button>
+        {onAddDocument&&<DocumentPickerActions language={language} onSelect={(file,mode)=>onAddDocument(item.id,mode,file)}/>}
+      </article>)}
+      <button className="secondary workspaceNewCase" type="button" onClick={()=>handleQuickAction('case')}>＋ {core?.newCase||ux.create}</button>
+    </section>}
+    {caseStart&&overview.cases.length===0&&<SimpleCaseStart {...caseStart} language={language} copy={core}/>}
     {(!caseStart||next.kind!=='create')&&<section className="workspaceNext" aria-labelledby="workspace-next-title">
       <span className="eyebrow">{ux.next}</span>
       <h2 id="workspace-next-title">{linkedCase&&(next.kind==='read'||next.kind==='review')?simple.continue:ux[next.kind]}</h2>
       <p className="workspaceNextSubject">{linkedCase?.title||next.item?.title||next.item?.subject||ux.empty}</p>
       <button className="primary" type="button" onClick={openNext}>{nextButton} <span aria-hidden="true">→</span></button>
-    </section>}
-    {overview.recentCases.length>0&&<section className="workspaceRecent" aria-labelledby="workspace-recent-title">
-      <div className="workspaceRecentHead"><h2 id="workspace-recent-title">{ux.recent}</h2><button type="button" className="linkBtn" onClick={()=>setSection('cases')}>{ux.allCases}</button></div>
-      {overview.recentCases.map(item=><button type="button" className="workspaceRecentCase" key={item.id} onClick={()=>handleQuickAction('open-case',item)}><span>{item.title}</span><span aria-hidden="true">→</span></button>)}
     </section>}
     <details className="workspaceMore">
       <summary>{ux.more}</summary>
