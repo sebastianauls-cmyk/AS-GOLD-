@@ -115,7 +115,7 @@
     "test:completion-followup": "node scripts/test_completion_followup.mjs && node scripts/test_legal_research_flow.mjs && node scripts/test_primary_source_tables.mjs",
     "test:password-recovery": "node scripts/test_password_recovery_routing.mjs",
     "test:password-reset-limits": "node scripts/test_password_reset_limits.mjs",
-    "test:workspace-recovery": "node scripts/test_workspace_session_recovery.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_session_check_deadline.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_auth_diagnostics.mjs",
+    "test:workspace-recovery": "node scripts/test_workspace_session_recovery.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_session_check_deadline.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_auth_diagnostics.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_auth_sdk_coordination.mjs",
     "test:document-analysis": "node scripts/test_document_request_flow.mjs && node scripts/test_document_recovery.mjs && node scripts/test_document_failure.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_document_persistence.mjs",
     "test:workspace-overview": "node scripts/test_workspace_overview.mjs && node scripts/test_simple_case_flow.mjs",
     "test:public-product-tour": "node scripts/test_public_product_tour.mjs && node scripts/test_public_case_start.mjs",
@@ -126,7 +126,7 @@
     "test:mobile-intake": "node --import ./scripts/offline/noNetwork.mjs scripts/test_mobile_document_intake.mjs"
   },
   "dependencies": {
-    "@supabase/supabase-js": "2.57.4",
+    "@supabase/supabase-js": "2.117.3",
     "country-flag-icons": "1.6.20",
     "docx": "9.5.1",
     "jspdf": "4.2.1",
