@@ -47,6 +47,25 @@ for(const [name,text] of [['Rechnung.txt','Synthetische Rechnung: 900 EUR offen.
     assert.ok(state.filters.every(filters=>filters.some(([key,value])=>key==='owner_id'&&value===owner)&&filters.some(([key])=>key==='id')&&filters.some(([key])=>key==='file_path')))
   }
 }
+// Exercise the real File bytes, not a mocked text decoder. BOMs identify UTF-16
+// exports; leading whitespace and CRLF remain part of the original evidence.
+const originalText='\tBestätigung: Grüße, 300,00 EUR\r\n'
+const utf16le=Buffer.concat([Buffer.from([0xff,0xfe]),Buffer.from(originalText,'utf16le')])
+const utf16be=Buffer.from(utf16le).swap16()
+for(const bytes of [Buffer.from(originalText),Buffer.concat([Buffer.from([0xef,0xbb,0xbf]),Buffer.from(originalText)]),utf16le,utf16be]){
+  const input=options(new File([bytes],'Zahlung.csv',{type:'text/csv'})),{client,state}=transport({delivery:'ok'})
+  const result=await uploadWorkspaceDocument(client,input)
+  assert.equal(result.error,null)
+  assert.equal(result.data.extracted_text,originalText,'the encoding must not change the original text')
+  assert.equal(state.uploads,1);assert.equal(state.rows.size,1);assert.equal(state.objects.size,1);assert.equal(state.removals,0)
+}
+for(const bytes of [Buffer.from([0xc3,0x28]),Buffer.from('binary\0text'),Buffer.from(' \r\n\t'),Buffer.from([0xff,0xfe,0x41])]){
+  const input=options(new File([bytes],'Unreadable.txt')),{client,state}=transport({delivery:'ok'})
+  const result=await uploadWorkspaceDocument(client,input)
+  assert.equal(result.error,null,'an unreadable text preview must not lose the original file')
+  assert.equal(result.data.extracted_text,null,'invalid, binary and empty input must not be marked as extracted text')
+  assert.equal(state.uploads,1);assert.equal(state.rows.size,1);assert.equal(state.objects.size,1);assert.equal(state.removals,0)
+}
 for(const read of ['error','throw','foreign']){
   const input=options(new File(['SYNTHETIC'],'Source.txt')),{client,state}=transport({read})
   input.intakeQuality={state:'good',checked_at:'2026-09-24T10:00:00Z'}

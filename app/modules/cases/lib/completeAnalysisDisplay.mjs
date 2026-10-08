@@ -29,10 +29,13 @@ const traceLabels={
  vi:['Tài liệu gốc','Từ phép tính','Bước liên quan','Câu hỏi của vụ việc','Chưa cung cấp']
 }
 const traceKeys=['document','derived','relatedSteps','topics','unavailable']
+const evidenceLabels={de:'Beleg',en:'Evidence',fr:'Preuve',tr:'Kanıt',pl:'Dowód',ru:'Подтверждение',ar:'دليل',fa:'مدرک',ro:'Dovadă',bg:'Доказателство',vi:'Bằng chứng'}
 export function completeAnalysisCopy(language='de'){return Object.fromEntries([
   ...keys.map((key,index)=>[key,(labels[language]||labels.de)[index]]),
-  ...traceKeys.map((key,index)=>[key,(traceLabels[language]||traceLabels.de)[index]])
+  ...traceKeys.map((key,index)=>[key,(traceLabels[language]||traceLabels.de)[index]]),
+  ['evidence',evidenceLabels[language]||evidenceLabels.de]
 ])}
+const sourceKey=url=>String(url||'').split('#')[0]
 const number=(value,language)=>{
   const text=String(value),[whole,fraction]=text.split('.'),format=new Intl.NumberFormat(language)
   const integer=BigInt(whole),formatted=integer===0n&&text.startsWith('-')?format.format(-0):format.format(integer)
@@ -49,11 +52,22 @@ export function completeAnalysisBlocks(analysis,language='de',{steps=[],document
   const topicTitles=new Map(analysis.topics.map(topic=>[topic.id,topic.title]))
   const calculationTitles=new Map(analysis.calculations.map(calculation=>[calculation.id,calculation.title]))
   const add=(text,kind='body',reference={})=>{if(text)blocks.push({text,kind,...reference})}
+  const evidence=new Map(),usedSources=new Set()
+  let evidenceCount=0
+  const addQuote=(quote,reference={},showUrl=false)=>{
+    const origin=reference.documentId?['document',reference.documentId]:reference.url?['source',reference.url]:null
+    const key=origin?JSON.stringify([...origin,quote]):null
+    const previous=key&&evidence.get(key)
+    if(previous){add(ui.evidence+' '+previous,'meta',{...reference,evidenceRef:previous});return}
+    const id=++evidenceCount
+    if(key)evidence.set(key,id)
+    add(ui.evidence+' '+id+': „'+quote+'“'+(showUrl?'\n'+reference.url:''),'meta',{...reference,evidenceId:id})
+  }
   add(ui.analysis,'heading')
   for(const topic of analysis.topics){
     add(topic.title+' · '+ui[topic.status],'heading');add(topic.conclusion)
     if(topic.conditions)add(ui.conditions+': '+topic.conditions)
-    for(const source of topic.sources)add('„'+source.quote+'“\n'+source.url,'meta',{url:source.url})
+    for(const source of topic.sources){usedSources.add(sourceKey(source.url));addQuote(source.quote,{url:source.url},true)}
     for(const id of topic.step_ids||[])add(ui.relatedSteps+': '+(stepTitles.get(id)||id),'meta',{stepId:id})
   }
   if(analysis.calculations.length)add(ui.calculations,'heading')
@@ -71,14 +85,20 @@ export function completeAnalysisBlocks(analysis,language='de',{steps=[],document
     for(const input of calculation.inputs){
       add(input.label+': '+number(input.value,language)+(input.kind==='assumption'?' · '+ui.assumption+': '+input.explanation:''),'body')
       if(input.kind==='document')add(ui.document+': '+(documentTitles.get(input.document_id)||input.document_id||ui.unavailable),'meta',{documentId:input.document_id})
-      if(input.kind==='source')add(ui.sources+': '+(input.url||ui.unavailable),'meta',input.url?{url:input.url}:{})
+      if(input.kind==='source'){
+        if(input.url)usedSources.add(sourceKey(input.url))
+        add(ui.sources+': '+(input.url||ui.unavailable),'meta',input.url?{url:input.url}:{})
+      }
       if(input.kind==='calculation')add(ui.derived+': '+(calculationTitles.get(input.calculation_id)||input.calculation_id||ui.unavailable),'meta')
-      if(input.quote)add('„'+input.quote+'“','meta')
+      if(input.quote)addQuote(input.quote,input.kind==='document'?{documentId:input.document_id}:input.kind==='source'?{url:input.url}:{})
     }
     add(ui.formula+': '+calculation.expression+' = '+calculation.result+' '+calculation.unit,'meta')
     if(calculation.conditions)add(ui.conditions+': '+calculation.conditions)
   }
   if(analysis.limitations.length){add(ui.limitations,'heading');for(const item of analysis.limitations)add(item,'bullet')}
-  if(analysis.research_sources?.length){add(ui.sources,'heading');for(const source of analysis.research_sources)add(source.title+' · '+source.checked_at.slice(0,10)+'\n'+source.url,'meta',{url:source.url})}
+  // The research pool may include unused fallback material. List only sources
+  // actually cited by an answer or calculation; the saved research stays intact.
+  const sources=(analysis.research_sources||[]).filter(source=>usedSources.has(sourceKey(source.url)))
+  if(sources.length){add(ui.sources,'heading');for(const source of sources)add(source.title+' · '+source.checked_at.slice(0,10)+'\n'+source.url,'meta',{url:source.url})}
   return blocks
 }

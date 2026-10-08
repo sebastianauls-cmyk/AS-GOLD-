@@ -1,4 +1,5 @@
 import { OUTPUT_LANGUAGES } from '../language/outputLanguage.js'
+import { readUploadedText } from '../documents/readUploadedText.mjs'
 
 export function updateDocumentRecord(supabase,{ownerId,documentId,draft,expectedUpdatedAt,expectedCaseId}){
   const customerCopyLanguage=OUTPUT_LANGUAGES.includes(draft.customer_copy_language)?draft.customer_copy_language:null
@@ -81,7 +82,7 @@ export async function uploadWorkspaceDocument(supabase,{ownerId,file,caseId,data
       pending.uploaded=true
     }
     if(['txt','csv'].includes(extension)&&file.size<=2*1024*1024){
-      try{pending.payload.extracted_text=(await file.text()).trim()||null}catch{}
+      try{pending.payload.extracted_text=await readUploadedText(file)}catch{}
     }
   }
   const matches=row=>row?.id===pending.payload.id&&row.owner_id===ownerId&&row.file_path===pending.path
