@@ -1,4 +1,5 @@
 import './test_case_reconciliation.mjs'
+import './test_case_legal_working_basis.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
 import './test_case_review_cache.mjs'
