@@ -5,6 +5,10 @@ async function expectDocumentLayout(page,selector){
   const layout=await page.locator(selector).evaluate(form=>({formWidth:form.clientWidth,contentWidth:form.scrollWidth,pageWidth:document.documentElement.clientWidth,pageContentWidth:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(element=>element.getBoundingClientRect().right>document.documentElement.clientWidth+1).slice(0,12).map(element=>({tag:element.tagName,class:element.className,width:element.getBoundingClientRect().width}))}))
   expect(layout.contentWidth,JSON.stringify(layout)).toBeLessThanOrEqual(layout.formWidth+1)
   expect(layout.pageContentWidth,JSON.stringify(layout)).toBeLessThanOrEqual(layout.pageWidth+1)
+  if(selector==='.documentUploadForm'){
+    const classificationHeight=await page.locator('select[name=data_classification]').evaluate(element=>element.getBoundingClientRect().height)
+    expect(classificationHeight,'The data-classification field must keep its normal input height beside the file preview').toBeLessThanOrEqual(80)
+  }
 }
 async function prepare(page,{sample=false}={}){
   await page.goto('/qa-document-flow')

@@ -129,6 +129,7 @@ html[dir="rtl"] .authCard .languageSwitch .flagLanguage{direction:rtl}
 .documentPickerActions .documentPickerInput{display:none!important}
 .documentPickerActions button{min-height:50px;display:flex;align-items:center;justify-content:center;gap:9px;white-space:normal;line-height:1.3;padding:12px 16px}
 .documentPickerActions svg{width:22px;height:22px;flex-shrink:0}
+.documentUploadForm{align-items:start}
 .documentUploadForm .documentFileIntake{padding:16px;margin:0}
 .caseIntakePrompt{grid-column:1/-1;min-width:0}
 .caseIntakePrompt h3{font-size:1.2rem;line-height:1.3;margin:0 0 8px}
