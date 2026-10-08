@@ -153,14 +153,14 @@ export function createDocumentWorkflowActions({
     return stayInCase?updated:true
   }
 
-  async function uploadDocument(event,{onUploaded}={}){
+  async function uploadDocument(event,{onUploaded,file:selectedFile}={}){
     event.preventDefault()
     if(uploadInFlight.current)return false
     uploadInFlight.current=true
     try{
     setMessage('')
     const form=event.currentTarget
-    let file=form.elements.file.files[0]
+    let file=selectedFile||form.elements.file?.files?.[0]
     const sampleDocument=!file&&form.elements.sample_document?.value==='synthetic-v29'?'synthetic-v29':null
     if(sampleDocument&&uploadAttempt.current?.sampleDocument===sampleDocument)file=uploadAttempt.current.file
     if(!file&&form.elements.sample_document?.value==='synthetic-v29'){

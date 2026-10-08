@@ -25,6 +25,7 @@ import { caseStatusLabel } from './lib/caseStatus.mjs'
 import { DocumentDeadlineCandidates } from './DocumentDeadlineCandidates'
 import { CustomerRoadmapPanel } from './CustomerRoadmapPanel'
 import { CaseAnalysisModes } from './FreeCaseAnalysisPanel'
+import DocumentPickerActions from '../documents/DocumentPickerActions'
 import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
 import { SimpleCaseStart } from './SimpleCaseStart'
 import { ResultContinuation } from './ResultContinuation'
@@ -135,7 +136,11 @@ export function CaseDetail({copy:on, analysis, access=null, language='de', outpu
   const readiness=!documents.length?on.notAssessable:evidenceState.complete?evidenceCopy.reviewed:evidenceCopy.pending
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
-    <div className="caseTitleRow"><div><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2>{item.title}</h2><p>{client?.name||on.clientUnknown}{item.reference_no?` · ${item.reference_no}`:''}</p></div><button className="secondary" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button></div>
+    <div className="caseTitleRow caseIntakeHeader">
+      <div className="caseIntakeTitle"><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2 title={item.title}>{item.title}</h2>{(client||item.reference_no)&&<p>{client?.name}{client&&item.reference_no?' · ':''}{item.reference_no}</p>}</div>
+      <DocumentPickerActions language={language} onSelect={(file,mode)=>onAddDocument(item.id,mode,file)}/>
+      <button className="secondary caseIntakeEdit" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button>
+    </div>
     <CaseAnalysisModes supabase={supabase} access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
     {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} continuation={continuation}/>}
     </CaseAnalysisModes>

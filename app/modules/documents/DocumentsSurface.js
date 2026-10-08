@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { APP_VERSION } from '../release/appRelease.mjs'
 import DocumentFileIntake from './DocumentFileIntake'
+import { documentPickerCopy } from './documentPickerCopy.mjs'
 import VoiceContextInput from './VoiceContextInput'
 import DeviceReadinessPanel from './DeviceReadinessPanel'
 import { simpleCaseCopy } from '../cases/lib/simpleCaseCopy.mjs'
@@ -19,24 +20,25 @@ function useActiveInterfaceLanguage(fallback='de'){
   return current
 }
 
-export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode,setDocumentMode,uploadCaseId,uploadDocument,uploading,allowedUploadAccept,setSelectedDocument,onBack,language='de'}){
+export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode,setDocumentMode,uploadCaseId,initialFile=null,uploadDocument,uploading,allowedUploadAccept,setSelectedDocument,onBack,language='de'}){
   const interfaceLanguage=useActiveInterfaceLanguage(language)
   const simple=simpleCaseCopy(interfaceLanguage)
   const linkedCase=cases.find(item=>item.id===uploadCaseId)
   const [intakeRevision,setIntakeRevision]=useState(0)
+  const [selectedFile,setSelectedFile]=useState(initialFile)
   async function submitDocument(event){
-    const uploaded=await uploadDocument(event)
-    if(uploaded)setIntakeRevision(current=>current+1)
+    const uploaded=await uploadDocument(event,{file:selectedFile})
+    if(uploaded){setSelectedFile(null);setIntakeRevision(current=>current+1)}
   }
   return <>
     <div className="sectionHead"><button className="backBtn" data-persistent-back type="button" onClick={onBack}>{a.backOverview}</button><h2>{a.sections.documents}</h2></div>
     {access?.app_role!=='owner'&&Number(access?.permissions?.document_limit||0)>0&&<p className="muted">{a.used.replace('{used}',documents.length).replace('{limit}',access.permissions.document_limit)}</p>}
     <form className="actionCard coreForm documentUploadForm" onSubmit={submitDocument}>
-      <div className="formIntro"><h3>{simple.add}</h3>{linkedCase&&<p>{linkedCase.title}</p>}<div className="modeSwitch"><button type="button" className={documentMode==='upload'?'active':''} onClick={()=>setDocumentMode('upload')}>{core.uploadMode}</button><button type="button" className={documentMode==='scan'?'active':''} onClick={()=>setDocumentMode('scan')}>{core.scanMode}</button></div></div>
-      <DocumentFileIntake key={`file-${documentMode}-${intakeRevision}`} language={interfaceLanguage} documentMode={documentMode} allowedUploadAccept={allowedUploadAccept}/>
+      <div className="formIntro"><h3>{simple.add}</h3>{linkedCase&&<p className="documentLinkedCase" title={linkedCase.title}>{linkedCase.title}</p>}</div>
+      <DocumentFileIntake key={`file-${intakeRevision}`} language={interfaceLanguage} documentMode={documentMode} allowedUploadAccept={allowedUploadAccept} initialFile={intakeRevision===0?initialFile:null} onFileChange={setSelectedFile} onModeChange={setDocumentMode} disabled={uploading}/>
       {linkedCase?<input type="hidden" name="case_id" value={linkedCase.id}/>:<label htmlFor="document-case">{core.selectCase}<select id="document-case" name="case_id" defaultValue={uploadCaseId||''}><option value="">{core.withoutCase}</option>{cases.map(item=><option value={item.id} key={item.id}>{item.title}</option>)}</select></label>}
-      <details className="simpleUploadOptions"><summary>{simple.options}</summary>
       <VoiceContextInput key={`voice-${intakeRevision}`} language={interfaceLanguage}/>
+      <details className="simpleUploadOptions"><summary>{simple.options}</summary>
       <label htmlFor="document-type">{core.documentType}<input id="document-type" name="document_type"/></label>
       <label htmlFor="document-date">{core.documentDate}<input id="document-date" name="document_date" type="date"/></label>
       <DeviceReadinessPanel language={interfaceLanguage}/>
@@ -45,7 +47,7 @@ export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode
       <label htmlFor="document-classification">{v28.classification}<select id="document-classification" name="data_classification" defaultValue="" required><option value="" disabled>—</option><option value="synthetic">{v28.synthetic}</option><option value="anonymized">{v28.anonymized}</option></select></label>
       <label className="documentPrivacyConfirm"><input name="test_data_confirmed" type="checkbox" required/><span>{v28.uploadConfirm}</span></label>
       <input type="hidden" name="source" value={documentMode}/>
-      <button className="primary full" disabled={uploading}>{uploading?core.uploading:core.upload}</button>
+      <button className="primary full" disabled={uploading}>{uploading?core.uploading:documentPickerCopy(interfaceLanguage).save}</button>
     </form>
     {documents.length?<div className="itemList">{documents.map(item=><button className="itemRow buttonRow" type="button" onClick={()=>setSelectedDocument(item)} key={item.id}><div><b>{item.title}</b><p>{item.document_type||core.documentType}{item.document_date?` · ${item.document_date}`:''}{item.source_language?` · ${item.source_language.toUpperCase()}`:''}{item.voice_context?' · 🎤':''}</p></div><span className="chev">›</span></button>)}</div>:null}
   </>

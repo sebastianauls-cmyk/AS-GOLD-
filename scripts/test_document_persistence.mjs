@@ -114,7 +114,7 @@ function workflow({audit='pending',localFailure=true,metadata='ok',generated=fal
   const state={data:{documents:[{...row,extracted_text:null}],cases:[{id:row.case_id}],assessments:[],sourceStatus:[]},message:'',selected:null,uploads:0,saves:0,reset:0,audits:[],opening:0}
   const context={recordCommittedAction,documentUploadReadinessMessage,parseIntakeQuality,validateDocumentUploadReadiness,currentAssessments,caseGuidanceCopy,
     PRIVACY_NOTICE_VERSION:'test',allowedUploadExtensions:new Set(['txt']),maxUploadBytes:10000,
-    uploadWorkspaceDocument:async()=>{state.uploads++;return {data:row,error:null}},
+    uploadWorkspaceDocument:async(client,input)=>{state.uploads++;state.uploadInput=input;return {data:row,error:null}},
     updateDocumentRecord:async()=>{state.saves++;return failSave?{error:new Error('Actual save rejected')}:{data:row,error:null}},
     createAssessmentRecord:async()=>{if(metadata==='rejected')throw new Error('Assessment unavailable');return {assessment:{id:'assessment',case_id:row.case_id},updatedCase:{id:row.case_id,traffic_light:'yellow'},error:null}},
     createWorkspaceDocumentSignedUrl:async()=>({}),window:{},openPrivateDocument:async()=>{state.opening++;return true}}
@@ -138,6 +138,25 @@ try{
     assert.equal(await bounded(actions.openDocument({...row,file_path:'synthetic/file.txt'})),true)
     assert.equal(state.opening,1)
     assert.deepEqual(state.audits,['document_uploaded','document_reviewed','document_opened'])
+  }
+  for(const keepNativeInput of [false,true]){
+    const {actions,state,event}=workflow({audit:'ok'})
+    const chosen=new File(['NEW SYNTHETIC FILE'],'Chosen.txt')
+    if(!keepNativeInput)delete event.currentTarget.elements.file
+    event.currentTarget.elements.voice_context={value:'Confirmed synthetic context'}
+    assert.equal(await actions.uploadDocument(event,{file:chosen}),true)
+    assert.equal(state.uploadInput.file,chosen,'the selected file takes precedence over a stale native input')
+    assert.equal(state.uploadInput.caseId,'synthetic-case')
+    assert.equal(state.uploadInput.voiceContext,'Confirmed synthetic context')
+  }
+  {
+    const {actions,state,event}=workflow()
+    delete event.currentTarget.elements.file
+    assert.equal(await actions.uploadDocument(event),false)
+    event.currentTarget.elements.test_data_confirmed.checked=false
+    assert.equal(await actions.uploadDocument(event,{file:new File(['SYNTHETIC'],'Chosen.txt')}),false)
+    assert.equal(state.uploads,0,'a direct picker never bypasses file or consent checks')
+    assert.equal(state.reset,0)
   }
   for(const stayInCase of [false,true]){
     const {actions,state,row,draft}=workflow({metadata:'rejected',generated:true})
