@@ -47,6 +47,7 @@ import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
 import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
+import { readCaseLink, resolveCaseLink, clearCaseLink, caseLinkUnavailable } from './caseLink.mjs'
 import { buildSyntheticCaseDraft } from '../testing/syntheticCaseDraft.mjs'
 import { buildDeadlineOverview } from '../cases/deadlineCases.mjs'
 import { getDeadlineUi } from '../cases/deadlineUi.mjs'
@@ -103,6 +104,8 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const [data,setData]=useState(emptyData)
   const [section,setSection]=useState('dashboard')
   const [selectedCase,setSelectedCase]=useState(null)
+  const caseLinkHandled=useRef(false)
+  const caseLinkScroll=useRef(null)
   const [selectedClient,setSelectedClient]=useState(null)
   const [selectedDocument,setSelectedDocument]=useState(null)
   const uploadInFlight=useRef(false)
@@ -186,6 +189,32 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const approvalUi=getV25ApprovalCopy(language)
   const analysisUi=getV26AnalysisCopy(language)
   const privacyCurrent=privacySettings?.privacy_notice_version===PRIVACY_NOTICE_VERSION&&privacySettings?.terms_version===TERMS_VERSION&&!!privacySettings?.privacy_notice_acknowledged_at&&!!privacySettings?.terms_acknowledged_at
+  useEffect(()=>{
+    if(publicOnly||caseLinkHandled.current)return
+    const destination=resolveCaseLink({caseId:readCaseLink(window.location.search),screen,userId:user?.id,access,privacyCurrent,cases:data.cases})
+    if(destination.kind==='none'||destination.kind==='waiting')return
+    caseLinkHandled.current=true
+    clearCaseLink(window)
+    setSelectedClient(null)
+    setSelectedDocument(null)
+    setSelectedApproval(null)
+    setSection('cases')
+    if(destination.kind==='unavailable'){
+      setSelectedCase(null)
+      setMessage(caseLinkUnavailable(language))
+      return
+    }
+    caseLinkScroll.current=destination.item.id
+    setSelectedCase(destination.item)
+  },[publicOnly,screen,user?.id,access,privacyCurrent,data.cases,language])
+  useEffect(()=>{
+    if(screen!=='app'||!privacyCurrent||!selectedCase||caseLinkScroll.current!==selectedCase.id)return
+    const frame=requestAnimationFrame(()=>{
+      document.getElementById('customer-roadmap')?.scrollIntoView({block:'start'})
+      caseLinkScroll.current=null
+    })
+    return ()=>cancelAnimationFrame(frame)
+  },[screen,privacyCurrent,selectedCase?.id])
   const recommendedTier=goalTier[selectedGoal]||'free'
   const recommendedPlan=localizedPlans.find(plan=>plan.key===recommendedTier)||localizedPlans[0]
   const currentSufficient=(tierRank[currentTier]||1)>=(tierRank[recommendedTier]||1)

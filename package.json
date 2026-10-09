@@ -117,12 +117,13 @@
     "test:password-reset-limits": "node scripts/test_password_reset_limits.mjs",
     "test:workspace-recovery": "node scripts/test_workspace_session_recovery.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_session_check_deadline.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_auth_diagnostics.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_auth_sdk_coordination.mjs",
     "test:document-analysis": "node scripts/test_document_request_flow.mjs && node scripts/test_document_recovery.mjs && node scripts/test_document_failure.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_document_persistence.mjs",
-    "test:workspace-overview": "node scripts/test_workspace_overview.mjs && node scripts/test_simple_case_flow.mjs",
+    "test:workspace-overview": "node scripts/test_workspace_overview.mjs && node scripts/test_simple_case_flow.mjs && npm run test:case-result-access",
     "test:public-product-tour": "node scripts/test_public_product_tour.mjs && node scripts/test_public_case_start.mjs",
     "test:product-deliverables": "node --import ./scripts/offline/noNetwork.mjs scripts/test_analysis_traceability.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_customer_notes.mjs && node scripts/test_product_deliverables.mjs",
     "test:offline": "node --import ./scripts/offline/noNetwork.mjs scripts/offline/run.mjs",
     "test:payment-recovery": "node --import ./scripts/offline/noNetwork.mjs scripts/test_payment_recovery.mjs",
     "test:roadmap-overview-ui": "node --import ./scripts/offline/noNetwork.mjs scripts/test_roadmap_overview_ui.mjs",
+    "test:case-result-access": "node --import ./scripts/offline/noNetwork.mjs scripts/test_case_result_access.mjs",
     "test:mobile-intake": "node --import ./scripts/offline/noNetwork.mjs scripts/test_mobile_document_intake.mjs"
   },
   "dependencies": {
