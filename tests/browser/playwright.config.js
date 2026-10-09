@@ -10,6 +10,7 @@ export default defineConfig({
   retries:process.env.CI?1:0,
   workers:2,
   maxFailures:6,
+  globalTimeout:8*60_000,
   timeout:45_000,
   expect:{timeout:12_000},
   reporter:[['line'],['html',{outputFolder:'playwright-report',open:'never'}],['json',{outputFile:'test-results/results.json'}]],
