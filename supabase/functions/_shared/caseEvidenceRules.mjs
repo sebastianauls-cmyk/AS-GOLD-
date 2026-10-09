@@ -35,3 +35,21 @@ ${DOCUMENT_ATTRIBUTION_RULES}
 - Later revenue may come from mitigation or another activity, not a reopened original business. Explain that distinction when the sources support it. Check cut-off dates and overlapping monthly periods before declaring a calculation inconsistent. Missing invoices or receipts stay missing.
 - Substantive conclusions beyond what an original states stay open without the necessary evidence. Preserve facts explicitly stated in that original with attribution; do not require a second source merely to report them. Missing facts become concrete questions, a responsible party and a completion condition, not invented answers. No message, payment, order or submission is performed by this analysis.
 `
+
+// The requested frame is a server-owned label, not a model-inferred fact.
+const workingBasisNotices={
+  de:'Arbeitsgrundlage dieser Einschätzung ist deutsches Recht.',
+  en:'German law is the working basis for this assessment.',
+  fr:'Le droit allemand constitue la base de travail de cette évaluation.',
+  tr:'Bu değerlendirmenin çalışma temeli Alman hukukudur.',
+  pl:'Podstawą roboczą tej oceny jest prawo niemieckie.',
+  ru:'Рабочая основа этой оценки — немецкое право.',
+  ar:'يشكل القانون الألماني أساس العمل لهذا التقييم.',
+  fa:'حقوق آلمان مبنای کاری این ارزیابی است.',
+  ro:'Dreptul german constituie baza de lucru a acestei evaluări.',
+  bg:'Германското право е работната основа на тази оценка.',
+  vi:'Pháp luật Đức là cơ sở làm việc cho đánh giá này.'
+}
+export function caseLegalWorkingBasisNotice(caseData,language='de') {
+  return caseLegalWorkingBasis(caseData).mode==='german_working_basis'?(workingBasisNotices[language]||workingBasisNotices.de):''
+}

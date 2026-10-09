@@ -27,3 +27,11 @@ Rechtsquellen zur Einordnung des Prüffunds, abgerufen am 9. Oktober 2026:
 ## Offene Abnahme
 
 Der Browserzugriff blieb durch die Schutzfunktion der Browserübergabe blockiert. Anmeldung, Bedienung und tatsächliche Downloadschaltflächen werden durch einen Serverlauf oder einen lokalen Aufruf des unveränderten Produkt-Exportcodes nicht als geprüft behandelt. Die acht ursprünglichen Abnahmebedingungen und beide Originaldateien bleiben unverändert.
+
+## Zweiter echter Lauf und Korrektur des Prüfumfangs
+
+Der zweite Auftrag `f91e3e07-978b-4358-9edd-7da5591388f9` lief mit Worker 50 vom 9. Oktober 2026 16:14:41 UTC bis 16:22:52 UTC. Die unveränderte Quellengrundlage war dieselbe. Nach 12 abgeschlossenen Modellaufrufen (348629 Eingabetoken, 17081 Ausgabetoken) stoppte die erste Gegenprüfung mit `review_unresolved`: Der Prüfabschnitt beanstandete den fehlenden ausdrücklichen Hinweis auf deutsches Recht als Arbeitsgrundlage. Es wurde wiederum kein Ergebnis gespeichert.
+
+Der allgemeine Einleitungstext wurde dem Analyse-Prüfabschnitt bisher nicht als Kontext mitgegeben. Daher konnte ein solcher Abschnitt eine globale Kennzeichnung nicht zuverlässig beurteilen. Die Korrektur ergänzt einen lokalisierten, serverseitig aus den Falleinstellungen abgeleiteten Hinweis vor der unabhängigen Gegenprüfung. Fremde, gemischte oder unbekannte Länderauswahlen erhalten keinen deutschen Hinweis. Wiederholte Validierung verdoppelt den Hinweis nicht; die Originalunterlagen bleiben unverändert. Jeder Prüfabschnitt erhält den tatsächlichen Überblickstext und vorhandene Einschränkungen als Kontext. Die vollständige Übersicht behält ihre eigene Pflichtprüfung.
+
+Erweiterte Regressionstests prüfen den gespeicherten Hinweis, seine Einbeziehung in alle Prüfabschnitte, Idempotenz und die unterstützten Ausgabesprachen. Der vollständige `test_complete_case.mjs`-Ablauf prüft weiterhin Quellen, Arithmetik, begrenzte Korrektur, Cache-Invalidierung und sämtliche Pflichtprüfungen mit simulierten Modellantworten. Ein erneuter echter Lauf und die eigentliche Browser-Abnahme sind noch offen.

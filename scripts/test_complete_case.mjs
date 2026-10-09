@@ -1,3 +1,4 @@
+import {caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import './test_case_reconciliation.mjs'
 import './test_case_legal_working_basis.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
@@ -690,7 +691,7 @@ const bigFetch=async(url,options)=>{
     assert.deepEqual(sections.flatMap(item=>item.calculation_ids),part.analysis?.calculations?.map(item=>item.id)||[])
     if(assignment.scope==='roadmap'||assignment.scope==='letters'){
       assert.deepEqual(payloads.find(item=>item.related_output).related_output.steps,big.steps,'every action/letter audit retains complete cross-step context')
-      if(assignment.part==='overview')for(const key of Object.keys(big).filter(k=>!['analysis','facts','open_questions','steps','letters'].includes(k)))assert.deepEqual(part[key],big[key],'every overview field is reviewed')
+      if(assignment.part==='overview')for(const key of Object.keys(big).filter(k=>!['analysis','facts','open_questions','steps','letters'].includes(k)))assert.deepEqual(part[key],key==='opening'&&caseLegalWorkingBasisNotice(args.source.case,args.outputLanguage)?caseLegalWorkingBasisNotice(args.source.case,args.outputLanguage)+'\n\n'+big[key]:big[key],'every overview field, including the visible server frame, is reviewed')
     }
     observedBatches.push(sections)
     if(assignment.calculation_ids.includes('difference_6')&&!batchTimedOut){batchTimedOut=true;throw new DOMException('Synthetic middle-batch timeout','TimeoutError')}
