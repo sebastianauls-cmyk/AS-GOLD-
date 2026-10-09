@@ -6,6 +6,7 @@ import { readableStepText, roadmapProgressLabel, roadmapStepReference } from './
 import { roadmapCurrentCopy } from './lib/roadmapCurrentStatus.mjs'
 import { roadmapOverview } from './lib/roadmapOverview.mjs'
 import { RoadmapOverview } from './RoadmapOverview'
+import { RoadmapLetters } from './RoadmapLetters'
 import { roadmapUi } from './lib/customerRoadmapCopy.mjs'
 import { OUTPUT_LANGUAGES, outputLanguageLabels } from '../language/outputLanguage'
 import { listCustomerRoadmaps, generateCustomerRoadmap, saveRoadmapProgress, authorizeRoadmap, roadmapErrorMessage, latestCustomerRoadmapJob, cancelCustomerRoadmapJob } from '../services/customerRoadmap'
@@ -56,6 +57,7 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
     <div className="roadmapLetterhead">{record.style.letterhead||record.style.sender_name}</div>
     <h3>{result.title}</h3><p className="roadmapMeta">{ui.draft}</p>
     {onExport&&continuation.canContinue!==false&&<div className="roadmapActions"><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('docx')}>Word</button><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('pdf')}>PDF</button></div>}
+    {continuation.canContinue!==false&&<RoadmapLetters record={record} onExport={onExport} busy={busy} stale={stale}/>}
     {record.style.salutation&&<p>{record.style.salutation}</p>}
     <RoadmapOverview overview={overview} language={record.output_language} onOpenStep={onFull&&continuation.canContinue!==false?openStep:undefined} busy={busy}/>
     <div className="roadmapCurrentStatus" role="status" aria-live="polite"><b>{currentCopy.current}</b><Dot light={current.light} label={current.label}/>{!stale&&<span>{currentCopy.confirmed}: {current.completed} / {current.total}</span>}</div>
@@ -97,12 +99,6 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
         </form>}
       </li>)}</ol>
       <p className="roadmapClosing">{record.style.closing||result.closing}{record.style.sender_name?'\n'+record.style.sender_name:''}</p>
-      {result.letters.length>0&&<section className="roadmapLetters"><h4>{ui.letters}</h4>{result.letters.map(letter=><details key={letter.id}>
-        <summary>{letter.recipient} · {letter.subject}</summary>
-        <div dir={['ar','fa'].includes(record.reference_language)?'rtl':'ltr'} className="roadmapFormalLetter"><p>{letter.recipient}</p><h4>{letter.subject}</h4><p>{letter.body}</p></div>
-        {letter.customer_translation&&<details><summary>{ui.translation}</summary><p className="roadmapFormalLetter">{letter.customer_translation}</p></details>}
-        <div className="roadmapActions"><button type="button" className="secondary" disabled={busy||stale} onClick={()=>onExport?.('docx',letter.id)}>Word</button><button type="button" className="secondary" disabled={busy||stale} onClick={()=>onExport?.('pdf',letter.id)}>PDF</button></div>
-      </details>)}</section>}
       {record.events?.length>0&&<details><summary>{ui.progress}</summary><ul>{record.events.map((entry,index)=><li key={index}>{new Date(entry.at).toLocaleString(record.output_language)} · {result.steps.find(step=>step.id===entry.step_id)?.title}: {entry.done?ui.complete:ui.reopen}<p>{entry.note}</p></li>)}</ul></details>}
     </>}
   </div>
