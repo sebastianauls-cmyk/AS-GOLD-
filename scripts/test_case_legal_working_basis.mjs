@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {caseLegalWorkingBasis,CASE_LEGAL_SCOPE_RULES} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
+import {caseLegalWorkingBasis,CASE_LEGAL_SCOPE_RULES,PAYMENT_DATE_ATTRIBUTION_RULES} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {advanceCompleteAnalysis,completeResearchScope,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
@@ -32,6 +32,7 @@ for(const [home,target,country] of [['DE','DE','DE'],[null,null,'DE'],[' de ',nu
     assert.deepEqual(contexts[0].legal_working_basis,basis,'planning, generation and review use the same scope regardless of output language')
     assert(request.instructions.includes(CASE_LEGAL_SCOPE_RULES),'the shared policy reaches generation and independent review')
     assert.equal(contexts[0].legal_working_basis.ignore_foreign_law,undefined,'arbitrary source fields cannot override the server policy')
+    if(name!=='ash_case_scope')assert(request.instructions.includes(PAYMENT_DATE_ATTRIBUTION_RULES),'generation, reconciliation and independent review share payment-date evidence conditions')
     seen.push(name)
     let output
     if(name==='ash_case_scope')output=scope

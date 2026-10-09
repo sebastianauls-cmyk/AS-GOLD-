@@ -1,3 +1,4 @@
+import {PAYMENT_DATE_ATTRIBUTION_RULES} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
 import {advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
@@ -102,6 +103,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
     const transport=async(url,options)=>{
       assert.equal(url,'https://api.openai.com/v1/responses')
       const request=JSON.parse(options.body),payloads=request.input.flatMap(message=>message.content).map(block=>{try{return JSON.parse(block.text)}catch{return {}}})
+      if(request.text.format.name!=='ash_case_scope')assert(request.instructions.includes(PAYMENT_DATE_ATTRIBUTION_RULES),'bounded corrections retain the same payment-date evidence conditions')
       let output
       if(request.text.format.name==='ash_complete_repair_v169'){
         repairCalls++
@@ -178,6 +180,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   const fetchImpl=async(url,options)=>{
     if(url!=='https://api.openai.com/v1/responses')return new Response('',{status:404})
     const request=JSON.parse(options.body),name=request.text.format.name
+    if(request.text.format.name!=='ash_case_scope')assert(request.instructions.includes(PAYMENT_DATE_ATTRIBUTION_RULES),'bounded corrections retain the same payment-date evidence conditions')
     counts.total++
     let output
     if(name==='ash_case_scope')output=bigScope
@@ -244,6 +247,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   const scopedTransport=async(url,options)=>{
     assert.equal(url,'https://api.openai.com/v1/responses','this fixture never fetches real research or model output')
     const request=JSON.parse(options.body)
+    if(request.text.format.name!=='ash_case_scope')assert(request.instructions.includes(PAYMENT_DATE_ATTRIBUTION_RULES),'bounded corrections retain the same payment-date evidence conditions')
     const payloads=request.input.flatMap(message=>message.content).map(block=>{try{return JSON.parse(block.text)}catch{return {}}})
     scopedCalls++
     let output
@@ -286,6 +290,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
     const transport=async(url,options)=>{
       assert.equal(url,'https://api.openai.com/v1/responses')
       const request=JSON.parse(options.body)
+      if(request.text.format.name!=='ash_case_scope')assert(request.instructions.includes(PAYMENT_DATE_ATTRIBUTION_RULES),'bounded corrections retain the same payment-date evidence conditions')
       if(request.text.format.name!=='ash_complete_repair_v169'){reviews++;throw Error('A failed patch must not reach another model call')}
       repairs++
       if(defect==='truncated')return Response.json({status:'incomplete',id:'truncated-patch',incomplete_details:{reason:'max_output_tokens'},output_text:'{"changes":'})
