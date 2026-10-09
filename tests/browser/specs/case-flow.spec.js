@@ -152,11 +152,14 @@ async function openDirectExports(page){
   await page.getByRole('checkbox',{name:/Ich erlaube/}).check()
   await page.getByRole('button',{name:'Antwort erhalten',exact:true}).click()
   await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
-  await page.getByRole('button',{name:'Nächste Schritte anzeigen',exact:true}).click()
   await expect(page.locator('.roadmapCurrentStatus')).toContainText('0 / 4')
-  const letter=page.locator('.roadmapLetters > details').first()
-  await letter.locator('summary').first().click()
-  return {report:page.locator('.customerRoadmapView > .roadmapActions'),letter}
+  const report=page.locator('.customerRoadmapView > .roadmapActions')
+  const letter=page.getByRole('region',{name:'Getrennte Anschreiben',exact:true}).locator('article').first()
+  await expect(letter.locator(':scope > details')).not.toHaveAttribute('open')
+  for(const target of [report,letter])for(const label of ['Word','PDF']){
+    await expect(target.getByRole('button',{name:label,exact:true})).toBeVisible()
+  }
+  return {report,letter}
 }
 
 test('direct report and letter downloads use saved progress from another window',async({page})=>{
