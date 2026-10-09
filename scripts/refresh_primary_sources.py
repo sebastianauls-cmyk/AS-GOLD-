@@ -131,8 +131,15 @@ def main(only_if_stale=False):
     if only_if_stale and catalogue_is_current():
         print(f'All {len(pairs)} public provisions already verified for today (UTC); no fetch or date change.')
         return
+    if not pairs:
+        raise SystemExit('No provisions configured; existing snapshots remain unchanged.')
+    # Fail quickly if this runner cannot reach the common official host.
+    # Reuse the successful probe as the first record, rather than fetching twice.
+    first = fetch(pairs[0])
+    if first is None:
+        raise SystemExit('Official source cannot currently be fetched from this runner; existing snapshot dates remain unchanged.')
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
-        refreshed = [item for item in pool.map(fetch, pairs) if item]
+        refreshed = [first] + [item for item in pool.map(fetch, pairs[1:]) if item]
     if len(refreshed) != len(pairs):
         raise SystemExit(f'Refresh incomplete ({len(refreshed)}/{len(pairs)}); existing snapshot dates remain unchanged.')
     payload = json.dumps(refreshed, ensure_ascii=False, separators=(',', ':'))
