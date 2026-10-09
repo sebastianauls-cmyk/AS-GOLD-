@@ -49,9 +49,9 @@ export async function POST(request){
   const mode=body?.mode==='configure'?'configure':'status'
 
   const admin=createTeamAdminClient()
-  if(!admin)return json(origin,503,{ok:false,code:'setup_unavailable'})
-  const {data:existing,error:securityError}=await readTeamSecurity(admin)
-  if(securityError)return json(origin,503,{ok:false,code:'setup_unavailable'})
+  if(!admin)return json(origin,503,{ok:false,code:'setup_server_connection_failed'})
+  const {data:existing,error:securityError,status:securityStatus}=await readTeamSecurity(admin)
+  if(securityError)return json(origin,503,{ok:false,code:securityStatus===401?'setup_server_connection_failed':'setup_unavailable'})
   if(existing?.owner_id&&existing.owner_id!==user.id)return json(origin,403,{ok:false,code:'owner_required'})
 
   if(mode==='status'){

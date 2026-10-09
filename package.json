@@ -103,7 +103,7 @@
     "test:v131-installation": "node scripts/test_v131_installation_entry.mjs",
     "test:v132-brand": "node scripts/test_v132_ash_brand.mjs",
     "test:v133-videos": "node scripts/test_v133_ash_explainer_videos.mjs",
-    "test:team-change-control": "node scripts/test_team_change_control.mjs",
+    "test:team-change-control": "node scripts/test_team_change_control.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_team_setup_status.mjs",
     "test:v135-guidance": "node scripts/test_v135_case_guidance.mjs && node scripts/test_v135_evidence_database.mjs",
     "test:v136-roadmap": "node scripts/test_v136_customer_roadmap.mjs && node scripts/test_v136_roadmap_database.mjs",
     "test:v137-legal-localization": "node scripts/test_v137_localized_legal_pages.mjs",

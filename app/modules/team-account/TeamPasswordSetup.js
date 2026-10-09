@@ -29,7 +29,8 @@ const errorCopy={
   already_configured:'Die beiden Passwörter wurden bereits eingerichtet.',
   access_password_not_saved:'Das Zugangspasswort konnte nicht gespeichert werden. Bitte versuche es erneut.',
   setup_incomplete:'Das Zugangspasswort wurde übernommen, die Einrichtung konnte aber nicht vollständig abgeschlossen werden. Bitte melde dich erneut an und öffne diese Seite wieder.',
-  setup_unavailable:'Die sichere Einrichtung ist momentan nicht verfügbar.'
+  setup_unavailable:'Die sichere Einrichtung ist momentan nicht verfügbar.',
+  setup_server_connection_failed:'Die Serververbindung für die interne Einrichtung ist nicht richtig konfiguriert. Dein persönliches Passwort ist nicht die Ursache.'
 }
 
 function PasswordRules({password,passwordRepeat,identity,label}){
