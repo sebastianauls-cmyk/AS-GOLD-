@@ -6,7 +6,7 @@ Alle Namen, Unternehmen, Forderungen und Unterlagen sind erfunden. Die beiden Da
 
 ## Gefundene und korrigierte Fehler
 
-1. Die Fallansicht zeigte den 31. Juli 2026 als möglicherweise abgelaufene Frist. Tatsächlich war dies nur das Ende des Abrechnungszeitraums. Die Datumserkennung unterscheidet jetzt solche Zeiträume von Handlungsfristen und erkennt den ausdrücklich genannten Zahlungstermin am 16. Oktober. Separate Handlungsfristen im selben Satz und tatsächlich abgelaufene Fristen bleiben erkennbar.
+1. Die Fallansicht zeigte den 31. Juli 2026 als möglicherweise abgelaufene Frist. Tatsächlich war dies nur das Ende des Abrechnungszeitraums. Die Datumserkennung unterscheidet jetzt solche Zeiträume von Handlungsfristen und erkennt den ausdrücklich genannten Zahlungstermin am 16. Oktober, auch bei Zeilenumbrüchen aus PDF/OCR. Separate Handlungsfristen im selben Satz und tatsächlich abgelaufene Fristen bleiben erkennbar. Die zitierten Zeilenumbrüche bleiben unverändert.
 2. Der Start-Endpunkt fasste eine Betriebspause, ein erreichtes Tageslimit und eine fehlende Freigabe unter derselben Meldung über einen nicht gespeicherten Auftrag zusammen. Er liefert jetzt getrennte Fehlercodes und passende HTTP-Statuswerte. Die Oberfläche erklärt Betriebspause und unbestätigten Auftragsstatus in elf Sprachen. Bei unklarem Speicherergebnis fordert sie zur Prüfung des gespeicherten Auftrags auf, statt einen weiteren Start nahelegen. Datenbankdiagnosen bleiben intern.
 
 Die Änderung schaltet keine Verarbeitung frei und verändert weder Zugangsrechte noch Verbrauchsgrenzen. Die getrennt bereitgestellte Worker-Funktion und ihre Modellverarbeitung werden nicht geändert.

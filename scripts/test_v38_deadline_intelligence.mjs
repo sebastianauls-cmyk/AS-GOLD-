@@ -42,6 +42,13 @@ for(const label of ['Abrechnungszeitraum','Abrechnungsperiode','Leistungszeitrau
 }
 for(const label of ['Zahlungstermin','Zahlungsfrist','Zahlungsziel','Fälligkeitsdatum','Fälligkeit']){
   assert.equal(analyzeDeadlines({text:`${label}: 16.10.2026`,now:receiptDate}).primary.date,'2026-10-16')
+  const wrapped=analyzeDeadlines({text:`${label}:\n16.10.2026`,now:receiptDate})
+  assert.equal(wrapped.primary.date,'2026-10-16')
+  assert.equal(wrapped.primary.context,`${label}:\n16.10.2026`,'line-wrapped source evidence remains verbatim')
+}
+for(const period of ['Abrechnungszeitraum:\n01.08.2025 bis 31.07.2026','Abrechnungszeitraum: 01.08.2025\nbis 31.07.2026','Abrechnungszeitraum:\r\nvom 01.08.2025 bis einschließlich\r\n31.07.2026']){
+  assert.equal(analyzeDeadlines({text:period,now:receiptDate}).primary,null,'a PDF line break must not turn a period into a deadline')
+  assert.equal(analyzeDeadlines({text:`${period}\nZahlungstermin:\n16.10.2026`,now:receiptDate}).primary.date,'2026-10-16')
 }
 assert.equal(analyzeDeadlines({text:'Abrechnungszeitraum 01.08.2025 bis 31.07.2026, bitte zahlen Sie bis 16.10.2026.',now:receiptDate}).primary.date,'2026-10-16','a separate deadline in the same sentence remains active')
 assert.equal(analyzeDeadlines({text:'Unterlagen zum Abrechnungszeitraum bitte bis 16.10.2026 einreichen.',now:receiptDate}).primary.date,'2026-10-16','a period keyword must not suppress an actual deadline')
