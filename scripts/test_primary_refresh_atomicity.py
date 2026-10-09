@@ -110,6 +110,17 @@ class RefreshTests(unittest.TestCase):
             self.assertEqual(target.read_text(),original)
             self.assertEqual(target.with_suffix('.json').read_text(),'[]\n')
 
+    def test_unreachable_host_stops_before_fetching_all_fifty_sources(self):
+        with tempfile.TemporaryDirectory() as folder:
+            target=pathlib.Path(folder)/'cache.mjs'
+            self.write_catalogue(target,[self.record(checked='2000-01-01T00:00:00+00:00')])
+            before=[target.read_bytes(),target.with_suffix('.json').read_bytes()]
+            with patch.object(refresh,'TARGET',target),patch.object(refresh,'fetch',return_value=None) as fetch:
+                with self.assertRaisesRegex(SystemExit,'cannot currently be fetched'):
+                    refresh.main(only_if_stale=True)
+                fetch.assert_called_once()
+            self.assertEqual(before,[target.read_bytes(),target.with_suffix('.json').read_bytes()])
+
     def test_wrong_provision_title_is_rejected(self):
         class Response:
             status=200
