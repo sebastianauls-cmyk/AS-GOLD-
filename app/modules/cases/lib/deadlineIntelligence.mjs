@@ -2,8 +2,10 @@ const DAY_MS=86400000
 const DATE_RE=/\b([0-3]?\d)\.(0?\d|1[0-2])\.(20\d{2})\b/g
 // A receipt ("Eingang") records an event, not a deadline on its own.
 // Receipt deadlines still need an explicit cue such as "bis" or "spätestens".
-const STRONG_DEADLINE_CUES=/\b(bis(?:\s+zum|\s+spätestens)?|spätestens|frist(?:\s+bis|ende)?|fristablauf|einzureichen|einreichen|eingehen|vorzulegen|vorlegen|zahlbar|fällig)\b/i
+const STRONG_DEADLINE_CUES=/\b(bis(?:\s+zum|\s+spätestens)?|spätestens|frist(?:\s+bis|ende)?|fristablauf|einzureichen|einreichen|eingehen|vorzulegen|vorlegen|zahlbar|fällig|zahlungs(?:termin|frist|ziel)|fälligkeit(?:sdatum|stermin)?)\b/i
 const ORDINARY_DATE_CUES=/\b(besprechung|termin|geburtstag|veranstaltung|meeting|gespräch|anhörungstermin|telefonat)\b/i
+const PERIOD_CUES=/\b(?:abrechnungszeitraum|abrechnungsperiode|leistungszeitraum|leistungsperiode|verbrauchszeitraum|lieferzeitraum|versicherungszeitraum|bewilligungszeitraum|mietzeitraum|vertragslaufzeit|gültigkeitszeitraum|zeitraum)\b/iu
+const RANGE_JOIN=/^\s*(?:bis(?:\s+(?:zum|einschließlich))?|[–−-])\s*$/iu
 
 function atNoonUtc(date){
   return Date.UTC(date.getUTCFullYear(),date.getUTCMonth(),date.getUTCDate(),12,0,0,0)
@@ -87,6 +89,10 @@ export function extractDeadlineDates(value){
     const before=context.slice(0,context.indexOf(match[0]))
     const earlier=[...before.matchAll(new RegExp(DATE_RE.source,'g'))].at(-1)
     const localCue=earlier?before.slice(earlier.index+earlier[0].length):before
+    // "Abrechnungszeitraum 01.08.2025 bis 31.07.2026" describes the
+    // billed period. Its closing "bis" is not a request to act. Keep a
+    // separate payment/response date in the same sentence eligible below.
+    if(earlier&&RANGE_JOIN.test(localCue)&&(PERIOD_CUES.test(before.slice(0,earlier.index))||ORDINARY_DATE_CUES.test(before.slice(0,earlier.index))))continue
     const strong=STRONG_DEADLINE_CUES.test(localCue)
     const ordinary=ORDINARY_DATE_CUES.test(context)
     const shift=explicitDeadlineShift(context)

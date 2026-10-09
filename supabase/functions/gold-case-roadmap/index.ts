@@ -13,6 +13,14 @@ const allowedOrigin=(origin:string|null)=>origin==='https://app-gold-workspace.v
 function headers(req:Request) { const origin=allowedOrigin(req.headers.get('Origin')); return {'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','Vary':'Origin',...(origin?{'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization, x-client-info, apikey, content-type','Access-Control-Allow-Methods':'POST, OPTIONS'}:{})}; }
 const reply=(req:Request,body:unknown,status=200)=>new Response(JSON.stringify(body),{status,headers:headers(req)});
 
+function queueFailure(error:{message?:string,code?:string}) {
+  if(error.message==='Background service unavailable')return {status:503,body:{code:'processing_paused',error:'Die KI-Auswertung ist derzeit pausiert. Es wurde kein neuer Auftrag gestartet. Ihre Unterlagen bleiben gespeichert.'}};
+  if(error.message==='Analysis daily limit reached')return {status:429,body:{code:'daily_limit_reached',error:'Das Tageslimit für neue Auswertungen ist erreicht. Bitte später erneut versuchen.'}};
+  if(error.message==='Analysis authorization missing'||error.code==='42501')return {status:403,body:{code:'analysis_access_denied',error:'Die Verarbeitung ist für diesen Zugang nicht freigegeben. Bitte Zugang und Datenschutzbestätigung prüfen.'}};
+  // A lost database response can leave an accepted job behind. Do not claim
+  // that nothing was saved and never expose raw database diagnostics.
+  return {status:503,body:{code:'queue_unavailable',error:'Der Auftragsstatus konnte nicht bestätigt werden. Bitte den Fall neu öffnen und den gespeicherten Auftrag prüfen.'}};
+}
 
 Deno.serve(async(req:Request)=>{
   if(req.method==='OPTIONS') return allowedOrigin(req.headers.get('Origin'))?new Response(null,{status:204,headers:headers(req)}):reply(req,{error:'Origin not allowed'},403);
@@ -73,7 +81,7 @@ Deno.serve(async(req:Request)=>{
     if(body.action==='enqueue') {
       if(!providerKey)return reply(req,{error:'Die KI-Erstellung ist noch nicht eingerichtet.'},503);
       const {data:job,error}=await admin.rpc('enqueue_case_analysis_job',{p_owner_id:user.id,p_case_id:body.case_id,p_fingerprint:fingerprint,p_request:{style,output_language:outputLanguage,reference_language:referenceLanguage,draft_letters:permissions.draft_letters===true,acknowledged:true,privacy_notice_version:PRIVACY,terms_version:TERMS}});
-      if(error)return reply(req,{error:'Der Auftrag konnte nicht gespeichert werden. Bitte den laufenden Auftrag oder die Zugangsfreigabe prüfen.'},409);
+      if(error){const failure=queueFailure(error);return reply(req,failure.body,failure.status);}
       return reply(req,{status:'queued',job},202);
     }
     // MODEL_WORKFLOW_START: same model flow in production and synthetic evaluation.

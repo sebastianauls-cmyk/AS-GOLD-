@@ -32,6 +32,22 @@ for(const text of ['Bitte bestätigen Sie den Eingang bis spätestens 16.10.2026
   assert.equal(analyzeDeadlines({text,now:receiptDate}).primary.date,'2026-10-16','explicit receipt deadlines remain recognized')
 }
 
+// Regression from an actual synthetic browser upload: the billing period
+// must not overtake the supplier's payment date as an overdue deadline.
+for(const label of ['Abrechnungszeitraum','Abrechnungsperiode','Leistungszeitraum','Verbrauchszeitraum','Versicherungszeitraum','Bewilligungszeitraum','Vertragslaufzeit','Zeitraum']){
+  const period=`${label}: 01.08.2025 bis 31.07.2026`
+  assert.equal(analyzeDeadlines({text:period,now:receiptDate}).primary,null,`${label} is a period, not a deadline`)
+  const bill=analyzeDeadlines({text:`${period}\nIn der Rechnung genannter Zahlungstermin: 16.10.2026`,now:receiptDate})
+  assert.equal(bill.primary.date,'2026-10-16');assert.equal(bill.candidates,1)
+}
+for(const label of ['Zahlungstermin','Zahlungsfrist','Zahlungsziel','Fälligkeitsdatum','Fälligkeit']){
+  assert.equal(analyzeDeadlines({text:`${label}: 16.10.2026`,now:receiptDate}).primary.date,'2026-10-16')
+}
+assert.equal(analyzeDeadlines({text:'Abrechnungszeitraum 01.08.2025 bis 31.07.2026, bitte zahlen Sie bis 16.10.2026.',now:receiptDate}).primary.date,'2026-10-16','a separate deadline in the same sentence remains active')
+assert.equal(analyzeDeadlines({text:'Unterlagen zum Abrechnungszeitraum bitte bis 16.10.2026 einreichen.',now:receiptDate}).primary.date,'2026-10-16','a period keyword must not suppress an actual deadline')
+assert.equal(analyzeDeadlines({text:'Besprechung vom 03.10.2026 bis 05.10.2026.',now:receiptDate}).primary,null)
+assert.equal(analyzeDeadlines({text:'Frist bis 05.10.2026.',now:receiptDate}).status,'overdue','actual overdue deadlines remain visible')
+
 const card=fs.readFileSync(new URL('../app/modules/cases/DeadlineCard.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 const directCases=fs.readFileSync(new URL('../app/modules/cases/CaseWorkspace.js',import.meta.url),'utf8')

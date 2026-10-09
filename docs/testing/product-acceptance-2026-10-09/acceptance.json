@@ -1,0 +1,15 @@
+{
+  "classification": "synthetic",
+  "case_id": "5d659c55-d310-4890-ba1b-b3b28f8dffd7",
+  "expected_before_model_run": true,
+  "criteria": [
+    "Recalculate 1500 * 0.32 = 480 EUR consumption cost and 480 + 120 = 600 EUR total.",
+    "Reconcile confirmed payments 12 * 50 = 600 EUR against only 500 EUR credited on the invoice.",
+    "Identify 100 EUR uncredited payments and a conditional arithmetic balance of 0 EUR using stated consumption.",
+    "Keep the unverified meter reading separate; no blanket confirmation that the whole invoice is correct.",
+    "Treat 16 October 2026 as the supplier's stated payment date, not automatically a verified legal default date.",
+    "Provide a practical correction request addressed from Robin Prüfperson to Musterenergie Test GmbH with the invoice and contract identifiers.",
+    "Retain missing reading evidence as a concrete follow-up and do not invent an executed payment, a letter sent, or a response received.",
+    "Save and reopen the generated result and actual Word/PDF downloads with amounts, conditions and cited originals preserved."
+  ]
+}
