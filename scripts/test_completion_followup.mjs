@@ -22,7 +22,7 @@ record={...record,...updateRoadmapProgress(record,{step_id:record.result.steps[0
 assert.equal(roadmapCurrentStatus(record).completed,0,'reopening invalidates all dependent confirmations')
 assert.deepEqual(record.result,originals,'progress and display never rewrite reviewed evidence or formal letters')
 for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
-  for(const code of ['no_verified_sources','source_review_unresolved','review_unresolved','source_unresolved','provider_timeout']){
+  for(const code of ['no_verified_sources','source_review_unresolved','review_unresolved','source_unresolved','provider_timeout','processing_paused','queue_unavailable','daily_limit_reached','analysis_access_denied']){
     const message=workflowErrorMessage({code,error:'RAW_SERVER_DIAGNOSTIC',issues:[{reason:'RAW_MODEL_REASON'}]},'LOCAL_FALLBACK',language)
     assert.ok(message.length>30);assert.doesNotMatch(message,/RAW_|LOCAL_FALLBACK/)
     if(language!=='de')assert.notEqual(message,workflowErrorMessage({code},'', 'de'))
@@ -31,6 +31,9 @@ for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
   assert.equal(fallback,'LOCAL_FALLBACK')
 }
 assert.match(await readWorkflowError({context:{json:async()=>({error:'Die Fallgrundlage hat sich geändert. Bitte einen neuen Fahrplan erstellen.'})}},'fallback','en'),/Reload/)
+assert.match(await readWorkflowError({context:{json:async()=>({code:'processing_paused'})}},'fallback','de'),/pausiert/)
+assert.match(workflowErrorMessage({code:'daily_limit_reached'},'fallback','de'),/Tageslimit/)
+assert.doesNotMatch(workflowErrorMessage({code:'queue_unavailable'},'fallback','de'),/kein.*Auftrag|erneut.*versuchen/,'an uncertain enqueue must lead to checking saved state, not blindly starting another job')
 const url='https://entreprendre.service-public.gouv.fr/vosdroits/F38586'
 const discovered=researchSourceCandidates([{url,title:'Official proposal'},{url:'https://service-public.gouv.fr.evil.invalid/'}],new Map(),['service-public.gouv.fr'])
 assert.equal(discovered.size,1)

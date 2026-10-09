@@ -25,7 +25,20 @@ const providerMessages={
   bg:['Обработката с ИИ е недостъпна поради изчерпан кредит при доставчика. Операторът на ASH трябва да възстанови достъпа до ИИ. Документите ви остават запазени.','Услугата с ИИ е временно претоварена. Опитайте по-късно. Документите ви остават запазени.'],
   vi:['Không thể xử lý bằng AI vì tín dụng tại nhà cung cấp đã hết. Đơn vị vận hành ASH cần khôi phục quyền truy cập AI. Tài liệu của bạn vẫn được lưu.','Dịch vụ AI tạm thời quá tải. Vui lòng thử lại sau. Tài liệu của bạn vẫn được lưu.']
 }
-const groups={no_verified_sources:'sources',source_review_unresolved:'review',review_unresolved:'review',source_unresolved:'review',provider_timeout:'timeout'}
+const queueMessages={
+  de:['Die KI-Auswertung ist derzeit pausiert. Es wurde kein neuer Auftrag gestartet. Ihre Unterlagen bleiben gespeichert.','Der Auftragsstatus konnte nicht bestätigt werden. Bitte den Fall neu öffnen und den gespeicherten Auftrag prüfen.'],
+  en:['AI analysis is currently paused. No new job was started. Your documents remain saved.','The job status could not be confirmed. Reopen the case and check the saved job.'],
+  fr:['L’analyse IA est actuellement en pause. Aucune nouvelle tâche n’a été lancée. Vos documents restent enregistrés.','L’état de la tâche n’a pas pu être confirmé. Rouvrez le dossier et vérifiez la tâche enregistrée.'],
+  tr:['Yapay zekâ analizi şu anda duraklatılmıştır. Yeni bir işlem başlatılmadı. Belgeleriniz kayıtlı kalır.','İşlem durumu doğrulanamadı. Dosyayı yeniden açıp kayıtlı işlemi kontrol edin.'],
+  pl:['Analiza AI jest obecnie wstrzymana. Nie rozpoczęto nowego zadania. Dokumenty pozostają zapisane.','Nie udało się potwierdzić stanu zadania. Otwórz sprawę ponownie i sprawdź zapisane zadanie.'],
+  ru:['Анализ ИИ сейчас приостановлен. Новое задание не запущено. Ваши документы остаются сохранёнными.','Не удалось подтвердить статус задания. Откройте дело заново и проверьте сохранённое задание.'],
+  ar:['تحليل الذكاء الاصطناعي متوقف مؤقتاً حالياً. لم تبدأ مهمة جديدة. تبقى مستنداتك محفوظة.','تعذر تأكيد حالة المهمة. أعد فتح الملف وتحقق من المهمة المحفوظة.'],
+  fa:['تحلیل هوش مصنوعی فعلاً متوقف است. کار جدیدی شروع نشده است. اسناد شما ذخیره می‌مانند.','وضعیت کار تأیید نشد. پرونده را دوباره باز کنید و کار ذخیره‌شده را بررسی کنید.'],
+  ro:['Analiza AI este momentan întreruptă. Nu a fost pornită nicio sarcină nouă. Documentele rămân salvate.','Starea sarcinii nu a putut fi confirmată. Redeschideți cazul și verificați sarcina salvată.'],
+  bg:['Анализът с ИИ в момента е спрян. Не е стартирана нова задача. Документите ви остават запазени.','Състоянието на задачата не можа да бъде потвърдено. Отворете случая отново и проверете запазената задача.'],
+  vi:['Phân tích AI hiện đang tạm dừng. Chưa bắt đầu tác vụ mới. Tài liệu của bạn vẫn được lưu.','Không thể xác nhận trạng thái tác vụ. Hãy mở lại hồ sơ và kiểm tra tác vụ đã lưu.']
+}
+const groups={no_verified_sources:'sources',source_review_unresolved:'review',review_unresolved:'review',source_unresolved:'review',provider_timeout:'timeout',daily_limit_reached:'limit',analysis_access_denied:'access'}
 // Older deployed handlers use German messages. Keep their concrete failure
 // categories understandable while new handlers return stable machine codes.
 const legacy=[
@@ -39,6 +52,7 @@ const legacy=[
 ]
 export function workflowErrorMessage(payload,fallback,language='de') {
   if(['provider_quota','provider_rate_limit'].includes(payload?.code))return (providerMessages[language]||providerMessages.de)[payload.code==='provider_quota'?0:1]
+  if(['processing_paused','queue_unavailable'].includes(payload?.code))return (queueMessages[language]||queueMessages.de)[payload.code==='processing_paused'?0:1]
   const detail=payload?.error||payload?.message||payload?.detail||''
   const group=groups[payload?.code]||legacy.find(([,pattern])=>pattern.test(detail))?.[0]
   if(group)return (messages[language]||messages.de)[keys.indexOf(group)]

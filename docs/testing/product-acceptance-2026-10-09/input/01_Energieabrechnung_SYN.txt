@@ -1,0 +1,21 @@
+SYNTHETISCHER ABNAHMEFALL – ALLE PERSONEN, FIRMEN UND UNTERLAGEN SIND ERFUNDEN.
+Keine echte Rechnung, keine Zahlungspflicht, kein Versand.
+
+Absender: Musterenergie Test GmbH, Abrechnungsstelle
+Empfänger: Robin Prüfperson
+Vertragsnummer: SYN-ENERGIE-100
+Rechnungsnummer: SYN-E-20261007
+Rechnungsdatum: 07.10.2026
+Abrechnungszeitraum: 01.08.2025 bis 31.07.2026
+
+Stromverbrauch laut Abrechnung: 1.500 kWh
+Arbeitspreis: 0,32 EUR je kWh
+Verbrauchskosten: 480,00 EUR
+Grundpreis für den gesamten Abrechnungszeitraum: 120,00 EUR
+Gesamtkosten: 600,00 EUR
+Angerechnete Abschlagszahlungen: 500,00 EUR
+Geforderte Nachzahlung: 100,00 EUR
+In der Rechnung genannter Zahlungstermin: 16.10.2026
+
+Ein Ablesebeleg oder Übergabeprotokoll liegt diesem Testfall nicht bei.
+Ob die abgerechneten 1.500 kWh tatsächlich zutreffen, ist anhand der vorhandenen Unterlagen noch nicht überprüfbar.

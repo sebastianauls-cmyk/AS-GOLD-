@@ -59,6 +59,7 @@ const createClient=(_url,key)=>({
   rpc:async(name,args)=>{
     if(name==='enqueue_case_analysis_job'){
       assert.equal(key,secret);assert.equal(args.p_owner_id,state.user.id)
+      if(state.enqueueError)return {data:null,error:state.enqueueError}
       state.enqueued.push(args)
       return {data:{id:crypto.randomUUID(),case_id:args.p_case_id,status:'queued',stage:'planning'},error:null}
     }
@@ -99,6 +100,20 @@ try {
   state.ai=true;assert.equal((await call({...baseBody,action:'enqueue',acknowledged:false})).status,412)
   state.permissions.full_analysis=false;assert.equal((await call({...baseBody,action:'enqueue'})).status,403)
   assert.equal(state.enqueued.length,1,'unapproved jobs never reach the background dispatcher')
+  for(const [message,dbCode,status,code] of [
+    ['Background service unavailable','P0001',503,'processing_paused'],
+    ['Analysis daily limit reached','P0001',429,'daily_limit_reached'],
+    ['Analysis authorization missing','42501',403,'analysis_access_denied'],
+    ['PRIVATE_DB_DIAGNOSTIC','42501',403,'analysis_access_denied'],
+    ['PRIVATE_DB_DIAGNOSTIC','08006',503,'queue_unavailable']
+  ]){
+    reset();state.enqueueError={message,code:dbCode,details:'PRIVATE_DB_DETAILS'}
+    const failed=await call({...baseBody,action:'enqueue'})
+    assert.equal(failed.status,status);assert.equal(failed.data.code,code)
+    assert.doesNotMatch(JSON.stringify(failed.data),/PRIVATE_DB|P0001|08006|42501/)
+    assert.equal(state.enqueued.length,0);assert.equal(state.modelCalls,0)
+    assert.equal(state.case_roadmaps.length,0,'a rejected enqueue never fabricates a result')
+  }
   reset()
   const fullBody={...baseBody,analysis_mode:'complete'}
   const legacy=await call(fullBody)

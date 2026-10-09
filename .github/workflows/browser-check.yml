@@ -42,6 +42,12 @@ jobs:
   public-browser:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Keep this version aligned with tests/browser/package-lock.json. The
+    # official image already contains browsers and their OS dependencies;
+    # installing those from apt exhausted this job's timeout before tests ended.
+    container:
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
+      options: --user 1001
     defaults:
       run:
         working-directory: tests/browser
@@ -64,8 +70,8 @@ jobs:
           npm ci
           node tests/browser/create-case-fixture.mjs
           npm run build
-      - name: Install independent Chromium and WebKit browsers
-        run: npx playwright install --with-deps chromium webkit
+      - name: Check pinned browser test version
+        run: npx playwright --version
       - name: Check the proposed application or published production page
         run: npm test
       - name: Save screenshots and browser reports
