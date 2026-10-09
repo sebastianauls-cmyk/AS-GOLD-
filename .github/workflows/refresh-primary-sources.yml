@@ -4,9 +4,11 @@ on:
     branches: [main]
     paths:
       - scripts/refresh_primary_sources.py
+      - scripts/test_primary_refresh_atomicity.py
       - .github/workflows/refresh-primary-sources.yml
   schedule:
-    - cron: '15 4 * * *'
+    # GitHub may delay or drop a scheduled event. Later runs only fetch if stale.
+    - cron: '17 3,5,7,11 * * *'
   workflow_dispatch:
 permissions:
   contents: write
@@ -16,20 +18,16 @@ concurrency:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Check official source connectivity
-        run: |
-          python3 - <<'PY'
-          from scripts.refresh_primary_sources import fetch
-          if fetch(('bgb', '631')) is None:
-              raise SystemExit('Official source cannot currently be fetched from this runner; existing snapshot dates remain unchanged.')
-          PY
-      - run: python3 scripts/refresh_primary_sources.py
+      - name: Verify complete refresh and safe retries
+        run: python3 scripts/test_primary_refresh_atomicity.py
+      - name: Refresh only a stale or incomplete catalogue
+        run: python3 scripts/refresh_primary_sources.py --if-stale
       - name: Diagnose a failed public connection
         if: failure()
         run: |
