@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import {caseLegalWorkingBasis,CASE_LEGAL_SCOPE_RULES,PAYMENT_DATE_ATTRIBUTION_RULES} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
-import {advanceCompleteAnalysis,completeResearchScope,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {caseLegalWorkingBasis,CASE_LEGAL_SCOPE_RULES,PAYMENT_DATE_ATTRIBUTION_RULES,caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
+import {advanceCompleteAnalysis,completeResearchScope,completeReviewGroups,validateCompleteAnalysis} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
@@ -33,6 +33,12 @@ for(const [home,target,country] of [['DE','DE','DE'],[null,null,'DE'],[' de ',nu
     assert(request.instructions.includes(CASE_LEGAL_SCOPE_RULES),'the shared policy reaches generation and independent review')
     assert.equal(contexts[0].legal_working_basis.ignore_foreign_law,undefined,'arbitrary source fields cannot override the server policy')
     if(name!=='ash_case_scope')assert(request.instructions.includes(PAYMENT_DATE_ATTRIBUTION_RULES),'generation, reconciliation and independent review share payment-date evidence conditions')
+    if(name==='ash_evidence_review_v139'){
+      const related=payloads.find(p=>p.related_output)?.related_output
+      assert(related?.overview,'every review partition sees the actual global qualification text')
+      const notice=caseLegalWorkingBasisNotice(source.case,args.outputLanguage)
+      if(notice)assert(related.overview.opening.startsWith(notice),'the server notice reaches every independent review')
+    }
     seen.push(name)
     let output
     if(name==='ash_case_scope')output=scope
@@ -48,7 +54,14 @@ for(const [home,target,country] of [['DE','DE','DE'],[null,null,'DE'],[' de ',nu
   args.outputLanguage='de'
   for(let n=0;flow.status==='processing'&&n<12;n++)flow=await advanceCompleteAnalysis({...args,fetchImpl:transport,state:flow.state})
   assert.equal(flow.status,'completed')
+  const notice=caseLegalWorkingBasisNotice(source.case,'de')
+  assert.equal(flow.result.opening,notice?notice+'\n\n'+roadmapTestResult.opening:roadmapTestResult.opening,'only the configured German working frame receives the visible notice')
+  assert.equal(validateCompleteAnalysis(flow.result,source,{outputLanguage:'de',referenceLanguage:'de',scope,research:[]}).opening,flow.result.opening,'revalidation cannot duplicate or remove the server notice')
   assert.equal(seen.filter(name=>name==='ash_evidence_review_v139').length,completeReviewGroups(flow.result).length,'no review is skipped by the working basis')
   assert.equal(JSON.stringify(source),original,'scope routing does not rewrite countries or originals')
+}
+for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
+  assert(caseLegalWorkingBasisNotice({home_country:'DE',target_country:'DE'},language).length>20,'the notice is available in every supported output language')
+  assert.equal(caseLegalWorkingBasisNotice({home_country:'FR',target_country:'FR'},language),'','language never selects German law')
 }
 console.log('Legal working basis: German default, foreign/mixed/unknown selections, original immutability and identical planning/generation/review scope passed (mocked provider; no live legal assessment).')

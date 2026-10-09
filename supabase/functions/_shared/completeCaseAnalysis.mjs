@@ -1,5 +1,5 @@
 import {quotationIndex,indexedModelData,resolveQuotationIds,indexedQuotationSchema} from './quotationIndex.mjs'
-import {DOCUMENT_ATTRIBUTION_RULES,CASE_LEGAL_SCOPE_RULES,caseLegalWorkingBasis} from './caseEvidenceRules.mjs'
+import {DOCUMENT_ATTRIBUTION_RULES,CASE_LEGAL_SCOPE_RULES,caseLegalWorkingBasis,caseLegalWorkingBasisNotice} from './caseEvidenceRules.mjs'
 import { ROADMAP_SCHEMA, ROADMAP_CUSTOMER_NOTES_RULES, roadmapModelSource, splitVerbatimRoadmapEvidence, validateRoadmapResult } from './customerRoadmap.mjs'
 import { callModel, reviewModelCandidate, ModelWorkflowError } from './modelQuality.mjs'
 import { RESEARCH_COUNTRIES, SHARED_RESEARCH_DOMAINS } from './researchCountries.mjs'
@@ -159,7 +159,9 @@ export function completeResearchScope(source){
 
 export function validateCompleteAnalysis(raw,source,{outputLanguage,referenceLanguage,scope,research,requiredLetterIds=[]}){
   const result=validateRoadmapResult(splitVerbatimRoadmapEvidence(raw,source),source,{outputLanguage,referenceLanguage,requiredLetterIds})
-  return {...result,analysis:validateAnalysisContent(result.analysis,source,{scope,research,stepIds:new Set(result.steps.map(item=>item.id))})}
+  const notice=caseLegalWorkingBasisNotice(source.case,outputLanguage)
+  const opening=notice&&!result.opening.startsWith(notice)?notice+'\n\n'+result.opening:result.opening
+  return {...result,opening,analysis:validateAnalysisContent(result.analysis,source,{scope,research,stepIds:new Set(result.steps.map(item=>item.id))})}
 }
 
 function validateAnalysisContent(analysis,source,{scope,research,stepIds=null}){
@@ -489,7 +491,9 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
   if(current.reviewIds?.length&&(JSON.stringify(current.reviewCoverage)!==JSON.stringify(coverage)||JSON.stringify(current.reviewGroups)!==JSON.stringify(groups)))throw new ModelWorkflowError('Die Prüfabschnitte wurden geändert. Bitte die Auswertung mit dem aktuellen Stand neu beauftragen.',409,'review_coverage_changed')
   if(!Number.isInteger(partIndex)||partIndex<0||partIndex>=groups.length||coverage.length>MAX_REVIEW_PARTS||(current.reviewIds||[]).length!==partIndex)throw new ModelWorkflowError('Ungültiger Prüfabschnitt.',409)
   const sections=groups[partIndex].map(index=>coverage[index]),section=mergedReviewSection(sections),reviewScope=section.scope
-  const related={topics:analysis?.topics?.map(({id,title,conclusion,conditions,step_ids})=>({id,title,conclusion,conditions,step_ids})),calculations:analysis?.calculations?.map(({id,title,result,unit,conditions,topic_ids})=>({id,title,result,unit,conditions,topic_ids})),steps:['roadmap','letters'].includes(reviewScope)?plan.steps:plan.steps?.map(({id,action,done_when})=>({id,action,done_when})),letters:letters?.map(({id,recipient,subject,document_ids})=>({id,recipient,subject,document_ids}))}
+  // Every partition sees the actual global explanation as read-only context.
+  // Absence from a narrow candidate must not become an invented global omission.
+  const related={overview,limitations:analysis?.limitations||[],topics:analysis?.topics?.map(({id,title,conclusion,conditions,step_ids})=>({id,title,conclusion,conditions,step_ids})),calculations:analysis?.calculations?.map(({id,title,result,unit,conditions,topic_ids})=>({id,title,result,unit,conditions,topic_ids})),steps:['roadmap','letters'].includes(reviewScope)?plan.steps:plan.steps?.map(({id,action,done_when})=>({id,action,done_when})),letters:letters?.map(({id,recipient,subject,document_ids})=>({id,recipient,subject,document_ids}))}
   if(['roadmap','letters'].includes(reviewScope))Object.assign(related,{overview,facts:facts.map((item,index)=>({index,text:item.text})),open_questions:open_questions.map((item,index)=>({index,...item}))})
   if(reviewScope==='roadmap'&&section.part==='overview')related.topics=analysis?.topics||[]
   const part=reviewGroupCandidate(candidate,sections,groups[partIndex][0])

@@ -1,3 +1,4 @@
+import {caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
 import {readFile} from 'node:fs/promises'
@@ -167,7 +168,11 @@ try {
   const acceptedResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
   const auditedRoadmap={...reviewedParts[2].part,...Object.fromEntries(['facts','open_questions','steps'].map(key=>[key,reviewedParts.flatMap(({part})=>part[key]||[])]))}
   const {letters:expectedLetters,...expectedRoadmap}=roadmapTestResult
-  assert.deepEqual(auditedRoadmap,expectedRoadmap,'every non-letter field is audited exactly once across overview, records and bounded action batches')
+  const notice=caseLegalWorkingBasisNotice(roadmapTestCase,'de')
+  expectedRoadmap.opening=notice+'\n\n'+expectedRoadmap.opening
+  assert.deepEqual(auditedRoadmap,expectedRoadmap,'every non-letter field, including the server frame, is audited exactly once across overview, records and bounded action batches')
+  const {analysis:savedAnalysis,letters:savedLetters,...savedRoadmap}=acceptedResult
+  assert.deepEqual(auditedRoadmap,savedRoadmap,'the persisted explanation is exactly the audited explanation')
   assert.deepEqual(reviewedParts.flatMap(({part})=>part.letters||[]),expectedLetters,'every whole letter and complete translation is included in its required group')
   for(const item of reviewedParts.filter(({part})=>part.steps||part.letters))assert.deepEqual(item.related.steps,roadmapTestResult.steps,'action and letter review retain every complete action for dependency/consistency checks')
 
