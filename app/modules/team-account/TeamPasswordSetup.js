@@ -190,7 +190,7 @@ export function TeamPasswordSetup(){
       </section>}
 
       {stage==='forbidden'&&<section className="teamSetupPanel"><h2>Kein Zugriff</h2><p>Diese Ersteinrichtung ist nur über deinen freigeschalteten persönlichen Chefzugang möglich.</p><Link href="/?start=login" className="primary teamSetupLink">Zur persönlichen Anmeldung</Link></section>}
-      {stage==='error'&&<section className="teamSetupPanel"><h2>Einrichtung noch nicht verfügbar</h2><p>Bitte versuche es nach der Veröffentlichung erneut.</p></section>}
+      {stage==='error'&&<section className="teamSetupPanel"><h2>Einrichtung derzeit nicht möglich</h2><p>Dein bisheriger Zugang bleibt nutzbar. Du kannst zum Arbeitsbereich zurückkehren.</p><Link href="/" className="primary teamSetupLink">Zum Arbeitsbereich</Link></section>}
 
       <nav className="teamSetupFooter" aria-label="Zurück"><Link href="/insider">Zur internen Übersicht</Link></nav>
     </section>
