@@ -30,7 +30,7 @@ function Evidence({items,documents,ui,onOpenDocument}) {
   })}</details>
 }
 
-export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocument,onProgress,onExport,busy=false,full=false,onFull,continuation={},language='de'}) {
+export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocument,onProgress,onExport,busy=false,full=false,onFull,continuation={},language='de',resultRef}) {
   const ui=roadmapUi(record.output_language)
   const controls=roadmapUi(language)
   const [editing,setEditing]=useState('')
@@ -53,7 +53,7 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   const rtl=['ar','fa'].includes(record.output_language)
   const safeExport=type=>onExport?.(type)
   const assessment=<><p className="roadmapOpening">{result.opening}</p><ul>{result.key_points.map((point,index)=><li key={index}>{point}</li>)}</ul><p><b>{ui.meaning}</b><br/>{result.meaning}</p></>
-  return <div className="customerRoadmapView" lang={record.output_language} dir={rtl?'rtl':'ltr'}>
+  return <div className="customerRoadmapView" ref={resultRef} tabIndex={-1} lang={record.output_language} dir={rtl?'rtl':'ltr'}>
     <div className="roadmapLetterhead">{record.style.letterhead||record.style.sender_name}</div>
     <h3>{result.title}</h3><p className="roadmapMeta">{ui.draft}</p>
     {onExport&&continuation.canContinue!==false&&<div className="roadmapActions"><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('docx')}>Word</button><button className="secondary" type="button" disabled={busy||stale} onClick={()=>safeExport('pdf')}>PDF</button></div>}
@@ -104,7 +104,7 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   </div>
 }
 
-export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,onAnalyzeDocument,onRecoverDocument,onSaveDocument,onAddDocument,continuation={}}) {
+export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,onAnalyzeDocument,onRecoverDocument,onSaveDocument,onAddDocument,onResultReady,continuation={}}) {
   const ui=roadmapUi(language)
   const simple=simpleCaseCopy(language)
   const backgroundCopy=backgroundCaseCopy(language)
@@ -126,10 +126,16 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   activeCaseRef.current=item.id
   const busyRef=useRef(false)
   const formRef=useRef(null)
+  const panelRef=useRef(null),resultRef=useRef(null)
   const source=useMemo(()=>roadmapSource(item,documents,assessments),[item,documents,assessments])
   const caseRecords=records.filter(entry=>entry.case_id===item.id)
   const record=caseRecords.find(entry=>entry.id===activeId)||caseRecords[0]
   const stale=!!record&&(!fingerprint||record.source_fingerprint!==fingerprint||record.id!==caseRecords[0]?.id)
+  useEffect(()=>{
+    if(loading||!record||!fingerprint||!onResultReady)return
+    const frame=requestAnimationFrame(()=>onResultReady(item.id,stale?panelRef.current:resultRef.current))
+    return()=>cancelAnimationFrame(frame)
+  },[loading,record?.id,fingerprint,stale,item.id,onResultReady])
   const exportViewRef=useRef(null)
   exportViewRef.current={caseId:item.id,roadmapId:record?.id,fingerprint,stale}
   const canCreate=continuation.canContinue!==false
@@ -257,7 +263,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     downloadExportArtifact(artifact);return true
   })
   function expandForm() {setShowForm(true);requestAnimationFrame(()=>formRef.current?.scrollIntoView({behavior:'smooth',block:'start'}))}
-  return <section className="customerRoadmapPanel" id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>
+  return <section className="customerRoadmapPanel" ref={panelRef} tabIndex={-1} id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>
     <header className="roadmapPanelHead"><div><h3 id={`roadmap-title-${item.id}`}>{simple.title}</h3><p>{simple.intro}</p></div>{record&&canCreate&&<button type="button" className="secondary" disabled={busy} onClick={expandForm}>{ui.refresh}</button>}</header>
     {loading&&<p role="status">{ui.loading}</p>}
     {backgroundBusy&&<div className="caseReadingProgress" data-testid="background-case-job" role="status" aria-live="polite"><b>{backgroundCopy.title}</b><p>{backgroundCopy.working}</p><p>{roadmapProgressLabel(language,job.stage)}</p><button type="button" className="secondary" disabled={busy} onClick={cancelJob}>{ui.cancel}</button></div>}
@@ -286,6 +292,6 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
       </div></details></fieldset>
     </form>}
     {busy&&!processingStage&&<p role="status" aria-live="polite">{ui.loading}</p>}
-    {record&&<CustomerRoadmapView key={record.id} record={record} stale={stale} documents={documents} onOpenDocument={onOpenDocument} onProgress={progress} onExport={exportFile} busy={busy} full={full} onFull={()=>setFull(true)} continuation={continuation} language={language}/>}
+    {record&&<CustomerRoadmapView key={record.id} resultRef={resultRef} record={record} stale={stale} documents={documents} onOpenDocument={onOpenDocument} onProgress={progress} onExport={exportFile} busy={busy} full={full} onFull={()=>setFull(true)} continuation={continuation} language={language}/>}
   </section>
 }

@@ -5,7 +5,7 @@ import {createRequire} from 'node:module'
 import React from 'react'
 import {renderToStaticMarkup} from 'react-dom/server'
 import {transformSync} from 'next/dist/build/swc/index.js'
-import {readCaseLink,caseResultHref,resolveCaseLink,clearCaseLink,caseLinkUnavailable} from '../app/modules/workspace/caseLink.mjs'
+import {readCaseLink,caseResultHref,resolveCaseLink,clearCaseLink,caseLinkUnavailable,createCaseResultFocus} from '../app/modules/workspace/caseLink.mjs'
 import {resolveWorkspaceEntry} from '../app/modules/workspace/sessionEntry.mjs'
 import {roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {roadmapUi} from '../app/modules/cases/lib/customerRoadmapCopy.mjs'
@@ -34,6 +34,19 @@ const historyState={retained:'framework history'}
 clearCaseLink({location:{href:'https://app.example.invalid/?start=login&case='+caseId+'&lang=pl&payment=return#answer'},history:{state:historyState,replaceState:(...args)=>{replaced=args}}})
 assert.deepEqual(replaced,[historyState,'','/?lang=pl&payment=return#answer'],'consuming a link must preserve other workflow parameters and history state')
 for(const language of ['de','en','tr','pl','ru','ar','fa','fr','ro','bg','vi'])assert.ok(caseLinkUnavailable(language))
+
+const focus=createCaseResultFocus(),moves=[]
+const element={isConnected:false,focus:options=>moves.push(['focus',options]),getBoundingClientRect:()=>({top:800}),ownerDocument:{defaultView:{scrollY:20,scrollX:0,scrollTo:options=>moves.push(['scroll',options])},querySelector:()=>({getBoundingClientRect:()=>({height:180})})}}
+focus.request(caseId)
+assert.equal(focus.ready(caseId,null),false,'a result that has not mounted must not consume the request')
+assert.equal(focus.ready(caseId,element),false,'a detached result must not consume the request')
+element.isConnected=true
+assert.equal(focus.ready('other-case',element),false,'another case cannot consume the request')
+assert.equal(focus.ready(caseId,element),true)
+assert.deepEqual(moves,[['focus',{preventScroll:true}],['scroll',{top:624,left:0,behavior:'instant'}]],'the result must remain below the measured sticky header')
+assert.equal(focus.ready(caseId,element),false,'refreshing the result must not scroll again')
+focus.request(caseId);focus.request(null)
+assert.equal(focus.ready(caseId,element),false,'leaving the case must cancel the pending request')
 
 // Render production components and invoke their real export callbacks. This
 // regression check uses no browser session and makes no network/model calls.

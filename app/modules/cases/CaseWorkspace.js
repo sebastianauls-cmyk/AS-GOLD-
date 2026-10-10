@@ -101,7 +101,7 @@ export function CaseSection({copy:on, language='de', clients, cases, newCase, se
   </>
 }
 
-export function CaseDetail({copy:on, analysis, access=null, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate, onAnalyzeDocument, onRecoverDocument, onSaveDocument, continuation}){
+export function CaseDetail({copy:on, analysis, access=null, language='de', outputLanguage='de', supabase, ownerId, item, clients, documents, assessments, onBack, onSave, onAddAssessment, onAddDocument, onOpenDocument, onPrivacyUpdate, onAnalyzeDocument, onRecoverDocument, onSaveDocument, onResultReady, continuation}){
   const [editing,setEditing]=useState(false)
   const [draft,setDraft]=useState({title:item.title||'',client_id:item.client_id||'',reference_no:item.reference_no||'',goal:item.goal||'',summary:item.summary||'',deadline_at:localDateTime(item.deadline_at),next_action:item.next_action||'',traffic_light:item.traffic_light||'yellow',status:item.status||'open',home_country:item.home_country||'DE',target_country:item.target_country||'DE',test_case_id:item.test_case_id||null,test_case_expected_ampel:item.test_case_expected_ampel||null,test_case_language:item.test_case_language||null})
   const [assessment,setAssessment]=useState(emptyAssessment)
@@ -139,7 +139,7 @@ export function CaseDetail({copy:on, analysis, access=null, language='de', outpu
   const intakeCopy=documentPickerCopy(language)
   const deadlineResult=analyzeCaseDeadlines(item,documents)
   const analysisPanel=<CaseAnalysisModes supabase={supabase} access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
-    {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} continuation={continuation}/>}
+    {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} onResultReady={onResultReady} continuation={continuation}/>}
   </CaseAnalysisModes>
   const deadlinePanel=<DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={deadlineResult}/>
   return <>
