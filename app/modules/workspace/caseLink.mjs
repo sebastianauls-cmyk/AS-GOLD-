@@ -26,6 +26,24 @@ export function clearCaseLink(browser){
   browser.history.replaceState(browser.history.state,'',url.pathname+url.search+url.hash)
 }
 
+// The saved-result mode and its record load asynchronously. Consume this intent
+// only when the matching case reports a mounted result, never on the first frame.
+export function createCaseResultFocus(){
+  let pending=null
+  return {
+    request(caseId){pending=caseId||null},
+    ready(caseId,element){
+      if(!pending||pending!==caseId||!element?.isConnected)return false
+      const browser=element.ownerDocument.defaultView
+      const headerHeight=element.ownerDocument.querySelector('.appTop')?.getBoundingClientRect().height||0
+      pending=null
+      element.focus({preventScroll:true})
+      browser.scrollTo({top:Math.max(0,browser.scrollY+element.getBoundingClientRect().top-headerHeight-16),left:browser.scrollX,behavior:'instant'})
+      return true
+    }
+  }
+}
+
 const unavailable={
   de:'Dieser Fall ist in Ihrem angemeldeten Konto nicht verfügbar. Hier finden Sie Ihre Fälle.',
   en:'This case is not available in your signed-in account. Your cases are listed here.',

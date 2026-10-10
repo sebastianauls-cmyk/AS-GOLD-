@@ -47,7 +47,7 @@ import { createPricingWorkflowActions } from '../pricing/pricingWorkflow'
 import { createAccountWorkflowActions } from '../compliance/accountWorkflow'
 import { useWorkspaceAudit } from './useWorkspaceAudit'
 import { useWorkspaceSession } from './useWorkspaceSession'
-import { readCaseLink, resolveCaseLink, clearCaseLink, caseLinkUnavailable } from './caseLink.mjs'
+import { readCaseLink, resolveCaseLink, clearCaseLink, caseLinkUnavailable, createCaseResultFocus } from './caseLink.mjs'
 import { buildSyntheticCaseDraft } from '../testing/syntheticCaseDraft.mjs'
 import { buildDeadlineOverview } from '../cases/deadlineCases.mjs'
 import { getDeadlineUi } from '../cases/deadlineUi.mjs'
@@ -105,7 +105,8 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const [section,setSection]=useState('dashboard')
   const [selectedCase,setSelectedCase]=useState(null)
   const caseLinkHandled=useRef(false)
-  const caseLinkScroll=useRef(null)
+  const caseResultFocus=useRef(null)
+  if(!caseResultFocus.current)caseResultFocus.current=createCaseResultFocus()
   const [selectedClient,setSelectedClient]=useState(null)
   const [selectedDocument,setSelectedDocument]=useState(null)
   const uploadInFlight=useRef(false)
@@ -204,17 +205,9 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
       setMessage(caseLinkUnavailable(language))
       return
     }
-    caseLinkScroll.current=destination.item.id
+    caseResultFocus.current.request(destination.item.id)
     setSelectedCase(destination.item)
   },[publicOnly,screen,user?.id,access,privacyCurrent,data.cases,language])
-  useEffect(()=>{
-    if(screen!=='app'||!privacyCurrent||!selectedCase||caseLinkScroll.current!==selectedCase.id)return
-    const frame=requestAnimationFrame(()=>{
-      document.getElementById('customer-roadmap')?.scrollIntoView({block:'start'})
-      caseLinkScroll.current=null
-    })
-    return ()=>cancelAnimationFrame(frame)
-  },[screen,privacyCurrent,selectedCase?.id])
   const recommendedTier=goalTier[selectedGoal]||'free'
   const recommendedPlan=localizedPlans.find(plan=>plan.key===recommendedTier)||localizedPlans[0]
   const currentSufficient=(tierRank[currentTier]||1)>=(tierRank[recommendedTier]||1)
@@ -444,7 +437,7 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   if(screen==='app'&&selectedCase){
     const caseDocs=data.documents.filter(document=>document.case_id===selectedCase.id)
     const caseAssessments=data.assessments.filter(assessment=>assessment.case_id===selectedCase.id)
-    return protectedWorkspace(<><CaseDetail access={access} continuation={resultContinuation} key={selectedCase.id} copy={core} analysis={analysisUi} language={language} outputLanguage={outputLanguage} supabase={supabase} ownerId={user?.id} item={data.cases.find(item=>item.id===selectedCase.id)||selectedCase} clients={data.clients} documents={caseDocs} assessments={caseAssessments} onBack={()=>setSelectedCase(null)} onSave={updateCase} onAddAssessment={createAssessment} onAddDocument={addCaseDocument} onOpenDocument={setSelectedDocument} onPrivacyUpdate={setPrivacySettings} onAnalyzeDocument={analyzeDocument} onRecoverDocument={recoverDocumentAnalysis} onSaveDocument={updateDocument}/><details className="simpleCaseMore"><summary>{a.exportResult}</summary><div className="exportBar"><b>{a.exportResult}</b><select value={exportType} onChange={event=>setExportType(event.target.value)}><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="csv">CSV (.csv)</option><option value="txt">Text (.txt)</option></select><button className="primary" onClick={()=>doExport({kind:'case',item:data.cases.find(item=>item.id===selectedCase.id)||selectedCase},exportType)}>{a.export}</button></div></details></>)
+    return protectedWorkspace(<><CaseDetail access={access} continuation={resultContinuation} onResultReady={caseResultFocus.current.ready} key={selectedCase.id} copy={core} analysis={analysisUi} language={language} outputLanguage={outputLanguage} supabase={supabase} ownerId={user?.id} item={data.cases.find(item=>item.id===selectedCase.id)||selectedCase} clients={data.clients} documents={caseDocs} assessments={caseAssessments} onBack={()=>{caseResultFocus.current.request(null);setSelectedCase(null)}} onSave={updateCase} onAddAssessment={createAssessment} onAddDocument={addCaseDocument} onOpenDocument={setSelectedDocument} onPrivacyUpdate={setPrivacySettings} onAnalyzeDocument={analyzeDocument} onRecoverDocument={recoverDocumentAnalysis} onSaveDocument={updateDocument}/><details className="simpleCaseMore"><summary>{a.exportResult}</summary><div className="exportBar"><b>{a.exportResult}</b><select value={exportType} onChange={event=>setExportType(event.target.value)}><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="csv">CSV (.csv)</option><option value="txt">Text (.txt)</option></select><button className="primary" onClick={()=>doExport({kind:'case',item:data.cases.find(item=>item.id===selectedCase.id)||selectedCase},exportType)}>{a.export}</button></div></details></>)
   }
 
   if(screen==='app'&&!selectedClient&&section==='cases') return protectedWorkspace(<CasesSurface a={a} core={core} language={language} clients={data.clients} cases={data.cases} newCase={newCase} setNewCase={setNewCase} showCaseForm={showCaseForm} setShowCaseForm={setShowCaseForm} createCase={createCase} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
