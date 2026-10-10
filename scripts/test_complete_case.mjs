@@ -8,6 +8,7 @@ import './test_case_research_context.mjs'
 import {calculateExpression,quoteContainsNumber} from '../supabase/functions/_shared/checkedCalculations.mjs'
 import {validateCompleteAnalysis,advanceCompleteAnalysis,completeResearchScope,completeReviewCoverage,completeReviewGroups,COMPLETE_ANALYSIS_SCHEMA} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
+import {roadmapModelContext} from '../supabase/functions/_shared/roadmapModelContext.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult,roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeAnalysisBlocks,completeAnalysisCopy} from '../app/modules/cases/lib/completeAnalysisDisplay.mjs'
 import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport.mjs'
@@ -917,3 +918,61 @@ for(const component of ['topics','calculations']){
 }
 await runLocalizedRepairChecks({args,candidate,big,bigScope,topicFixture,outlineFixture})
 console.log('Complete analysis: exact arithmetic, provenance, bounded generation, complete grouped reviews, isolated transport resumption, one local correction, early failure stops and display/export parity passed (provider mocked).')
+
+// Use the real caller's roadmap prompt: topic drafting and reconciliation
+// must not inherit commands to create actions/letters before a plan exists.
+{
+  const context=roadmapModelContext({source,style:{tone:'formal'},outputLanguage:'de',referenceLanguage:'de',permissions:{draft_letters:true}})
+  const seen=[],sizes={}
+  const isolatedFetch=async(url,options)=>{
+    const request=JSON.parse(options.body),name=request.text.format.name
+    if(['ash_complete_topics_v167','ash_complete_reconciliation_v171','ash_complete_plan_v157'].includes(name)){
+      seen.push(name);sizes[name]=request.instructions.length
+      assert.equal(request.instructions.includes('Build 1–12 numbered steps'),name==='ash_complete_plan_v157','only the roadmap call receives roadmap-generation commands')
+      assert.equal(request.instructions.includes('Create separate formal draft letters'),name==='ash_complete_plan_v157','letters are not requested while writing topic fields')
+      if(name!=='ash_complete_plan_v157'){
+        assert.equal(request.instructions.includes('Provide analysis.calculations'),false,'topics do not receive a competing calculation-generation assignment')
+        assert(request.instructions.includes('Synthetic/anonymized cases remain internal test scenarios'))
+        assert(request.text.format.schema.properties.topics.items.properties.conditions.description.includes('case facts'))
+      }
+    }
+    return fetchImpl(url,options)
+  }
+  let flow=await advanceCompleteAnalysis({...args,baseRequest:context.request,baseReviewContent:context.reviewContent,fetchImpl:isolatedFetch})
+  for(let i=0;flow.status==='processing'&&i<16;i++)flow=await advanceCompleteAnalysis({...args,baseRequest:context.request,baseReviewContent:context.reviewContent,fetchImpl:isolatedFetch,state:flow.state})
+  assert.equal(flow.status,'completed')
+  assert.deepEqual(seen,['ash_complete_topics_v167','ash_complete_reconciliation_v171','ash_complete_plan_v157'])
+  assert.deepEqual(flow.result.analysis.verification.review_coverage,completeReviewCoverage(flow.result),'isolation does not remove any independent review')
+  assert.equal(flow.result.analysis.calculations[0].result,'1000.00')
+  assert.deepEqual(flow.result.analysis.topics[0].step_ids,candidate.analysis.topics[0].step_ids,'the actual plan supplies the final links')
+  console.log(JSON.stringify({topic_instruction_characters:sizes}))
+}
+// Reproduce the contradictory forward reference. It fails before numerical
+// work, uses the existing single input repair, and cannot become a result if
+// repeated. A later correction is subject to the same final validator.
+for(const repeated of [false,true]){
+  let topicCalls=0
+  const prematurePlan=async(_url,options)=>{
+    const request=JSON.parse(options.body),name=request.text.format.name
+    assert.equal(name,'ash_complete_topics_v167');topicCalls++
+    const output=topicFixture(candidate.analysis,request)
+    if(topicCalls===1||repeated)output.topics[0].conditions='Bleibt die Antwort aus, werden die Belegfragen wie in Schritt 2 in einer zweiten Anforderung wiederholt.'
+    return Response.json({status:'completed',id:'topic-boundary-'+topicCalls,output_text:JSON.stringify(output)})
+  }
+  const initial={stage:'analysis',scope,research:[],discovery_gaps:[]}
+  const first=await advanceCompleteAnalysis({...args,state:initial,fetchImpl:prematurePlan})
+  assert.equal(first.state.inputRepair.component,'topics');assert.equal(first.state.topicDraft,undefined)
+  assert.equal(first.state.inputRepair.feedback[0].location,'analysis.topics[0].conditions')
+  if(repeated)await assert.rejects(advanceCompleteAnalysis({...args,state:first.state,fetchImpl:prematurePlan}),error=>error.code==='source_unresolved')
+  else {
+    const repaired=await advanceCompleteAnalysis({...args,state:first.state,fetchImpl:prematurePlan})
+    assert.equal(repaired.state.topicDraft.analysis.topics[0].conditions,candidate.analysis.topics[0].conditions)
+    assert.equal(repaired.state.inputRepair.used,true,'a successful correction does not reset its allowance')
+  }
+  assert.equal(topicCalls,2);assert(!first.result)
+}
+for(const field of ['conclusion','conditions']){
+  const invalid=structuredClone(candidate);invalid.analysis.topics[0][field]+=' Siehe Schritt 2.'
+  assert.throws(()=>validateCompleteAnalysis(invalid,source,options),error=>error.analysisIssues.some(issue=>issue.location===`analysis.topics[0].${field}`),'final assembly and local corrections cannot introduce a numbered topic link')
+}
+console.log('Topic boundary: real caller prompt isolation, unchanged review coverage, actual plan links and bounded rejection of invented step references passed (provider mocked).')
