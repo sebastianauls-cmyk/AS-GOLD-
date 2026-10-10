@@ -1,7 +1,7 @@
 import {PAYMENT_DATE_ATTRIBUTION_RULES} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
-import {advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {RESEARCH_SCOPE_RULES,advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {completeReviewLocations,resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 
 const get=(value,path)=>path.reduce((item,key)=>item[key],value)
@@ -104,6 +104,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       assert.equal(url,'https://api.openai.com/v1/responses')
       const request=JSON.parse(options.body),payloads=request.input.flatMap(message=>message.content).map(block=>{try{return JSON.parse(block.text)}catch{return {}}})
       if(request.text.format.name!=='ash_case_scope')assert(request.instructions.includes(PAYMENT_DATE_ATTRIBUTION_RULES),'bounded corrections retain the same payment-date evidence conditions')
+      if(request.text.format.name!=='ash_case_scope')assert([request.instructions,...request.input.filter(message=>message.role==='developer').flatMap(message=>message.content.map(item=>item.text))].some(text=>text.includes(RESEARCH_SCOPE_RULES)),'complete generation, reconciliation, local repair and review preserve partial research scope')
       let output
       if(request.text.format.name==='ash_complete_repair_v169'){
         repairCalls++
@@ -190,7 +191,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       counts.numbers++
       const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations
       output={calculations:big.analysis.calculations.filter(c=>assigned.some(a=>a.id===c.id)).map(cleanCalculation)}
-    }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    }else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       counts.plans++
       const {analysis,...plan}=structuredClone(big);output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}

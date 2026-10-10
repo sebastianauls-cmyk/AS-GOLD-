@@ -57,7 +57,7 @@ for(const id of ['invoice','authority','bilingual']){
       else if(name==='ash_complete_topics_v167')output={topics:analysis.topics.map(topic=>({...topic,step_ids:[]})),limitations:analysis.limitations}
       else if(name==='ash_complete_outline_v166')output={calculation_plan:analysis.calculations.map(calc=>({id:calc.id,title:calc.title,topic_ids:calc.topic_ids,purpose:calc.explanation,depends_on:calc.inputs.filter(input=>input.kind==='calculation').map(input=>input.calculation_id)}))}
       else if(name==='ash_complete_numbers_v157')output={calculations:analysis.calculations}
-      else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+      else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
       else if(name==='ash_complete_plan_v157')output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
       return Response.json({id:'synthetic-notes-'+requests.length,status:'completed',model:request.model,output_text:JSON.stringify(withQuoteIds(output))})
     }

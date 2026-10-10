@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import {advanceCompleteAnalysis,validateCompleteAnalysis,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {advanceCompleteAnalysis,validateCompleteAnalysis,completeReviewGroups,RESEARCH_SCOPE_RULES} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 
@@ -23,15 +23,15 @@ let reconciliations=0,plans=0,reviews=0
 const transport=async(url,options)=>{
   assert.equal(url,'https://api.openai.com/v1/responses')
   const request=JSON.parse(options.body),name=request.text.format.name
-  if(!reconciliations)assert.equal(name,'ash_complete_reconciliation_v170','final topic narratives must be reconciled after checked arithmetic and before the plan')
-  if(name==='ash_complete_reconciliation_v170'){
+  if(!reconciliations)assert.equal(name,'ash_complete_reconciliation_v171','final topic narratives must be reconciled after checked arithmetic and before the plan')
+  if(name==='ash_complete_reconciliation_v171'){
     reconciliations++
     const payload=JSON.parse(request.input.at(-1).content[0].text)
     assert.deepEqual(payload.checked_analysis.calculations.map(item=>item.result),['27930.00','28421.00'])
     assert(request.input.some(message=>message.content.some(item=>item.text.includes('Die Auszahlung ist laut Mandantenangabe im August 2026 eingegangen.'))))
     assert.deepEqual(Object.keys(request.text.format.schema.properties.topics.items.properties),['id','status','conclusion','conditions','sources'])
     assert.match(request.instructions,/document-reported receipt/i)
-    return reply(request,{topics:[fixed]},'reconciled-net-and-receipt')
+    return reply(request,{topics:[fixed],limitations:[]},'reconciled-net-and-receipt')
   }
   if(name==='ash_complete_plan_v157'){
     plans++
@@ -61,17 +61,22 @@ assert.equal(flow.result.analysis.topics[0].conclusion,fixed.conclusion)
 assert(flow.result.analysis.verification.analysis_response_ids.includes('reconciled-net-and-receipt'))
 assert.deepEqual(start.draftAnalysis,draft,'the previous checkpoint is immutable')
 
-for(const defect of ['missing','id','extra','empty','truncated']){
+for(const defect of ['missing','id','extra','empty','missing_limits','invalid_limits','empty_limit','extra_root','truncated']){
   let calls=0
   await assert.rejects(advanceCompleteAnalysis({...args,state:structuredClone(start),fetchImpl:async(url,options)=>{
     calls++;const request=JSON.parse(options.body)
-    assert.equal(request.text.format.name,'ash_complete_reconciliation_v170')
+    assert.equal(request.text.format.name,'ash_complete_reconciliation_v171')
     if(defect==='truncated')return Response.json({status:'incomplete',id:'truncated-reconciliation',incomplete_details:{reason:'max_output_tokens'},output_text:'{"topics":'})
     const topic=structuredClone(fixed)
     if(defect==='id')topic.id='unassigned'
     if(defect==='extra')topic.title='Unassigned title'
     if(defect==='empty')topic.conclusion=''
-    return reply(request,{topics:defect==='missing'?[]:[topic]},'invalid-reconciliation')
+    const output={topics:defect==='missing'?[]:[topic],limitations:[]}
+    if(defect==='missing_limits')delete output.limitations
+    if(defect==='invalid_limits')output.limitations='Missing a specific primary text.'
+    if(defect==='empty_limit')output.limitations=[' ']
+    if(defect==='extra_root')output.calculations=[]
+    return reply(request,output,'invalid-reconciliation')
   }}),error=>error.code===(defect==='truncated'?'provider_token_limit':'source_unresolved'))
   assert.equal(calls,1,'invalid reconciliation stops; it does not add another correction loop')
 }
@@ -86,7 +91,7 @@ assert.equal(unexpected,0)
 let rejectedReviews=0,repairs=0
 const rejectionTransport=async(url,options)=>{
   const request=JSON.parse(options.body),name=request.text.format.name
-  if(name==='ash_complete_reconciliation_v170')return reply(request,{topics:[{id:stale.id,status:stale.status,conclusion:stale.conclusion,conditions:stale.conditions,sources:stale.sources}]},'bad-meaning')
+  if(name==='ash_complete_reconciliation_v171')return reply(request,{topics:[{id:stale.id,status:stale.status,conclusion:stale.conclusion,conditions:stale.conditions,sources:stale.sources}],limitations:[]},'bad-meaning')
   if(name==='ash_complete_plan_v157')return reply(request,{...plan,topic_steps:[{id:'payout',step_ids:['account']}]},'bad-plan')
   if(name==='ash_complete_repair_v169'){
     repairs++
@@ -112,6 +117,10 @@ const research=[
 ]
 const temporalStart=structuredClone(start)
 temporalStart.research=research
+const staleLimit='Es wurden keine Regeln zu Bescheinigungen abgerufen.'
+const retainedLimit='Empfangskonto und Zuordnung sind noch offen.'
+const preciseLimit='Die abgerufenen fiktiven Texte behandeln Bescheinigungen; sie klären die fehlende Kontozuordnung nicht.'
+temporalStart.draftAnalysis.limitations=[staleLimit,retainedLimit]
 temporalStart.draftAnalysis.topics[0].conclusion='Mögliche Rückstände sind nicht dokumentiert. Die Jahresbescheinigung bei der gesetzlichen Rentenversicherung anfordern.'
 temporalStart.draftAnalysis.topics[0].sources=[{url:research[0].url,quote:research[0].source_text}]
 const temporalFixed={...fixed,conclusion:fixed.conclusion+' Die erste Zahlung ist erst am 15. Oktober 2099 fällig; aus dieser Forderung besteht bis zum Prüfdatum kein Rückstand. Die fehlende Jahresbescheinigung bei der gesetzlichen Rentenversicherung anfordern.',sources:[{quote:'@s1_0'}]}
@@ -119,20 +128,26 @@ let temporalCalls=0
 const temporal=await advanceCompleteAnalysis({...args,source:temporalSource,state:temporalStart,fetchImpl:async(url,options)=>{
   temporalCalls++
   const request=JSON.parse(options.body)
-  assert.equal(request.text.format.name,'ash_complete_reconciliation_v170')
+  assert.equal(request.text.format.name,'ash_complete_reconciliation_v171')
   assert.equal(request.reasoning.effort,'high')
   assert.equal(request.max_output_tokens,12000)
+  assert(request.instructions.includes(RESEARCH_SCOPE_RULES),'the synthesis distinguishes partial coverage from source absence')
+  assert.deepEqual(request.text.format.schema.required,['topics','limitations'])
+  assert.deepEqual(JSON.parse(request.input.at(-1).content[0].text).checked_analysis.limitations,[staleLimit,retainedLimit])
+  assert.equal(JSON.parse(request.input[0].content[1].text).retrieved_sources.length,research.length,'global limitations are reconciled with all fetched sources')
   const originals=JSON.parse(request.input[0].content[0].text)
   assert.equal(originals.review_date,new Date().toISOString().slice(0,10))
   assert.match(request.instructions,/first due date is still in the future/)
   assert.match(request.instructions,/payer or institution, benefit\/product category/)
   assert.equal(request.text.format.schema.properties.topics.items.properties.sources.items.properties.url,undefined)
-  return reply(request,{topics:[temporalFixed]},'temporal-and-source-synthesis')
+  return reply(request,{topics:[temporalFixed],limitations:[preciseLimit,retainedLimit]},'temporal-and-source-synthesis')
 }})
 assert.equal(temporalCalls,1)
 assert.equal(temporal.status,'processing')
 assert.deepEqual(temporal.state.draftAnalysis.topics[0].sources,[{url:research[1].url,quote:research[1].source_text}],'a mismatched citation can be replaced by a verbatim passage from the supplied appropriate source')
 assert.deepEqual(temporal.state.draftAnalysis.calculations,draft.calculations,'citation correction does not alter checked arithmetic')
+assert.deepEqual(temporal.state.draftAnalysis.limitations,[preciseLimit,retainedLimit],'an overbroad batch limitation is replaced while a real gap remains')
+assert.deepEqual(temporalStart.draftAnalysis.limitations,[staleLimit,retainedLimit],'the original limitation checkpoint remains immutable')
 assert.deepEqual(temporalStart.draftAnalysis.topics[0].sources,[{url:research[0].url,quote:research[0].source_text}],'the old checkpoint is immutable')
 let planSawReconciled=false
 await advanceCompleteAnalysis({...args,source:temporalSource,state:temporal.state,fetchImpl:async(url,options)=>{
@@ -141,6 +156,7 @@ await advanceCompleteAnalysis({...args,source:temporalSource,state:temporal.stat
   const analysis=JSON.parse(request.input.at(-1).content[0].text).analysis
   assert.equal(analysis.topics[0].conclusion,temporalFixed.conclusion)
   assert.equal(analysis.topics[0].sources[0].url,research[1].url)
+  assert.deepEqual(analysis.limitations,[preciseLimit,retainedLimit],'the practical plan receives the reconciled global limitations')
   planSawReconciled=true
   return reply(request,{...plan,topic_steps:[{id:'payout',step_ids:['account']}]},'temporal-plan')
 }})
@@ -153,7 +169,7 @@ for(const invalidSource of [
 ]){
   let calls=0
   await assert.rejects(advanceCompleteAnalysis({...args,source:temporalSource,state:structuredClone(temporalStart),fetchImpl:async(url,options)=>{
-    calls++;return reply(JSON.parse(options.body),{topics:[{...temporalFixed,sources:[invalidSource]}]},'invalid-citation')
+    calls++;return reply(JSON.parse(options.body),{topics:[{...temporalFixed,sources:[invalidSource]}],limitations:[]},'invalid-citation')
   }}),error=>error.code==='source_unresolved')
   assert.equal(calls,1,'unknown, wrong-kind and fabricated citations stop before plan generation')
 }

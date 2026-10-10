@@ -297,7 +297,7 @@ const fetchImpl=async(url,options)=>{
   assert.equal(request.model,'gpt-5.6-sol','complete planning, generation and independent review use the higher-capability model')
   if(name==='ash_evidence_review_v139')assert.equal(request.reasoning.effort,'high','the complete assembled result retains the full independent review')
   if(name.startsWith('ash_complete_')){
-    assert.equal(request.reasoning.effort,name==='ash_complete_reconciliation_v170'||name==='ash_complete_repair_v169'?'high':'medium','final synthesis and local repair get high reasoning; independent review stays high')
+    assert.equal(request.reasoning.effort,name==='ash_complete_reconciliation_v171'||name==='ash_complete_repair_v169'?'high':'medium','final synthesis and local repair get high reasoning; independent review stays high')
     assert(!request.instructions.includes('No external research has been performed in this workflow.'))
     const inspect=schema=>{if(!schema||typeof schema!=='object')return;if(schema.properties?.quote){assert.equal(schema.properties.document_id,undefined);assert.equal(schema.properties.url,undefined);assert(schema.properties.quote.pattern)};Object.values(schema).forEach(inspect)}
     inspect(request.text.format.schema)
@@ -329,7 +329,7 @@ const fetchImpl=async(url,options)=>{
     assert.equal(fields.key_points.minItems,1);assert.equal(fields.steps.minItems,1)
   }
   const {analysis,...plan}=candidate
-  const output=name==='ash_case_scope'?scope:name==='ash_complete_topics_v167'?topicFixture(analysis,request):name==='ash_complete_outline_v166'?outlineFixture(analysis):name==='ash_complete_numbers_v157'?{calculations:structuredClone(analysis.calculations)}:name==='ash_complete_reconciliation_v170'?reconciliationFixture(request):name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
+  const output=name==='ash_case_scope'?scope:name==='ash_complete_topics_v167'?topicFixture(analysis,request):name==='ash_complete_outline_v166'?outlineFixture(analysis):name==='ash_complete_numbers_v157'?{calculations:structuredClone(analysis.calculations)}:name==='ash_complete_reconciliation_v171'?reconciliationFixture(request):name==='ash_complete_plan_v157'?{...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}:{issues:[]}
   if(name==='ash_complete_numbers_v157')for(const calculation of output.calculations)for(const input of calculation.inputs){
     const passage=[...quotationIndex(source,[]).values()].find(entry=>entry.document_id===input.document_id&&entry.quote.includes(input.quote))
     assert(passage,'integration fixture must select a real containing passage')
@@ -356,7 +356,7 @@ for(const repeatOverflow of [false,true]){
       }
       output=generations===1||repeatOverflow?outlineFixture(overBudget.analysis):outlineFixture(candidate.analysis)
     }else if(name==='ash_complete_numbers_v157')output={calculations:structuredClone(candidate.analysis.calculations)}
-    else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       const {analysis,...plan}=candidate;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else {reviews++;output={issues:[]}}
@@ -418,7 +418,7 @@ for(const change of ['letter','dependent_step','unlocated']){
     else if(name==='ash_complete_topics_v167'){topics++;output=topicFixture(candidate.analysis,request)}
     else if(name==='ash_complete_outline_v166')output=outlineFixture(candidate.analysis)
     else if(name==='ash_complete_numbers_v157'){numbers++;output={calculations:structuredClone(candidate.analysis.calculations)}}
-    else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       plans++
       const {analysis,...plan}=structuredClone(candidate)
@@ -494,7 +494,7 @@ for(const outcome of ['accepted','rejected','invalid_patch']){
     else if(name==='ash_complete_numbers_v157'){
       numbers++;output={calculations:structuredClone(candidate.analysis.calculations)}
       if(numbers===1)output.calculations[0].inputs[0].value='19000'
-    }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    }else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       plans++;const {analysis,...plan}=candidate
       output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
@@ -545,7 +545,7 @@ for(const repairOutcome of ['complete','partial','none']){
         assert.deepEqual(feedback.map(issue=>issue.location),['analysis.calculations[0].inputs[0].value','analysis.calculations[0].inputs[1].value'])
         assert(feedback.every(issue=>issue.reason.includes('steht nicht im angegebenen Beleg')))
       }
-    }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    }else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       const component=JSON.parse(request.input.at(-1).content[0].text)
       assert.equal(component.analysis.calculations[0].result,'1000.00','plan receives only successfully checked arithmetic')
@@ -675,7 +675,7 @@ const bigFetch=async(url,options)=>{
     }
     output={calculations:structuredClone(big.analysis.calculations.filter(item=>assigned.some(plan=>plan.id===item.id)))}
     if(!badInputRounds.has(bigRound)){badInputRounds.add(bigRound);output.calculations[0].inputs[0].value='19000'}
-  }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+  }else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
   else if(name==='ash_complete_plan_v157'){
     const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
   }else{
@@ -839,7 +839,7 @@ for(const rejectWholeCase of [false,true]){
     else if(name==='ash_complete_outline_v166')output=outlineFixture(moduleCandidate.analysis)
     else if(name==='ash_complete_numbers_v157'){
       output={calculations:moduleCandidate.analysis.calculations.filter(item=>component.assigned_calculations.some(assigned=>assigned.id===item.id))}
-    }else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    }else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       const {analysis,...plan}=moduleCandidate;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
     }else{
