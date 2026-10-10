@@ -38,9 +38,36 @@ export function indexedQuotationSchema(schema){
   }
   return result
 }
+
+// Operative legal wording can be selected directly in a topic conclusion.
+// Expansion happens before provenance checks and every independent review.
+// It proves transcription only, never relevance, completeness or applicability.
+const ruleMarker=/\[\[rule\b/i
+const ruleSelection=/\[\[rule:(@s[0-9]+_[0-9]+)(?:\.\.(@s[0-9]+_[0-9]+))?\]\]/g
+function resolveRuleWording(text,sources,index,issue){
+  const citations=Array.isArray(sources)?sources:[]
+  if(ruleMarker.test(text.replace(ruleSelection,'')))issue('Ungültiger Regelbeleg: einen Quellenverweis oder einen zusammenhängenden Bereich derselben Quelle auswählen.')
+  return text.replace(ruleSelection,(marker,startId,endId=startId)=>{
+    const start=index.get(startId),end=index.get(endId)
+    if(!start?.url||!end?.url){issue('Unbekannter Recherchebeleg für den Regeltext: '+marker);return marker}
+    const [startPrefix,startNumber]=startId.split('_'),[endPrefix,endNumber]=endId.split('_')
+    const first=Number(startNumber),last=Number(endNumber)
+    if(startPrefix!==endPrefix||start.url!==end.url||!Number.isSafeInteger(first)||!Number.isSafeInteger(last)||first>last){issue('Ein Regelbeleg muss einen geordneten, zusammenhängenden Bereich derselben Recherchequelle verwenden.');return marker}
+    // Filter the finite index instead of iterating over a model-supplied bound.
+    const selected=[...index.values()].filter(item=>{
+      const [prefix,number]=item.id.split('_')
+      return prefix===startPrefix&&Number(number)>=first&&Number(number)<=last
+    }).sort((a,b)=>Number(a.id.split('_')[1])-Number(b.id.split('_')[1]))
+    const norm=value=>String(value||'').replace(/\s+/gu,' ').trim()
+    if(selected.length!==last-first+1||selected.some(item=>item.url!==start.url||!citations.some(citation=>citation?.url===item.url&&norm(citation.quote)===item.quote))){issue('Jeder Teil des Regeltexts braucht seinen unveränderten Quellenbeleg in sources derselben Fallfrage.');return marker}
+    if(selected.some(item=>ruleMarker.test(item.quote))){issue('Der ausgewählte Quelltext enthält selbst reservierte Regelverweise und kann nicht als Regeltext-Vorlage eingesetzt werden.');return marker}
+    return '„'+selected.map(item=>item.quote).join(' ')+'“'
+  })
+}
 export function resolveQuotationIds(raw,index,{pathPrefix=''}={}){
   const issues=[]
   const visit=(value,path)=>{
+    if(typeof value==='string'&&ruleMarker.test(value)&&!/(?:^|\.)topics\[\d+\]\.conclusion$|(?:^|\.)quote$/.test(path))issues.push({code:'source',location:path,reason:'Regelbeleg-Verweise sind nur in der Schlussfolgerung einer Fallfrage zulässig. Bedingungen beschreiben die offenen Falltatsachen; andere Texte dürfen keine unaufgelösten Verweise enthalten.'})
     if(!value||typeof value!=='object')return value
     if(Array.isArray(value))return value.map((item,i)=>visit(item,`${path}[${i}]`))
     const result=Object.fromEntries(Object.entries(value).map(([key,item])=>[key,visit(item,path?path+'.'+key:key)]))
@@ -59,6 +86,7 @@ export function resolveQuotationIds(raw,index,{pathPrefix=''}={}){
       if(passage.url)result.url=passage.url
       result.quote=passage.quote
     }
+    if(/(?:^|\.)topics\[\d+\]$/.test(path)&&typeof result.conclusion==='string'&&ruleMarker.test(result.conclusion))result.conclusion=resolveRuleWording(result.conclusion,result.sources,index,reason=>issues.push({code:'source',location:path+'.conclusion',reason}))
     return result
   }
   const result=visit(raw,pathPrefix)

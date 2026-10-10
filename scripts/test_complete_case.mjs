@@ -1,5 +1,6 @@
 import {caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import './test_case_reconciliation.mjs'
+import './test_source_rule_quotes.mjs'
 import './test_case_legal_working_basis.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'

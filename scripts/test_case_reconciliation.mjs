@@ -61,6 +61,54 @@ assert.equal(flow.result.analysis.topics[0].conclusion,fixed.conclusion)
 assert(flow.result.analysis.verification.analysis_response_ids.includes('reconciled-net-and-receipt'))
 assert.deepEqual(start.draftAnalysis,draft,'the previous checkpoint is immutable')
 
+// The real pipeline must resolve operative source selections before planning
+// and review. A perfect quote still cannot excuse a false application beside it.
+const triggerText='SYNTHETISCHE REGEL: Sind die vereinbarten Voraussetzungen erfüllt, beginnt die Wirkung mit dem Zugang der Mitteilung. Eine zusätzliche Wartezeit ist nicht vorgesehen.'
+for(const incorrectApplication of [false,true]){
+  const selected='Quellenregel: [[rule:@s0_0]] '+(incorrectApplication?'Danach ist eine weitere Wartezeit erforderlich.':'Der Zugang ist in den Testunterlagen nicht belegt.')
+  const expanded=selected.replace('[[rule:@s0_0]]','„'+triggerText+'“')
+  const quotedStart={...structuredClone(start),research:[{url:'https://authority.example/trigger',title:'Synthetische Zeitregel',source_text:triggerText,checked_at:new Date().toISOString()}]}
+  let quoteReviews=0,quoteRepairs=0,quotePlans=0
+  let quotedFlow={status:'processing',state:quotedStart}
+  const quoteTransport=async(url,options)=>{
+    const request=JSON.parse(options.body),name=request.text.format.name
+    if(name==='ash_complete_reconciliation_v171')return reply(request,{topics:[{...fixed,conclusion:fixed.conclusion+' '+selected,sources:[{quote:'@s0_0'}]}],limitations:[]},'quoted-rule-synthesis')
+    if(name==='ash_complete_plan_v157'){
+      quotePlans++
+      assert.equal(JSON.parse(request.input.at(-1).content[0].text).analysis.topics[0].conclusion,fixed.conclusion+' '+expanded,'the plan receives resolved original wording, never a template marker')
+      return reply(request,{...plan,topic_steps:[{id:'payout',step_ids:['account']}]},'quoted-rule-plan')
+    }
+    if(name==='ash_complete_repair_v169'){
+      quoteRepairs++
+      const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_replacements
+      return reply(request,{requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,item.previous]))},'unfixed-application')
+    }
+    assert.equal(name,'ash_evidence_review_v139');quoteReviews++
+    const payloads=request.input.flatMap(message=>message.content).map(item=>{try{return JSON.parse(item.text)}catch{return {}}})
+    const topics=payloads.find(item=>item.candidate).candidate.analysis?.topics
+    if(topics){
+      assert.equal(topics[0].conclusion,fixed.conclusion+' '+expanded)
+      assert.equal(topics[0].sources[0].quote,triggerText)
+    }
+    return reply(request,{issues:incorrectApplication&&topics?[{code:'meaning',location:'analysis.topics[0]',reason:'The literal quotation does not support the added waiting period in its application.'}]:[]},'quoted-rule-review-'+quoteReviews)
+  }
+  const execute=async()=>{
+    for(let i=0;quotedFlow.status==='processing'&&i<20;i++)quotedFlow=await advanceCompleteAnalysis({...args,state:quotedFlow.state,fetchImpl:quoteTransport})
+    return quotedFlow
+  }
+  if(incorrectApplication){
+    await assert.rejects(execute,error=>error.code==='review_unresolved')
+    assert.equal(quoteRepairs,1,'literal source preservation does not extend correction allowances or override rejection')
+    assert(!quotedFlow.result)
+  }else{
+    await execute()
+    assert.equal(quotedFlow.status,'completed')
+    assert.equal(quoteRepairs,0)
+    assert.equal(quoteReviews,completeReviewGroups(quotedFlow.result).length,'every existing independent review remains required')
+  }
+  assert.equal(quotePlans,1,'source preservation adds no extra generation stage')
+}
+
 for(const defect of ['missing','id','extra','empty','missing_limits','invalid_limits','empty_limit','extra_root','truncated']){
   let calls=0
   await assert.rejects(advanceCompleteAnalysis({...args,state:structuredClone(start),fetchImpl:async(url,options)=>{
