@@ -44,6 +44,19 @@ test('saved-result link waits for mode and record, then shows downloads below th
   expect(errors).toEqual([])
 })
 
+test('leaving a delayed saved result cancels the pending jump',async({page})=>{
+  await page.goto('/qa-case-flow')
+  await page.getByRole('button',{name:'Open delayed saved result link',exact:true}).click()
+  await page.getByRole('button',{name:'Load saved-result mode',exact:true}).click()
+  await expect(page.locator('#customer-roadmap')).toContainText('Fahrplan wird geladen')
+  await page.locator('.backBtn').click()
+  await page.getByRole('button',{name:'Load saved result',exact:true}).click()
+  await expect(page.getByRole('textbox',{name:'Wobei brauchen Sie Hilfe?'})).toBeVisible()
+  await expect(page.locator('.customerRoadmapView')).toHaveCount(0)
+  await expect(page.getByTestId('result-focus-count')).toHaveText('0')
+  await expect(page.getByTestId('invocations')).toHaveText('0')
+})
+
 test('empty case starts with its letter and keeps actual deadlines visible',async({page})=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
   await begin(page)
