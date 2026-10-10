@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import {caseLegalWorkingBasis,CASE_LEGAL_SCOPE_RULES,PAYMENT_DATE_ATTRIBUTION_RULES,caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
-import {advanceCompleteAnalysis,completeResearchScope,completeReviewGroups,validateCompleteAnalysis} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {RESEARCH_SCOPE_RULES,advanceCompleteAnalysis,completeResearchScope,completeReviewGroups,validateCompleteAnalysis} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
@@ -33,6 +33,7 @@ for(const [home,target,country] of [['DE','DE','DE'],[null,null,'DE'],[' de ',nu
     assert(request.instructions.includes(CASE_LEGAL_SCOPE_RULES),'the shared policy reaches generation and independent review')
     assert.equal(contexts[0].legal_working_basis.ignore_foreign_law,undefined,'arbitrary source fields cannot override the server policy')
     if(name!=='ash_case_scope')assert(request.instructions.includes(PAYMENT_DATE_ATTRIBUTION_RULES),'generation, reconciliation and independent review share payment-date evidence conditions')
+    if(request.text.format.name!=='ash_case_scope')assert([request.instructions,...request.input.filter(message=>message.role==='developer').flatMap(message=>message.content.map(item=>item.text))].some(text=>text.includes(RESEARCH_SCOPE_RULES)),'complete generation, reconciliation, local repair and review preserve partial research scope')
     if(name==='ash_evidence_review_v139'){
       const related=payloads.find(p=>p.related_output)?.related_output
       assert(related?.overview,'every review partition sees the actual global qualification text')
@@ -42,7 +43,7 @@ for(const [home,target,country] of [['DE','DE','DE'],[null,null,'DE'],[' de ',nu
     seen.push(name)
     let output
     if(name==='ash_case_scope')output=scope
-    else if(name==='ash_complete_reconciliation_v170')output=reconciliationFixture(request)
+    else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157')output={...structuredClone(roadmapTestResult),topic_steps:[{id:'scope',step_ids:[roadmapTestResult.steps[0].id]}]}
     else {assert.equal(name,'ash_evidence_review_v139');assert.equal(request.reasoning.effort,'high');output={issues:[]}}
     return Response.json({id:'scope-test-'+seen.length,status:'completed',model:request.model,output_text:JSON.stringify(output)})
