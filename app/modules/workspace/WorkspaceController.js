@@ -107,11 +107,6 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const [selectedCase,setSelectedCase]=useState(null)
   const [automaticCaseRun,setAutomaticCaseRun]=useState(null)
   const uploadViewRef=useRef('')
-  useEffect(()=>{
-    if(automaticCaseRun&&(automaticCaseRun.ownerId!==user?.id||automaticCaseRun.caseId!==selectedCase?.id)){
-      automaticCaseRun.cancel();setAutomaticCaseRun(null)
-    }
-  },[automaticCaseRun,user?.id,selectedCase?.id])
   const caseLinkHandled=useRef(false)
   const caseResultFocus=useRef(null)
   if(!caseResultFocus.current)caseResultFocus.current=createCaseResultFocus()
@@ -121,6 +116,11 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const uploadAttempt=useRef(null)
   useEffect(()=>{uploadAttempt.current=null},[user?.id])
   const [selectedApproval,setSelectedApproval]=useState(null)
+  useEffect(()=>{
+    if(automaticCaseRun&&(screen!=='app'||selectedDocument||selectedClient||selectedApproval||automaticCaseRun.ownerId!==user?.id||automaticCaseRun.caseId!==selectedCase?.id)){
+      automaticCaseRun.cancel();setAutomaticCaseRun(null)
+    }
+  },[automaticCaseRun,screen,user?.id,selectedCase?.id,selectedDocument,selectedClient,selectedApproval])
   const [approvalDefaults,setApprovalDefaults]=useState({caseId:'',documentId:'',recipient:'',subject:'',body:''})
   const [access,setAccess]=useState(null)
   const [upgrades,setUpgrades]=useState([])
