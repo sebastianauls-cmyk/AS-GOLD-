@@ -434,6 +434,7 @@ body:has(.persistentDeadlineButton) .legalFooter{padding-bottom:calc(110px + env
 .publicPageBackButton[data-persistent-back]{
   position:fixed;
   cursor:pointer;
+  text-decoration:none;
 }
 .publicTop .publicBackButton{
   position:static;

@@ -18,20 +18,7 @@ import { PublicLanguageCountryModule } from './PublicLanguageCountryModule'
 import { publicLanguageCountryCopy } from './publicLanguageCountryCopy.mjs'
 import { InstallAppButton } from './InstallAppButton'
 import { PublicResultExample } from './PublicResultExample'
-
-const publicBackCopy={
-  de:{label:'← Zurück',aria:'Zurück zum Anfang der Seite'},
-  en:{label:'← Back',aria:'Back to the top of the page'},
-  fr:{label:'← Retour',aria:'Retour en haut de la page'},
-  tr:{label:'← Geri',aria:'Sayfanın başına dön'},
-  pl:{label:'← Wstecz',aria:'Wróć na początek strony'},
-  ru:{label:'← Назад',aria:'Вернуться в начало страницы'},
-  ar:{label:'رجوع →',aria:'العودة إلى أعلى الصفحة'},
-  fa:{label:'بازگشت →',aria:'بازگشت به بالای صفحه'},
-  ro:{label:'← Înapoi',aria:'Înapoi la începutul paginii'},
-  bg:{label:'← Назад',aria:'Обратно в началото на страницата'},
-  vi:{label:'← Quay lại',aria:'Quay lại đầu trang'}
-}
+import { publicNavigationCopy, workspaceEntryHref } from './publicNavigation.mjs'
 
 export const productCopy={
   de:{
@@ -53,12 +40,12 @@ export const productCopy={
   vi:{eyebrow:'ASH Workspace Gold · không gian số hoàn chỉnh cho hồ sơ và tài liệu',cta:'Bắt đầu vụ việc',explainer:'▶ Xem giải thích ngắn',capTitle:'ASH Workspace Gold hiện có thể xử lý những gì',capLead:'Từ mô tả ban đầu đến kết quả đã được kiểm tra, toàn bộ quy trình nằm trong một cấu trúc liên tục: tài liệu, phân tích, đèn tín hiệu, thời hạn, so sánh pháp lý, thư, xem trước, phê duyệt và xuất.',more:'Xem thêm khả năng',featureEyebrow:'Các chức năng liên kết',featureTitle:'Không phải công cụ rời rạc — một quy trình xuyên suốt.',result:'Kết quả của bạn',proof:[['📄','Tài liệu','tải lên · ảnh · nhận dạng'],['🚦','Phân tích','🟢 🟡 🔴 hiển thị'],['⏱️','Thời hạn','phát hiện · cảnh báo · theo dõi'],['⚖️','Pháp lý','so sánh theo vụ việc'],['✉️','Thư','song ngữ'],['📤','Đầu ra','PDF · Word · phê duyệt']],journey:[['1','Ghi nhận','Nhập hoặc nói nội dung và thêm tài liệu hoặc ảnh.'],['2','Hiểu','Tài liệu, rủi ro, bằng chứng, đèn tín hiệu và thời hạn được tổng hợp.'],['3','So sánh','Quốc gia gốc, quốc gia đích và không gian pháp lý được so sánh theo vụ việc.'],['4','Chuẩn bị','Bước tiếp theo và thư được chuẩn bị bằng ngôn ngữ đã chọn.'],['5','Kiểm tra & phê duyệt','Kiểm tra bản xem trước, phê duyệt rõ ràng, sau đó xuất hoặc chuyển tiếp.']],features:[['📄','Tài liệu & hình ảnh','Tải lên, cấu trúc, gán và phân tích trong bối cảnh vụ việc.'],['🎙️','Nhập bằng giọng nói','Đưa sự việc từ micro vào cùng quy trình.'],['🚦','Phân tích đèn tín hiệu','Mỗi đánh giá có 🟢, 🟡 hoặc 🔴 cùng lý do.'],['🧩','Bằng chứng & thiếu sót','Hiển thị thông tin, tài liệu còn thiếu và mâu thuẫn.'],['⏱️','Thời hạn & tiến độ','Gộp thời hạn, phản ứng cần thiết, trạng thái và dòng thời gian.'],['⚖️','So sánh pháp lý','So sánh quốc gia và không gian pháp lý kèm nguồn và ghi chú cần kiểm tra.'],['🌍','11 ngôn ngữ','Tách ngôn ngữ giao diện và đầu ra; RTL cho tiếng Ả Rập và Ba Tư.'],['✉️','Thư song ngữ','Tạo hai phiên bản bằng hai ngôn ngữ tự chọn.'],['👁️','Xem trước & phê duyệt','Kiểm tra nội dung trước khi chuyển tiếp và phê duyệt rõ ràng.'],['📤','PDF & Word','Tạo đầu ra có phân tích, đèn tín hiệu, thời hạn và thư.'],['📚','Hồ sơ bàn giao','Cấu trúc vụ việc, tài liệu, đánh giá, nguồn, phê duyệt và bước tiếp theo.'],['🔒','Kiểm soát & truy vết','Giữ dữ liệu, phê duyệt, xuất và hành động quan trọng có thể truy vết.']]}
 }
 
-export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,onStartLanguageCase,cd,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
+export function PublicLanding({hasWorkspaceSession=false,t,a,payment,paymentConfig,language,setLanguage,outputLanguage,setOutputLanguage,setScreen,onStartLanguageCase,cd,pa,activePublicCase,setSelectedPublicCase,tt,jl,localizedPlans,rt,selectedGoal,setSelectedGoal,setShowRecommendation,showRecommendation,recommendedPlan,recommendedTier,eur,period,terms,monthsLabel}){
   const hero=heroTitleCopy[language]||heroTitleCopy.de
   const audience=audienceCopy[language]||audienceCopy.de
   const orderedPublicCases=orderCasesByResearch(cd.cases)
   const [explainerSignal,setExplainerSignal]=useState(0)
-  const backCopy=publicBackCopy[language]||publicBackCopy.de
+  const navigation=publicNavigationCopy(language)
   const pc=productCopy[language]||productCopy.de
   const c=publicExperienceCopy(language)
   const crossBorder=publicLanguageCountryCopy(language)
@@ -89,8 +76,10 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
   }
 
   return <div className="publicProductPage" lang={language} dir={language==='ar'||language==='fa'?'rtl':'ltr'} onClickCapture={revealLinkedSection}>
-    <PublicHeader t={t} c={c} caseNavLabel={cd.nav} language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onScreenChange={setScreen} onPlayExplainer={()=>setExplainerSignal(value=>value+1)}/>
-    <button className="publicPageBackButton" data-persistent-back type="button" onClick={returnToPublicStart} aria-label={backCopy.aria}>{backCopy.label}</button>
+    <PublicHeader hasWorkspaceSession={hasWorkspaceSession} t={t} c={c} caseNavLabel={cd.nav} language={language} onLanguageChange={setLanguage} outputLanguage={outputLanguage} onOutputLanguageChange={setOutputLanguage} onScreenChange={setScreen} onPlayExplainer={()=>setExplainerSignal(value=>value+1)}/>
+    {hasWorkspaceSession
+      ?<a className="publicPageBackButton" data-persistent-back href={workspaceEntryHref(language)}>{navigation.returnToWorkspace}</a>
+      :<button className="publicPageBackButton" data-persistent-back type="button" onClick={returnToPublicStart} aria-label={navigation.topDescription}>{navigation.top}</button>}
     <main>
       <section className="publicProductHero">
         <div className="wrap publicProductHeroGrid">
@@ -131,7 +120,7 @@ export function PublicLanding({t,a,payment,paymentConfig,language,setLanguage,ou
         </details>
       </div></section>
       <section id="fragen" className="section publicQuestions"><div className="wrap"><h2>{c.questions}</h2>{[[hero.title,hero.lead],[c.question1,c.answer1],[c.question2,c.answer2],[c.question3,c.answer3]].map(([question,answer])=><details key={question}><summary>{question}</summary><p>{answer}</p></details>)}</div></section>
-      <section className="publicFinalAction"><div className="wrap"><h2>{c.ready}</h2><button type="button" className="primary btn" onClick={()=>setScreen('register')}>{c.start}</button><button type="button" className="secondary btn" onClick={()=>setScreen('login')}>{t.login}</button></div></section>
+      <section className="publicFinalAction"><div className="wrap"><h2>{c.ready}</h2><button type="button" className="primary btn" onClick={()=>setScreen('register')}>{c.start}</button>{hasWorkspaceSession?<a className="secondary btn" href={workspaceEntryHref(language)}>{navigation.workspace}</a>:<button type="button" className="secondary btn" onClick={()=>setScreen('login')}>{t.login}</button>}</div></section>
     </main>
     <LegalFooter language={language}/>
   </div>
