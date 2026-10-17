@@ -6,6 +6,12 @@ on:
       - scripts/refresh_primary_sources.py
       - scripts/test_primary_refresh_atomicity.py
       - .github/workflows/refresh-primary-sources.yml
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/refresh_primary_sources.py
+      - scripts/test_primary_refresh_atomicity.py
+      - .github/workflows/refresh-primary-sources.yml
   schedule:
     # GitHub may delay or drop a scheduled event. Later runs only fetch if stale.
     - cron: '17 3,5,7,11 * * *'
@@ -17,7 +23,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   refresh:
-    runs-on: ubuntu-latest
+    # The former Azure Linux runner repeatedly timed out at the official host.
+    # Use a different hosted network; content, freshness and hash checks stay exact.
+    runs-on: macos-15
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -27,7 +35,12 @@ jobs:
       - name: Verify complete refresh and safe retries
         run: python3 scripts/test_primary_refresh_atomicity.py
       - name: Refresh only a stale or incomplete catalogue
-        run: python3 scripts/refresh_primary_sources.py --if-stale
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then
+            python3 scripts/refresh_primary_sources.py
+          else
+            python3 scripts/refresh_primary_sources.py --if-stale
+          fi
       - name: Diagnose a failed public connection
         if: failure()
         run: |
@@ -38,6 +51,7 @@ jobs:
               print(json.dumps({'family': family, 'exit_code': result.returncode, 'response': result.stdout[:1500], 'error': result.stderr[:500]}))
           PY
       - name: Commit only successfully fetched public source snapshots
+        if: ${{ success() && github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
         run: |
           git config user.name 'ASH source refresh'
           git config user.email 'source-refresh@users.noreply.github.com'
