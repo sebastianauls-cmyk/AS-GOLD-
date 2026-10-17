@@ -187,11 +187,11 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
     if(name==='ash_case_scope')output=bigScope
     else if(name==='ash_complete_topics_v167'){counts.topics++;output=topicFixture(big.analysis,request)}
     else if(name==='ash_complete_outline_v166'){counts.outlines++;output=outlineFixture(big.analysis)}
-    else if(name==='ash_complete_numbers_v157'){
+    else if(name==='ash_complete_numbers_v172'){
       counts.numbers++
       const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_calculations
       output={calculations:big.analysis.calculations.filter(c=>assigned.some(a=>a.id===c.id)).map(cleanCalculation)}
-    }else if(name==='ash_complete_reconciliation_v171')output=reconciliationFixture(request)
+    }else if(name==='ash_complete_reconciliation_v172')output=reconciliationFixture(request)
     else if(name==='ash_complete_plan_v157'){
       counts.plans++
       const {analysis,...plan}=structuredClone(big);output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
