@@ -12,4 +12,17 @@ const rows={
   bg:['За какво ви е нужна помощ?','Разкажете със свои думи. После можете да добавите писмо или да го снимате.','Например: Не разбирам писмо от здравната си каса.','Продължи','Говори','Спри записа','Други данни (по желание)','Вашият отговор','Какво означава това за вас? Какво можете да направите сега?','Получи отговор','Добави документи','Вашите документи','Чета документите','Подготвям отговора','Този документ още не е прочетен. Опитайте отново или отворете файла. Прочетените документи се запазват.','Данните ви са променени. Започнете отговора отново.','Разрешавам обработка на този случай и документите с OpenAI за този отговор и запазване на резултатите като непроверени чернови. Съдържат само измислени или анонимизирани тестови данни.','Виж подробности','Имате ли писмо по въпроса? Добавете го. ASH се нуждае от документи, за да обясни ситуацията.','Документи и други данни','Оставете тази страница отворена.','Опитай отново'],
   vi:['Bạn cần giúp đỡ về việc gì?','Hãy kể bằng lời của bạn. Sau đó bạn có thể thêm thư hoặc chụp ảnh thư.','Ví dụ: Tôi không hiểu thư từ bảo hiểm y tế.','Tiếp tục','Nói','Dừng ghi âm','Thông tin khác (không bắt buộc)','Câu trả lời của bạn','Điều này có nghĩa gì với bạn? Bạn có thể làm gì tiếp theo?','Nhận câu trả lời','Thêm tài liệu','Tài liệu của bạn','Đang đọc tài liệu','Đang chuẩn bị câu trả lời','Chưa đọc được tài liệu này. Hãy thử lại hoặc mở tệp. Tài liệu đã đọc vẫn được giữ lại.','Thông tin đã thay đổi. Hãy bắt đầu lại câu trả lời.','Tôi cho phép xử lý hồ sơ và tài liệu bằng OpenAI cho câu trả lời này và lưu kết quả dưới dạng bản nháp chưa kiểm tra. Tất cả chỉ chứa dữ liệu thử nghiệm giả định hoặc đã ẩn danh.','Xem chi tiết','Bạn có thư liên quan không? Hãy thêm thư. ASH cần tài liệu để giải thích tình huống của bạn.','Tài liệu và thông tin khác','Vui lòng giữ trang này mở.','Thử lại']
 }
-export function simpleCaseCopy(language='de') {return Object.fromEntries(keys.map((key,index)=>[key,(rows[language]||rows.de)[index]]))}
+const costs={
+  de:'Die Auswertung kann Kosten verursachen. Sie startet erst nach Ihrer Bestätigung.',
+  en:'The analysis may incur costs. It starts only after your confirmation.',
+  fr:'L’analyse peut entraîner des frais. Elle ne commence qu’après votre confirmation.',
+  tr:'Değerlendirme ücret oluşturabilir. Yalnızca onayınızdan sonra başlar.',
+  pl:'Analiza może wiązać się z kosztami. Rozpocznie się dopiero po Twoim potwierdzeniu.',
+  ru:'Анализ может повлечь расходы. Он начнётся только после вашего подтверждения.',
+  ar:'قد تترتب تكاليف على التحليل. لن يبدأ إلا بعد تأكيدك.',
+  fa:'تحلیل ممکن است هزینه داشته باشد. فقط پس از تأیید شما شروع می‌شود.',
+  ro:'Analiza poate genera costuri. Începe numai după confirmarea dumneavoastră.',
+  bg:'Анализът може да доведе до разходи. Започва само след вашето потвърждение.',
+  vi:'Việc phân tích có thể phát sinh chi phí. Chỉ bắt đầu sau khi bạn xác nhận.'
+}
+export function simpleCaseCopy(language='de') {return {...Object.fromEntries(keys.map((key,index)=>[key,(rows[language]||rows.de)[index]])),cost:costs[language]||costs.de}}

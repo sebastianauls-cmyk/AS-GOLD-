@@ -1,6 +1,7 @@
 import {formatEuro} from './freeCaseAnalysis.mjs'
 
 const de={
+  localOption:'Unterlagen kostenlos nachrechnen',
   title:'Kostenlose Analyse',mode:'Analysemodus',local:'Kostenlos · ohne KI-Aufruf',paid:'KI-Auswertung öffnen',paidHint:'Die KI-Auswertung kann API-Kosten verursachen und benötigt eine eigene Bestätigung.',
   saved:'Gespeichertes Ergebnis',savedHint:'Ansehen und Herunterladen lösen keinen neuen KI-Aufruf aus. Eine neue Auswertung benötigt eine eigene Bestätigung.',savedReadError:'Vorhandene Ergebnisse konnten nicht geprüft werden. Über „KI-Auswertung öffnen“ können Sie es erneut versuchen.',
   lead:'Unterlagen ordnen, erkennbare Abrechnungen nachrechnen und offene Angaben finden – direkt auf diesem Gerät.',
@@ -20,6 +21,7 @@ const de={
   report:'Interne Dokumentprüfung · keine KI-Analyse',goal:'Gespeichertes Fallziel',created:'Erstellt',close:'Ergebnis schließen'
 }
 const en={
+  localOption:'Check document calculations for free',
   title:'Free analysis',mode:'Analysis mode',local:'Free · no AI request',paid:'Open AI analysis',paidHint:'AI analysis can incur API costs and requires a separate confirmation.',
   saved:'Saved result',savedHint:'Viewing and downloading do not start a new AI request. A new analysis requires a separate confirmation.',savedReadError:'Existing results could not be checked. Select “Open AI analysis” to try again.',
   lead:'Organise documents, check supported calculations and find missing information directly on this device.',

@@ -24,7 +24,7 @@ export default function Fixture(){
   const [exportMessage,setExportMessage]=useState(''),[exportType,setExportType]=useState('txt')
   const [savedLink,setSavedLink]=useState(false),[focusCount,setFocusCount]=useState(0)
   const resultFocus=useMemo(()=>createCaseResultFocus(),[])
-  const heldReads=useRef({mode:false,record:false,modeWaiters:[],recordWaiters:[]})
+  const heldReads=useRef({record:false,recordWaiters:[]})
   const current=useRef({}),cache=useRef(new Map()),fail=useRef(false),reviewFailure=useRef(false),savedJob=useRef(null),savedRoadmap=useRef(null),holdJob=useRef(false)
   const remoteDocuments=useRef(null)
   const item={...roadmapTestCase,...(emptyEntry?{deadline_at:manualDeadline}:{}),title:draft.title||'Ich verstehe meine Briefe nicht.',goal:draft.goal||roadmapTestCase.goal}
@@ -40,11 +40,9 @@ export default function Fixture(){
   const supabase=useMemo(()=>({
     from(table){
       const filters=[]
-      let columns=''
       const read=()=>structuredClone(table==='cases'?[current.current.item]:table==='documents'?(remoteDocuments.current||current.current.documents):table==='case_analysis_jobs'&&savedJob.current?[savedJob.current]:table==='case_roadmaps'&&savedRoadmap.current?[savedRoadmap.current]:[]).filter(row=>filters.every(([key,value])=>row[key]===value))
-      const query={select(value){columns=value;return this},eq(key,value){filters.push([key,value]);return this},order(){return this},update(){return this},insert(){return this},limit:async()=>{
-        const phase=columns==='id'?'mode':'record'
-        if(table==='case_roadmaps'&&heldReads.current[phase])await new Promise(resolve=>heldReads.current[phase+'Waiters'].push(resolve))
+      const query={select(){return this},eq(key,value){filters.push([key,value]);return this},order(){return this},update(){return this},insert(){return this},limit:async()=>{
+        if(table==='case_roadmaps'&&heldReads.current.record)await new Promise(resolve=>heldReads.current.recordWaiters.push(resolve))
         return {data:read(),error:null}
       },range:async(first,last)=>({data:read().slice(first,last+1),error:null}),maybeSingle:async()=>({data:read()[0]||null,error:null}),single:async()=>({data:{},error:null}),then(resolve,reject){return Promise.resolve({data:read(),error:null}).then(resolve,reject)}}
       return query
@@ -84,19 +82,18 @@ export default function Fixture(){
   async function openSavedLink(){
     const storedDocuments=roadmapTestDocuments.map((doc,i)=>({...doc,title:`${i+1}.pdf`,file_path:`fixture/${i+1}.pdf`}))
     savedRoadmap.current={...roadmapTestRecord(),owner_id:item.owner_id,case_id:item.id,source_fingerprint:await roadmapFingerprint(roadmapSource(item,storedDocuments,[]))}
-    heldReads.current.mode=true;heldReads.current.record=true
+    heldReads.current.record=true
     resultFocus.request(item.id)
     setDocuments(storedDocuments);setInternal(true);setSavedLink(true);setStarted(true)
   }
-  function releaseSavedRead(phase){
-    heldReads.current[phase]=false
-    heldReads.current[phase+'Waiters'].splice(0).forEach(resolve=>resolve())
+  function releaseSavedRead(){
+    heldReads.current.record=false
+    heldReads.current.recordWaiters.splice(0).forEach(resolve=>resolve())
   }
   return <main style={{maxWidth:880,margin:'0 auto',padding:16}}>
     <p>Prüfansicht · erfundene Daten · simulierte Antworten</p>
     <button onClick={openSavedLink}>Open delayed saved result link</button>
-    <button onClick={()=>releaseSavedRead('mode')}>Load saved-result mode</button>
-    <button onClick={()=>releaseSavedRead('record')}>Load saved result</button>
+    <button onClick={releaseSavedRead}>Load saved result</button>
     <label>Test language<select aria-label="Test language" value={language} onChange={event=>setLanguage(event.target.value)}>{['de','en','fa'].map(key=><option key={key}>{key}</option>)}</select></label>
     <button onClick={()=>{setEmptyEntry(true);setInternal(true);setDocuments([]);setManualDeadline('')}}>Use empty case</button>
     <button onClick={()=>setManualDeadline('2026-12-01T12:00:00Z')}>Add known case deadline</button>

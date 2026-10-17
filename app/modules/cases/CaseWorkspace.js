@@ -138,20 +138,24 @@ export function CaseDetail({copy:on, analysis, access=null, language='de', outpu
   const needsDocument=documents.length===0
   const intakeCopy=documentPickerCopy(language)
   const deadlineResult=analyzeCaseDeadlines(item,documents)
-  const analysisPanel=<CaseAnalysisModes supabase={supabase} access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
+  const analysisPanel=<CaseAnalysisModes access={access} item={item} documents={documents} language={language} onOpenDocument={onOpenDocument}>
     {supabase&&ownerId&&<CustomerRoadmapPanel supabase={supabase} ownerId={ownerId} item={item} client={client} documents={documents} assessments={assessments} language={language} outputLanguage={outputLanguage} onOpenDocument={onOpenDocument} onPrivacyUpdate={onPrivacyUpdate} onAnalyzeDocument={onAnalyzeDocument} onRecoverDocument={onRecoverDocument} onSaveDocument={onSaveDocument} onAddDocument={()=>onAddDocument(item.id)} onResultReady={onResultReady} continuation={continuation}/>}
   </CaseAnalysisModes>
   const deadlinePanel=<DeadlineWarningCard language={language} caseDeadline={item.deadline_at||''} mode="case" result={deadlineResult}/>
   return <>
     <button className="backBtn" data-persistent-back type="button" onClick={onBack}>{on.back}</button>
-    <div className="caseTitleRow caseIntakeHeader">
+    <div className={`caseTitleRow caseIntakeHeader${needsDocument?'':' caseReadyHeader'}`}>
       <div className="caseIntakeTitle"><span className="modeBadge">{on.caseRecord}</span>{syntheticCaseId(item)&&<span className="pill syntheticCasePill">🧪 {syntheticCaseId(item)} · {on.syntheticCase}</span>}<h2 title={item.title}>{item.title}</h2>{(client||item.reference_no)&&<p>{client?.name}{client&&item.reference_no?' · ':''}{item.reference_no}</p>}</div>
       {needsDocument&&<div className="caseIntakePrompt"><h3>{intakeCopy.start}</h3><p>{intakeCopy.startHelp}</p></div>}
-      <DocumentPickerActions language={language} onSelect={(file,mode)=>onAddDocument(item.id,mode,file)}/>
-      <button className="secondary caseIntakeEdit" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button>
+      {needsDocument&&<DocumentPickerActions language={language} onSelect={(file,mode)=>onAddDocument(item.id,mode,file)}/>}
     </div>
     {!needsDocument&&analysisPanel}
     {(!needsDocument||deadlineResult.primary)&&deadlinePanel}
+    <details ref={moreRef} className="simpleCaseMore"><summary>{simple.more}</summary>
+    <div className="caseAdditionalActions">
+      {!needsDocument&&<DocumentPickerActions language={language} onSelect={(file,mode)=>onAddDocument(item.id,mode,file)}/>}
+      <button className="secondary caseIntakeEdit" type="button" onClick={()=>setEditing(value=>!value)}>{editing?on.cancel:on.editCase}</button>
+    </div>
     {editing&&<form className="actionCard coreForm" onSubmit={event=>{event.preventDefault();onSave(item.id,draft).then(saved=>{if(saved)setEditing(false)})}}>
       <label htmlFor={fieldId(item.id,'title')}>{on.title}<input id={fieldId(item.id,'title')} value={draft.title} onChange={event=>setDraft({...draft,title:event.target.value})} required/></label>
       <label htmlFor={fieldId(item.id,'client')}>{on.client}<select id={fieldId(item.id,'client')} value={draft.client_id} onChange={event=>setDraft({...draft,client_id:event.target.value})}><option value="">{on.noClient}</option>{clients.map(entry=><option value={entry.id} key={entry.id}>{entry.name}</option>)}</select></label>
@@ -164,7 +168,6 @@ export function CaseDetail({copy:on, analysis, access=null, language='de', outpu
       <label htmlFor={fieldId(item.id,'next')}>{on.nextAction}<textarea id={fieldId(item.id,'next')} value={draft.next_action} onChange={event=>setDraft({...draft,next_action:event.target.value})}/></label>
       <button className="primary full">{on.saveChanges}</button>
     </form>}
-    <details ref={moreRef} className="simpleCaseMore"><summary>{simple.more}</summary>
     {needsDocument&&analysisPanel}
     {needsDocument&&!deadlineResult.primary&&deadlinePanel}
     <PrimaryNextStepCard language={language} item={item} documents={documents} assessments={assessments} onAction={nextAction}/>
