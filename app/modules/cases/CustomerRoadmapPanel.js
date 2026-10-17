@@ -278,13 +278,14 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     {!canCreate&&!record&&<ResultContinuation {...continuation} language={language}/>}
     {showForm&&canCreate&&!ownDocuments.length&&<div className="simpleCaseEmpty"><p>{simple.noDocuments}</p>{onAddDocument&&<button className="primary" type="button" onClick={onAddDocument}>＋ {simple.add}</button>}</div>}
     {showForm&&canCreate&&ownDocuments.length>0&&<form ref={formRef} className="roadmapSetup" onSubmit={create}>
-      <p>{simple.files}: <b>{ownDocuments.length}</b> · {ui.output}: <b>{outputLanguageLabels[outputLanguage]}</b></p>
-      <details className="caseFileList"><summary>{simple.files}</summary><ul>{ownDocuments.map(doc=><li key={doc.id}>{doc.title}</li>)}</ul></details>
+      <details className="caseFileList"><summary>{simple.files}: {ownDocuments.length}</summary><ul>{ownDocuments.map(doc=><li key={doc.id}>{doc.title}</li>)}</ul></details>
       <fieldset disabled={busy||backgroundBusy}>
+      <p className="caseStartCost">{simple.cost}</p>
       <label className="roadmapConsent"><input type="checkbox" required checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>{onAnalyzeDocument?simple.consent:ui.confirm}</span></label>
       <button type="submit" className="primary" disabled={busy||backgroundBusy||!confirmed||loading}>{busy?simple.saving:error?simple.retry:simple.start}</button>
       {onAddDocument&&<button type="button" className="linkBtn" onClick={onAddDocument}>＋ {simple.add}</button>}
       <details className="caseMoreOptions"><summary>{simple.options}</summary>
+      <p>{ui.output}: <b>{outputLanguageLabels[outputLanguage]}</b></p>
       <label>{ui.reference}<select value={referenceLanguage} onChange={event=>{setReferenceLanguage(event.target.value);setConfirmed(false)}}>{OUTPUT_LANGUAGES.map(key=><option key={key} value={key}>{outputLanguageLabels[key]}</option>)}</select></label>
       <h4>{ui.style}</h4><div className="roadmapFields">
         {['customer_name','salutation','sender_name','letterhead','closing'].map((key,index)=><label key={key}>{ui[['customer','salutation','sender','letterhead','closing'][index]]}{['letterhead','closing'].includes(key)?<textarea maxLength={600} value={style[key]} onChange={event=>setStyle({...style,[key]:event.target.value})}/>:<input maxLength={180} value={style[key]} onChange={event=>setStyle({...style,[key]:event.target.value})}/>}</label>)}

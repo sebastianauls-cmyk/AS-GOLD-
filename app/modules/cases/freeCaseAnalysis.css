@@ -1,6 +1,7 @@
 .caseAnalysisModes{margin:18px 0;min-width:0}
-.freeAnalysisModes,.freeAnalysisActions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
-.freeAnalysisModes button{min-height:44px;white-space:normal}
+.freeAnalysisActions{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+.freeAnalysisOptional{margin:16px 0;border-top:1px solid #d6dee8}
+.freeAnalysisOptional>summary{cursor:pointer;min-height:44px;padding:14px 0;font-size:1rem;line-height:1.5;font-weight:600}
 .freeCaseAnalysis{padding:22px;border:1px solid #cbd9e4;border-radius:16px;background:#fff;color:#202b3b;overflow-wrap:anywhere}
 .freeCaseAnalysis h3,.freeCaseAnalysis h4,.freeCaseAnalysis h5{margin:16px 0 10px;line-height:1.4}
 .freeCaseAnalysis h3{margin-top:0}.freeCaseAnalysis h5{font-size:1rem}
@@ -15,4 +16,4 @@
 .freeCaseAnalysis details{margin:14px 0}.freeCaseAnalysis summary{cursor:pointer;font-weight:600}
 .freeCaseAnalysis blockquote{margin:10px 0;padding:6px 12px;border-left:3px solid #ccd6e0;white-space:pre-line}
 .freeCaseAnalysis ul{padding-left:22px}.freeCaseAnalysis li{margin:8px 0}
-@media(max-width:600px){.freeCaseAnalysis{padding:16px}.freeAnalysisModes button{width:100%}.freeAnalysisCheck{padding:10px}}
+@media(max-width:600px){.freeCaseAnalysis{padding:16px}.freeAnalysisCheck{padding:10px}}
