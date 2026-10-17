@@ -115,6 +115,16 @@ export function localizedRepairTargets(candidate,feedback,schema){
     selected.set(label(path),path)
     if(['source','meaning'].includes(issue.code)&&path[0]==='analysis'&&path[1]==='topics')affectedTopicIds.add(get(candidate,path).id)
   }
+  // Global limitations may repeat the claim being corrected. Keep that
+  // dependent text editable in the same single patch, even when the first
+  // review located only the topic. Include it BEFORE the fixed size check:
+  // if the necessary scope cannot fit, stop instead of locking in a stale
+  // limitation. Unrelated limitations must be preserved and reviewed again.
+  if(affectedTopicIds.size&&candidate.analysis?.limitations?.length){
+    const path=['analysis','limitations']
+    if(!schemaAt(schema,path))return null
+    selected.set(label(path),path)
+  }
   // A changed computed value cannot leave a later calculation using its old
   // result. Include every transitive consumer in original dependency order.
   const affected=new Set([...selected.values()].filter(path=>path[0]==='analysis'&&path[1]==='calculations').map(path=>get(candidate,path).id))

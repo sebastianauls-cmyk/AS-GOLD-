@@ -61,7 +61,7 @@ export async function testSourceActionChecks(){
   const candidate=validateCompleteAnalysis(fixture.reply,fixture.source,fixture.context)
   const feedback=[{code:'source',location:'analysis.topics[0]',reason:'The cited text does not support this conclusion; the related request must seek the actual contract.'}]
   const targets=localizedRepairTargets(candidate,feedback,COMPLETE_ANALYSIS_SCHEMA)
-  assert.deepEqual(targets.map(target=>target.location),['analysis.topics[0]','steps[0]','steps[1]'],'a source correction can update its explicitly linked actions in the same bounded request')
+  assert.deepEqual(targets.map(target=>target.location),['analysis.limitations','analysis.topics[0]','steps[0]','steps[1]'],'a source correction can update existing limitations and its explicitly linked actions in the same bounded request')
   const largeStep=structuredClone(candidate);largeStep.steps[0].action='x'.repeat(21000)
   assert(!localizedRepairTargets(largeStep,feedback,COMPLETE_ANALYSIS_SCHEMA).some(target=>target.location==='steps[0]'),'related actions never enlarge the established correction budget')
 
@@ -79,8 +79,8 @@ export async function testSourceActionChecks(){
     if(request.text.format.name==='ash_complete_repair_v169'){
       repairs++
       const assigned=payloads.find(item=>item.assigned_replacements).assigned_replacements
-      assert.deepEqual(assigned.map(item=>item.location),['analysis.topics[0]','steps[0]','steps[1]'])
-      const replacement={ 'analysis.topics[0]':fixture.reply.analysis.topics[0], 'steps[0]':fixAction?fixture.reply.steps[0]:bad.steps[0], 'steps[1]':fixture.reply.steps[1] }
+      assert.deepEqual(assigned.map(item=>item.location),['analysis.limitations','analysis.topics[0]','steps[0]','steps[1]'])
+      const replacement={ 'analysis.limitations':fixture.reply.analysis.limitations, 'analysis.topics[0]':fixture.reply.analysis.topics[0], 'steps[0]':fixAction?fixture.reply.steps[0]:bad.steps[0], 'steps[1]':fixture.reply.steps[1] }
       output={requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,replacement[item.location]]))}
     }else{
       assert.equal(request.text.format.name,'ash_evidence_review_v139','no full generation, planning or extra research is allowed during local repair')
@@ -105,6 +105,7 @@ export async function testSourceActionChecks(){
   assert.equal(flow.status,'completed');assert.equal(repairs,1);assert.equal(reviews,completeReviewGroups(candidate).length)
   assert.deepEqual(flow.result.steps,fixture.reply.steps)
   assert.deepEqual(flow.result.analysis.topics,fixture.reply.analysis.topics)
+  assert.deepEqual(flow.result.analysis.limitations,fixture.reply.analysis.limitations,'unaffected limitations remain intact')
   assert.deepEqual(flow.result.analysis.calculations,candidate.analysis.calculations,'supported calculations are preserved verbatim')
   assert.deepEqual(flow.result.letters,candidate.letters)
   }
