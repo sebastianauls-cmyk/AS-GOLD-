@@ -56,7 +56,7 @@ mustContain(documentsSurface,'VoiceContextInput','modular microphone context mou
 mustContain(documentFileIntake,'<DocumentPickerActions','direct native document picker mount')
 mustContain(documentPicker,'type="file"','native document upload inputs')
 mustContain(documentPicker,'capture="environment"','rear-camera capture input')
-mustContain(documentsSurface,'uploadDocument(event,{file:selectedFile})','selected file reaches explicit upload handler')
+mustContain(documentsSurface,'uploadDocument(event,{file:selectedFile,autoAnalyze})','selected file and explicit analysis choice reach upload handler')
 mustContain(documentWorkflow,'let file=selectedFile||form.elements.file?.files?.[0]','direct and legacy file intake')
 mustContain(documentFileIntake,'name="source_language"','document source language input')
 mustContain(documentFileIntake,'name="intake_quality"','document intake quality input')

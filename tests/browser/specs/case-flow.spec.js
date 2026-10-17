@@ -10,6 +10,60 @@ async function begin(page){
   await expect(page.getByRole('heading',{name:'Ihre Antwort',exact:true})).toBeVisible()
 }
 
+async function prepareUpload(page){
+  await page.getByRole('button',{name:'Open upload entry',exact:true}).click()
+  await page.locator('.documentPickerActions input[type=file]').last().setInputFiles({name:'Automatischer-Test.txt',mimeType:'text/plain',buffer:Buffer.from('Ausschließlich erfundene Testdaten.')})
+  await page.locator('#document-classification').selectOption('synthetic')
+  await page.locator('input[name=test_data_confirmed]').check()
+}
+
+test('consented upload reaches the answer and downloads without another start or replay',async({page})=>{
+  const errors=[];page.on('pageerror',error=>errors.push(error.message))
+  await begin(page)
+  await prepareUpload(page)
+  await expect(page.getByTestId('invocations')).toHaveText('0')
+  await expect(page.locator('.documentUploadForm')).toContainText('einmal mit OpenAI')
+  await expect(page.locator('.documentUploadForm')).toContainText('Kosten')
+  await page.getByRole('button',{name:'Speichern und automatisch auswerten',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
+  await expect(page.getByTestId('uploads')).toHaveText('1')
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:2,generated:1,sent:0}))
+  for(const name of ['Word','PDF']){
+    const [download]=await Promise.all([page.waitForEvent('download'),page.locator('.customerRoadmapView > .roadmapActions').getByRole('button',{name,exact:true}).click()])
+    expect(await download.failure()).toBeNull()
+  }
+  await page.getByRole('button',{name:'Leave case page',exact:true}).click()
+  await page.getByRole('button',{name:'Return to case page',exact:true}).click()
+  await expect(page.getByRole('heading',{name:'Dein Fahrplan zur Auszahlung'})).toBeVisible()
+  await expect(page.getByTestId('invocations')).toHaveText('1')
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:2,saved:2,generated:1,sent:0}))
+  expect(errors).toEqual([])
+})
+
+test('automatic preparation stops on a provider error and does not replay on reopening',async({page})=>{
+  await begin(page)
+  await page.getByRole('button',{name:'Simulate exhausted provider credits',exact:true}).click()
+  await prepareUpload(page)
+  await page.getByRole('button',{name:'Speichern und automatisch auswerten',exact:true}).click()
+  await expect(page.getByText('Die automatische Verarbeitung wurde gestoppt. Es wird kein neuer Versuch automatisch gestartet.',{exact:true})).toBeVisible()
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:1,saved:0,generated:0,sent:0}))
+  await page.getByRole('button',{name:'Leave case page',exact:true}).click()
+  await page.getByRole('button',{name:'Return to case page',exact:true}).click()
+  await expect(page.getByRole('button',{name:'Antwort erhalten',exact:true})).toBeDisabled()
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:1,saved:0,generated:0,sent:0}))
+  await expect(page.getByTestId('invocations')).toHaveText('0')
+})
+
+test('saving a file only never grants an automatic analysis',async({page})=>{
+  await begin(page)
+  await prepareUpload(page)
+  await page.getByRole('button',{name:'Nur speichern',exact:true}).click()
+  await expect(page.getByTestId('uploads')).toHaveText('1')
+  await expect(page.getByRole('button',{name:'Antwort erhalten',exact:true})).toBeDisabled()
+  await expect(page.getByTestId('stats')).toHaveText(JSON.stringify({read:0,saved:0,generated:0,sent:0}))
+  await expect(page.getByTestId('invocations')).toHaveText('0')
+})
+
 test('saved-result link waits for the record, then shows downloads below the sticky header once',async({page},testInfo)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message))
   await page.goto('/qa-case-flow')

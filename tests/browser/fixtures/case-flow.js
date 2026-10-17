@@ -12,6 +12,9 @@ import {workflowErrorMessage} from '../modules/services/workflowError.mjs'
 import freeFixture from '../../scripts/fixtures/freeAnalysisSarah.json'
 import {createExportWorkflowActions} from '../modules/documents/exportWorkflow'
 import {createCaseResultFocus} from '../modules/workspace/caseLink.mjs'
+import {DocumentsSurface} from '../modules/documents/DocumentsSurface'
+import {getV28PrivacyCopy} from '../modules/compliance/PrivacyControls'
+import {createAutomaticCaseRun} from '../modules/cases/lib/automaticCaseRun.mjs'
 
 export default function Fixture(){
   const [draft,setDraft]=useState({...emptyCase}),[started,setStarted]=useState(false),[language,setLanguage]=useState('de')
@@ -21,6 +24,8 @@ export default function Fixture(){
   const [internal,setInternal]=useState(false)
   const [emptyEntry,setEmptyEntry]=useState(false),[manualDeadline,setManualDeadline]=useState('')
   const [invocations,setInvocations]=useState(0)
+  const [uploadEntry,setUploadEntry]=useState(false),[automaticRun,setAutomaticRun]=useState(null),[uploadCount,setUploadCount]=useState(0)
+  const [documentMode,setDocumentMode]=useState('upload')
   const [exportMessage,setExportMessage]=useState(''),[exportType,setExportType]=useState('txt')
   const [savedLink,setSavedLink]=useState(false),[focusCount,setFocusCount]=useState(0)
   const resultFocus=useMemo(()=>createCaseResultFocus(),[])
@@ -90,10 +95,20 @@ export default function Fixture(){
     heldReads.current.record=false
     heldReads.current.recordWaiters.splice(0).forEach(resolve=>resolve())
   }
+  async function uploadAndStart(event,{file,autoAnalyze}){
+    event.preventDefault()
+    if(!file)return false
+    const next=documents.map((doc,index)=>index?doc:{...doc,title:file.name,updated_at:'2026-10-18T00:00:00Z'})
+    setDocuments(next);setUploadCount(value=>value+1)
+    if(autoAnalyze)setAutomaticRun(createAutomaticCaseRun({ownerId:item.owner_id,item,documents:next,assessments:[],outputLanguage:'de'}))
+    setUploadEntry(false);setStarted(true)
+    return true
+  }
   return <main style={{maxWidth:880,margin:'0 auto',padding:16}}>
     <p>Prüfansicht · erfundene Daten · simulierte Antworten</p>
     <button onClick={openSavedLink}>Open delayed saved result link</button>
     <button onClick={releaseSavedRead}>Load saved result</button>
+    <button onClick={()=>setUploadEntry(true)}>Open upload entry</button>
     <label>Test language<select aria-label="Test language" value={language} onChange={event=>setLanguage(event.target.value)}>{['de','en','fa'].map(key=><option key={key}>{key}</option>)}</select></label>
     <button onClick={()=>{setEmptyEntry(true);setInternal(true);setDocuments([]);setManualDeadline('')}}>Use empty case</button>
     <button onClick={()=>setManualDeadline('2026-12-01T12:00:00Z')}>Add known case deadline</button>
@@ -111,10 +126,12 @@ export default function Fixture(){
     <button onClick={()=>{savedRoadmap.current={...savedRoadmap.current,...updateRoadmapProgress(savedRoadmap.current,{step_id:'frist',done:true,note:'REMOTE-CONFIRMATION: Eingang im anderen Fenster bestätigt.'})}}}>Confirm progress in another window</button>
     <button onClick={()=>{savedRoadmap.current={...savedRoadmap.current,id:'newer-remote-report',created_at:'2026-09-24T12:00:00Z'}}}>Replace report in another window</button>
     {savedLink&&<header className="appTop" style={{minHeight:180}}>Feste Kopfzeile der mobilen Prüfansicht</header>}
-    {caseVisible&&(!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail access={internal?{active:true,status:'approved',app_role:'owner'}:null} copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>{resultFocus.request(null);setStarted(false)}} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} onResultReady={(caseId,element)=>{if(resultFocus.ready(caseId,element))setFocusCount(value=>value+1)}} continuation={{canContinue:true}}/>)}
+    {uploadEntry&&<DocumentsSurface a={{backOverview:'Zurück',sections:{documents:'Dokumente'}}} access={{app_role:'owner'}} documents={documents} core={getV24Copy(language)} v28={getV28PrivacyCopy(language)} cases={[item]} documentMode={documentMode} setDocumentMode={setDocumentMode} uploadCaseId={item.id} uploadDocument={uploadAndStart} uploading={false} setSelectedDocument={()=>{}} onBack={()=>setUploadEntry(false)} language={language} canAnalyze/>}
+    {!uploadEntry&&caseVisible&&(!started?<SimpleCaseStart language={language} copy={getV24Copy(language)} draft={draft} setDraft={setDraft} onSubmit={async(_,value)=>{setDraft(value);setStarted(true)}}/>:<CaseDetail automaticRun={automaticRun} access={internal?{active:true,status:'approved',app_role:'owner'}:null} copy={getV24Copy(language)} analysis={getV26AnalysisCopy(language)} language={language} outputLanguage="de" supabase={supabase} ownerId={item.owner_id} item={item} clients={[]} documents={documents} assessments={[]} onBack={()=>{resultFocus.request(null);setStarted(false)}} onSave={async()=>true} onAddAssessment={async()=>true} onAddDocument={()=>setOpened('upload')} onOpenDocument={doc=>setOpened(doc.title)} onPrivacyUpdate={()=>{}} onAnalyzeDocument={analyze} onRecoverDocument={async doc=>cache.current.get(doc.id)||false} onSaveDocument={save} onResultReady={(caseId,element)=>{if(resultFocus.ready(caseId,element))setFocusCount(value=>value+1)}} continuation={{canContinue:true}}/>)}
     <div style={{display:'grid',gap:4,overflowWrap:'anywhere'}}>
       <output data-testid="stats">{JSON.stringify(stats)}</output>
       <output data-testid="invocations">{invocations}</output>
+      <output data-testid="uploads">{uploadCount}</output>
       <output data-testid="opened-document">{opened}</output>
       <output data-testid="result-focus-count">{focusCount}</output>
     </div>

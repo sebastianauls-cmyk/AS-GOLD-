@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict'
+import {createAutomaticCaseRun} from '../app/modules/cases/lib/automaticCaseRun.mjs'
+import {automaticCaseCopy} from '../app/modules/cases/lib/automaticCaseCopy.mjs'
 import {prepareCaseDocuments,savePreparedCaseDocuments,preparationContext,preparationFailureMessage} from '../app/modules/cases/lib/casePreparation.mjs'
 import {simpleCaseCopy} from '../app/modules/cases/lib/simpleCaseCopy.mjs'
 import {updateDocumentRecord} from '../app/modules/services/documentRepository.js'
@@ -59,3 +61,30 @@ updateDocumentRecord({from:()=>query},{ownerId:'owner',documentId:'a',draft:draf
 assert.deepEqual(filters,[['id','a'],['owner_id','owner'],['updated_at','fresh'],['case_id','case']])
 for(const lang of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])for(const [key,value] of Object.entries(simpleCaseCopy(lang)))assert.ok(typeof value==='string'&&value.trim(),`${lang}.${key}`)
 console.log('Simple case flow passed: scoped preparation, consent boundaries, recovery, translation, preserved originals, conditional saves, no false human review, stop-on-failure and 11-language copy.')
+
+const automaticInput={ownerId:'owner',item:{id:'case',owner_id:'owner',goal:'Explain'},documents:[{id:'doc',owner_id:'owner',case_id:'case',file_path:'owner/original.pdf',updated_at:'v1',data_classification:'synthetic'}],assessments:[],outputLanguage:'de'}
+const once=createAutomaticCaseRun(automaticInput)
+assert.equal(once.claim(automaticInput),'ready')
+assert.equal(once.claim(automaticInput),'consumed','rerenders, remounts and errors cannot replay consent')
+for(const changed of [
+  {...automaticInput,ownerId:'other'},
+  {...automaticInput,item:{...automaticInput.item,id:'other'}},
+  {...automaticInput,item:{...automaticInput.item,owner_id:'other'}},
+  {...automaticInput,item:{...automaticInput.item,goal:'Changed'}},
+  {...automaticInput,outputLanguage:'en'},
+  {...automaticInput,referenceLanguage:'en'},
+  {...automaticInput,documents:[]},
+  {...automaticInput,documents:[{...automaticInput.documents[0],file_path:'different.pdf'}]},
+  {...automaticInput,documents:[{...automaticInput.documents[0],updated_at:'v2'}]}
+]){
+  const grant=createAutomaticCaseRun(automaticInput)
+  assert.equal(grant.claim(changed),'changed')
+  assert.equal(grant.claim(automaticInput),'consumed','returning to an old scope cannot revive rejected consent')
+}
+const cancelled=createAutomaticCaseRun(automaticInput)
+cancelled.cancel()
+assert.equal(cancelled.claim(automaticInput),'consumed')
+for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']){
+  assert.ok(Object.values(automaticCaseCopy(language)).every(value=>typeof value==='string'&&value.trim()))
+}
+console.log('Automatic case run: one use, cancellation, owner/case/source/language binding and 11-language copy passed.')
