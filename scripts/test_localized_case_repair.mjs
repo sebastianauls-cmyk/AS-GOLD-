@@ -21,7 +21,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
     const original=get(data,path)[1],sections=[{scope,[key]:[original.id]}],finding=issue(original.id)
     const resolved=resolveReviewIssueLocations([finding],data,sections)
     const targets=localizedRepairTargets(data,resolved,schema)
-    assert.deepEqual(targets[0].path,[...path,1],'the assigned original ID selects its whole-result item, not local index zero')
+    assert.deepEqual(targets.find(target=>target.location!=='analysis.limitations').path,[...path,1],'the assigned original ID selects its whole-result item, not local index zero')
     assert.equal(resolved[0].reason,finding.reason);assert.equal(resolved[0].code,finding.code)
     assert.equal(finding.location,original.id,'normalization never mutates provider findings')
     assert.deepEqual(resolveReviewIssueLocations(resolved,data,sections),resolved,'full paths remain unchanged')
@@ -31,7 +31,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       assert.equal(localizedRepairTargets(data,unresolved,schema),null)
     }
     const sourceFinding=resolveReviewIssueLocations([{...finding,code:'source'}],data,sections)
-    assert.deepEqual(localizedRepairTargets(data,sourceFinding,schema)[0].path,[...path,1],'a precisely located source finding uses the same bounded correction')
+    assert.deepEqual(localizedRepairTargets(data,sourceFinding,schema).find(target=>target.location!=='analysis.limitations').path,[...path,1],'a precisely located source finding uses the same bounded correction')
   }
   const repeatedId=structuredClone(data),sharedId=repeatedId.analysis.topics[0].id
   repeatedId.letters[0].id=sharedId
@@ -51,8 +51,8 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   for(const location of ['analysis','analysis.topics','analysis.calculations[99]','analysis.topics[missing]','analysis.topics[0].not_a_field','__proto__.polluted','letters','output'])assert.equal(localizedRepairTargets(data,[issue(location)],schema),null,'ambiguous or new structure cannot trigger an automatic complete rewrite')
   assert.equal(localizedRepairTargets(data,[{...issue('analysis'),code:'source'}],schema),null,'a global source objection still stops automatic correction')
   const ambiguous=structuredClone(data);ambiguous.analysis.topics[1].id='0'
-  assert.deepEqual(localizedRepairTargets(ambiguous,[issue('analysis.topics[0].conclusion')],schema)[0].path,['analysis','topics',0],'a canonical index always selects the assigned position')
-  assert.deepEqual(localizedRepairTargets(ambiguous,[issue('analysis.topics["0"].conclusion')],schema)[0].path,['analysis','topics',1],'a quoted numeric ID selects that original ID instead of an index')
+  assert.deepEqual(localizedRepairTargets(ambiguous,[issue('analysis.topics[0].conclusion')],schema).find(target=>target.location.startsWith('analysis.topics')).path,['analysis','topics',0],'a canonical index always selects the assigned position')
+  assert.deepEqual(localizedRepairTargets(ambiguous,[issue('analysis.topics["0"].conclusion')],schema).find(target=>target.location.startsWith('analysis.topics')).path,['analysis','topics',1],'a quoted numeric ID selects that original ID instead of an index')
   const numbered=structuredClone(data)
   numbered.steps.forEach((step,index)=>{step.id=String(index+1)})
   const numberSections=[{scope:'roadmap',part:'steps',step_ids:['5']}]
@@ -73,6 +73,10 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   numbered.steps[1].id='99'
   assert.equal(localizedRepairTargets(numbered,[issue('steps["99"]')],schema),null,'duplicate original IDs remain ambiguous')
   assert.equal(localizedRepairTargets(data,data.analysis.topics.slice(0,9).map(t=>issue(`analysis.topics[${t.id}]`)),schema),null,'a local request has a fixed size bound')
+  assert.equal(localizedRepairTargets(data,data.analysis.topics.slice(0,8).map(t=>issue(`analysis.topics[${t.id}]`)),schema),null,'eight topics plus their existing limitations exceed the unchanged eight-replacement bound')
+  const longLimitations=structuredClone(data)
+  longLimitations.analysis.limitations=['An existing dependent limitation. '.repeat(700)]
+  assert.equal(localizedRepairTargets(longLimitations,[issue('analysis.topics[0]')],schema),null,'a required limitation exceeding the text budget stops correction instead of being silently locked')
   // Expanded, verified quotations can dominate four otherwise small topic
   // replacements. The model returns passage IDs, never those literal texts.
   const heavilyCited=structuredClone(data)
@@ -80,7 +84,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   for(const topic of heavilyCited.analysis.topics.slice(0,4))topic.sources=[{url:'https://www.gesetze-im-internet.de/estg/__22.html',quote:longPassage}]
   const citedFindings=[0,1,2,3].map(index=>issue(`analysis.topics[${index}]`))
   assert(JSON.stringify(heavilyCited.analysis.topics.slice(0,4)).length>20000)
-  assert.deepEqual(localizedRepairTargets(heavilyCited,citedFindings,schema)?.map(target=>target.path),[...[0,1,2,3].map(index=>['analysis','topics',index]),['steps',0]],'verified quote expansion must not block four bounded topic corrections and their existing linked step')
+  assert.deepEqual(localizedRepairTargets(heavilyCited,citedFindings,schema)?.map(target=>target.path),[['analysis','limitations'],...[0,1,2,3].map(index=>['analysis','topics',index]),['steps',0]],'verified quote expansion must not block bounded topics, limitations and their existing linked step')
   assert(heavilyCited.analysis.topics.slice(0,4).every(topic=>topic.sources[0].quote===longPassage),'size accounting never truncates the evidence used by validation or review')
   heavilyCited.analysis.topics[0].conclusion='An oversized editable conclusion. '.repeat(800)
   assert.equal(localizedRepairTargets(heavilyCited,citedFindings,schema),null,'editable narrative still has the same size limit')
@@ -110,10 +114,10 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
         repairCalls++
         assert.equal(reviewCalls,expectedReviews,'all initial mandatory reviews precede the single local correction')
         const assigned=payloads.find(p=>p.assigned_replacements).assigned_replacements
-        assert.deepEqual(assigned.map(t=>t.location),['analysis.topics[0]','steps[1]'])
+        assert.deepEqual(assigned.map(t=>t.location),['analysis.limitations','analysis.topics[0]','steps[1]'])
         const replacement=structuredClone((outcome==='unresolved'?previous:original).analysis.topics[0])
         if(outcome==='bad_quote')replacement.sources=[{url:'https://example.invalid/not-fetched',quote:'A fabricated legal condition.'}]
-        output={requires_full_correction:false,reason:'',changes:{edit_0:replacement,edit_1:original.steps[1]}}
+        output={requires_full_correction:false,reason:'',changes:{edit_0:original.analysis.limitations,edit_1:replacement,edit_2:original.steps[1]}}
       }else{
         assert.equal(request.text.format.name,'ash_evidence_review_v139')
         reviewCalls++
@@ -141,6 +145,65 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       assert(!flow.result)
       assert.equal(failure?.code,['unassigned','compound'].includes(outcome)?'review_invalid':outcome==='bad_quote'?'source_unresolved':'review_unresolved')
       assert.equal(repairCalls,['unresolved','bad_quote'].includes(outcome)?1:0)
+    }
+  }
+
+  // A corrected topic can contradict an unchanged global limitation. Exercise
+  // the real single-repair workflow with synthetic provider responses: the
+  // first review identifies only the topic; the second checks the assembled
+  // topic AND limitation. This is dependency coverage, not a live model test.
+  for(const defect of ['meaning','source'])for(const outcome of ['fixed','stale_limitation']){
+    const previous=validateCompleteAnalysis(candidate,args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
+    const unrelated=previous.analysis.limitations[0]
+    const stale='Eine Gesamtabrechnung ist ohne Aufteilung der bestätigten Zahlung nicht möglich.'
+    const corrected='Für einen bezifferten Bruttosaldo fehlt der Gesamtertrag; die Aufteilung der bestätigten Zahlung wird nur für getrennte Komponenten benötigt.'
+    previous.analysis.topics[0].conditions=stale
+    previous.analysis.limitations=[stale,unrelated]
+    const fixedTopic={...previous.analysis.topics[0],conditions:corrected}
+    let repairCalls=0,reviewCalls=0,initiallyFlagged=false
+    const transport=async(url,options)=>{
+      assert.equal(url,'https://api.openai.com/v1/responses')
+      const request=JSON.parse(options.body)
+      const payloads=request.input.flatMap(message=>message.content).map(block=>{try{return JSON.parse(block.text)}catch{return {}}})
+      let output
+      if(request.text.format.name==='ash_complete_repair_v169'){
+        repairCalls++
+        assert.equal(reviewCalls,completeReviewGroups(previous).length,'all mandatory initial reviews still precede correction')
+        const assigned=payloads.find(p=>p.assigned_replacements).assigned_replacements
+        const replacements={
+          'analysis.topics[0]':fixedTopic,
+          'analysis.limitations':outcome==='fixed'?[corrected,unrelated]:previous.analysis.limitations,
+          'steps[1]':previous.steps[1]
+        }
+        output={requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(target=>[target.key,replacements[target.location]]))}
+      }else{
+        assert.equal(request.text.format.name,'ash_evidence_review_v139')
+        reviewCalls++
+        const part=payloads.find(p=>p.candidate).candidate
+        let findings=[]
+        if(!repairCalls&&!initiallyFlagged&&part.analysis?.topics?.some(topic=>topic.conditions===stale)){
+          initiallyFlagged=true
+          findings=[{code:defect,location:'analysis.topics[0]',reason:'The missing payment allocation does not itself block the gross balance.'}]
+        }else if(repairCalls&&part.analysis?.limitations?.includes(stale)){
+          findings=[issue('analysis.limitations','The global limitation still contradicts the corrected topic.')]
+        }
+        output={issues:findings}
+      }
+      return Response.json({status:'completed',id:`limitation-${defect}-${outcome}-${reviewCalls}-${repairCalls}`,model:request.model,output_text:JSON.stringify(output)})
+    }
+    let flow={status:'processing',state:{stage:'analysis',scope:{issues:[{id:'settlement',calculation_needed:true}],research_topics:[]},research:[],discovery_gaps:[],modelState:{stage:'review',attempt:1,candidate:previous,structuralFeedback:[],response_id:'synthetic-limitation-candidate'}}},failure
+    try{for(let step=0;flow.status==='processing'&&step<30;step++)flow=await advanceCompleteAnalysis({...args,fetchImpl:transport,state:flow.state})}catch(error){failure=error}
+    assert.equal(repairCalls,1,'dependent limitation changes use the existing single correction')
+    if(outcome==='fixed'){
+      assert.equal(failure,undefined,'the bounded correction must be able to update a contradictory global limitation')
+      assert.equal(flow.status,'completed')
+      assert.deepEqual(flow.result.analysis.limitations,[corrected,unrelated])
+      assert.deepEqual(flow.result.analysis.topics,[fixedTopic])
+      assert.deepEqual(flow.result.steps,previous.steps)
+      assert.deepEqual(flow.result.letters,previous.letters)
+    }else{
+      assert.equal(failure?.code,'review_unresolved','an unchanged contradiction still fails independent review')
+      assert(!flow.result,'the single failed correction never becomes an accepted result or another paid correction')
     }
   }
 
