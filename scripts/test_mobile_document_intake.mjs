@@ -118,3 +118,14 @@ assert.notEqual(find(tree,Intake).key,intakeNode.key)
 assert.equal(find(tree,Intake).props.initialFile,null,'successful upload cannot restore the old photo')
 assert.notEqual(find(tree,Voice).key,voiceNode.key,'successful upload starts a clean next document')
 console.log('Mobile intake: direct native picker gestures in 11 languages; cancellation, same-file retry, busy controls, original File handoff, case binding, visible microphone, context retention, sample replacement and successful reset passed. No network or model calls.')
+
+tree=surface({canAnalyze:true})
+assert.ok(nodes(tree).some(node=>node.type==='button'&&node.props.value==='analyze'))
+assert.equal(nodes(tree).filter(node=>node.type==='input'&&node.props.type==='checkbox').length,1,'one existing test-data confirmation; the labelled action grants one analysis')
+for(const [value,checked,expected] of [['analyze',true,true],['save',true,false],['analyze',false,false],[undefined,true,false]]){
+  await find(surface(),'form').props.onSubmit({nativeEvent:{submitter:{value}},currentTarget:{elements:{test_data_confirmed:{checked}}}})
+  assert.equal(submitted.at(-1).autoAnalyze,expected,'only the explicit analysis action carries consent')
+}
+tree=surface({canAnalyze:false})
+assert.ok(!nodes(tree).some(node=>node.type==='button'&&node.props.value==='analyze'))
+console.log('Automatic upload consent: explicit action, test-data confirmation, save-only and access boundaries passed.')

@@ -7,6 +7,7 @@ import { documentPickerCopy } from './documentPickerCopy.mjs'
 import VoiceContextInput from './VoiceContextInput'
 import DeviceReadinessPanel from './DeviceReadinessPanel'
 import { simpleCaseCopy } from '../cases/lib/simpleCaseCopy.mjs'
+import { automaticCaseCopy } from '../cases/lib/automaticCaseCopy.mjs'
 
 function useActiveInterfaceLanguage(fallback='de'){
   const [current,setCurrent]=useState(fallback)
@@ -20,15 +21,18 @@ function useActiveInterfaceLanguage(fallback='de'){
   return current
 }
 
-export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode,setDocumentMode,uploadCaseId,initialFile=null,uploadDocument,uploading,allowedUploadAccept,setSelectedDocument,onBack,language='de'}){
+export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode,setDocumentMode,uploadCaseId,initialFile=null,uploadDocument,uploading,allowedUploadAccept,setSelectedDocument,onBack,language='de',canAnalyze=false}){
   const interfaceLanguage=useActiveInterfaceLanguage(language)
   const simple=simpleCaseCopy(interfaceLanguage)
   const linkedCase=cases.find(item=>item.id===uploadCaseId)
+  const automatic=automaticCaseCopy(interfaceLanguage)
+  const offerAutomatic=!!linkedCase&&canAnalyze
   const visibleDocuments=uploadCaseId?documents.filter(item=>item.case_id===uploadCaseId):documents
   const [intakeRevision,setIntakeRevision]=useState(0)
   const [selectedFile,setSelectedFile]=useState(initialFile)
   async function submitDocument(event){
-    const uploaded=await uploadDocument(event,{file:selectedFile})
+    const autoAnalyze=offerAutomatic&&event.nativeEvent?.submitter?.value==='analyze'&&event.currentTarget.elements.test_data_confirmed.checked
+    const uploaded=await uploadDocument(event,{file:selectedFile,autoAnalyze})
     if(uploaded){setSelectedFile(null);setIntakeRevision(current=>current+1)}
   }
   return <>
@@ -41,7 +45,9 @@ export function DocumentsSurface({a,access,documents,core,v28,cases,documentMode
       <label htmlFor="document-classification">{v28.classification}<select id="document-classification" name="data_classification" defaultValue="" required><option value="" disabled>—</option><option value="synthetic">{v28.synthetic}</option><option value="anonymized">{v28.anonymized}</option></select></label>
       <label className="documentPrivacyConfirm"><input name="test_data_confirmed" type="checkbox" required/><span>{v28.uploadConfirm}</span></label>
       <input type="hidden" name="source" value={documentMode}/>
-      <button className="primary full" disabled={uploading}>{uploading?core.uploading:documentPickerCopy(interfaceLanguage).save}</button>
+      {offerAutomatic&&<p className="caseStartCost">{automatic.consent}</p>}
+      <button className="primary full" name="upload_action" value={offerAutomatic?'analyze':'save'} disabled={uploading}>{uploading?core.uploading:offerAutomatic?automatic.upload:documentPickerCopy(interfaceLanguage).save}</button>
+      {offerAutomatic&&<button className="linkBtn" name="upload_action" value="save" disabled={uploading}>{automatic.saveOnly}</button>}
       <details className="simpleUploadOptions"><summary>{simple.options}</summary>
       <label htmlFor="document-type">{core.documentType}<input id="document-type" name="document_type"/></label>
       <label htmlFor="document-date">{core.documentDate}<input id="document-date" name="document_date" type="date"/></label>

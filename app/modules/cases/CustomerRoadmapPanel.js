@@ -17,6 +17,7 @@ import { downloadExportArtifact } from '../services/exportService'
 import { ResultContinuation } from './ResultContinuation'
 import { simpleCaseCopy } from './lib/simpleCaseCopy.mjs'
 import { backgroundCaseCopy } from './lib/backgroundCaseCopy.mjs'
+import { automaticCaseCopy } from './lib/automaticCaseCopy.mjs'
 import { caseDocuments, preparationContext, prepareCaseDocuments, savePreparedCaseDocuments, preparationFailureMessage } from './lib/casePreparation.mjs'
 import { completeAnalysisBlocks, completeAnalysisCopy } from './lib/completeAnalysisDisplay.mjs'
 import './customerRoadmap.css'
@@ -104,10 +105,11 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   </div>
 }
 
-export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,onAnalyzeDocument,onRecoverDocument,onSaveDocument,onAddDocument,onResultReady,continuation={}}) {
+export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,onAnalyzeDocument,onRecoverDocument,onSaveDocument,onAddDocument,onResultReady,continuation={},automaticRun=null}) {
   const ui=roadmapUi(language)
   const simple=simpleCaseCopy(language)
   const backgroundCopy=backgroundCaseCopy(language)
+  const automatic=automaticCaseCopy(language)
   const [records,setRecords]=useState([]),[activeId,setActiveId]=useState(''),[loading,setLoading]=useState(true)
   const [busy,setBusy]=useState(false),[error,setError]=useState(''),[full,setFull]=useState(false),[showForm,setShowForm]=useState(true)
   const [style,setStyle]=useState(()=>roadmapStyle({customer_name:client?.name||''}))
@@ -117,6 +119,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   const [failedDocument,setFailedDocument]=useState(null)
   const [reviewIssues,setReviewIssues]=useState([])
   const [savedJob,setSavedJob]=useState(null),[jobReadError,setJobReadError]=useState(false)
+  const [jobLoaded,setJobLoaded]=useState(false),[automaticStarted,setAutomaticStarted]=useState(false)
   const [jobRefresh,setJobRefresh]=useState(0)
   const job=savedJob?.case_id===item.id?savedJob:null
   const backgroundBusy=!!job&&['queued','running'].includes(job.status)
@@ -143,7 +146,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   const context=preparationContext(item,documents,outputLanguage,referenceLanguage)
   const contextRef=useRef(context)
   contextRef.current=context
-  const scope=JSON.stringify([item.id,item.home_country,item.target_country,outputLanguage,referenceLanguage,ownDocuments.map(doc=>[doc.id,doc.file_path,doc.data_classification])])
+  const scope=JSON.stringify([ownerId,item.id,item.home_country,item.target_country,outputLanguage,referenceLanguage,ownDocuments.map(doc=>[doc.id,doc.file_path,doc.data_classification])])
   const scopeRef=useRef(scope)
   scopeRef.current=scope
   useEffect(()=>{if(!busyRef.current)setConfirmed(false)},[context])
@@ -158,7 +161,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     listCustomerRoadmaps(supabase,item.id).then(({data,error})=>{
       if(cancelled)return
       if(error)setError(ui.error)
-      else {setRecords(data||[]);if(data?.length){setActiveId(data[0].id);setStyle(roadmapStyle(data[0].style));setReferenceLanguage(data[0].reference_language);setShowForm(false)}}
+      else {setRecords(data||[]);if(data?.length){setActiveId(data[0].id);setStyle(roadmapStyle(data[0].style));if(!automaticRun)setReferenceLanguage(data[0].reference_language);setShowForm(false)}}
       setLoading(false)
     }).catch(()=>{if(!cancelled){setError(ui.error);setLoading(false)}})
     return ()=>{cancelled=true}
@@ -181,14 +184,27 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
           setError(workflowErrorMessage({code:latest.error_code,error:latest.error_message},ui.error,language))
           setReviewIssues((latest.issues||[]).slice(0,8).map(issue=>String(issue.reason||'').slice(0,700)).filter(Boolean))
         }
+        setJobLoaded(true)
         if(latest&&['queued','running'].includes(latest.status))timer=setTimeout(refreshJob,3000)
       }catch{
-        if(!cancelled){setJobReadError(true);timer=setTimeout(refreshJob,5000)}
+        if(!cancelled){setJobReadError(true);setJobLoaded(true)}
       }
     }
     refreshJob()
     return ()=>{cancelled=true;clearTimeout(timer)}
   },[supabase,item.id,job?.id,backgroundBusy,jobRefresh,ui.error,language])
+  useEffect(()=>{
+    if(!automaticRun||loading||!jobLoaded||busyRef.current)return
+    const claimed=automaticRun.claim({ownerId,item,documents,assessments,outputLanguage,referenceLanguage})
+    if(claimed==='consumed')return
+    if(claimed!=='ready'){setError(simple.changed);return}
+    if(!canCreate||jobReadError)return
+    // An existing live job is observed, never queued again. Consuming first also
+    // prevents a rerender, remount or failed request from replaying this consent.
+    if(backgroundBusy)return
+    setAutomaticStarted(true);setShowForm(false)
+    start(true)
+  },[automaticRun,loading,jobLoaded,jobReadError,backgroundBusy,canCreate,context,ownerId])
   async function run(task) {
     if(busyRef.current)return false
     busyRef.current=true;setBusy(true);setError('');setFailedDocument(null);setReviewIssues([])
@@ -199,7 +215,10 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   }
   async function create(event) {
     event.preventDefault()
-    if(!confirmed||!canCreate||loading||backgroundBusy)return
+    return start(confirmed)
+  }
+  async function start(authorized) {
+    if(!authorized||!canCreate||loading||!jobLoaded||jobReadError||backgroundBusy)return
     const creatingCaseId=item.id
     const initialContext=context
     const initialScope=scope
@@ -268,9 +287,11 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     {loading&&<p role="status">{ui.loading}</p>}
     {backgroundBusy&&<div className="caseReadingProgress" data-testid="background-case-job" role="status" aria-live="polite"><b>{backgroundCopy.title}</b><p>{backgroundCopy.working}</p><p>{roadmapProgressLabel(language,job.stage)}</p><button type="button" className="secondary" disabled={busy} onClick={cancelJob}>{ui.cancel}</button></div>}
     {job?.status==='cancelled'&&<p role="status">{backgroundCopy.cancelled}</p>}
-    {jobReadError&&<p role="status">{backgroundCopy.statusUnavailable}</p>}
+    {jobReadError&&<div role="status"><p>{backgroundCopy.statusUnavailable}</p><button type="button" className="secondary" disabled={busy} onClick={()=>setJobRefresh(value=>value+1)}>{automatic.status}</button></div>}
+    {automaticStarted&&(busy||backgroundBusy)&&<p role="status">{automatic.running}</p>}
     {busy&&processingStage&&<div className="caseReadingProgress" role="status" aria-live="polite"><b>{processingStage==='documents'?simple.reading:processingStage==='saving'?simple.saving:roadmapProgressLabel(language,processingStage)}{documentProgress?` · ${documentProgress.index} / ${documentProgress.total}`:' …'}</b>{documentProgress&&<p>{documentProgress.document.title}</p>}<p>{simple.working}</p><details><summary>{simple.details}</summary>{roadmapProgressLabel(language,processingStage)}</details></div>}
     {error&&<p className="roadmapError" role="alert">{error}</p>}
+    {automaticStarted&&error&&!busy&&!backgroundBusy&&<p role="status">{automatic.stopped}</p>}
     {error&&reviewIssues.length>0&&<details><summary>{simple.details}</summary><ul>{reviewIssues.map((reason,index)=><li key={index}>{reason}</li>)}</ul></details>}
     {failedDocument&&<button type="button" className="secondary" onClick={()=>onOpenDocument?.(failedDocument)}>{ui.newDocument}: {failedDocument.title}</button>}
     {stale&&<p className="roadmapStale" role="status">{ui.stale}</p>}
@@ -282,7 +303,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
       <fieldset disabled={busy||backgroundBusy}>
       <p className="caseStartCost">{simple.cost}</p>
       <label className="roadmapConsent"><input type="checkbox" required checked={confirmed} onChange={event=>setConfirmed(event.target.checked)}/><span>{onAnalyzeDocument?simple.consent:ui.confirm}</span></label>
-      <button type="submit" className="primary" disabled={busy||backgroundBusy||!confirmed||loading}>{busy?simple.saving:error?simple.retry:simple.start}</button>
+      <button type="submit" className="primary" disabled={busy||backgroundBusy||!confirmed||loading||!jobLoaded||jobReadError}>{busy?simple.saving:error?simple.retry:simple.start}</button>
       {onAddDocument&&<button type="button" className="linkBtn" onClick={onAddDocument}>＋ {simple.add}</button>}
       <details className="caseMoreOptions"><summary>{simple.options}</summary>
       <p>{ui.output}: <b>{outputLanguageLabels[outputLanguage]}</b></p>

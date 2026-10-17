@@ -50,6 +50,7 @@ import { useWorkspaceSession } from './useWorkspaceSession'
 import { readCaseLink, resolveCaseLink, clearCaseLink, caseLinkUnavailable, createCaseResultFocus } from './caseLink.mjs'
 import { buildSyntheticCaseDraft } from '../testing/syntheticCaseDraft.mjs'
 import { buildDeadlineOverview } from '../cases/deadlineCases.mjs'
+import { createAutomaticCaseRun } from '../cases/lib/automaticCaseRun.mjs'
 import { getDeadlineUi } from '../cases/deadlineUi.mjs'
 import { InternalChangeControlSurface } from '../team-account/InternalChangeControlSurface'
 
@@ -104,6 +105,8 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const [data,setData]=useState(emptyData)
   const [section,setSection]=useState('dashboard')
   const [selectedCase,setSelectedCase]=useState(null)
+  const [automaticCaseRun,setAutomaticCaseRun]=useState(null)
+  const uploadViewRef=useRef('')
   const caseLinkHandled=useRef(false)
   const caseResultFocus=useRef(null)
   if(!caseResultFocus.current)caseResultFocus.current=createCaseResultFocus()
@@ -113,6 +116,11 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const uploadAttempt=useRef(null)
   useEffect(()=>{uploadAttempt.current=null},[user?.id])
   const [selectedApproval,setSelectedApproval]=useState(null)
+  useEffect(()=>{
+    if(automaticCaseRun&&(screen!=='app'||selectedDocument||selectedClient||selectedApproval||automaticCaseRun.ownerId!==user?.id||automaticCaseRun.caseId!==selectedCase?.id)){
+      automaticCaseRun.cancel();setAutomaticCaseRun(null)
+    }
+  },[automaticCaseRun,screen,user?.id,selectedCase?.id,selectedDocument,selectedClient,selectedApproval])
   const [approvalDefaults,setApprovalDefaults]=useState({caseId:'',documentId:'',recipient:'',subject:'',body:''})
   const [access,setAccess]=useState(null)
   const [upgrades,setUpgrades]=useState([])
@@ -190,6 +198,7 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const approvalUi=getV25ApprovalCopy(language)
   const analysisUi=getV26AnalysisCopy(language)
   const privacyCurrent=privacySettings?.privacy_notice_version===PRIVACY_NOTICE_VERSION&&privacySettings?.terms_version===TERMS_VERSION&&!!privacySettings?.privacy_notice_acknowledged_at&&!!privacySettings?.terms_acknowledged_at
+  uploadViewRef.current=JSON.stringify([screen,user?.id,section,selectedCase?.id,selectedDocument?.id,uploadCaseId,documentIntake.revision,outputLanguage,privacyCurrent,resultContinuation.canContinue])
   useEffect(()=>{
     if(publicOnly||caseLinkHandled.current)return
     const destination=resolveCaseLink({caseId:readCaseLink(window.location.search),screen,userId:user?.id,access,privacyCurrent,cases:data.cases})
@@ -381,6 +390,23 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
     setSection('documents')
   }
 
+  async function uploadAndContinue(event,selection){
+    const view=uploadViewRef.current
+    const uploaded=await uploadDocument(event,{...selection,onUploaded:uploadCaseId?created=>{
+      if(uploadViewRef.current!==view)return
+      const item=data.cases.find(entry=>entry.id===created.case_id&&entry.owner_id===user?.id)
+      if(!item)return
+      if(selection.autoAnalyze&&resultContinuation.canContinue&&created.owner_id===user?.id){
+        const documents=[created,...data.documents.filter(doc=>doc.id!==created.id)]
+        setAutomaticCaseRun(createAutomaticCaseRun({ownerId:user.id,item,documents,assessments:data.assessments,outputLanguage}))
+        caseResultFocus.current.request(item.id)
+      }
+      setSelectedDocument(null);setSelectedCase(item);setSection('cases')
+    }:undefined})
+    if(uploaded)setDocumentIntake(current=>({...current,file:null}))
+    return uploaded
+  }
+
   function handleQuickAction(action,item=null){
     setSelectedClient(null)
     setSelectedDocument(null)
@@ -441,14 +467,14 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   if(screen==='app'&&selectedCase){
     const caseDocs=data.documents.filter(document=>document.case_id===selectedCase.id)
     const caseAssessments=data.assessments.filter(assessment=>assessment.case_id===selectedCase.id)
-    return protectedWorkspace(<><CaseDetail access={access} continuation={resultContinuation} onResultReady={caseResultFocus.current.ready} key={selectedCase.id} copy={core} analysis={analysisUi} language={language} outputLanguage={outputLanguage} supabase={supabase} ownerId={user?.id} item={data.cases.find(item=>item.id===selectedCase.id)||selectedCase} clients={data.clients} documents={caseDocs} assessments={caseAssessments} onBack={()=>setSelectedCase(null)} onSave={updateCase} onAddAssessment={createAssessment} onAddDocument={addCaseDocument} onOpenDocument={setSelectedDocument} onPrivacyUpdate={setPrivacySettings} onAnalyzeDocument={analyzeDocument} onRecoverDocument={recoverDocumentAnalysis} onSaveDocument={updateDocument}/><details className="simpleCaseMore"><summary>{a.exportResult}</summary><div className="exportBar"><b>{a.exportResult}</b><select value={exportType} onChange={event=>setExportType(event.target.value)}><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="csv">CSV (.csv)</option><option value="txt">Text (.txt)</option></select><button className="primary" onClick={()=>doExport({kind:'case',item:data.cases.find(item=>item.id===selectedCase.id)||selectedCase},exportType)}>{a.export}</button></div></details></>)
+    return protectedWorkspace(<><CaseDetail access={access} continuation={resultContinuation} onResultReady={caseResultFocus.current.ready} automaticRun={automaticCaseRun} key={selectedCase.id} copy={core} analysis={analysisUi} language={language} outputLanguage={outputLanguage} supabase={supabase} ownerId={user?.id} item={data.cases.find(item=>item.id===selectedCase.id)||selectedCase} clients={data.clients} documents={caseDocs} assessments={caseAssessments} onBack={()=>setSelectedCase(null)} onSave={updateCase} onAddAssessment={createAssessment} onAddDocument={addCaseDocument} onOpenDocument={setSelectedDocument} onPrivacyUpdate={setPrivacySettings} onAnalyzeDocument={analyzeDocument} onRecoverDocument={recoverDocumentAnalysis} onSaveDocument={updateDocument}/><details className="simpleCaseMore"><summary>{a.exportResult}</summary><div className="exportBar"><b>{a.exportResult}</b><select value={exportType} onChange={event=>setExportType(event.target.value)}><option value="pdf">PDF</option><option value="docx">Word (.docx)</option><option value="xlsx">Excel (.xlsx)</option><option value="pptx">PowerPoint (.pptx)</option><option value="csv">CSV (.csv)</option><option value="txt">Text (.txt)</option></select><button className="primary" onClick={()=>doExport({kind:'case',item:data.cases.find(item=>item.id===selectedCase.id)||selectedCase},exportType)}>{a.export}</button></div></details></>)
   }
 
   if(screen==='app'&&!selectedClient&&section==='cases') return protectedWorkspace(<CasesSurface a={a} core={core} language={language} clients={data.clients} cases={data.cases} newCase={newCase} setNewCase={setNewCase} showCaseForm={showCaseForm} setShowCaseForm={setShowCaseForm} createCase={createCase} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
 
   if(screen==='app'&&!selectedClient&&section==='deadlines') return protectedWorkspace(<DeadlinesSurface a={a} core={core} copy={deadlineCopy} datedCases={deadlineOverview.dated} unresolvedCases={deadlineOverview.unresolved} detectedCases={deadlineOverview.detected} language={language} setSelectedCase={setSelectedCase} onBack={()=>setSection('dashboard')}/>)
 
-  if(screen==='app'&&!selectedClient&&section==='documents') return protectedWorkspace(<DocumentsSurface key={documentIntake.revision} initialFile={documentIntake.file} a={a} access={access} documents={data.documents} core={core} v28={v28} cases={data.cases} documentMode={documentMode} setDocumentMode={setDocumentMode} uploadCaseId={uploadCaseId} uploadDocument={async(event,selection)=>{const uploaded=await uploadDocument(event,{...selection,onUploaded:uploadCaseId?created=>{setSelectedDocument(null);setSelectedCase(data.cases.find(item=>item.id===created.case_id)||null);setSection('cases')}:undefined});if(uploaded)setDocumentIntake(current=>({...current,file:null}));return uploaded}} uploading={uploading} allowedUploadAccept={allowedUploadAccept} setSelectedDocument={setSelectedDocument} onBack={()=>{setDocumentIntake(current=>({file:null,revision:current.revision+1}));if(uploadCaseId){setSelectedCase(data.cases.find(item=>item.id===uploadCaseId)||null);setSection('cases')}else setSection('dashboard')}} language={language}/>)
+  if(screen==='app'&&!selectedClient&&section==='documents') return protectedWorkspace(<DocumentsSurface key={documentIntake.revision} initialFile={documentIntake.file} a={a} access={access} documents={data.documents} core={core} v28={v28} cases={data.cases} documentMode={documentMode} setDocumentMode={setDocumentMode} uploadCaseId={uploadCaseId} uploadDocument={uploadAndContinue} canAnalyze={resultContinuation.canContinue} uploading={uploading} allowedUploadAccept={allowedUploadAccept} setSelectedDocument={setSelectedDocument} onBack={()=>{setDocumentIntake(current=>({file:null,revision:current.revision+1}));if(uploadCaseId){setSelectedCase(data.cases.find(item=>item.id===uploadCaseId)||null);setSection('cases')}else setSection('dashboard')}} language={language}/>)
 
   if(screen==='app'&&!selectedClient&&section==='approvals') return protectedWorkspace(<ApprovalsSurface a={a} approvalUi={approvalUi} language={language} outputLanguage={outputLanguage} cases={data.cases} documents={data.documents} approvals={data.approvals} approvalDefaults={approvalDefaults} createApproval={createApproval} setSelectedApproval={setSelectedApproval} onReturnToDocument={document=>{setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''});setSelectedDocument(document)}} onBack={()=>{setApprovalDefaults({caseId:'',documentId:'',recipient:'',subject:'',body:''});setSection('dashboard')}}/>)
 
