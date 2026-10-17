@@ -40,7 +40,7 @@ export async function GET(request,{params}){
       'x-primary-source-checked-at':new Date().toISOString()
     }})
   }catch(error){
-    console.error('public_primary_source_fetch_failed',{act,section,name:error?.name||'Error'})
+    console.error('public_primary_source_fetch_failed',{act,section,name:error?.name||'Error',code:error?.cause?.code||''})
     return failure(502)
   }
 }
