@@ -2,6 +2,7 @@
 
 import { ProductBrand } from '../brand/ProductBrand'
 import { PublicLanguageModules } from './PublicLanguageModules'
+import { publicNavigationCopy, workspaceEntryHref } from './publicNavigation.mjs'
 
 export function PublicHeader({
   t,
@@ -12,12 +13,15 @@ export function PublicHeader({
   outputLanguage,
   onOutputLanguageChange,
   onScreenChange,
-  onPlayExplainer
+  onPlayExplainer,
+  hasWorkspaceSession=false
 }){
   return <header className="publicTop">
     <div className="wrap nav publicHeader">
       <ProductBrand showDescriptor className="publicBrand" language={language}/>
-      <button type="button" className="secondary publicSignIn" onClick={()=>onScreenChange('login')}>{t.login}</button>
+      {hasWorkspaceSession
+        ?<a className="secondary btn publicSignIn" href={workspaceEntryHref(language)}>{publicNavigationCopy(language).workspace}</a>
+        :<button type="button" className="secondary publicSignIn" onClick={()=>onScreenChange('login')}>{t.login}</button>}
       <PublicLanguageModules
         compact
         language={language}
