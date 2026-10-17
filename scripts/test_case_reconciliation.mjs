@@ -18,13 +18,13 @@ const checked=validateCompleteAnalysis({...plan,analysis:{topics:[{...stale,step
 const draft=structuredClone(checked.analysis);draft.topics[0].step_ids=[]
 const start={stage:'analysis',scope,research:[],discovery_gaps:[],draftAnalysis:draft,analysis_response_ids:['checked-numbers'],modelState:{stage:'generation',attempt:1,feedback:[],previous:null}}
 const args={providerKey:'synthetic-only',source,style:{},outputLanguage:'de',referenceLanguage:'de',baseRequest:{instructions:'Use original quotes. Internal no-sending test.',input:[]},baseReviewContent:[]}
-const reply=(request,output,id)=>Response.json({status:'completed',id,model:request.model,output_text:JSON.stringify(output)})
+const reply=(request,output,id)=>Response.json({status:'completed',id,model:request.model,output_text:JSON.stringify(request.text.format.name==='ash_complete_reconciliation_v172'?{calculation_descriptions:[],...output}:output)})
 let reconciliations=0,plans=0,reviews=0
 const transport=async(url,options)=>{
   assert.equal(url,'https://api.openai.com/v1/responses')
   const request=JSON.parse(options.body),name=request.text.format.name
-  if(!reconciliations)assert.equal(name,'ash_complete_reconciliation_v171','final topic narratives must be reconciled after checked arithmetic and before the plan')
-  if(name==='ash_complete_reconciliation_v171'){
+  if(!reconciliations)assert.equal(name,'ash_complete_reconciliation_v172','final topic narratives must be reconciled after checked arithmetic and before the plan')
+  if(name==='ash_complete_reconciliation_v172'){
     reconciliations++
     const payload=JSON.parse(request.input.at(-1).content[0].text)
     assert.deepEqual(payload.checked_analysis.calculations.map(item=>item.result),['27930.00','28421.00'])
@@ -72,7 +72,7 @@ for(const incorrectApplication of [false,true]){
   let quotedFlow={status:'processing',state:quotedStart}
   const quoteTransport=async(url,options)=>{
     const request=JSON.parse(options.body),name=request.text.format.name
-    if(name==='ash_complete_reconciliation_v171')return reply(request,{topics:[{...fixed,conclusion:fixed.conclusion+' '+selected,sources:[{quote:'@s0_0'}]}],limitations:[]},'quoted-rule-synthesis')
+    if(name==='ash_complete_reconciliation_v172')return reply(request,{topics:[{...fixed,conclusion:fixed.conclusion+' '+selected,sources:[{quote:'@s0_0'}]}],limitations:[]},'quoted-rule-synthesis')
     if(name==='ash_complete_plan_v157'){
       quotePlans++
       assert.equal(JSON.parse(request.input.at(-1).content[0].text).analysis.topics[0].conclusion,fixed.conclusion+' '+expanded,'the plan receives resolved original wording, never a template marker')
@@ -113,7 +113,7 @@ for(const defect of ['missing','id','extra','empty','missing_limits','invalid_li
   let calls=0
   await assert.rejects(advanceCompleteAnalysis({...args,state:structuredClone(start),fetchImpl:async(url,options)=>{
     calls++;const request=JSON.parse(options.body)
-    assert.equal(request.text.format.name,'ash_complete_reconciliation_v171')
+    assert.equal(request.text.format.name,'ash_complete_reconciliation_v172')
     if(defect==='truncated')return Response.json({status:'incomplete',id:'truncated-reconciliation',incomplete_details:{reason:'max_output_tokens'},output_text:'{"topics":'})
     const topic=structuredClone(fixed)
     if(defect==='id')topic.id='unassigned'
@@ -139,7 +139,7 @@ assert.equal(unexpected,0)
 let rejectedReviews=0,repairs=0
 const rejectionTransport=async(url,options)=>{
   const request=JSON.parse(options.body),name=request.text.format.name
-  if(name==='ash_complete_reconciliation_v171')return reply(request,{topics:[{id:stale.id,status:stale.status,conclusion:stale.conclusion,conditions:stale.conditions,sources:stale.sources}],limitations:[]},'bad-meaning')
+  if(name==='ash_complete_reconciliation_v172')return reply(request,{topics:[{id:stale.id,status:stale.status,conclusion:stale.conclusion,conditions:stale.conditions,sources:stale.sources}],limitations:[]},'bad-meaning')
   if(name==='ash_complete_plan_v157')return reply(request,{...plan,topic_steps:[{id:'payout',step_ids:['account']}]},'bad-plan')
   if(name==='ash_complete_repair_v169'){
     repairs++
@@ -176,11 +176,11 @@ let temporalCalls=0
 const temporal=await advanceCompleteAnalysis({...args,source:temporalSource,state:temporalStart,fetchImpl:async(url,options)=>{
   temporalCalls++
   const request=JSON.parse(options.body)
-  assert.equal(request.text.format.name,'ash_complete_reconciliation_v171')
+  assert.equal(request.text.format.name,'ash_complete_reconciliation_v172')
   assert.equal(request.reasoning.effort,'high')
   assert.equal(request.max_output_tokens,12000)
   assert(request.instructions.includes(RESEARCH_SCOPE_RULES),'the synthesis distinguishes partial coverage from source absence')
-  assert.deepEqual(request.text.format.schema.required,['topics','limitations'])
+  assert.deepEqual(request.text.format.schema.required,['topics','limitations','calculation_descriptions'])
   assert.deepEqual(JSON.parse(request.input.at(-1).content[0].text).checked_analysis.limitations,[staleLimit,retainedLimit])
   assert.equal(JSON.parse(request.input[0].content[1].text).retrieved_sources.length,research.length,'global limitations are reconciled with all fetched sources')
   const originals=JSON.parse(request.input[0].content[0].text)
