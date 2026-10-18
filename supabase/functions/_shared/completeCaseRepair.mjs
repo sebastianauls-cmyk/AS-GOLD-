@@ -39,7 +39,7 @@ export function resolveReviewIssueLocations(issues,candidate,sections,schema=nul
 
 export function completeReviewLocations(candidate,sections){
   // Collection/global markers report a missing item or a genuinely wider
-  // defect. They deliberately cannot select an automatic local replacement.
+  // defect. A marker alone cannot select an automatic local replacement.
   const locations=new Set(['output','analysis',...collections.map(label)])
   const addItems=(prefix,ids)=>{
     for(const [index,item] of (get(candidate,prefix)||[]).entries())if(ids===null||ids.includes(item.id))locations.add(label([...prefix,index]))
@@ -63,6 +63,28 @@ export function completeReviewLocations(candidate,sections){
     }
   }
   return [...locations]
+}
+
+// Run only AFTER the review's assignment/schema validation. All reviews see
+// topic conclusions and conditions in related_output; an accepted collection
+// finding can quote one of those claims without supplying its exact path.
+// Narrow only an exact, substantial quotation unique to one existing topic.
+// Never infer a location from paraphrases, source citations, IDs or a guessed
+// batch index. Keep the full objection for correction and independent re-review.
+export function resolveQuotedTopicIssueLocations(issues,candidate){
+  const topics=candidate.analysis?.topics
+  if(!Array.isArray(topics))return issues
+  return issues.map(issue=>{
+    if(issue.location!=='analysis.topics'||!['source','meaning'].includes(issue.code)||typeof issue.reason!=='string')return issue
+    const quotes=[...issue.reason.matchAll(/"([^"]+)"|„([^„“]+)“|“([^“”]+)”|«([^«»]+)»/gu)]
+      .map(match=>match.slice(1).find(value=>value!==undefined))
+      .filter(quote=>quote.length>=32&&!/(?:…|\.{3})/.test(quote))
+    const indexes=new Set()
+    for(const quote of quotes)for(const [index,topic] of topics.entries()){
+      if(['conclusion','conditions'].some(field=>typeof topic?.[field]==='string'&&topic[field].includes(quote)))indexes.add(index)
+    }
+    return indexes.size===1?{...issue,location:label(['analysis','topics',[...indexes][0]])}:issue
+  })
 }
 
 function schemaAt(schema,path){

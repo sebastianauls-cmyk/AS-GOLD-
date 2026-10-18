@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {advanceCompleteAnalysis,completeAnalysisStage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {completeReviewLocations,resolveReviewIssueLocations,resolveQuotedTopicIssueLocations} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 
@@ -85,3 +86,100 @@ for(const change of ['finding','research','original','policy','receipt']){
   assert.equal(state.foundationReview.status,'passed','validation does not mutate its input checkpoint')
 }
 console.log('Early foundation: unsupported claims block plans, one repair is re-reviewed, identical approvals are reused, changed evidence/content/policy invalidate before writing; provider replies simulated.')
+
+// A reviewer can quote an existing claim but report the collection location.
+// Exercise that accepted global finding from related context, outside the
+// topic's own review assignment. It may select one bounded correction, never
+// waive another review, add a topic, or authorize a second correction.
+const unsupported='Die Jahresabrechnung war laut Original bereits vollständig geprüft.'
+{
+  const candidate={analysis:{topics:[{...topic,conditions:unsupported,sources:[]},{...topic,id:'second'}]}}
+  const base={code:'source',location:'analysis.topics',reason:''}
+  const original=structuredClone(candidate)
+  for(const [start,end] of [['„','“'],['“','”'],['"','"'],['«','»']]){
+    const finding={...base,reason:`The condition ${start}${unsupported}${end} lacks original support.`}
+    const resolved=resolveQuotedTopicIssueLocations([finding],candidate)
+    assert.deepEqual(resolved,[{...finding,location:'analysis.topics[0]'}])
+    assert.equal(finding.location,'analysis.topics','normalization does not mutate the original finding')
+    assert.deepEqual(resolveQuotedTopicIssueLocations(resolved,candidate),resolved)
+  }
+  for(const finding of [
+    {...base,reason:'An unquoted wider defect requires another topic.'},
+    {...base,reason:'The field „conditions“ is wrong.'},
+    {...base,reason:`The condition „${unsupported.toLowerCase()}“ is unsupported.`},
+    {...base,reason:'The condition „Die Jahresabrechnung war … vollständig geprüft.“ is unsupported.'},
+    {...base,location:'analysis',reason:`„${unsupported}“`},
+    {...base,location:'unassigned_id',reason:`„${unsupported}“`}
+  ])assert.deepEqual(resolveQuotedTopicIssueLocations([finding],candidate),[finding],'non-exact, short, wider and ID findings remain unresolved')
+  const finding={...base,reason:`The conditions assert „${unsupported}“ without support.`}
+  const calculationSection=[{scope:'calculations',calculation_ids:[]}]
+  assert(!completeReviewLocations(candidate,calculationSection).includes('analysis.topics[0]'))
+  assert.deepEqual(resolveReviewIssueLocations([finding],candidate,calculationSection),[finding],'review assignment validation remains unchanged before quote resolution')
+  candidate.analysis.topics[1].conclusion=unsupported
+  assert.deepEqual(resolveQuotedTopicIssueLocations([finding],candidate),[finding],'the same claim in two topics is ambiguous')
+  candidate.analysis.topics[1].conclusion='Another independently quoted unsupported condition.'
+  const two={...finding,reason:finding.reason+' Also „'+candidate.analysis.topics[1].conclusion+'“.'}
+  assert.deepEqual(resolveQuotedTopicIssueLocations([two],candidate),[two],'two distinct quoted topics cannot choose one target')
+  candidate.analysis.topics[0].conditions=topic.conditions
+  candidate.analysis.topics[0].sources=[{url:'https://example.invalid/synthetic',quote:unsupported}]
+  assert.deepEqual(resolveQuotedTopicIssueLocations([finding],candidate),[finding],'matching only a cited source never selects its topic')
+  assert.deepEqual(original.analysis.topics[0].conditions,unsupported)
+}
+for(const outcome of ['fixed','unfixed','wider','ambiguous','paraphrased']){
+  const state=structuredClone(initial),calls=[]
+  state.draftAnalysis.topics[0].conditions+=' '+unsupported
+  if(outcome==='ambiguous'){
+    state.scope.issues.push({...state.scope.issues[0],id:'second'})
+    state.draftAnalysis.topics.push({...structuredClone(state.draftAnalysis.topics[0]),id:'second'})
+  }
+  let repairs=0,rechecked=false,fixtureFailure
+  const fetchImpl=async(url,options)=>{
+    try{
+      assert.equal(url,'https://api.openai.com/v1/responses')
+      const request=JSON.parse(options.body),name=request.text.format.name
+      const payloads=request.input.flatMap(message=>message.content).map(item=>{try{return JSON.parse(item.text)}catch{return {}}})
+      const assignment=payloads.find(item=>item.assigned_review)?.assigned_review
+      calls.push({name,scope:assignment?.scope})
+      let output
+      if(name==='ash_complete_repair_v169'){
+        assert.equal(++repairs,1,'a quoted finding cannot add a correction round')
+        assert(calls.some(call=>call.scope==='analysis')&&calls.some(call=>call.scope==='calculations'))
+        const edits=payloads.find(item=>item.assigned_replacements).assigned_replacements
+        assert.deepEqual(edits.map(edit=>edit.location),['analysis.topics[0]'])
+        output=outcome==='wider'?{requires_full_correction:true,reason:'A missing topic is required beyond this existing item.',changes:null}:{requires_full_correction:false,reason:'',changes:{edit_0:outcome==='unfixed'?edits[0].previous:topic}}
+      }else if(name==='ash_complete_plan_v157'){
+        assert(rechecked,'the changed foundation must pass independent review before any plan')
+        assert(!JSON.stringify(payloads.find(item=>item.component==='roadmap').analysis).includes(unsupported))
+        output=plan
+      }else{
+        assert.equal(name,'ash_evidence_review_v139')
+        const related=payloads.find(item=>item.related_output).related_output
+        const bad=related.topics.some(item=>item.conditions.includes(unsupported))
+        if(repairs&&assignment.scope==='analysis'){
+          rechecked=true
+          const comparison=payloads.find(item=>item.correction_comparison)?.correction_comparison
+          if(outcome==='fixed'){
+            assert(comparison.changes.some(change=>change.location==='analysis.topics[0]'))
+            assert(comparison.previous_findings.some(finding=>finding.reason.includes(unsupported)),'the full original objection survives normalization')
+          }
+        }
+        const quote=outcome==='paraphrased'?unsupported.replace('bereits vollständig','schon umfassend'):unsupported
+        output={issues:bad&&assignment.scope==='calculations'?[{code:'source',location:'analysis.topics',reason:`The conditions assert: „${quote}“ This qualification has no support in the original.`}]:[]}
+      }
+      return Response.json({id:'quoted-'+outcome+'-'+calls.length,status:'completed',model:request.model,output_text:JSON.stringify(output)})
+    }catch(error){fixtureFailure=error;throw error}
+  }
+  let flow={status:'processing',state},failure
+  try{for(let n=0;flow.status==='processing'&&n<30;n++)flow=await advanceCompleteAnalysis({...args,state:flow.state,fetchImpl})}catch(error){failure=error}
+  assert.ifError(fixtureFailure)
+  if(outcome==='fixed'){
+    assert.ifError(failure);assert.equal(flow.status,'completed');assert.equal(flow.attempts,2)
+    assert.equal(repairs,1);assert.deepEqual(flow.result.analysis.topics[0].conditions,topic.conditions)
+  }else{
+    assert.equal(failure?.code,'review_unresolved');assert(!flow.result)
+    assert.equal(repairs,['unfixed','wider'].includes(outcome)?1:0)
+    assert(!calls.some(call=>call.name==='ash_complete_plan_v157'))
+  }
+}
+console.log('Quoted collection findings: one exact topic can enter the existing repair; ambiguous/paraphrased findings, wider changes and unresolved re-reviews remain blocked; provider replies simulated.')
+

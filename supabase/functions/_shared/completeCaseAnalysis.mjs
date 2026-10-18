@@ -6,7 +6,7 @@ import { RESEARCH_COUNTRIES, SHARED_RESEARCH_DOMAINS } from './researchCountries
 import { searchRetrievedSources, researchRetrievalPlan, retrieveOfficialEvidence, primarySourceCatalogue, loadPrimarySources, supportingPrimaryEvidence } from './verifiedResearch.mjs'
 import { calculateExpression, quoteContainsNumber } from './checkedCalculations.mjs'
 import {selectCaseResearch,caseResearchManifest,reviewResearchAssignment,MODULE_RESEARCH_INSTRUCTIONS} from './caseResearchContext.mjs'
-import {completeReviewLocations,resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,localizedRepairAssignments,applyLocalizedRepair,createCorrectionTrace,correctionReviewComparison,correctionFailureDiagnostics} from './completeCaseRepair.mjs'
+import {completeReviewLocations,resolveReviewIssueLocations,resolveQuotedTopicIssueLocations,localizedRepairTargets,localizedRepairSchema,localizedRepairAssignments,applyLocalizedRepair,createCorrectionTrace,correctionReviewComparison,correctionFailureDiagnostics} from './completeCaseRepair.mjs'
 
 // The persisted review-coverage contract is unchanged by the synthesis schema.
 export const COMPLETE_ANALYSIS_VERSION='v170'
@@ -589,7 +589,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     if(error instanceof ModelWorkflowError)error.issues=[...(error.issues||[]).slice(0,7),{code:'review_stage',location:`review.${reviewScope}${sections.length===1&&section.part?'.'+section.part:''}`,reason:`Prüfabschnitt ${partIndex+1} von ${groups.length}; keine geprüfte Antwort dieses Abschnitts gespeichert.`}]
     throw error
   }
-  const feedback=[...(reviewState.reviewFeedback||[]),...(partIndex===0?structuralFeedback:[]),...resolveReviewIssueLocations(review.issues,candidate,sections)]
+  const feedback=[...(reviewState.reviewFeedback||[]),...(partIndex===0?structuralFeedback:[]),...resolveQuotedTopicIssueLocations(resolveReviewIssueLocations(review.issues,candidate,sections),candidate)]
   const reviewIds=[...(reviewState.reviewIds||[]),review.response_id]
   const reviewReceipts=Object.fromEntries(groups.map(group=>JSON.stringify(group.map(index=>coverage[index]))).map(key=>[key,current.reviewReceipts?.[key]]).filter(([,receipt])=>receipt))
   if(review.receipt)reviewReceipts[JSON.stringify(sections)]=review.receipt
