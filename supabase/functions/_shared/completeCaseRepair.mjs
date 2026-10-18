@@ -180,6 +180,11 @@ export function localizedRepairTargets(candidate,feedback,schema){
   return paths.map((path,index)=>({key:'edit_'+index,path,location:label(path)}))
 }
 
+const topicTextFields=['conclusion','conditions']
+const isTopicTarget=target=>target.path.length===3&&target.path[0]==='analysis'&&target.path[1]==='topics'
+const exactObject=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)})
+const topicFieldCheck=exactObject({action:{type:'string',enum:['preserve','replace']},reason:{type:'string',minLength:1,maxLength:500,description:'One concise field-specific justification: identify its supported facts/rules or precise unresolved question, and the unsupported assertion removed if changed. This is a correction decision, not an independent approval.'}})
+
 export function localizedRepairSchema(targets,candidate,schema){
   const properties={}
   for(const target of targets){
@@ -187,10 +192,14 @@ export function localizedRepairSchema(targets,candidate,schema){
     if(spec?.properties?.id&&original?.id!==undefined)spec.properties.id={type:'string',enum:[original.id]}
     properties[target.key]=spec
   }
-  return {type:'object',additionalProperties:false,properties:{
+  const topicChecks=Object.fromEntries(targets.filter(isTopicTarget).map(target=>[target.key,exactObject(Object.fromEntries(topicTextFields.map(field=>[field,structuredClone(topicFieldCheck)])))]))
+  return exactObject({
     requires_full_correction:{type:'boolean'},reason:{type:'string'},
+    // Decide separately for BOTH fields before returning the complete patch.
+    // A valid decision proves coverage/consistency, never factual correctness.
+    ...(Object.keys(topicChecks).length?{topic_checks:{anyOf:[exactObject(topicChecks),{type:'null'}]}}:{}),
     changes:{anyOf:[{type:'object',additionalProperties:false,properties,required:Object.keys(properties)},{type:'null'}]}
-  },required:['requires_full_correction','reason','changes']}
+  })
 }
 
 function matches(value,spec){
@@ -201,21 +210,29 @@ function matches(value,spec){
   if(spec.enum&&!spec.enum.includes(value))return false
   if(type==='array')return (spec.minItems===undefined||value.length>=spec.minItems)&&(spec.maxItems===undefined||value.length<=spec.maxItems)&&value.every(item=>matches(item,spec.items))
   if(type==='object')return (spec.required||[]).every(key=>own(value,key))&&Object.keys(value).every(key=>own(spec.properties,key)&&matches(value[key],spec.properties[key]))
-  return type!=='string'||!spec.pattern||new RegExp(spec.pattern).test(value)
+  return type!=='string'||(spec.minLength===undefined||[...value].length>=spec.minLength)&&(spec.maxLength===undefined||[...value].length<=spec.maxLength)&&(!spec.pattern||new RegExp(spec.pattern).test(value))
 }
 
 export function applyLocalizedRepair(raw,targets,candidate,schema,resolve){
   const fail=reason=>{throw Object.assign(new Error(reason),{analysisIssues:[{code:'source',location:'correction',reason}]})}
-  if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).sort().join(',')!=='changes,reason,requires_full_correction'||typeof raw.requires_full_correction!=='boolean'||typeof raw.reason!=='string')fail('Die gezielte Korrektur hat kein gültiges Antwortformat.')
+  const repairSchema=localizedRepairSchema(targets,candidate,schema),hasTopicChecks=own(repairSchema.properties,'topic_checks')
+  if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).sort().join(',')!==repairSchema.required.slice().sort().join(',')||typeof raw.requires_full_correction!=='boolean'||typeof raw.reason!=='string')fail('Die gezielte Korrektur hat kein gültiges Antwortformat.')
   if(raw.requires_full_correction){
-    if(raw.changes!==null||!raw.reason.trim())fail('Eine erforderliche Gesamtkorrektur muss ohne Teiländerungen begründet werden.')
+    if(raw.changes!==null||hasTopicChecks&&raw.topic_checks!==null||!raw.reason.trim())fail('Eine erforderliche Gesamtkorrektur muss ohne Teiländerungen begründet werden.')
     return null
   }
   if(!raw.changes||typeof raw.changes!=='object'||Array.isArray(raw.changes)||Object.keys(raw.changes).sort().join(',')!==targets.map(target=>target.key).sort().join(','))fail('Die Korrektur muss genau die zugewiesenen Abschnitte enthalten.')
-  const result=structuredClone(candidate),spec=localizedRepairSchema(targets,candidate,schema).properties.changes.anyOf[0]
+  if(hasTopicChecks&&(!raw.topic_checks||!matches(raw.topic_checks,repairSchema.properties.topic_checks.anyOf[0])))fail('Die Korrektur muss Ergebnis und Voraussetzungen jedes zugewiesenen Themas einzeln prüfen.')
+  const result=structuredClone(candidate),spec=repairSchema.properties.changes.anyOf[0]
   for(const target of targets){
     const value=resolve(raw.changes[target.key],target.location)
     if(!matches(value,spec.properties[target.key]))fail('Die Korrektur verändert die Struktur oder Kennung des Abschnitts '+target.location+'.')
+    if(isTopicTarget(target))for(const field of topicTextFields){
+      const check=raw.topic_checks[target.key][field],changed=value[field]!==get(candidate,target.path)[field]
+      // Compare resolved text, not passage-ID spelling. No self-assessment
+      // can waive the following provenance, arithmetic or semantic reviews.
+      if(!check.reason.trim()||changed!==(check.action==='replace'))fail('Die Feldprüfung stimmt nicht mit der Änderung von '+target.location+'.'+field+' überein.')
+    }
     const parent=get(result,target.path.slice(0,-1))
     parent[target.path.at(-1)]=value
   }
@@ -223,7 +240,7 @@ export function applyLocalizedRepair(raw,targets,candidate,schema,resolve){
 }
 
 export function localizedRepairAssignments(targets,candidate){
-  return targets.map(target=>({key:target.key,location:target.location,previous:get(candidate,target.path)}))
+  return targets.map(target=>({key:target.key,location:target.location,previous:get(candidate,target.path),...(isTopicTarget(target)?{check_fields:topicTextFields.slice()}:{})}))
 }
 
 // The one correction must remain inspectable after a terminal rejection. Keep

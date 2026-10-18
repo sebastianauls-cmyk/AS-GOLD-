@@ -1,3 +1,5 @@
+import './test_repair_field_decisions.mjs'
+import {repairReplyWithFieldDecisions} from './fixtures/repairFieldDecisions.mjs'
 import assert from 'node:assert/strict'
 import {readFileSync} from 'node:fs'
 import {advanceCompleteAnalysis,completeAnalysisStage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
@@ -44,6 +46,7 @@ function harness(mode){
       const bad=candidate.analysis?.topics?.some(item=>item.conclusion.includes('UNBELEGTE RECHTSPFLICHT'))
       output={issues:bad?[{code:'source',location:'analysis.topics[0]',reason:'The assertion of a legal duty has no supplied primary text.'}]:[]}
     }
+    if(request.text.format.name==='ash_complete_repair_v169')output=repairReplyWithFieldDecisions(output,payloads.find(item=>item.assigned_replacements).assigned_replacements)
     return Response.json({id:'foundation-'+calls.length,status:'completed',model:request.model,output_text:JSON.stringify(output)})
   }
   return {state,calls,fetchImpl}
@@ -167,7 +170,8 @@ for(const outcome of ['fixed','unfixed','wider','ambiguous','paraphrased']){
         const quote=outcome==='paraphrased'?unsupported.replace('bereits vollständig','schon umfassend'):unsupported
         output={issues:bad&&assignment.scope==='calculations'?[{code:'source',location:'analysis.topics',reason:`The conditions assert: „${quote}“ This qualification has no support in the original.`}]:[]}
       }
-      return Response.json({id:'quoted-'+outcome+'-'+calls.length,status:'completed',model:request.model,output_text:JSON.stringify(output)})
+      if(request.text.format.name==='ash_complete_repair_v169')output=repairReplyWithFieldDecisions(output,payloads.find(item=>item.assigned_replacements).assigned_replacements)
+    return Response.json({id:'quoted-'+outcome+'-'+calls.length,status:'completed',model:request.model,output_text:JSON.stringify(output)})
     }catch(error){fixtureFailure=error;throw error}
   }
   let flow={status:'processing',state},failure
@@ -187,7 +191,7 @@ console.log('Quoted collection findings: one exact topic can enter the existing 
 // Replay the complete rejected topic from the October 18 synthetic live run.
 // A changed conclusion must not conceal an unsupported maturity claim left
 // in conditions. This tests the actual state machine, not model accuracy.
-{
+for(const outcome of ['historical_partial','missing_decision','contradictory_decision','precise_source_question']){
   const fixture=JSON.parse(readFileSync(new URL('./fixtures/rejectedKautionCorrection.json',import.meta.url),'utf8'))
   const state=structuredClone(initial),calls=[]
   state.scope.issues[0].id=fixture.before.id
@@ -210,22 +214,45 @@ console.log('Quoted collection findings: one exact topic can enter the existing 
         assert.equal(assignments.length,1)
         assert.equal(assignments[0].previous.conditions,fixture.before.conditions,'the whole conditions field was available for correction')
         assert.equal(assignments[0].previous.conclusion,fixture.before.conclusion)
-        output={requires_full_correction:false,reason:'',changes:{[assignments[0].key]:fixture.after}}
+        assert.deepEqual(assignments[0].check_fields,['conclusion','conditions'])
+        const replacement=structuredClone(fixture.after)
+        if(outcome==='precise_source_question')replacement.conditions='Absendetag und Empfangsdatum eines künftigen Schreibens stehen nicht fest. Eine frühere Mahnung, eine endgültige Ablehnung, eine besondere Fälligkeitsvereinbarung und weitere Korrespondenz sind nicht dokumentiert. Kautionserträge und Belege zu den beiden Einbehalten fehlen. Ob und wann ein weiterer Auszahlungsbetrag fällig ist, bleibt anhand eines zugänglichen einschlägigen Primärtextes zu klären; der vorliegende Text beantwortet diese Frage nicht.'
+        output={requires_full_correction:false,reason:'',changes:{[assignments[0].key]:replacement}}
       }else{
         assert.equal(name,'ash_evidence_review_v139','no downstream plan may be generated')
         const assignment=payloads.find(item=>item.assigned_review).assigned_review
         if(corrections)reviewsAfter++
         const finding=corrections?fixture.remaining_finding:fixture.first_finding
-        output={issues:assignment.scope==='analysis'?[{...finding,location:'analysis.topics[0]'}]:[]}
+        const candidate=payloads.find(item=>item.candidate).candidate
+        if(corrections){
+          assert(!JSON.stringify(candidate).includes('topic_checks'),'field decisions never become review approvals or factual evidence')
+          if(outcome==='precise_source_question'&&candidate.analysis?.topics?.length){
+            assert(candidate.analysis.topics[0].conditions.includes('Ob und wann'))
+            assert.equal(candidate.analysis.topics[0].conclusion,fixture.after.conclusion,'the bounded correction preserves the supported/qualified result text')
+          }
+        }
+        // Controlled reviewer replies test routing only, not legal/model quality.
+        output={issues:assignment.scope==='analysis'&&!(corrections&&outcome==='precise_source_question')?[{...finding,location:'analysis.topics[0]'}]:[]}
+      }
+      if(request.text.format.name==='ash_complete_repair_v169'){
+        output=repairReplyWithFieldDecisions(output,payloads.find(item=>item.assigned_replacements).assigned_replacements)
+        if(outcome==='missing_decision')delete output.topic_checks.edit_0.conditions
+        if(outcome==='contradictory_decision')output.topic_checks.edit_0.conditions.action='preserve'
       }
       return Response.json({id:'remaining-condition-'+calls.length,status:'completed',model:request.model,output_text:JSON.stringify(output)})
     }catch(error){fixtureFailure=error;throw error}
   }
   let flow={status:'processing',state},failure
-  try{for(let n=0;flow.status==='processing'&&n<30;n++)flow=await advanceCompleteAnalysis({...args,state:flow.state,fetchImpl})}catch(error){failure=error}
+  try{for(let n=0;flow.status==='processing'&&flow.state.foundationReview?.status!=='passed'&&n<30;n++)flow=await advanceCompleteAnalysis({...args,state:flow.state,fetchImpl})}catch(error){failure=error}
   assert.ifError(fixtureFailure)
-  assert.equal(failure?.code,'review_unresolved');assert.equal(corrections,1);assert(reviewsAfter>0)
-  assert(!flow.result);assert(!calls.includes('ash_complete_plan_v157'))
+  assert.equal(corrections,1);assert(!flow.result);assert(!calls.includes('ash_complete_plan_v157'))
+  if(outcome==='precise_source_question'){
+    assert.ifError(failure);assert.equal(flow.state.foundationReview.status,'passed')
+    assert.equal(reviewsAfter,2,'both changed foundation scopes are independently reviewed before the first plan')
+  }else{
+    assert.equal(failure?.code,outcome==='historical_partial'?'review_unresolved':'source_unresolved')
+    assert.equal(reviewsAfter,outcome==='historical_partial'?1:0,'mechanically invalid field decisions stop before another model call')
+  }
 }
-console.log('Stored incomplete correction: changed conclusion plus unsupported condition remains rejected after one repair; no plan/result and no second correction; reviewer responses replayed, model quality not measured.')
+console.log('Stored incomplete correction remains rejected; missing/contradictory field decisions stop before paid review; a precisely open source question can pass controlled foundation reviews without another correction. No customer result or live-model quality claim.')
 
