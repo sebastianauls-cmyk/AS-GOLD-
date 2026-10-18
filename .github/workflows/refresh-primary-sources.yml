@@ -9,15 +9,42 @@ on:
   schedule:
     # GitHub may delay or drop a scheduled event. Later runs only fetch if stale.
     - cron: '17 3,5,7,11 * * *'
+  pull_request:
+    paths:
+      - scripts/refresh_primary_sources.py
+      - scripts/test_primary_refresh_atomicity.py
+      - .github/workflows/refresh-primary-sources.yml
   workflow_dispatch:
 permissions:
-  contents: write
+  contents: read
 concurrency:
   group: primary-text-refresh
   cancel-in-progress: false
 jobs:
+  verify-public-refresh:
+    if: github.event_name == 'pull_request'
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify complete refresh and safe retries
+        run: python3 scripts/test_primary_refresh_atomicity.py
+      - name: Fetch all official texts without publishing
+        run: python3 scripts/refresh_primary_sources.py
+      - name: Verify the complete current catalogue
+        run: python3 scripts/refresh_primary_sources.py --if-stale
+
   refresh:
-    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+    # macOS uses GitHub's own network, separate from the unreachable Azure runner.
+    runs-on: macos-15
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
