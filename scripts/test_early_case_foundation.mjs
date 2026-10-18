@@ -229,3 +229,50 @@ console.log('Quoted collection findings: one exact topic can enter the existing 
 }
 console.log('Stored incomplete correction: changed conclusion plus unsupported condition remains rejected after one repair; no plan/result and no second correction; reviewer responses replayed, model quality not measured.')
 
+// A failed URL is not evidence that every address on its authority's domain
+// is unavailable. The fake search engine respects the actual allowed_domains
+// request, so this exercises discovery as well as the subsequent fetch.
+for(const outcome of ['alternative_readable','alternative_unavailable','untrusted_suggestion']){
+  const obsolete='https://juris.bundesgerichtshof.de/synthetic-obsolete'
+  const alternative='https://www.bundesgerichtshof.de/synthetic-current'
+  const untrusted='https://bundesgerichtshof.de.untrusted.invalid/synthetic-current'
+  const text='SYNTHETIC TRANSPORT FIXTURE. This is a fictional readable document at a different address of the same authority. It establishes no real legal rule.'
+  const calls=[],fetched=[]
+  const transport=async(url,options={})=>{
+    if(String(url).startsWith('https://raw.githubusercontent.com/'))return new Response('',{status:404})
+    if(url==='https://api.openai.com/v1/responses'){
+      const request=JSON.parse(options.body)
+      calls.push(request)
+      const allowed=request.tools[0].filters.allowed_domains
+      const selected=calls.length===1?obsolete:outcome==='untrusted_suggestion'?untrusted:allowed.includes('bundesgerichtshof.de')?alternative:null
+      const sources=selected?[{url:selected,title:'Fictional authority document'}]:[]
+      return Response.json({id:'same-authority-'+outcome+'-'+calls.length,status:'completed',model:request.model,
+        output:[{type:'web_search_call',status:'completed',action:{type:'search',sources}}],
+        output_text:JSON.stringify({sources,gaps:selected?[]:['No alternative was found in the permitted search scope.']})})
+    }
+    fetched.push(url)
+    if(url===alternative&&outcome==='alternative_readable')return new Response(text,{headers:{'Content-Type':'text/plain'}})
+    return new Response('',{status:403})
+  }
+  const researchScope={...scope,research_topics:['Fictional primary-source question']}
+  const first=await advanceCompleteAnalysis({...args,state:{stage:'research',scope:researchScope,research:[],discovery_gaps:[]},fetchImpl:transport})
+  assert.equal(first.state.stage,'research_recovery')
+  assert.deepEqual(first.state.unreachable,[obsolete])
+  const second=await advanceCompleteAnalysis({...args,state:first.state,fetchImpl:transport})
+  assert.equal(calls.length,2,'one research request and one existing recovery, never another loop')
+  assert.equal(second.state.stage,'analysis','an unsuccessful recovery does not schedule another research round')
+  assert.deepEqual(calls[1].tools[0].filters.allowed_domains,calls[0].tools[0].filters.allowed_domains,'one failed URL must not exclude an entire allowed authority domain')
+  assert(calls.every(call=>call.max_tool_calls===2&&call.max_output_tokens===8000),'provider-call and output limits are unchanged')
+  assert.deepEqual(JSON.parse(calls[1].input).prior_unreachable_urls,[obsolete],'the exact failed address remains available to discovery')
+  assert.equal(fetched.filter(url=>url===obsolete).length,1,'discovery can select a new address instead of repeating the failed one')
+  assert(!fetched.includes(untrusted),'preserving the authority domain does not allow lookalike hosts')
+  if(outcome==='alternative_readable'){
+    assert.deepEqual(second.state.research.map(item=>item.url),[alternative])
+    assert.equal(second.state.research[0].source_text,text,'evidence is the actually fetched text, not the search result')
+    assert.deepEqual(second.state.failed_topics,[])
+  }else assert.equal(second.state.research.length,0,'unavailable or disallowed sources never become evidence')
+  assert(second.state.unreachable.includes(obsolete),'a different address does not falsely mark the original URL as fetched')
+}
+console.log('Same-authority recovery: alternate URLs remain discoverable, fetched text is required, lookalike hosts stay blocked, and one recovery remains the limit; transport responses simulated.')
+
+
