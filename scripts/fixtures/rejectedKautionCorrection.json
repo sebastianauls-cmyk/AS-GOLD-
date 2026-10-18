@@ -1,0 +1,41 @@
+{
+  "provenance": "Rejected synthetic case, 2026-10-18. Full stored topic before and after its single correction. Not an approved result.",
+  "before": {
+    "conclusion": "Ein sachliches Anschreiben kann die Gutschrift von 250,00 EUR vom 05.10.2026 ausdrücklich anerkennen und darf sie nicht erneut verlangen. Die Einbehalte von 500,00 EUR wegen behaupteter Parkettkratzer und 750,00 EUR als Betriebskostenreserve sollten getrennt erläutert und mit den jeweils vorhandenen Unterlagen belegt werden; außerdem sind die nicht bezifferten Kautionserträge anzusprechen. Die 1.250,00 EUR sind als derzeit einbehaltener Betrag zu bezeichnen, nicht als bereits feststehender sofortiger Auszahlungsanspruch. Eine Zahlung kann nur insoweit verlangt werden, wie ein Betrag nach Prüfung fällig und nicht berechtigt oder nicht mehr als Sicherheit erforderlich ist. Für einen möglichen Verzug gilt: „§ 286 BGB - Einzelnorm zurück weiter Nichtamtliches Inhaltsverzeichnis Bürgerliches Gesetzbuch (BGB) § 286 Verzug des Schuldners *) (1) Leistet der Schuldner auf eine Mahnung des Gläubigers nicht, die nach dem Eintritt der Fälligkeit erfolgt, so kommt er durch die Mahnung in Verzug.“ Eine gesetzte Frist macht einen materiell ungeklärten Anspruch daher nicht allein fällig. Ein konkretes Kalenderdatum kann erst anhand des tatsächlichen Absendetags festgelegt werden; ein Versand oder Zugang wird durch diese Analyse nicht bewirkt.",
+    "conditions": "Ein Absendetag und ein Empfangsdatum eines künftigen Schreibens stehen nicht fest. Spätere Korrespondenz, eine frühere Mahnung, eine endgültige Ablehnung und eine besondere Fälligkeitsvereinbarung sind nicht dokumentiert. Höhe und Fälligkeit eines weiteren Auszahlungsbetrags hängen von den Kautionserträgen und den beiden Einbehalten ab. Ein lesbarer Primärtext zur angemessenen Prüfungs- und Abrechnungsfrist nach Mietende fehlt.",
+    "id": "frist_und_anschreiben",
+    "sources": [
+      {
+        "quote": "§ 286 BGB - Einzelnorm zurück weiter Nichtamtliches Inhaltsverzeichnis Bürgerliches Gesetzbuch (BGB) § 286 Verzug des Schuldners *) (1) Leistet der Schuldner auf eine Mahnung des Gläubigers nicht, die nach dem Eintritt der Fälligkeit erfolgt, so kommt er durch die Mahnung in Verzug.",
+        "url": "https://www.gesetze-im-internet.de/bgb/__286.html"
+      }
+    ],
+    "status": "conditional",
+    "step_ids": [],
+    "title": "Sachliches Aufforderungsschreiben mit Prüf- und Zahlungsfrist vorbereiten"
+  },
+  "after": {
+    "conclusion": "Ein sachliches Anschreiben kann die am 05.10.2026 dokumentierte Gutschrift von 250,00 EUR ausdrücklich berücksichtigen, ohne sie erneut zu verlangen. Die Einbehalte von 500,00 EUR wegen behaupteter Parkettkratzer und 750,00 EUR als Betriebskostenreserve sollten getrennt erläutert und mit den jeweils vorhandenen Unterlagen belegt werden; außerdem sind die nicht bezifferten Kautionserträge anzusprechen. Die 1.250,00 EUR sind dabei als derzeit einbehaltener Betrag und nicht als bereits feststehender sofortiger Auszahlungsanspruch zu bezeichnen. Das Schreiben kann um Auskunft, Belege, eine nachvollziehbare Abrechnung und die Auszahlung eines nach der Klärung verbleibenden fälligen Betrags bitten. Für Verzug aufgrund einer Mahnung gilt „§ 286 BGB - Einzelnorm zurück weiter Nichtamtliches Inhaltsverzeichnis Bürgerliches Gesetzbuch (BGB) § 286 Verzug des Schuldners *) (1) Leistet der Schuldner auf eine Mahnung des Gläubigers nicht, die nach dem Eintritt der Fälligkeit erfolgt, so kommt er durch die Mahnung in Verzug.“. Diese Vorschrift setzt für diesen Verzugsweg voraus, dass die Fälligkeit bereits vor der Mahnung eingetreten ist; sie bestimmt nicht, wann ein weiterer Kautionsrückzahlungsbetrag fällig wird. Eine im Schreiben vorgeschlagene Antwortfrist belegt diese Fälligkeit daher nicht. Ein konkretes Kalenderdatum kann erst anhand des tatsächlichen Absendetags eingesetzt werden; Versand und Empfang werden durch die Vorbereitung des Entwurfs nicht bewirkt.",
+    "conditions": "Absendetag und Empfangsdatum eines künftigen Schreibens stehen nicht fest. Eine frühere Mahnung, eine endgültige Ablehnung, eine besondere Fälligkeitsvereinbarung und weitere Korrespondenz sind nicht dokumentiert. Höhe und Fälligkeit eines weiteren Auszahlungsbetrags hängen von den Kautionserträgen und der abschließenden Prüfung der beiden Einbehalte ab. Ein lesbarer Primärtext zur angemessenen Prüfungs- und Abrechnungsfrist nach Mietende fehlt.",
+    "id": "frist_und_anschreiben",
+    "sources": [
+      {
+        "quote": "§ 286 BGB - Einzelnorm zurück weiter Nichtamtliches Inhaltsverzeichnis Bürgerliches Gesetzbuch (BGB) § 286 Verzug des Schuldners *) (1) Leistet der Schuldner auf eine Mahnung des Gläubigers nicht, die nach dem Eintritt der Fälligkeit erfolgt, so kommt er durch die Mahnung in Verzug.",
+        "url": "https://www.gesetze-im-internet.de/bgb/__286.html"
+      }
+    ],
+    "status": "conditional",
+    "step_ids": [],
+    "title": "Sachliches Aufforderungsschreiben mit Prüf- und Zahlungsfrist vorbereiten"
+  },
+  "first_finding": {
+    "code": "source",
+    "reason": "Die conclusion stellt als Regel auf: „Eine Zahlung kann nur insoweit verlangt werden, wie ein Betrag nach Prüfung fällig und nicht berechtigt oder nicht mehr als Sicherheit erforderlich ist.“ Der zitierte § 286 Abs. 1 BGB regelt lediglich den Verzug nach einer nach Fälligkeit erfolgten Mahnung; er belegt weder die Fälligkeit der Kautionsrückzahlung noch die Voraussetzungen „nach Prüfung“, „nicht berechtigt“ oder „nicht mehr als Sicherheit erforderlich“. Ein lesbarer Primärtext zur Prüfungs- und Abrechnungsfrist bzw. zum Sicherungseinbehalt fehlt laut candidate selbst.",
+    "location": "analysis.topics[5]"
+  },
+  "remaining_finding": {
+    "code": "source",
+    "reason": "Im Feld conditions wird behauptet: „Höhe und Fälligkeit eines weiteren Auszahlungsbetrags hängen von den Kautionserträgen und der abschließenden Prüfung der beiden Einbehalte ab.“ § 286 Abs. 1 BGB setzt Fälligkeit für den dort geregelten Verzugsweg nur voraus und bestimmt nicht, wovon die Fälligkeit der Kautionsrückzahlung abhängt. Der Kandidat räumt selbst ein: „Ein lesbarer Primärtext zur angemessenen Prüfungs- und Abrechnungsfrist nach Mietende fehlt.“ Die Abhängigkeit der Höhe ist nachvollziehbar, die behauptete Fälligkeitsvoraussetzung ist dagegen nicht belegt und muss als ungeklärte Rechtsfrage offenbleiben.",
+    "location": "analysis.topics[5]"
+  }
+}
