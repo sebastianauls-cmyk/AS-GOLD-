@@ -1,3 +1,4 @@
+import {repairReplyWithFieldDecisions} from '../fixtures/repairFieldDecisions.mjs'
 import assert from 'node:assert/strict'
 import {researchRetrievalPlan} from '../../supabase/functions/_shared/verifiedResearch.mjs'
 import {advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewGroups} from '../../supabase/functions/_shared/completeCaseAnalysis.mjs'
@@ -81,7 +82,7 @@ export async function testSourceActionChecks(){
       const assigned=payloads.find(item=>item.assigned_replacements).assigned_replacements
       assert.deepEqual(assigned.map(item=>item.location),['analysis.limitations','analysis.topics[0]','steps[0]','steps[1]'])
       const replacement={ 'analysis.limitations':fixture.reply.analysis.limitations, 'analysis.topics[0]':fixture.reply.analysis.topics[0], 'steps[0]':fixAction?fixture.reply.steps[0]:bad.steps[0], 'steps[1]':fixture.reply.steps[1] }
-      output={requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,replacement[item.location]]))}
+      output=repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,replacement[item.location]]))},assigned)
     }else{
       assert.equal(request.text.format.name,'ash_evidence_review_v139','no full generation, planning or extra research is allowed during local repair')
       reviews++
@@ -111,3 +112,4 @@ export async function testSourceActionChecks(){
   assert.deepEqual(flow.result.letters,candidate.letters)
   }
 }
+
