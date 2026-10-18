@@ -1,4 +1,5 @@
 import {deflateSync} from 'node:zlib'
+import {Buffer} from 'node:buffer'
 
 // Small real, compressed, two-page PDF. Synthetic extraction fixture only;
 // it is not a court decision, model response, or customer export.
