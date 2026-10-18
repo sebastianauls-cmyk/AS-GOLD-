@@ -1,3 +1,4 @@
+import {repairReplyWithFieldDecisions} from './fixtures/repairFieldDecisions.mjs'
 import {PAYMENT_DATE_ATTRIBUTION_RULES} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
@@ -118,7 +119,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
         const replacement=structuredClone((outcome==='unresolved'?previous:original).analysis.topics[0])
         if(outcome==='regression')replacement.conditions+=' New synthetic defect introduced in the changed section.'
         if(outcome==='bad_quote')replacement.sources=[{url:'https://example.invalid/not-fetched',quote:'A fabricated legal condition.'}]
-        output={requires_full_correction:false,reason:'',changes:{edit_0:original.analysis.limitations,edit_1:replacement,edit_2:original.steps[1]}}
+        output=repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes:{edit_0:original.analysis.limitations,edit_1:replacement,edit_2:original.steps[1]}},assigned)
       }else{
         assert.equal(request.text.format.name,'ash_evidence_review_v139')
         reviewCalls++
@@ -230,7 +231,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
           'analysis.limitations':outcome==='fixed'?[corrected,unrelated]:previous.analysis.limitations,
           'steps[1]':previous.steps[1]
         }
-        output={requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(target=>[target.key,replacements[target.location]]))}
+        output=repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(target=>[target.key,replacements[target.location]]))},assigned)
       }else{
         assert.equal(request.text.format.name,'ash_evidence_review_v139')
         reviewCalls++
@@ -432,3 +433,4 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   assert.equal(counts.total,23,'one local correction reduces the former 39-call scenario to 23')
   console.log(`Grouped complete-case correction: ${counts.total} simulated requests; ${initialCalls} for the first candidate, then 1 replacement + 1 changed foundation review + the plan and its downstream audits; all 25 sections covered by ${groupCount} current approvals. No live model cost measured.`)
 }
+
