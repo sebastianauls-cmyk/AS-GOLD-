@@ -414,6 +414,14 @@ try {
   job=await enqueue();const badLetter=await drain(job.id)
   assert.equal(badLetter.error_code,'review_unresolved')
   assert.deepEqual(badLetter.issues.map(issue=>issue.location),['letters[0]'])
+  const correctionDiagnosis=badLetter.issues[0].correction
+  assert.equal(correctionDiagnosis?.phase,'after_correction','the real worker and database retain the comparison after the terminal checkpoint is erased')
+  assert.equal(correctionDiagnosis.section_changed,false)
+  assert.equal(correctionDiagnosis.before.sha256,correctionDiagnosis.after.sha256)
+  assert(correctionDiagnosis.previous_findings.some(issue=>issue.reason.includes('Synthetic negative control')))
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[other]);await db.exec('set role authenticated')
+  assert.equal((await db.query('select issues from public.case_analysis_jobs where id=$1',[job.id])).rows.length,0,'another owner cannot read correction diagnostics')
+  await db.exec('reset role')
   assert.equal(await scalar('select count(*)::integer from case_roadmaps where id=$1',[job.id]),0,'a defect in the new final scope still prevents result publication')
 
   reviewIssues=[{code:'meaning',location:'analysis',reason:'Synthetic negative control: unsupported conclusion.'}]

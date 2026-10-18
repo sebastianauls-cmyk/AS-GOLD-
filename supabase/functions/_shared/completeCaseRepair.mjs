@@ -202,3 +202,64 @@ export function applyLocalizedRepair(raw,targets,candidate,schema,resolve){
 export function localizedRepairAssignments(targets,candidate){
   return targets.map(target=>({key:target.key,location:target.location,previous:get(candidate,target.path)}))
 }
+
+// The one correction must remain inspectable after a terminal rejection. Keep
+// bounded excerpts and hashes of the COMPLETE values, never provider requests,
+// credentials or a second copy of the whole case. These excerpts are diagnostic
+// drafts, not evidence or an accepted customer answer.
+const TRACE_TEXT_LIMIT=4000
+function traceExcerpt(text){
+  const bytes=new TextEncoder().encode(text)
+  let end=Math.min(bytes.length,TRACE_TEXT_LIMIT)
+  // Cut only at a UTF-8 boundary: a diagnostic excerpt must not manufacture a
+  // replacement character or multiply the sealed-state budget for CJK/emoji.
+  if(end<bytes.length)while(end>0&&(bytes[end]&0xc0)===0x80)end--
+  return {text:new TextDecoder().decode(bytes.subarray(0,end)),truncated:end<bytes.length}
+}
+const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value
+const traceFindings=issues=>(issues||[]).slice(0,30).map(issue=>({code:String(issue.code||'').slice(0,80),location:String(issue.location||'').slice(0,160),reason:String(issue.reason||'').slice(0,700)}))
+async function traceValue(value){
+  const text=JSON.stringify(canonical(value))
+  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text))
+  return {...traceExcerpt(text),sha256:Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,'0')).join('')}
+}
+export async function createCorrectionTrace(targets,previous,candidate,findings){
+  const entries=[]
+  for(const target of targets){
+    const before=await traceValue(get(previous,target.path)),after=await traceValue(get(candidate,target.path))
+    entries.push({location:target.location,changed:before.sha256!==after.sha256,before,after})
+  }
+  return {version:1,findings:traceFindings(findings),entries}
+}
+export function correctionReviewComparison(trace,locations){
+  if(trace?.version!==1||!Array.isArray(trace.entries))return null
+  const changes=trace.entries.filter(entry=>entry.changed&&locations.includes(entry.location))
+  if(!changes.length)return null
+  return {previous_findings:trace.findings.filter(issue=>locations.includes(issue.location)),changes}
+}
+export async function correctionFailureDiagnostics(issues,candidate,trace,schema){
+  if(trace?.version!==1||!Array.isArray(trace.entries))return []
+  const diagnostics=[]
+  for(const issue of issues.slice(0,8)){
+    const path=locate(candidate,issue.location,schema)
+    if(!path){diagnostics.push(null);continue}
+    const location=label(path),entry=trace.entries.find(entry=>entry.location===location)
+    // applyLocalizedRepair preserves every unassigned section verbatim. A new
+    // finding on that section is not proof that the correction introduced it.
+    const after=entry?.after||await traceValue(get(candidate,path))
+    diagnostics.push({phase:'after_correction',section_changed:entry?.changed??false,
+      previous_findings:trace.findings.filter(finding=>finding.location===location).slice(0,8),
+      before:entry?.before||after,after})
+  }
+  return diagnostics
+}
+export function safeCorrectionDiagnostic(value){
+  const snapshot=item=>{
+    if(!item||typeof item.text!=='string'||typeof item.truncated!=='boolean'||!/^[a-f0-9]{64}$/.test(item.sha256))return null
+    const excerpt=traceExcerpt(item.text)
+    return {...excerpt,truncated:item.truncated||excerpt.truncated,sha256:item.sha256}
+  }
+  if(value?.phase!=='after_correction'||typeof value.section_changed!=='boolean'||!Array.isArray(value.previous_findings))return null
+  const before=snapshot(value.before),after=snapshot(value.after)
+  return before&&after?{phase:'after_correction',section_changed:value.section_changed,previous_findings:traceFindings(value.previous_findings).slice(0,8),before,after}:null
+}
