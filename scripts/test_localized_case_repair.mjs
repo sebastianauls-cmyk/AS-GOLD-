@@ -2,7 +2,7 @@ import {PAYMENT_DATE_ATTRIBUTION_RULES} from '../supabase/functions/_shared/case
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
 import {RESEARCH_SCOPE_RULES,advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
-import {completeReviewLocations,resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair} from '../supabase/functions/_shared/completeCaseRepair.mjs'
+import {completeReviewLocations,resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair,createCorrectionTrace,correctionFailureDiagnostics,safeCorrectionDiagnostic} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 
 const get=(value,path)=>path.reduce((item,key)=>item[key],value)
 const issue=(location,reason='Synthetic concrete defect in this field.')=>({code:'meaning',location,reason})
@@ -96,14 +96,14 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   // Replay a local unsupported eligibility detail through the actual workflow,
   // then prove that a failed correction, fabricated quote and invalid location
   // still cannot become an accepted customer result. No live API calls.
-  for(const defect of ['source','meaning'])for(const outcome of ['fixed','unresolved','bad_quote','unassigned','compound','global']){
-    const previous=validateCompleteAnalysis(candidate,args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
+  for(const defect of ['source','meaning'])for(const outcome of ['fixed','unresolved','regression','bad_quote','unassigned','compound','global']){
+    const previous=validateCompleteAnalysis(structuredClone(candidate),args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
     const original=structuredClone(previous)
     const defectText=defect==='meaning'?' Missing a concrete follow-up action for the documented payment question.':' Unsupported synthetic eligibility detail.'
     previous.analysis.topics[0].conditions+=defectText
     if(defect==='meaning')previous.steps[1].action='Wait indefinitely without a concrete next action.'
     const expectedReviews=completeReviewGroups(previous).length
-    let repairCalls=0,reviewCalls=0,flaggedSource=false
+    let repairCalls=0,reviewCalls=0,flaggedSource=false,fixtureFailure
     const transport=async(url,options)=>{
       assert.equal(url,'https://api.openai.com/v1/responses')
       const request=JSON.parse(options.body),payloads=request.input.flatMap(message=>message.content).map(block=>{try{return JSON.parse(block.text)}catch{return {}}})
@@ -116,6 +116,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
         const assigned=payloads.find(p=>p.assigned_replacements).assigned_replacements
         assert.deepEqual(assigned.map(t=>t.location),['analysis.limitations','analysis.topics[0]','steps[1]'])
         const replacement=structuredClone((outcome==='unresolved'?previous:original).analysis.topics[0])
+        if(outcome==='regression')replacement.conditions+=' New synthetic defect introduced in the changed section.'
         if(outcome==='bad_quote')replacement.sources=[{url:'https://example.invalid/not-fetched',quote:'A fabricated legal condition.'}]
         output={requires_full_correction:false,reason:'',changes:{edit_0:original.analysis.limitations,edit_1:replacement,edit_2:original.steps[1]}}
       }else{
@@ -124,18 +125,29 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
         const part=payloads.find(p=>p.candidate).candidate
         const locations=request.text.format.schema.properties.issues.items.properties.location.enum
         assert(Array.isArray(locations)&&locations.includes('analysis'),'a wider defect remains reportable')
-        const reject=part.analysis?.topics?.some(t=>t.conditions.includes(defectText.trim()))&&(!flaggedSource||repairCalls)
+        const comparison=payloads.find(p=>p.correction_comparison)?.correction_comparison
+        if(repairCalls&&part.analysis?.topics&&['fixed','regression'].includes(outcome)){
+          const change=comparison?.changes.find(change=>change.location==='analysis.topics[0]')
+          assert(change,'the affected independent review receives the server-built before/after comparison')
+          assert(change.before.text.includes(defectText.trim()))
+          assert(!change.after.text.includes(defectText.trim()),'resolved old wording is not presented as the current candidate')
+          assert.notEqual(change.before.sha256,change.after.sha256)
+          assert(request.input.some(message=>message.role==='developer'&&message.content.some(block=>block.text.includes('never treat a corrected old finding as still present'))),'comparison rules stay in server instructions, not source data')
+        }
+        const regression=part.analysis?.topics?.some(t=>t.conditions.includes('New synthetic defect'))
+        const reject=(regression||part.analysis?.topics?.some(t=>t.conditions.includes(defectText.trim())))&&(!flaggedSource||repairCalls)
         if(reject)flaggedSource=true
         const location=({unassigned:'analysis.topics[99]',compound:'analysis.topics[0] und Berechnungsabdeckung',global:'analysis'})[outcome]||'analysis.topics[0]'
-        output={issues:reject?[{code:defect,location,reason:defect==='meaning'?'The linked step lacks a concrete action to resolve the stated payment question.':'The supplied originals and fetched text do not support this eligibility example.'}]:[]}
+        output={issues:reject?[{code:defect,location,reason:regression?'New unsupported condition in the corrected section.':defect==='meaning'?'The linked step lacks a concrete action to resolve the stated payment question.':'The supplied originals and fetched text do not support this eligibility example.'}]:[]}
       }
       return Response.json({status:'completed',id:`source-${outcome}-${reviewCalls}-${repairCalls}`,model:request.model,output_text:JSON.stringify(output)})
     }
     let flow={status:'processing',state:{stage:'analysis',scope:{issues:[{id:'settlement',calculation_needed:true}],research_topics:[]},research:[],discovery_gaps:[],modelState:{stage:'review',attempt:1,candidate:previous,structuralFeedback:[],response_id:'synthetic-source-candidate'}}},failure
     try{for(let step=0;flow.status==='processing'&&step<30;step++){
       assert(!flow.result)
-      flow=await advanceCompleteAnalysis({...args,fetchImpl:transport,state:flow.state})
+      flow=await advanceCompleteAnalysis({...args,fetchImpl:async(...input)=>{try{return await transport(...input)}catch(error){fixtureFailure=error;throw error}},state:flow.state})
     }}catch(error){failure=error}
+    assert.ifError(fixtureFailure)
     if(outcome==='fixed'){
       assert.equal(failure,undefined);assert.equal(flow.status,'completed');assert.equal(flow.attempts,2)
       assert.equal(repairCalls,1);assert.equal(reviewCalls,2*expectedReviews,'changed topic dependencies invalidate all affected approvals')
@@ -144,8 +156,51 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
     }else{
       assert(!flow.result)
       assert.equal(failure?.code,['unassigned','compound'].includes(outcome)?'review_invalid':outcome==='bad_quote'?'source_unresolved':'review_unresolved')
-      assert.equal(repairCalls,['unresolved','bad_quote'].includes(outcome)?1:0)
+      assert.equal(repairCalls,['unresolved','regression','bad_quote'].includes(outcome)?1:0)
+      if(outcome==='unresolved'){
+        assert.equal(failure.correctionDiagnostics?.[0]?.section_changed,false,'a failed unchanged correction must retain a before/after diagnosis')
+        assert.equal(failure.correctionDiagnostics[0].before.sha256,failure.correctionDiagnostics[0].after.sha256)
+        assert(failure.correctionDiagnostics[0].previous_findings.length,'the first review finding must survive the final rejection')
+      }
+      if(outcome==='regression'){
+        const diagnosis=failure.correctionDiagnostics[0]
+        assert.equal(diagnosis.section_changed,true)
+        assert(diagnosis.after.text.includes('New synthetic defect'))
+        assert(!diagnosis.before.text.includes('New synthetic defect'))
+        assert(!diagnosis.previous_findings.some(issue=>issue.reason===failure.issues[0].reason),'a new objection is not mislabelled as the original defect')
+        assert.equal(failure.issues[0].reason,'New unsupported condition in the corrected section.')
+      }
     }
+  }
+
+  // Bounded diagnostics do not turn excerpts into full originals or mistakes
+  // outside the patch into regressions caused by it. Old checkpoints work too.
+  {
+    const previous=structuredClone(data),changed=structuredClone(data)
+    changed.analysis.topics[0].conditions+=' A changed condition.'
+    const targets=localizedRepairTargets(previous,[issue('analysis.topics[0]')],schema)
+    const trace=await createCorrectionTrace(targets,previous,changed,[issue('analysis.topics[0]')])
+    const untouched=await correctionFailureDiagnostics([issue('letters[0]')],changed,trace,schema)
+    assert.equal(untouched[0].section_changed,false)
+    assert.deepEqual(untouched[0].previous_findings,[])
+    assert.equal(untouched[0].before.sha256,untouched[0].after.sha256)
+    assert.deepEqual(await correctionFailureDiagnostics([issue('letters[0]')],changed,null,schema),[],'legacy checkpoints do not invent a prior comparison')
+    changed.analysis.topics[0].conclusion='Long diagnostic text. '.repeat(1000)
+    const long=await createCorrectionTrace(targets,previous,changed,[])
+    const entry=long.entries.find(entry=>entry.location==='analysis.topics[0]')
+    assert.equal(entry.after.text.length,4000);assert.equal(entry.after.truncated,true)
+    changed.analysis.topics[0].conclusion+='A difference beyond the excerpt.'
+    const later=await createCorrectionTrace(targets,previous,changed,[])
+    const laterEntry=later.entries.find(entry=>entry.location==='analysis.topics[0]')
+    assert.equal(entry.after.text,laterEntry.after.text)
+    assert.notEqual(entry.after.sha256,laterEntry.after.sha256,'hashes cover the entire value, including the undisplayed tail')
+    const safe=safeCorrectionDiagnostic({...untouched[0],provider_key:'must-not-leave',before:{...untouched[0].before,secret:'must-not-leave'}})
+    assert(!JSON.stringify(safe).includes('must-not-leave'))
+    assert.equal(safeCorrectionDiagnostic({...untouched[0],after:{text:'invalid'}}),null)
+    const multilingual=safeCorrectionDiagnostic({...untouched[0],after:{...untouched[0].after,text:'日本語🙂'.repeat(2000)}}).after
+    assert(new TextEncoder().encode(multilingual.text).length<=4000)
+    assert.equal(multilingual.truncated,true)
+    assert(!multilingual.text.includes('\ufffd'),'byte limits preserve complete Unicode characters')
   }
 
   // A corrected topic can contradict an unchanged global limitation. Exercise
@@ -153,7 +208,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   // first review identifies only the topic; the second checks the assembled
   // topic AND limitation. This is dependency coverage, not a live model test.
   for(const defect of ['meaning','source'])for(const outcome of ['fixed','stale_limitation']){
-    const previous=validateCompleteAnalysis(candidate,args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
+    const previous=validateCompleteAnalysis(structuredClone(candidate),args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
     const unrelated=previous.analysis.limitations[0]
     const stale='Eine Gesamtabrechnung ist ohne Aufteilung der bestätigten Zahlung nicht möglich.'
     const corrected='Für einen bezifferten Bruttosaldo fehlt der Gesamtertrag; die Aufteilung der bestätigten Zahlung wird nur für getrennte Komponenten benötigt.'
@@ -348,7 +403,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   // schema/source defects, required wider changes and incomplete output.
   for(const defect of ['source','format','wider','truncated']){
     let repairs=0,reviews=0
-    const previous=validateCompleteAnalysis(candidate,args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
+    const previous=validateCompleteAnalysis(structuredClone(candidate),args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
     const before=structuredClone(previous)
     const state={stage:'analysis',scope:{issues:[{id:'settlement',calculation_needed:true}],research_topics:[]},research:[],discovery_gaps:[],localizedRepair:{},modelState:{stage:'generation',attempt:2,previous,feedback:[issue('analysis.calculations[difference].explanation')]}}
     const transport=async(url,options)=>{

@@ -5,6 +5,7 @@ import {advanceCompleteAnalysis,completeAnalysisStage} from './completeCaseAnaly
 import {openModelCheckpoint,sealModelCheckpoint} from './modelCheckpoint.mjs'
 import {retainedCaseWork} from './retainedCaseWork.mjs'
 import {MODEL_QUALITY_VERSION,ModelWorkflowError} from './modelQuality.mjs'
+import {safeCorrectionDiagnostic} from './completeCaseRepair.mjs'
 
 // Called only with a database-claimed, single-use job lease. No caller-supplied
 // identity, model input, checkpoint or result can enter this worker endpoint.
@@ -54,7 +55,10 @@ export async function processCaseAnalysisJob({client,job,secret,providerKey,cach
     const retryAfter=Number.isInteger(error.retry_after)&&error.retry_after>=0&&error.retry_after<=86400?error.retry_after:null
     const retry=['provider_network','provider_timeout','provider_response_format'].includes(code)||(code==='provider_http'&&[500,502,503,504].includes(providerStatus))
     const message=error instanceof ModelWorkflowError?error.message:'Die Hintergrundverarbeitung konnte nicht abgeschlossen werden. Kein neues Ergebnis gespeichert.'
-    const issues=Array.isArray(error.issues)?error.issues.slice(0,8).map(issue=>({code:String(issue.code||'').slice(0,80),location:String(issue.location||'').slice(0,160),reason:String(issue.reason||'').slice(0,700)})):[]
+    const issues=Array.isArray(error.issues)?error.issues.slice(0,8).map((issue,index)=>{
+      const correction=error instanceof ModelWorkflowError?safeCorrectionDiagnostic(error.correctionDiagnostics?.[index]):null
+      return {code:String(issue.code||'').slice(0,80),location:String(issue.location||'').slice(0,160),reason:String(issue.reason||'').slice(0,700),...(correction?{correction}:{})}
+    }):[]
     try {await finish({p_outcome:{status:'failed',code,message:message.slice(0,1200),issues,retry,provider_status:providerStatus,retry_after:retryAfter}})}catch{log('failure_save_unavailable')}
   }
 }
