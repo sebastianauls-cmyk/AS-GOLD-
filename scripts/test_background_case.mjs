@@ -414,9 +414,13 @@ try {
   localLetterScenario=false
 
   reviewIssues=part=>part.letters?.some(letter=>letter.id===roadmapTestResult.letters.at(-1).id)?[{code:'meaning',location:'letters[0].body',reason:'Synthetic negative control: letter invents a payment suspension.'}]:[]
+  const reviewsBeforeUnchanged=reviewedParts.length,repairsBeforeUnchanged=localRepairCalls
   job=await enqueue();const badLetter=await drain(job.id)
   assert.equal(badLetter.error_code,'review_unresolved')
-  assert.deepEqual(badLetter.issues.map(issue=>issue.location),['letters[0]'])
+  assert.deepEqual(badLetter.issues.map(issue=>issue.location),['letters[0]','output'])
+  assert(badLetter.issues[1].reason.includes('nicht verändert'),'the persisted failure explains why the repeated review was skipped')
+  assert.equal(localRepairCalls-repairsBeforeUnchanged,1)
+  assert.equal(reviewedParts.length-reviewsBeforeUnchanged,4,'only initial reviews are requested; no further audit follows the unchanged repair')
   const correctionDiagnosis=badLetter.issues[0].correction
   assert.equal(correctionDiagnosis?.phase,'after_correction','the real worker and database retain the comparison after the terminal checkpoint is erased')
   assert.equal(correctionDiagnosis.section_changed,false)

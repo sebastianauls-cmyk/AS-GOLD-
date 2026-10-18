@@ -270,6 +270,10 @@ function traceExcerpt(text){
   return {text:new TextDecoder().decode(bytes.subarray(0,end)),truncated:end<bytes.length}
 }
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value
+// Compare the complete resolved, validated candidates. Key ordering, passage
+// IDs and omitted server-computed fields must not buy a repeat of a failed
+// review. Any actual change still requires independent semantic review.
+export const localizedRepairChanged=(previous,candidate)=>JSON.stringify(canonical(previous))!==JSON.stringify(canonical(candidate))
 const traceFindings=issues=>(issues||[]).slice(0,30).map(issue=>({code:String(issue.code||'').slice(0,80),location:String(issue.location||'').slice(0,160),reason:String(issue.reason||'').slice(0,700)}))
 async function traceValue(value){
   const text=JSON.stringify(canonical(value))
