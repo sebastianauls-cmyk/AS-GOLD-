@@ -63,12 +63,19 @@ for(const response of [
 
 const cancelled=new AbortController();cancelled.abort()
 assert.equal(await extractOfficialPdfText(bytes.slice(),{signal:cancelled.signal}),null)
+const landing='<html><main>A general official decisions index is not the requested judgment. This page contains navigation, search controls and many unrelated court decisions.</main></html>'
+for(const legacy of [url,'https://authority.example/document.py?Blank=1.pdf']){
+  const result=await retrieveOfficialEvidence([{url:legacy}],domains,{fetchImpl:async request=>request===legacy?
+    new Response('',{status:302,headers:{location:'/decisions'}}):new Response(landing,{headers:{'content-type':'text/html'}})})
+  assert.equal(result.size,0,'a PDF redirect to an HTML index must not become decision evidence')
+}
 const items=Array.from({length:4},(_,i)=>({url:`https://authority.example/${i}.pdf`}))
 const bounded=await retrieveOfficialEvidence(items,domains,{fetchImpl:pdfResponse})
 assert.equal(bounded.size,3,'one research step parses at most three PDF responses')
 const cached={...evidence,checked_at:new Date().toISOString(),retrieval_mode:'verified_snapshot'}
 assert.equal((await retrieveOfficialEvidence([item],domains,{fetchImpl:async()=>new Response('',{status:503}),snapshotRecords:[cached]})).get(url).source_text,evidence.source_text)
 const text='Plain source content with enough readable text for evidence extraction. Existing text, HTML and character decoding paths must continue working.'
-assert.equal((await retrieveOfficialEvidence([item],domains,{fetchImpl:async()=>new Response(text,{headers:{'content-type':'text/plain'}})})).get(url).source_text,text)
+const textUrl='https://authority.example/source.txt'
+assert.equal((await retrieveOfficialEvidence([{url:textUrl}],domains,{fetchImpl:async()=>new Response(text,{headers:{'content-type':'text/plain'}})})).get(textUrl).source_text,text)
 assert.equal(externalRequests,0,'PDFs cannot initiate their own network/asset requests')
 console.log(JSON.stringify({pdf_extraction:'passed',runtime:Deno.version,elapsed_ms:Math.round(performance.now()-start),live_model_calls:0,external_requests:externalRequests,customer_acceptance:'pending'}))
