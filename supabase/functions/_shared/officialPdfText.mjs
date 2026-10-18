@@ -38,13 +38,13 @@ async function extract(bytes,signal,maxChars){
       for(let number=1;number<=pdf.numPages;number++){
         signal?.throwIfAborted()
         const page=await pdf.getPage(number)
-        const reader=page.streamTextContent({includeMarkedContent:false}).getReader()
         try{
-          while(true){
-            signal?.throwIfAborted()
-            const {done,value}=await reader.read()
-            if(done)break
-            for(const item of value.items){
+          // Complete one page before stopping at the character boundary.
+          // Cancelling PDF.js's message stream mid-page can enqueue into a
+          // closed stream on Deno. Pages and input bytes are capped above.
+          const content=await page.getTextContent({includeMarkedContent:false})
+          signal?.throwIfAborted()
+          for(const item of content.items){
               if(typeof item.str!=='string')continue
               if(++itemsSeen>MAX_ITEMS)return null
               // Separate independently positioned numeric items. Otherwise two
@@ -56,10 +56,8 @@ async function extract(bytes,signal,maxChars){
               text+=(text?separator:'')+part
               previous=part
               if(text.length>maxChars){truncated=true;break}
-            }
-            if(truncated)break
           }
-        }finally{await reader.cancel().catch(()=>{});page.cleanup()}
+        }finally{page.cleanup()}
         if(truncated)break
         // An explicit page boundary also prevents cross-page number grouping.
         if(number<pdf.numPages&&text){text+=' ; ';previous=''}
