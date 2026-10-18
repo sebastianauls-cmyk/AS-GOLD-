@@ -137,14 +137,16 @@ export function readableSourceText(body,type) {
   }).replace(/\s+/gu,' ').trim()
 }
 
-async function fetchOfficialSource(item,domains,fetchImpl,maxChars=48000) {
+async function fetchOfficialSource(item,domains,fetchImpl,maxChars=48000,pdfBudget={remaining:3}) {
   const original=officialUrl(item.url,domains)
   if(!original) return null
+  const address=new URL(original)
+  const requestsPdf=/\.pdf$/iu.test(address.pathname)||[...address.searchParams.values()].some(value=>/\.pdf$/iu.test(value))
   const signal=AbortSignal.timeout(8000)
   let current=original,response
   try {
     for(let redirects=0;redirects<=3;redirects++) {
-      response=await fetchImpl(current,{method:'GET',redirect:'manual',signal,headers:{Accept:'text/html, application/xhtml+xml, text/plain'}})
+      response=await fetchImpl(current,{method:'GET',redirect:'manual',signal,headers:{Accept:'text/html, application/xhtml+xml, text/plain, application/pdf'}})
       if([301,302,303,307,308].includes(response.status)) {
         const location=response.headers.get('location');await response.body?.cancel()
         const next=location?officialUrl(new URL(location,current).href,domains):null
@@ -155,29 +157,43 @@ async function fetchOfficialSource(item,domains,fetchImpl,maxChars=48000) {
     }
     if(response?.status!==200){await response?.body?.cancel();return null}
     const type=(response.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()
-    if(!['text/html','application/xhtml+xml','text/plain'].includes(type)){await response.body?.cancel();return null}
+    // Legacy court PDF links can redirect to a general decisions index. Its
+    // HTML is not the requested decision, even on the same official domain.
+    if(requestsPdf&&type!=='application/pdf'){await response.body?.cancel();return null}
+    if(!['text/html','application/xhtml+xml','text/plain','application/pdf'].includes(type)){await response.body?.cancel();return null}
+    // Keep expensive parsing bounded per research step as well as per file.
+    if(type==='application/pdf'&&pdfBudget.remaining--<=0){await response.body?.cancel();return null}
     if(Number(response.headers.get('content-length'))>1500000){await response.body?.cancel();return null}
     const reader=response.body?.getReader();if(!reader)return null
     const chunks=[];let length=0
     while(true){const {done,value}=await reader.read();if(done)break;length+=value.byteLength;if(length>1500000){await reader.cancel();return null}chunks.push(value)}
     const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.byteLength}
-    // Many official legacy pages declare ISO-8859-1 in HTML, not in HTTP headers.
-    const head=new TextDecoder('windows-1252').decode(bytes.subarray(0,4096))
-    const charset=/charset\s*=\s*["']?([\w-]+)/i.exec(response.headers.get('content-type')||'')?.[1]
-      ||/<meta\b[^>]*charset\s*=\s*["']?([\w-]+)/i.exec(head)?.[1]
-      ||/<\?xml\b[^>]*encoding\s*=\s*["']([\w-]+)/i.exec(head)?.[1]||'utf-8'
-    const markup=new TextDecoder(charset,{fatal:true}).decode(bytes)
-    const fullText=readableSourceText(markup,type)
+    let fullText,title=new URL(current).hostname,pdfTruncated=false
+    if(type==='application/pdf'){
+      const {extractOfficialPdfText}=await import('./officialPdfText.mjs')
+      const extracted=await extractOfficialPdfText(bytes,{signal,maxChars})
+      if(!extracted)return null
+      fullText=extracted.text;pdfTruncated=extracted.truncated
+    }else{
+      // Many official legacy pages declare ISO-8859-1 in HTML, not in HTTP headers.
+      const head=new TextDecoder('windows-1252').decode(bytes.subarray(0,4096))
+      const charset=/charset\s*=\s*["']?([\w-]+)/i.exec(response.headers.get('content-type')||'')?.[1]
+        ||/<meta\b[^>]*charset\s*=\s*["']?([\w-]+)/i.exec(head)?.[1]
+        ||/<\?xml\b[^>]*encoding\s*=\s*["']([\w-]+)/i.exec(head)?.[1]||'utf-8'
+      const markup=new TextDecoder(charset,{fatal:true}).decode(bytes)
+      fullText=readableSourceText(markup,type)
+      if(type!=='text/plain')title=readableSourceText(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/iu.exec(markup)?.[1]||'','text/html').slice(0,260)||title
+    }
     if(fullText.length<100||/verifying your browser|radware page|security check|access denied/iu.test(fullText.slice(0,250))) return null
     const retrievedText=fullText.slice(0,maxChars)
     const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(retrievedText))
-    const title=type==='text/plain'?new URL(current).hostname:readableSourceText(/<title\b[^>]*>([\s\S]*?)<\/title\s*>/iu.exec(markup)?.[1]||'','text/html').slice(0,260)||new URL(current).hostname
-    return {url:original,final_url:current,title,source_text:retrievedText,truncated:fullText.length>retrievedText.length,checked_at:new Date().toISOString(),content_sha256:Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')}
+    return {url:original,final_url:current,title,source_text:retrievedText,truncated:pdfTruncated||fullText.length>retrievedText.length,checked_at:new Date().toISOString(),content_sha256:Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('')}
   } catch {return null}
 }
 
 export async function retrieveOfficialEvidence(items,domains,{fetchImpl=fetch,maxSources=8,maxChars=48000,snapshotRecords=[]}={}) {
   const unique=[...new Map(items.map(item=>[item.url,item])).values()].slice(0,Math.min(maxSources,20))
-  const fetched=await Promise.all(unique.map(async item=>await fetchOfficialSource(item,domains,fetchImpl,Math.min(maxChars,48000))||await cachedSource(item.url,domains,Math.min(maxChars,48000),snapshotRecords)))
+  const pdfBudget={remaining:3}
+  const fetched=await Promise.all(unique.map(async item=>await fetchOfficialSource(item,domains,fetchImpl,Math.min(maxChars,48000),pdfBudget)||await cachedSource(item.url,domains,Math.min(maxChars,48000),snapshotRecords)))
   return new Map(fetched.filter(Boolean).map(item=>[item.url,item]))
 }
