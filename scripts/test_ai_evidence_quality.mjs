@@ -5,6 +5,7 @@ import {searchRetrievedSources,retrieveOfficialEvidence,officialUrl,readableSour
 import {historyCaseCorpus} from '../app/modules/testing/historyCaseCorpus.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {roadmapSource,validateRoadmapResult} from '../supabase/functions/_shared/customerRoadmap.mjs'
+import {RESEARCH_COUNTRIES} from '../supabase/functions/_shared/researchCountries.mjs'
 
 const encode=value=>new TextEncoder().encode(value)
 for(const [providerCode,expected] of [['credit_balance_exhausted','provider_quota'],['insufficient_quota','provider_quota'],['rate_limit_exceeded','provider_rate_limit']]){
@@ -77,6 +78,25 @@ await assert.rejects(runReviewedModel({providerKey:'synthetic-test-key',request:
 assert.equal(incompleteCalls,2,'no accepted result or unbounded retry after an incomplete review')
 
 const domains=['gesetze-im-internet.de']
+// Federal court portals must reach the same real-text gate as court websites.
+// The body below is a transport fixture, not a legal finding or a live result.
+const courtUrls=['https://www.rechtsprechung-im-internet.de/','https://testphase.rechtsinformationen.bund.de/v1/rechtsprechung/KORE301062024.html']
+const courtBody='Synthetic court-text transport fixture. No legal proposition or case outcome is established. '.repeat(4)
+const courtDiscovery={output:[{type:'web_search_call',status:'completed',action:{sources:courtUrls.map(url=>({url}))}}]}
+assert.deepEqual([...searchRetrievedSources(courtDiscovery,RESEARCH_COUNTRIES.DE.domains).keys()],courtUrls,'both federal portals must survive the German discovery allowlist')
+let courtFetches=[]
+const courtEvidence=await retrieveOfficialEvidence(courtUrls.map(url=>({url})),RESEARCH_COUNTRIES.DE.domains,{fetchImpl:async url=>{courtFetches.push(url);return new Response(courtBody,{headers:{'content-type':'text/plain'}})}})
+assert.deepEqual(courtFetches,courtUrls)
+assert.equal(courtEvidence.size,2)
+for(const item of courtEvidence.values()){
+  assert.equal(item.source_text,courtBody.trim(),'only the fetched original body becomes evidence')
+  assert.match(item.content_sha256,/^[a-f0-9]{64}$/)
+}
+for(const country of ['FR','US'])assert.equal(searchRetrievedSources(courtDiscovery,RESEARCH_COUNTRIES[country].domains).size,0,'German portals are not silently added to another country')
+for(const host of ['rechtsinformationen.bund.de','rechtsprechung-im-internet.de']){
+  for(const invalid of [`https://${host}.example.test/`,`https://user:secret@${host}/`,`http://${host}/`,`https://${host}:8443/`])assert.equal(officialUrl(invalid,RESEARCH_COUNTRIES.DE.domains),null)
+}
+assert.equal((await retrieveOfficialEvidence(courtUrls.map(url=>({url})),RESEARCH_COUNTRIES.DE.domains,{fetchImpl:async()=>new Response('Unavailable',{status:503})})).size,0,'a permitted portal is not itself evidence when its body is unavailable')
 const url='https://www.gesetze-im-internet.de/bgb/__286.html'
 assert.equal(officialUrl(url,domains),url)
 for(const invalidUrl of ['http://gesetze-im-internet.de/x','https://gesetze-im-internet.de.evil.test/x','https://user:secret@gesetze-im-internet.de/x','https://127.0.0.1/x','https://gesetze-im-internet.de:8443/x'])assert.equal(officialUrl(invalidUrl,domains),null)
