@@ -1,3 +1,4 @@
+import {repairReplyWithFieldDecisions} from './fixtures/repairFieldDecisions.mjs'
 import assert from 'node:assert/strict'
 import {advanceCompleteAnalysis,validateCompleteAnalysis,completeReviewGroups,RESEARCH_SCOPE_RULES} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
@@ -81,7 +82,7 @@ for(const incorrectApplication of [false,true]){
     if(name==='ash_complete_repair_v169'){
       quoteRepairs++
       const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_replacements
-      return reply(request,{requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,item.previous]))},'unfixed-application')
+      return reply(request,repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,item.previous]))},assigned),'unfixed-application')
     }
     assert.equal(name,'ash_evidence_review_v139');quoteReviews++
     const payloads=request.input.flatMap(message=>message.content).map(item=>{try{return JSON.parse(item.text)}catch{return {}}})
@@ -144,7 +145,7 @@ const rejectionTransport=async(url,options)=>{
   if(name==='ash_complete_repair_v169'){
     repairs++
     const assigned=JSON.parse(request.input.at(-1).content[0].text).assigned_replacements
-    return reply(request,{requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,item.previous]))},'still-bad')
+    return reply(request,repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(item=>[item.key,item.previous]))},assigned),'still-bad')
   }
   assert.equal(name,'ash_evidence_review_v139');rejectedReviews++
   const payloads=request.input.flatMap(message=>message.content).map(item=>{try{return JSON.parse(item.text)}catch{return {}}})
@@ -224,3 +225,4 @@ for(const invalidSource of [
   assert.equal(calls,1,'unknown, wrong-kind and fabricated citations stop before plan generation')
 }
 console.log('Case reconciliation: checked payouts, reported receipt, due-date context and source replacement reach the plan; literal source/math gates, all reviews, immutable fields and one-correction stop passed. Model responses simulated; no live model cost.')
+
