@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import {Buffer} from 'node:buffer'
 import {officialSourcePdf} from './fixtures/officialSourcePdf.mjs'
 import {extractOfficialPdfText} from '../supabase/functions/_shared/officialPdfText.mjs'
 import {retrieveOfficialEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
