@@ -65,10 +65,10 @@ for(const location of ['open_questions[0]','steps[2]']){
 
 // Exercise the real persisted state machine with controlled reviewer replies.
 // Mechanical coverage must never act as semantic approval or add retry rounds.
-for(const mode of ['covered','irrelevant_step']){
+for(const mode of ['covered','unchanged','reordered','changed_wrong','corrected']){
   const initial=structuredClone(candidate)
-  if(mode==='irrelevant_step')Object.assign(initial.open_questions[0],{collect_step_id:'frist',check_step_id:'frist'})
-  let calls=0,repairs=0,reviewedTasks=0
+  if(mode!=='covered')Object.assign(initial.open_questions[0],{collect_step_id:'frist',check_step_id:'frist'})
+  let calls=0,repairs=0,reviewedTasks=0,reviewsAfterRepair=0
   const fetchImpl=async(_url,init)=>{
     const request=JSON.parse(init.body)
     const payloads=request.input.flatMap(message=>message.content).flatMap(item=>{try{return [JSON.parse(item.text)]}catch{return []}})
@@ -76,17 +76,22 @@ for(const mode of ['covered','irrelevant_step']){
     if(request.text.format.name==='ash_complete_repair_v169'){
       repairs++
       const assignments=payloads.find(item=>item.assigned_replacements).assigned_replacements
-      // Intentionally leave the semantic defect: the second review must stop.
-      parsed={requires_full_correction:false,reason:'',changes:Object.fromEntries(assignments.map(item=>[item.key,item.previous]))}
+      const changes=Object.fromEntries(assignments.map(item=>[item.key,structuredClone(item.previous)]))
+      const questionKey=assignments.find(item=>item.location==='open_questions[0]').key
+      if(mode==='changed_wrong')changes[questionKey].why+=' Die Wohnform muss noch erfragt werden.'
+      if(mode==='corrected')Object.assign(changes[questionKey],{collect_step_id:'anfragen',check_step_id:'antworten'})
+      if(mode==='reordered')for(const key of Object.keys(changes))changes[key]=Object.fromEntries(Object.entries(changes[key]).reverse())
+      parsed={requires_full_correction:false,reason:'',changes}
     }else{
       assert.equal(request.text.format.name,'ash_evidence_review_v139')
+      if(repairs)reviewsAfterRepair++
       const assignment=payloads.find(item=>item.assigned_review).assigned_review
       const part=payloads.find(item=>item.candidate).candidate
       for(const step of part.steps||[])if(step.id==='antworten'&&mode==='covered'){
         assert(step.action.includes(question.question),'the actual paid-review payload carries the complete generated task')
         reviewedTasks++
       }
-      parsed={issues:mode==='irrelevant_step'&&assignment.question_indexes?.includes(0)?[{code:'meaning',location:'open_questions[0]',reason:'Der zugewiesene Fristschritt beschafft und prüft die Angabe zur Wohnform nicht sachgerecht.'}]:[]}
+      parsed={issues:assignment.question_indexes?.includes(0)&&part.open_questions[0].collect_step_id==='frist'?[{code:'meaning',location:'open_questions[0]',reason:'Der zugewiesene Fristschritt beschafft und prüft die Angabe zur Wohnform nicht sachgerecht.'}]:[]}
     }
     return new Response(JSON.stringify({status:'completed',id:'question-regression-'+mode+'-'+(++calls),model:request.model,output_text:JSON.stringify(parsed)}))
   }
@@ -98,9 +103,19 @@ for(const mode of ['covered','irrelevant_step']){
     assert.ifError(failure);assert.equal(run.status,'completed');assert(reviewedTasks>0);assert.equal(repairs,0)
     assert.equal(run.result.analysis.verification.question_action_version,'v1')
     assert(roadmapSteps({...record,result:run.result})[2].action.includes(question.question))
+  }else if(mode==='corrected'){
+    assert.ifError(failure);assert.equal(run.status,'completed');assert.equal(repairs,1);assert(reviewsAfterRepair>0)
+    assert.equal(run.result.analysis.verification.question_action_version,'v1')
+    assert.equal(run.result.open_questions[0].collect_step_id,'anfragen')
+    assert(roadmapSteps({...record,result:run.result})[2].action.includes(question.question))
   }else{
     assert.equal(failure?.code,'review_unresolved');assert.equal(repairs,1);assert.notEqual(run.status,'completed')
     assert(!run.result,'a syntactically valid but semantically wrong assignment never becomes an accepted result')
+    if(mode==='changed_wrong')assert(reviewsAfterRepair>0,'a real text change is independently reviewed and can still be rejected')
+    else{
+      assert.equal(reviewsAfterRepair,0,'an unchanged rejected candidate must stop before another paid review')
+      assert(failure.issues.some(item=>item.reason.includes('nicht verändert')),'terminal feedback explains the ineffective correction')
+    }
   }
 }
-console.log('Question action coverage: missing/invalid links rejected; collection, assessment, repair and exports retain the complete question. Synthetic, no live model calls.')
+console.log('Question action coverage: missing/invalid links rejected; collection, assessment, repair and exports retain the complete question. Unchanged repairs stop without another review; actual changes still require review. Synthetic, no live model calls.')

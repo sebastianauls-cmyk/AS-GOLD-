@@ -7,7 +7,7 @@ import { RESEARCH_COUNTRIES, SHARED_RESEARCH_DOMAINS } from './researchCountries
 import { searchRetrievedSources, researchRetrievalPlan, retrieveOfficialEvidence, primarySourceCatalogue, loadPrimarySources, supportingPrimaryEvidence } from './verifiedResearch.mjs'
 import { calculateExpression, quoteContainsNumber } from './checkedCalculations.mjs'
 import {selectCaseResearch,caseResearchManifest,reviewResearchAssignment,MODULE_RESEARCH_INSTRUCTIONS} from './caseResearchContext.mjs'
-import {completeReviewLocations,resolveReviewIssueLocations,resolveQuotedTopicIssueLocations,localizedRepairTargets,localizedRepairSchema,localizedRepairAssignments,applyLocalizedRepair,createCorrectionTrace,correctionReviewComparison,correctionFailureDiagnostics} from './completeCaseRepair.mjs'
+import {completeReviewLocations,resolveReviewIssueLocations,resolveQuotedTopicIssueLocations,localizedRepairTargets,localizedRepairSchema,localizedRepairAssignments,applyLocalizedRepair,localizedRepairChanged,createCorrectionTrace,correctionReviewComparison,correctionFailureDiagnostics} from './completeCaseRepair.mjs'
 
 // The persisted review-coverage contract is unchanged by the synthesis schema.
 export const COMPLETE_ANALYSIS_VERSION='v170'
@@ -434,7 +434,11 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
       {type:'input_text',text:JSON.stringify({retrieved_sources}),prompt_cache_breakpoint:{mode:'explicit'}},
       {type:'input_text',text:JSON.stringify({previous_candidate:previous,issues:current.modelState.feedback,previously_addressed_issues:current.correctionHistory||[]}),prompt_cache_breakpoint:{mode:'explicit'}}
     ]},{role:'user',content:[{type:'input_text',text:JSON.stringify({assigned_replacements:localizedRepairAssignments(targets,previous),mechanical_feedback:current.localizedRepair.feedback||[],previous_failed_patch:current.localizedRepair.previous||null})}]}],text:{format:{type:'json_schema',name:'ash_complete_repair_v169',strict:true,schema:indexedQuotationSchema(localizedRepairSchema(targets,previous,COMPLETE_ANALYSIS_SCHEMA))}},max_output_tokens:8000,prompt_cache_options:{mode:'explicit'},prompt_cache_key:'ash-repair:'+source.case.id}
-    const fullCorrection=reason=>{throw new ModelWorkflowError('Die gezielte Korrektur reicht nicht aus. Der Auftrag wurde ohne automatische Neuberechnung beendet.',422,'review_unresolved',[...current.modelState.feedback,...(reason?[{code:'meaning',location:'output',reason}]:[])])}
+    const fullCorrection=(reason,diagnostics)=>{
+      const error=new ModelWorkflowError('Die gezielte Korrektur reicht nicht aus. Der Auftrag wurde ohne automatische Neuberechnung beendet.',422,'review_unresolved',[...current.modelState.feedback,...(reason?[{code:'meaning',location:'output',reason}]:[])])
+      if(diagnostics)error.correctionDiagnostics=diagnostics
+      throw error
+    }
     // A failed or incomplete patch never triggers regeneration of the case.
     const generated=await invoke(repairRequest,'correction')
     let candidate
@@ -447,6 +451,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
       throw new ModelWorkflowError('Die einmalige Korrektur konnte nicht ausreichend belegt werden. Der Auftrag wurde beendet.',422,'source_unresolved',validationFeedback(error,'correction'))
     }
     const correctionTrace=await createCorrectionTrace(targets,previous,candidate,current.modelState.feedback)
+    if(!localizedRepairChanged(previous,candidate))fullCorrection('Die Korrektur hat das beanstandete Ergebnis nicht verändert. Eine erneute kostenpflichtige Prüfung wurde deshalb nicht gestartet.',await correctionFailureDiagnostics(current.modelState.feedback,candidate,correctionTrace,COMPLETE_ANALYSIS_SCHEMA))
     if(repairingFoundation)return {status:'processing',state:{...current,localizedRepair:null,draftAnalysis:candidate.analysis,correctionTrace,correction_response_ids:[...(current.correction_response_ids||[]),generated.response_id],foundationReview:{status:'reviewing'},modelState:{stage:'generation',attempt,previous:null,feedback:[],model:generated.model,response_id:generated.response_id}}}
     return {status:'processing',state:{...current,localizedRepair:null,correctionTrace,correction_response_ids:[...(current.correction_response_ids||[]),generated.response_id],modelState:{stage:'review',attempt,candidate,structuralFeedback:[],validationContext:current.modelState.validationContext,feedback:current.modelState.feedback,model:generated.model,response_id:generated.response_id}}}
   }

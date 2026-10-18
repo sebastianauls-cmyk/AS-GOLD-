@@ -1,6 +1,7 @@
 import {repairReplyWithFieldDecisions} from './fixtures/repairFieldDecisions.mjs'
 import {PAYMENT_DATE_ATTRIBUTION_RULES} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
+import {quotationIndex} from '../supabase/functions/_shared/quotationIndex.mjs'
 import assert from 'node:assert/strict'
 import {RESEARCH_SCOPE_RULES,advanceCompleteAnalysis,foundationReviewCoverage,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {completeReviewLocations,resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair,createCorrectionTrace,correctionFailureDiagnostics,safeCorrectionDiagnostic} from '../supabase/functions/_shared/completeCaseRepair.mjs'
@@ -159,6 +160,8 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       assert.equal(failure?.code,['unassigned','compound'].includes(outcome)?'review_invalid':outcome==='bad_quote'?'source_unresolved':'review_unresolved')
       assert.equal(repairCalls,['unresolved','regression','bad_quote'].includes(outcome)?1:0)
       if(outcome==='unresolved'){
+        if(defect==='source')assert.equal(reviewCalls,expectedReviews,'an entirely unchanged correction incurs no further review requests')
+        else assert(reviewCalls>expectedReviews,'a changed linked action still requires review even when the topic remains unchanged')
         assert.equal(failure.correctionDiagnostics?.[0]?.section_changed,false,'a failed unchanged correction must retain a before/after diagnosis')
         assert.equal(failure.correctionDiagnostics[0].before.sha256,failure.correctionDiagnostics[0].after.sha256)
         assert(failure.correctionDiagnostics[0].previous_findings.length,'the first review finding must survive the final rejection')
@@ -400,6 +403,43 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   assert.deepEqual(scopedRun.result.analysis.research_sources,research)
   assert.deepEqual(scopedRun.result.analysis.topics,sourced.analysis.topics)
   console.log(`Localized correction with scoped research: ${scopedCalls} simulated requests from a generated candidate; ${scopedGroupCount} initial reviews + 1 correction + 1 changed review.`)
+
+  // An unchanged patch must stop in both phases, AFTER passage expansion and
+  // restoration of the computed result. Comparing the raw patch would miss it.
+  for(const phase of ['foundation','plan']){
+    const quotations=quotationIndex(args.source,[])
+    const raw=structuredClone(candidate)
+    raw.analysis.calculations=raw.analysis.calculations.map(cleanCalculation)
+    for(const input of raw.analysis.calculations[0].inputs)if(input.kind==='document'){
+      const passage=[...quotations.values()].find(item=>item.document_id===input.document_id&&item.quote.includes(input.quote))
+      assert(passage,'the fixture uses an exact original passage')
+      input.quote=passage.quote
+    }
+    const checked=validateCompleteAnalysis(raw,args.source,{scope:{issues:[{id:'settlement'}]},research:[],outputLanguage:'de',referenceLanguage:'de'})
+    const previous=phase==='foundation'?{analysis:checked.analysis}:checked,before=structuredClone(previous)
+    const finding=issue('analysis.calculations[0].explanation')
+    const state={stage:'analysis',scope:{issues:[{id:'settlement',calculation_needed:true}],research_topics:[]},research:[],discovery_gaps:[],localizedRepair:{phase},modelState:{stage:'generation',attempt:2,previous,feedback:[finding]}}
+    let repairs=0
+    const transport=async(_url,options)=>{
+      const request=JSON.parse(options.body)
+      assert.equal(request.text.format.name,'ash_complete_repair_v169','an unchanged correction must not trigger any later model request')
+      repairs++
+      const value=cleanCalculation(previous.analysis.calculations[0])
+      assert(!Object.hasOwn(value,'result'),'the provider does not return the computed field')
+      for(const input of value.inputs)if(input.kind==='document'){
+        input.quote=[...quotations.values()].find(item=>item.document_id===input.document_id&&item.quote===input.quote).id
+        delete input.document_id
+      }
+      return Response.json({status:'completed',id:'unchanged-'+phase,model:request.model,output_text:JSON.stringify({requires_full_correction:false,reason:'',changes:{edit_0:value}})})
+    }
+    await assert.rejects(advanceCompleteAnalysis({...args,fetchImpl:transport,state}),error=>{
+      assert.equal(error.code,'review_unresolved')
+      assert.deepEqual(error.issues[0],finding,'the original finding remains unresolved')
+      assert(error.issues.some(item=>item.reason.includes('nicht verändert')))
+      return true
+    })
+    assert.equal(repairs,1);assert.deepEqual(previous,before)
+  }
 
   // Every unsuccessful local correction stops after ONE request, including
   // schema/source defects, required wider changes and incomplete output.
