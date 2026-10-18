@@ -22,8 +22,8 @@ export async function testRetainedCaseWork({db,client,owner,caseId,secret,proces
   try{
     // The production authorization service also updates this timestamp.
     await db.exec('alter table public.account_privacy_settings add column if not exists updated_at timestamptz default now()')
-    // A real terminal lifetime stop after seven successful simulated stages. The new
-    // explicit job needs only the ninth stage and retains all review receipts.
+    // A terminal lifetime stop after eight paid stages. Identical foundation
+    // receipts are checked within the same lease; only the letter audit remains.
     const before=modelCalls()
     let job=await fresh()
     for(let i=0;i<8;i++)await run(await claim(job.id))

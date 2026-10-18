@@ -86,7 +86,8 @@ export async function testSourceActionChecks(){
       assert.equal(request.text.format.name,'ash_evidence_review_v139','no full generation, planning or extra research is allowed during local repair')
       reviews++
       const related=payloads.find(item=>item.related_output).related_output
-      assert.equal(related.steps[0].action,fixAction?fixture.reply.steps[0].action:bad.steps[0].action,'every following review sees the actual returned action')
+      const reviewScope=payloads.find(item=>item.assigned_review).assigned_review.scope
+      if(['roadmap','letters'].includes(reviewScope))assert.equal(related.steps[0].action,fixAction?fixture.reply.steps[0].action:bad.steps[0].action,'every action and letter review sees the actual returned action')
       const part=payloads.find(item=>item.candidate).candidate
       output={issues:!fixAction&&part.steps?.some(step=>step.id==='request')?[{code:'meaning',location:'steps[0]',reason:'The action still relies on an unrelated contribution rule instead of seeking the contract.'}]:[]}
     }

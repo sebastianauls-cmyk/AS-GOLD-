@@ -115,6 +115,9 @@ for(const defect of ['empty_reason','invented_formula','wrong_id','missing_assig
 const rejected=structuredClone(reconciledState)
 rejected.draftAnalysis=structuredClone(flow.result.analysis)
 rejected.reconciliation_response_id='already-reconciled'
-const planned=await advanceCompleteAnalysis({...args,state:rejected,fetchImpl:async(url,options)=>reply(JSON.parse(options.body),plan)})
-await assert.rejects(advanceCompleteAnalysis({...args,state:planned.state,fetchImpl:async(url,options)=>reply(JSON.parse(options.body),{issues:[{code:'meaning',location:'analysis.calculations',reason:'The missing calculation is supported by the evidence; the supplied reason does not justify omitting it.'}]})}),error=>error.code==='review_unresolved')
+await assert.rejects(advanceCompleteAnalysis({...args,state:rejected,fetchImpl:async(url,options)=>{
+  const request=JSON.parse(options.body)
+  assert.equal(request.text.format.name,'ash_evidence_review_v139','an unsupported omission stops before plan generation')
+  return reply(request,{issues:[{code:'meaning',location:'analysis.calculations',reason:'The missing calculation is supported by the evidence; the supplied reason does not justify omitting it.'}]})
+}}),error=>error.code==='review_unresolved')
 console.log('Calculation grounding: unsupported proposals remain visible and independently reviewed; later batches continue; descriptive correction preserves exact arithmetic/provenance; malformed gaps and numerical edits fail. Model replies simulated.')
