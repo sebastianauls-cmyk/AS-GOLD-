@@ -1,5 +1,6 @@
 import {caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import './test_case_reconciliation.mjs'
+import {runRentalSourceFallbackChecks} from './test_primary_rental_fallback.mjs'
 import './test_calculation_grounding.mjs'
 import './test_source_rule_quotes.mjs'
 import './test_case_legal_working_basis.mjs'
@@ -17,6 +18,9 @@ import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport
 import {quotationIndex,resolveQuotationIds,indexedQuotationSchema,indexedModelData} from '../supabase/functions/_shared/quotationIndex.mjs'
 import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence,supportingPrimaryEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
 import {runLocalizedRepairChecks} from './test_localized_case_repair.mjs'
+
+// Imported asynchronous checks finish before this historical-clock check runs.
+await runRentalSourceFallbackChecks()
 
 const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
 const quoteMap=quotationIndex({documents:[{id:'original',extracted_text:original}]},[])
@@ -978,3 +982,4 @@ for(const field of ['conclusion','conditions']){
   assert.throws(()=>validateCompleteAnalysis(invalid,source,options),error=>error.analysisIssues.some(issue=>issue.location===`analysis.topics[0].${field}`),'final assembly and local corrections cannot introduce a numbered topic link')
 }
 console.log('Topic boundary: real caller prompt isolation, unchanged review coverage, actual plan links and bounded rejection of invented step references passed (provider mocked).')
+
