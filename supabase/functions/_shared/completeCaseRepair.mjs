@@ -130,7 +130,8 @@ export function localizedRepairTargets(candidate,feedback,schema){
   // Source findings may correct an existing local claim. Wider source gaps
   // still fail location/size checks; every replacement is independently
   // reviewed again and must pass the unchanged literal-source/math gates.
-  const selected=new Map(),affectedTopicIds=new Set()
+  let selected=new Map()
+  const affectedTopicIds=new Set()
   for(const issue of feedback){
     const path=locate(candidate,issue.location,schema)
     if(!path||!schemaAt(schema,path)||get(candidate,path)===undefined)return null
@@ -148,19 +149,28 @@ export function localizedRepairTargets(candidate,feedback,schema){
     if(!schemaAt(schema,path))return null
     selected.set(label(path),path)
   }
-  // A question and both linked tasks form one bounded repair unit. Keep
-  // the actual references, never infer a topic/step association from prose.
-  // If the unit exceeds the existing cap, fail before requesting a patch.
-  const questionTargets=new Set([...selected.values()].filter(path=>path[0]==='open_questions').map(path=>path[1]))
-  const stepTargets=new Set([...selected.values()].filter(path=>path[0]==='steps').map(path=>get(candidate,path).id))
-  for(const [index,question] of (candidate.open_questions||[]).entries()){
-    const ids=[question.collect_step_id,question.check_step_id].filter(id=>typeof id==='string')
-    if(!questionTargets.has(index)&&!ids.some(id=>stepTargets.has(id)))continue
-    const path=['open_questions',index];selected.set(label(path),path)
-    for(const [stepIndex,step] of (candidate.steps||[]).entries())if(ids.includes(step.id)){
-      const path=['steps',stepIndex];selected.set(label(path),path)
-    }
+  // Questions and their collection/assessment steps are connected repair
+  // units. Expand to a fixed point: a newly included step may serve another
+  // question, even one earlier in the array. Never infer links from prose.
+  const questionUnits=paths=>{
+    const expanded=new Map(paths)
+    let size
+    do{
+      size=expanded.size
+      const stepIds=new Set([...expanded.values()].filter(path=>path[0]==='steps').map(path=>get(candidate,path).id))
+      for(const [index,question] of (candidate.open_questions||[]).entries()){
+        const ids=[question.collect_step_id,question.check_step_id].filter(id=>typeof id==='string')
+        const path=['open_questions',index]
+        if(!expanded.has(label(path))&&!ids.some(id=>stepIds.has(id)))continue
+        expanded.set(label(path),path)
+        for(const [stepIndex,step] of (candidate.steps||[]).entries())if(ids.includes(step.id)){
+          const path=['steps',stepIndex];expanded.set(label(path),path)
+        }
+      }
+    }while(expanded.size!==size)
+    return expanded
   }
+  selected=questionUnits(selected)
   // A changed computed value cannot leave a later calculation using its old
   // result. Include every transitive consumer in original dependency order.
   const affected=new Set([...selected.values()].filter(path=>path[0]==='analysis'&&path[1]==='calculations').map(path=>get(candidate,path).id))
@@ -187,7 +197,12 @@ export function localizedRepairTargets(candidate,feedback,schema){
   const linkedSteps=new Set((candidate.analysis?.topics||[]).filter(topic=>affectedTopicIds.has(topic.id)).flatMap(topic=>topic.step_ids||[]))
   for(const [index,step] of (candidate.steps||[]).entries())if(linkedSteps.has(step.id)){
     const path=['steps',index],key=label(path)
-    if(!selected.has(key)&&fits([...selected.values(),path]))selected.set(key,path)
+    if(!selected.has(key)){
+      // Include the complete connected unit or none of it. Adding a linked
+      // topic step alone used to leave its required question update forbidden.
+      const proposed=questionUnits(new Map([...selected,[key,path]]))
+      if(fits([...proposed.values()]))selected=proposed
+    }
   }
   const paths=[...selected.values()].sort((a,b)=>a.slice(0,-1).join('.')===b.slice(0,-1).join('.')&&typeof a.at(-1)==='number'?a.at(-1)-b.at(-1):label(a).localeCompare(label(b)))
   return paths.map((path,index)=>({key:'edit_'+index,path,location:label(path)}))

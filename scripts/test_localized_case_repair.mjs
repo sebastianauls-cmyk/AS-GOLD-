@@ -86,7 +86,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   for(const topic of heavilyCited.analysis.topics.slice(0,4))topic.sources=[{url:'https://www.gesetze-im-internet.de/estg/__22.html',quote:longPassage}]
   const citedFindings=[0,1,2,3].map(index=>issue(`analysis.topics[${index}]`))
   assert(JSON.stringify(heavilyCited.analysis.topics.slice(0,4)).length>20000)
-  assert.deepEqual(localizedRepairTargets(heavilyCited,citedFindings,schema)?.map(target=>target.path),[['analysis','limitations'],...[0,1,2,3].map(index=>['analysis','topics',index]),['steps',0]],'verified quote expansion must not block bounded topics, limitations and their existing linked step')
+  assert.deepEqual(localizedRepairTargets(heavilyCited,citedFindings,schema)?.map(target=>target.path),[['analysis','limitations'],...[0,1,2,3].map(index=>['analysis','topics',index]),['open_questions',0],['open_questions',12],['steps',0]],'verified quote expansion preserves the complete linked question/action unit within the eight-item bound')
   assert(heavilyCited.analysis.topics.slice(0,4).every(topic=>topic.sources[0].quote===longPassage),'size accounting never truncates the evidence used by validation or review')
   heavilyCited.analysis.topics[0].conclusion='An oversized editable conclusion. '.repeat(800)
   assert.equal(localizedRepairTargets(heavilyCited,citedFindings,schema),null,'editable narrative still has the same size limit')
@@ -116,11 +116,13 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
         repairCalls++
         assert.equal(reviewCalls,expectedReviews,'all initial mandatory reviews precede the single local correction')
         const assigned=payloads.find(p=>p.assigned_replacements).assigned_replacements
-        assert.deepEqual(assigned.map(t=>t.location),['analysis.limitations','analysis.topics[0]','steps[1]'])
+        assert.deepEqual(assigned.map(t=>t.location),['analysis.limitations','analysis.topics[0]','open_questions[0]','open_questions[1]','steps[1]','steps[2]'])
         const replacement=structuredClone((outcome==='unresolved'?previous:original).analysis.topics[0])
         if(outcome==='regression')replacement.conditions+=' New synthetic defect introduced in the changed section.'
         if(outcome==='bad_quote')replacement.sources=[{url:'https://example.invalid/not-fetched',quote:'A fabricated legal condition.'}]
-        output=repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes:{edit_0:original.analysis.limitations,edit_1:replacement,edit_2:original.steps[1]}},assigned)
+        const changes=Object.fromEntries(assigned.map(item=>[item.key,structuredClone(item.previous)]))
+        for(const [location,value] of [['analysis.limitations',original.analysis.limitations],['analysis.topics[0]',replacement],['steps[1]',original.steps[1]]])changes[assigned.find(item=>item.location===location).key]=value
+        output=repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes},assigned)
       }else{
         assert.equal(request.text.format.name,'ash_evidence_review_v139')
         reviewCalls++
@@ -234,7 +236,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
           'analysis.limitations':outcome==='fixed'?[corrected,unrelated]:previous.analysis.limitations,
           'steps[1]':previous.steps[1]
         }
-        output=repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(target=>[target.key,replacements[target.location]]))},assigned)
+        output=repairReplyWithFieldDecisions({requires_full_correction:false,reason:'',changes:Object.fromEntries(assigned.map(target=>[target.key,replacements[target.location]??target.previous]))},assigned)
       }else{
         assert.equal(request.text.format.name,'ash_evidence_review_v139')
         reviewCalls++
