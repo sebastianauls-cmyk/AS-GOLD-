@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import {readFileSync} from 'node:fs'
 import {advanceCompleteAnalysis,completeAnalysisStage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {completeReviewLocations,resolveReviewIssueLocations,resolveQuotedTopicIssueLocations} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
@@ -182,4 +183,49 @@ for(const outcome of ['fixed','unfixed','wider','ambiguous','paraphrased']){
   }
 }
 console.log('Quoted collection findings: one exact topic can enter the existing repair; ambiguous/paraphrased findings, wider changes and unresolved re-reviews remain blocked; provider replies simulated.')
+
+// Replay the complete rejected topic from the October 18 synthetic live run.
+// A changed conclusion must not conceal an unsupported maturity claim left
+// in conditions. This tests the actual state machine, not model accuracy.
+{
+  const fixture=JSON.parse(readFileSync(new URL('./fixtures/rejectedKautionCorrection.json',import.meta.url),'utf8'))
+  const state=structuredClone(initial),calls=[]
+  state.scope.issues[0].id=fixture.before.id
+  state.draftAnalysis.topics=[fixture.before]
+  // Supply precisely the cited source; it proves the default rule, not the
+  // unsupported maturity prerequisite reported by both independent reviews.
+  const citation=fixture.before.sources[0]
+  state.research=[{url:citation.url,title:'Cited statutory text',source_text:citation.quote,checked_at:new Date().toISOString(),content_sha256:Buffer.from(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(citation.quote))).toString('hex')}]
+  let corrections=0,reviewsAfter=0,fixtureFailure
+  const fetchImpl=async(url,options)=>{
+    try{
+      assert.equal(url,'https://api.openai.com/v1/responses')
+      const request=JSON.parse(options.body),name=request.text.format.name
+      const payloads=request.input.flatMap(message=>message.content).map(item=>{try{return JSON.parse(item.text)}catch{return {}}})
+      calls.push(name)
+      let output
+      if(name==='ash_complete_repair_v169'){
+        assert.equal(++corrections,1)
+        const assignments=payloads.find(item=>item.assigned_replacements).assigned_replacements
+        assert.equal(assignments.length,1)
+        assert.equal(assignments[0].previous.conditions,fixture.before.conditions,'the whole conditions field was available for correction')
+        assert.equal(assignments[0].previous.conclusion,fixture.before.conclusion)
+        output={requires_full_correction:false,reason:'',changes:{[assignments[0].key]:fixture.after}}
+      }else{
+        assert.equal(name,'ash_evidence_review_v139','no downstream plan may be generated')
+        const assignment=payloads.find(item=>item.assigned_review).assigned_review
+        if(corrections)reviewsAfter++
+        const finding=corrections?fixture.remaining_finding:fixture.first_finding
+        output={issues:assignment.scope==='analysis'?[{...finding,location:'analysis.topics[0]'}]:[]}
+      }
+      return Response.json({id:'remaining-condition-'+calls.length,status:'completed',model:request.model,output_text:JSON.stringify(output)})
+    }catch(error){fixtureFailure=error;throw error}
+  }
+  let flow={status:'processing',state},failure
+  try{for(let n=0;flow.status==='processing'&&n<30;n++)flow=await advanceCompleteAnalysis({...args,state:flow.state,fetchImpl})}catch(error){failure=error}
+  assert.ifError(fixtureFailure)
+  assert.equal(failure?.code,'review_unresolved');assert.equal(corrections,1);assert(reviewsAfter>0)
+  assert(!flow.result);assert(!calls.includes('ash_complete_plan_v157'))
+}
+console.log('Stored incomplete correction: changed conclusion plus unsupported condition remains rejected after one repair; no plan/result and no second correction; reviewer responses replayed, model quality not measured.')
 
