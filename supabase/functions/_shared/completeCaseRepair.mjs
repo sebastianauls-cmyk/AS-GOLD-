@@ -119,7 +119,8 @@ export function localizedRepairTargets(candidate,feedback,schema){
   // dependent text editable in the same single patch, even when the first
   // review located only the topic. Include it BEFORE the fixed size check:
   // if the necessary scope cannot fit, stop instead of locking in a stale
-  // limitation. Unrelated limitations must be preserved and reviewed again.
+  // limitation. Preserve supported unrelated limitations, while checking every
+  // claim in this assigned replacement against the sources before re-review.
   if(affectedTopicIds.size&&candidate.analysis?.limitations?.length){
     const path=['analysis','limitations']
     if(!schemaAt(schema,path))return null

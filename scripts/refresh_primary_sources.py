@@ -23,7 +23,7 @@ PROVISIONS = {
     'sgg': ['84', '86a'],
     'sgb_10': ['37'],
     'bgb': ['126', '126b', '127', '133', '157', '195', '199', '286', '288',
-            '311', '362', '366', '631', '632', '640', '641', '677', '683',
+            '311', '362', '366', '551', '556', '631', '632', '640', '641', '677', '683',
             '684', '812', '818', '1629', '1640', '1642', '1643', '1648',
             '1680', '2303', '2314'],
     'ao_1977': ['108', '149', '355'],
@@ -151,3 +151,4 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--if-stale', action='store_true', help='Skip a fully verified UTC-day catalogue without network calls or date changes.')
     main(only_if_stale=parser.parse_args().if_stale)
+
