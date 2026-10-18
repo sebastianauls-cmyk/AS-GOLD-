@@ -140,6 +140,8 @@ export function readableSourceText(body,type) {
 async function fetchOfficialSource(item,domains,fetchImpl,maxChars=48000,pdfBudget={remaining:3}) {
   const original=officialUrl(item.url,domains)
   if(!original) return null
+  const address=new URL(original)
+  const requestsPdf=/\.pdf$/iu.test(address.pathname)||[...address.searchParams.values()].some(value=>/\.pdf$/iu.test(value))
   const signal=AbortSignal.timeout(8000)
   let current=original,response
   try {
@@ -155,6 +157,9 @@ async function fetchOfficialSource(item,domains,fetchImpl,maxChars=48000,pdfBudg
     }
     if(response?.status!==200){await response?.body?.cancel();return null}
     const type=(response.headers.get('content-type')||'').split(';')[0].trim().toLowerCase()
+    // Legacy court PDF links can redirect to a general decisions index. Its
+    // HTML is not the requested decision, even on the same official domain.
+    if(requestsPdf&&type!=='application/pdf'){await response.body?.cancel();return null}
     if(!['text/html','application/xhtml+xml','text/plain','application/pdf'].includes(type)){await response.body?.cancel();return null}
     // Keep expensive parsing bounded per research step as well as per file.
     if(type==='application/pdf'&&pdfBudget.remaining--<=0){await response.body?.cancel();return null}
