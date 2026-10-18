@@ -26,3 +26,14 @@ jobs:
         run: npm run prebuild
       - name: Build production bundle
         run: npm run build
+  pdf-evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.1.14
+      - name: Cache pinned serverless PDF dependency
+        run: deno cache --no-config --lock=scripts/offline/pdf-deno.lock scripts/test_primary_pdf_sources.mjs
+      - name: Verify real PDF extraction without network permission
+        run: deno run --no-config --cached-only --lock=scripts/offline/pdf-deno.lock scripts/test_primary_pdf_sources.mjs
