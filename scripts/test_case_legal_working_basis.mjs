@@ -36,9 +36,12 @@ for(const [home,target,country] of [['DE','DE','DE'],[null,null,'DE'],[' de ',nu
     if(request.text.format.name!=='ash_case_scope')assert([request.instructions,...request.input.filter(message=>message.role==='developer').flatMap(message=>message.content.map(item=>item.text))].some(text=>text.includes(RESEARCH_SCOPE_RULES)),'complete generation, reconciliation, local repair and review preserve partial research scope')
     if(name==='ash_evidence_review_v139'){
       const related=payloads.find(p=>p.related_output)?.related_output
-      assert(related?.overview,'every review partition sees the actual global qualification text')
+      const substantive=['analysis','calculations'].includes(payloads.find(p=>p.assigned_review)?.assigned_review.scope)
+      assert(related&&Array.isArray(related.limitations),'every review sees substantive qualifications')
+      if(substantive)assert.equal(related.overview,undefined,'foundation checks do not depend on a later roadmap')
+      else assert(related.overview,'roadmap and letter reviews see the actual global qualification text')
       const notice=caseLegalWorkingBasisNotice(source.case,args.outputLanguage)
-      if(notice)assert(related.overview.opening.startsWith(notice),'the server notice reaches every independent review')
+      if(notice&&!substantive)assert(related.overview.opening.startsWith(notice),'the server notice reaches the complete customer-output review')
     }
     seen.push(name)
     let output

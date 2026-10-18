@@ -106,7 +106,7 @@ for(const incorrectApplication of [false,true]){
     assert.equal(quoteRepairs,0)
     assert.equal(quoteReviews,completeReviewGroups(quotedFlow.result).length,'every existing independent review remains required')
   }
-  assert.equal(quotePlans,1,'source preservation adds no extra generation stage')
+  assert.equal(quotePlans,incorrectApplication?0:1,'an unsupported foundation cannot reach plan generation')
 }
 
 for(const defect of ['missing','id','extra','empty','missing_limits','invalid_limits','empty_limit','extra_root','truncated']){
@@ -198,8 +198,10 @@ assert.deepEqual(temporal.state.draftAnalysis.limitations,[preciseLimit,retained
 assert.deepEqual(temporalStart.draftAnalysis.limitations,[staleLimit,retainedLimit],'the original limitation checkpoint remains immutable')
 assert.deepEqual(temporalStart.draftAnalysis.topics[0].sources,[{url:research[0].url,quote:research[0].source_text}],'the old checkpoint is immutable')
 let planSawReconciled=false
-await advanceCompleteAnalysis({...args,source:temporalSource,state:temporal.state,fetchImpl:async(url,options)=>{
+let temporalFlow=temporal
+for(let n=0;!planSawReconciled&&n<4;n++)temporalFlow=await advanceCompleteAnalysis({...args,source:temporalSource,state:temporalFlow.state,fetchImpl:async(url,options)=>{
   const request=JSON.parse(options.body)
+  if(request.text.format.name==='ash_evidence_review_v139')return reply(request,{issues:[]},'temporal-foundation-'+n)
   assert.equal(request.text.format.name,'ash_complete_plan_v157')
   const analysis=JSON.parse(request.input.at(-1).content[0].text).analysis
   assert.equal(analysis.topics[0].conclusion,temporalFixed.conclusion)

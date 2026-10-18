@@ -1,7 +1,7 @@
 import {PAYMENT_DATE_ATTRIBUTION_RULES} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
-import {RESEARCH_SCOPE_RULES,advanceCompleteAnalysis,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {RESEARCH_SCOPE_RULES,advanceCompleteAnalysis,foundationReviewCoverage,validateCompleteAnalysis,COMPLETE_ANALYSIS_SCHEMA,completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {completeReviewLocations,resolveReviewIssueLocations,localizedRepairTargets,localizedRepairSchema,applyLocalizedRepair,createCorrectionTrace,correctionFailureDiagnostics,safeCorrectionDiagnostic} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 
 const get=(value,path)=>path.reduce((item,key)=>item[key],value)
@@ -339,9 +339,10 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   }
   assert.equal(flow.status,'completed');assert.equal(flow.attempts,2)
   assert.deepEqual([counts.topics,counts.outlines,counts.numbers,counts.plans,counts.repairs],[5,1,4,1,1],'a substantive calculation correction does not regenerate topics, the numerical plan, unrelated calculations or letters')
-  assert.equal(counts.total,initialCalls+2,'one targeted correction and one changed review follow the first full round')
+  const foundationGroups=completeReviewGroups(data,foundationReviewCoverage(data)).length
+  assert.equal(counts.total,initialCalls+3+groupCount-foundationGroups,'one correction, one changed foundation audit, then the first plan and its remaining audits')
   assert.equal(flow.result.analysis.verification.review_response_ids.length,groupCount)
-  assert.equal(flow.result.analysis.verification.reused_review_response_ids.length,groupCount-1)
+  assert.equal(flow.result.analysis.verification.reused_review_response_ids.length,foundationGroups,'all unchanged foundation receipts are reused after plan assembly')
   assert.equal(flow.result.analysis.verification.correction_response_ids.length,1)
   assert.deepEqual(flow.result.analysis.verification.review_coverage,completeReviewCoverage(data))
   const {research_sources,verification,...finalAnalysis}=flow.result.analysis
@@ -427,7 +428,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
   const invalid=structuredClone(data);invalid.analysis.calculations[0].inputs[0].value='19000'
   await assert.rejects(advanceCompleteAnalysis({...args,state:{stage:'analysis',scope:bigScope,research:[],modelState:{stage:'review',attempt:1,candidate:invalid}},fetchImpl:async()=>{unexpectedCalls++;throw Error('No paid audit of invalid source input')}}),error=>error.code==='source_unresolved')
   assert.equal(unexpectedCalls,0)
-  assert.equal(initialCalls,21,'maximum-size no-research fixture previously needed 37 initial calls')
+  assert.equal(initialCalls,15,'the maximum-size fixture finds its defect before paying for the plan and downstream audits')
   assert.equal(counts.total,23,'one local correction reduces the former 39-call scenario to 23')
-  console.log(`Grouped complete-case correction: ${counts.total} simulated requests; ${initialCalls} for the first candidate, then 1 replacement + 1 changed review; all 25 sections covered by ${groupCount} current approvals. No live model cost measured.`)
+  console.log(`Grouped complete-case correction: ${counts.total} simulated requests; ${initialCalls} for the first candidate, then 1 replacement + 1 changed foundation review + the plan and its downstream audits; all 25 sections covered by ${groupCount} current approvals. No live model cost measured.`)
 }

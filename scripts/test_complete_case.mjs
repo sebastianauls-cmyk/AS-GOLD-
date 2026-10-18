@@ -1,5 +1,6 @@
 import {caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import './test_case_reconciliation.mjs'
+import './test_early_case_foundation.mjs'
 import {runRentalSourceFallbackChecks} from './test_primary_rental_fallback.mjs'
 import './test_calculation_grounding.mjs'
 import './test_source_rule_quotes.mjs'
@@ -404,8 +405,13 @@ flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.resu
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.analysisOutline);assert.equal(flow.state.draftAnalysis,null)
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.draftAnalysis);assert.equal(flow.state.modelState.stage,'generation')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert(flow.state.reconciliation_response_id);assert.equal(flow.state.modelState.stage,'generation')
+for(let n=0;flow.state.foundationReview?.status!=='passed'&&n<8;n++){
+  flow=await advanceCompleteAnalysis({...args,state:flow.state})
+  assert(!flow.result);assert.equal(flow.state.modelState.stage,'generation','no plan exists during the foundation audit')
+}
+assert.equal(flow.state.foundationReview.status,'passed')
 flow=await advanceCompleteAnalysis({...args,state:flow.state});assert(!flow.result);assert.equal(flow.state.modelState.stage,'review')
-for(let part=0;part<3;part++){
+for(let part=0;part<1;part++){
   flow=await advanceCompleteAnalysis({...args,state:flow.state});assert.equal(flow.status,'processing');assert(!flow.result,'letters still require their separate review before acceptance')
   if(part===0)for(const reviewCoverage of [undefined,[]])await assert.rejects(advanceCompleteAnalysis({...args,state:{...flow.state,reviewCoverage}}),error=>error.code==='review_coverage_changed','old review receipts cannot be reassigned after a batching change')
   if(part===0)for(const reviewGroups of [undefined,[],[[0,1]]])await assert.rejects(advanceCompleteAnalysis({...args,state:{...flow.state,reviewGroups}}),error=>error.code==='review_coverage_changed','existing approvals cannot be reassigned to changed groups')
@@ -523,10 +529,10 @@ for(const outcome of ['accepted','rejected','invalid_patch']){
   }
   let run=await advanceCompleteAnalysis({...args,fetchImpl:transport}),failure
   try{for(let step=0;run.status==='processing'&&step<30;step++)run=await advanceCompleteAnalysis({...args,fetchImpl:transport,state:run.state})}catch(error){failure=error}
-  assert.equal(numbers,2);assert.equal(plans,1);assert.equal(patches,1)
+  assert.equal(numbers,2);assert.equal(plans,outcome==='accepted'?1:0,'a rejected foundation never generates the plan');assert.equal(patches,1)
   if(outcome==='accepted'){assert.equal(failure,undefined);assert.equal(run.status,'completed');assert.equal(run.result.analysis.verification.review_response_ids.length,4)}
   else {assert.equal(failure?.code,outcome==='invalid_patch'?'source_unresolved':'review_unresolved');assert(!run.result)}
-  assert.equal(reviews,outcome==='invalid_patch'?4:5,'unchanged approvals are reused, and a rejected correction stops at the failing group')
+  assert.equal(reviews,outcome==='invalid_patch'?2:outcome==='rejected'?3:5,'unchanged approvals are reused, and a rejected foundation stops before downstream work')
 }
 
 // Wrong source numbers are repaired before generating a plan. This remains
@@ -690,7 +696,7 @@ const bigFetch=async(url,options)=>{
     assert(request.input[0].content.some(item=>item.text==='SYNTHETIC_COMPLETE_ORIGINALS'),'every batch retains the complete original evidence')
     const payloads=request.input.filter(message=>message.role==='user').flatMap(message=>message.content).flatMap(item=>{try{return [JSON.parse(item.text)]}catch{return []}})
     const assignment=payloads.find(item=>item.assigned_review).assigned_review,part=payloads.find(item=>item.candidate).candidate
-    assert.deepEqual(payloads.find(item=>item.required_reviews).required_reviews,expectedCoverage)
+    assert.deepEqual(payloads.find(item=>item.required_reviews).required_reviews,['analysis','calculations'].includes(assignment.scope)?expectedCoverage.filter(item=>['analysis','calculations'].includes(item.scope)):expectedCoverage)
     const sections=payloads.find(item=>item.assigned_reviews).assigned_reviews
     assert(sections.length<=4);assert(sections.every(item=>item.scope===assignment.scope))
     if(sections.length>1)assert(Buffer.byteLength(JSON.stringify(part))<=16000,'grouped content has a UTF-8 byte bound')

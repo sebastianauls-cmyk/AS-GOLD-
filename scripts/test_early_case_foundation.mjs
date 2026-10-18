@@ -1,0 +1,87 @@
+import assert from 'node:assert/strict'
+import {advanceCompleteAnalysis,completeAnalysisStage} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
+import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
+
+// Adversarial, controlled provider replies test the real state machine. They
+// do not establish live model accuracy or an accepted customer case.
+const source=roadmapSource({...roadmapTestCase,title:'Synthetischer Grundlagen-Test',goal:'Den dokumentierten Eingang erhalten; nur fehlende Unterlagen klären.'},roadmapTestDocuments,[])
+const scope={issues:[{id:'basis',title:'Grundlagen',reason:'Belege zuordnen.',calculation_needed:false}],research_topics:[]}
+const topic={id:'basis',title:'Grundlagen',status:'open',conclusion:'Die vorhandenen Unterlagen sind dem Fall zugeordnet.',conditions:'Die konkrete offene Frage ist anhand der angeforderten Unterlage zu klären.',sources:[],step_ids:[]}
+const analysis={topics:[topic],calculations:[],limitations:[]}
+const plan={...structuredClone(roadmapTestResult),topic_steps:[{id:'basis',step_ids:[roadmapTestResult.steps[0].id]}]}
+const initial={stage:'analysis',scope,research:[],discovery_gaps:[],draftAnalysis:analysis,reconciliation_response_id:'synthetic-reconciliation',modelState:{stage:'generation',attempt:1,feedback:[],previous:null}}
+const args={providerKey:'synthetic-only',source,style:{},outputLanguage:'de',referenceLanguage:'de',baseRequest:{instructions:'Original evidence only. Internal synthetic test.',input:[]},baseReviewContent:[]}
+
+function harness(mode){
+  const calls=[]
+  let repaired=false
+  const state=structuredClone(initial)
+  if(mode!=='valid')state.draftAnalysis.topics[0].conclusion+=' UNBELEGTE RECHTSPFLICHT.'
+  const fetchImpl=async(url,options)=>{
+    if(url!=='https://api.openai.com/v1/responses')return new Response('',{status:404})
+    const request=JSON.parse(options.body),name=request.text.format.name
+    const payloads=request.input.flatMap(message=>message.content).map(item=>{try{return JSON.parse(item.text)}catch{return {}}})
+    const assignment=payloads.find(item=>item.assigned_review)?.assigned_review
+    calls.push({name,scope:assignment?.scope})
+    let output
+    if(name==='ash_complete_plan_v157'){
+      assert(calls.some(call=>call.scope==='analysis')&&calls.some(call=>call.scope==='calculations'),'both foundation scopes precede any plan')
+      const supplied=payloads.find(item=>item.component==='roadmap').analysis
+      assert(!JSON.stringify(supplied).includes('UNBELEGTE RECHTSPFLICHT'),'unsupported claims never enter downstream generation')
+      output=plan
+    }else if(name==='ash_complete_repair_v169'){
+      assert(!repaired,'there is one shared substantive correction budget')
+      repaired=true
+      const edits=payloads.find(item=>item.assigned_replacements).assigned_replacements
+      if(mode==='wider')output={requires_full_correction:true,reason:'A new topic is necessary outside the assigned replacement.',changes:null}
+      else output={requires_full_correction:false,reason:'',changes:Object.fromEntries(edits.map(edit=>[edit.key,mode==='unfixed'?edit.previous:{...edit.previous,conclusion:topic.conclusion}]))}
+    }else{
+      assert.equal(name,'ash_evidence_review_v139')
+      const candidate=payloads.find(item=>item.candidate).candidate
+      const bad=candidate.analysis?.topics?.some(item=>item.conclusion.includes('UNBELEGTE RECHTSPFLICHT'))
+      output={issues:bad?[{code:'source',location:'analysis.topics[0]',reason:'The assertion of a legal duty has no supplied primary text.'}]:[]}
+    }
+    return Response.json({id:'foundation-'+calls.length,status:'completed',model:request.model,output_text:JSON.stringify(output)})
+  }
+  return {state,calls,fetchImpl}
+}
+
+for(const mode of ['valid','corrected','unfixed','wider']){
+  const h=harness(mode)
+  let flow={status:'processing',state:h.state},failure
+  try{for(let n=0;flow.status==='processing'&&n<30;n++)flow=await advanceCompleteAnalysis({...args,fetchImpl:h.fetchImpl,state:flow.state})}catch(error){failure=error}
+  const plans=h.calls.filter(call=>call.name==='ash_complete_plan_v157')
+  if(['unfixed','wider'].includes(mode)){
+    assert.equal(failure?.code,'review_unresolved');assert.equal(plans.length,0);assert(!flow.result)
+  }else{
+    assert.equal(failure,undefined);assert.equal(flow.status,'completed');assert.equal(plans.length,1)
+    const proof=flow.result.analysis.verification
+    assert.equal(proof.foundation_review_version,'v173')
+    assert.equal(proof.foundation_review_response_ids.length,2)
+    assert.equal(proof.reused_review_response_ids.length,2,'final assembly reuses only matching foundation receipts')
+    if(mode==='valid')assert.equal(h.calls.filter(call=>call.scope).length,4,'moving audits earlier does not add paid audits')
+  }
+}
+
+// Mutating an approved foundation, its evidence or the review policy must
+// invalidate approval BEFORE downstream text is generated, not just at export.
+const h=harness('valid')
+let approved={status:'processing',state:h.state}
+for(let n=0;approved.state.foundationReview?.status!=='passed'&&n<6;n++)approved=await advanceCompleteAnalysis({...args,fetchImpl:h.fetchImpl,state:approved.state})
+assert.equal(approved.state.foundationReview.status,'passed')
+assert.equal(completeAnalysisStage(h.state),'review')
+for(const change of ['finding','research','original','policy','receipt']){
+  const state=structuredClone(approved.state),modified={...args,source:structuredClone(source)}
+  if(change==='finding')state.draftAnalysis.topics[0].conditions+=' Weitere Unterlage fehlt.'
+  if(change==='research')state.discovery_gaps.push('A newly observed source gap.')
+  if(change==='original')modified.source.documents[0].extracted_text+=' Zusätzliche synthetische Aussage.'
+  if(change==='policy')modified.baseRequest={...args.baseRequest,instructions:args.baseRequest.instructions+' New review context.'}
+  if(change==='receipt')state.foundationReview.binding='0'.repeat(64)
+  const before=h.calls.length
+  const next=await advanceCompleteAnalysis({...modified,fetchImpl:h.fetchImpl,state})
+  assert(!h.calls.slice(before).some(call=>call.name==='ash_complete_plan_v157'),'changed '+change+' must re-enter foundation validation')
+  assert.equal(next.state.foundationReview.status,'reviewing')
+  assert.equal(state.foundationReview.status,'passed','validation does not mutate its input checkpoint')
+}
+console.log('Early foundation: unsupported claims block plans, one repair is re-reviewed, identical approvals are reused, changed evidence/content/policy invalidate before writing; provider replies simulated.')
