@@ -1,3 +1,5 @@
+import {questionActionStep} from '../supabase/functions/_shared/questionActionCoverage.mjs'
+import './test_question_action_coverage.mjs'
 import {caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import './test_case_reconciliation.mjs'
 import './test_early_case_foundation.mjs'
@@ -619,7 +621,7 @@ for(const defect of ['missing','extra','renamed','topic','forward_dependency']){
 // alone. Independent local-correction tests below exercise material defects.
 const big=structuredClone(candidate)
 big.facts=Array.from({length:24},()=>structuredClone(candidate.facts[0]))
-big.open_questions=Array.from({length:24},()=>structuredClone(candidate.open_questions[0]))
+big.open_questions=Array.from({length:24},(_,i)=>({...structuredClone(candidate.open_questions[0]),collect_step_id:'step_'+(i%12),check_step_id:'step_'+(i%12)}))
 big.steps=Array.from({length:12},(_,i)=>({...structuredClone(candidate.steps[0]),id:'step_'+i,depends_on:i?['step_'+(i-1)]:[]}))
 big.letters=Array.from({length:6},(_,i)=>({...structuredClone(candidate.letters[0]),id:'letter_'+i}))
 big.analysis.topics=Array.from({length:10},(_,i)=>({...candidate.analysis.topics[0],id:'topic_'+i,step_ids:['step_0']}))
@@ -703,7 +705,7 @@ const bigFetch=async(url,options)=>{
     assert.deepEqual(sections.flatMap(item=>item.topic_ids),part.analysis?.topics?.map(item=>item.id)||[])
     assert.deepEqual(sections.flatMap(item=>item.calculation_ids),part.analysis?.calculations?.map(item=>item.id)||[])
     if(assignment.scope==='roadmap'||assignment.scope==='letters'){
-      assert.deepEqual(payloads.find(item=>item.related_output).related_output.steps,big.steps,'every action/letter audit retains complete cross-step context')
+      assert.deepEqual(payloads.find(item=>item.related_output).related_output.steps,big.steps.map(step=>questionActionStep(step,big.open_questions)),'every action/letter audit retains complete cross-step context')
       if(assignment.part==='overview')for(const key of Object.keys(big).filter(k=>!['analysis','facts','open_questions','steps','letters'].includes(k)))assert.deepEqual(part[key],key==='opening'&&caseLegalWorkingBasisNotice(args.source.case,args.outputLanguage)?caseLegalWorkingBasisNotice(args.source.case,args.outputLanguage)+'\n\n'+big[key]:big[key],'every overview field, including the visible server frame, is reviewed')
     }
     observedBatches.push(sections)

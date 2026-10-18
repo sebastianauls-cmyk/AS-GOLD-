@@ -1,3 +1,4 @@
+import {questionActionStep} from '../supabase/functions/_shared/questionActionCoverage.mjs'
 import {caseLegalWorkingBasisNotice} from '../supabase/functions/_shared/caseEvidenceRules.mjs'
 import {reconciliationFixture} from './fixtures/completeCaseReconciliation.mjs'
 import assert from 'node:assert/strict'
@@ -170,11 +171,13 @@ try {
   const {letters:expectedLetters,...expectedRoadmap}=roadmapTestResult
   const notice=caseLegalWorkingBasisNotice(roadmapTestCase,'de')
   expectedRoadmap.opening=notice+'\n\n'+expectedRoadmap.opening
+  expectedRoadmap.steps=expectedRoadmap.steps.map(step=>questionActionStep(step,expectedRoadmap.open_questions))
   assert.deepEqual(auditedRoadmap,expectedRoadmap,'every non-letter field, including the server frame, is audited exactly once across overview, records and bounded action batches')
   const {analysis:savedAnalysis,letters:savedLetters,...savedRoadmap}=acceptedResult
-  assert.deepEqual(auditedRoadmap,savedRoadmap,'the persisted explanation is exactly the audited explanation')
+  assert.deepEqual(auditedRoadmap,{...savedRoadmap,steps:savedRoadmap.steps.map(step=>questionActionStep(step,savedRoadmap.open_questions))},'the persisted explanation renders exactly the audited explanation')
+  assert.deepEqual(savedRoadmap.steps,roadmapTestResult.steps,'persisted base actions remain unchanged; the audited question links supply the checklist')
   assert.deepEqual(reviewedParts.flatMap(({part})=>part.letters||[]),expectedLetters,'every whole letter and complete translation is included in its required group')
-  for(const item of reviewedParts.filter(({part})=>part.steps||part.letters))assert.deepEqual(item.related.steps,roadmapTestResult.steps,'action and letter review retain every complete action for dependency/consistency checks')
+  for(const item of reviewedParts.filter(({part})=>part.steps||part.letters))assert.deepEqual(item.related.steps,roadmapTestResult.steps.map(step=>questionActionStep(step,roadmapTestResult.open_questions)),'action and letter review retain every complete action for dependency/consistency checks')
 
   await testRetainedCaseWork({db,client,owner,caseId,secret,process,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
 

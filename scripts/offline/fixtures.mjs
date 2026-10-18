@@ -20,7 +20,7 @@ function fixture(id,title,documents,{topics,calculations,steps,letters=[],output
   const source={case:{id,title,owner_id:owner,home_country:'DE',target_country:'DE'},documents,assessments:[]}
   const reply={title,opening:topics[0].conclusion,key_points:[topics[0].conclusion],meaning:topics[0].conditions,next:steps[0].action,customer_action:steps[0].action,
     facts:documents.map(doc=>({text:doc.extracted_text,evidence:[{document_id:doc.id,quote:doc.extracted_text}]})),
-    open_questions:topics.filter(topic=>topic.status!=='answered').map(topic=>({question:topic.conditions,who:'Zuständige Stelle',why:topic.conditions})),steps,letters,closing:'Synthetischer Referenzfall.',
+    open_questions:topics.filter(topic=>topic.status!=='answered').map(topic=>({question:topic.conditions,who:'Zuständige Stelle',why:topic.conditions,collect_step_id:topic.step_ids[0],check_step_id:topic.step_ids.at(-1)})),steps,letters,closing:'Synthetischer Referenzfall.',
     analysis:{topics,calculations,limitations:['Alle Personen, Dokumente und Prüfquellen sind erfunden. Dies ist keine neue KI-Auswertung.']}}
   return {id,title,provenance:'synthetic_reference',source,context:{outputLanguage,referenceLanguage,scope:{issues:topics.map(({id,title})=>({id,title})),research_topics:[]},research},reply}
 }

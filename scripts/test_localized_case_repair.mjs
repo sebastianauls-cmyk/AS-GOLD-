@@ -22,7 +22,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
     const original=get(data,path)[1],sections=[{scope,[key]:[original.id]}],finding=issue(original.id)
     const resolved=resolveReviewIssueLocations([finding],data,sections)
     const targets=localizedRepairTargets(data,resolved,schema)
-    assert.deepEqual(targets.find(target=>target.location!=='analysis.limitations').path,[...path,1],'the assigned original ID selects its whole-result item, not local index zero')
+    assert.deepEqual(targets.find(target=>JSON.stringify(target.path)===JSON.stringify([...path,1])).path,[...path,1],'the assigned original ID selects its whole-result item, not local index zero')
     assert.equal(resolved[0].reason,finding.reason);assert.equal(resolved[0].code,finding.code)
     assert.equal(finding.location,original.id,'normalization never mutates provider findings')
     assert.deepEqual(resolveReviewIssueLocations(resolved,data,sections),resolved,'full paths remain unchanged')
@@ -32,7 +32,7 @@ export async function runLocalizedRepairChecks({args,candidate,big,bigScope,topi
       assert.equal(localizedRepairTargets(data,unresolved,schema),null)
     }
     const sourceFinding=resolveReviewIssueLocations([{...finding,code:'source'}],data,sections)
-    assert.deepEqual(localizedRepairTargets(data,sourceFinding,schema).find(target=>target.location!=='analysis.limitations').path,[...path,1],'a precisely located source finding uses the same bounded correction')
+    assert.deepEqual(localizedRepairTargets(data,sourceFinding,schema).find(target=>JSON.stringify(target.path)===JSON.stringify([...path,1])).path,[...path,1],'a precisely located source finding uses the same bounded correction')
   }
   const repeatedId=structuredClone(data),sharedId=repeatedId.analysis.topics[0].id
   repeatedId.letters[0].id=sharedId
