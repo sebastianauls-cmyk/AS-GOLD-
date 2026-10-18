@@ -34,6 +34,10 @@ jobs:
         with:
           deno-version: v2.1.14
       - name: Cache pinned serverless PDF dependency
-        run: deno cache --no-config --lock=scripts/offline/pdf-deno.lock scripts/test_primary_pdf_sources.mjs
+        run: |
+          deno cache --no-config --lock=scripts/offline/pdf-deno.lock scripts/test_primary_pdf_sources.mjs
+          cat scripts/offline/pdf-deno.lock
       - name: Verify real PDF extraction without network permission
         run: deno run --no-config --cached-only --lock=scripts/offline/pdf-deno.lock scripts/test_primary_pdf_sources.mjs
+      - name: Observe public PDF availability (separate from offline acceptance)
+        run: deno run --no-config --cached-only --lock=scripts/offline/pdf-deno.lock --allow-net=juris.bundesgerichtshof.de scripts/probe_official_pdf_sources.mjs
