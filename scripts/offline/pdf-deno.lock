@@ -1,0 +1,11 @@
+{
+  "version": "4",
+  "specifiers": {
+    "npm:unpdf@1.9.0": "1.9.0"
+  },
+  "npm": {
+    "unpdf@1.9.0": {
+      "integrity": "sha512-YIXl+jZUBneP22IkRUwFA1b71l+Ad2uX7o7dMfxLSLuCOtaKAQvak7Sz3MtdVsWTsocblznSIGidfXyhnBgBMA=="
+    }
+  }
+}
