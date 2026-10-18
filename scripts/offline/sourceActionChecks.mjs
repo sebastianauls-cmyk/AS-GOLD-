@@ -1,3 +1,4 @@
+import {questionActionStep} from '../../supabase/functions/_shared/questionActionCoverage.mjs'
 import {repairReplyWithFieldDecisions} from '../fixtures/repairFieldDecisions.mjs'
 import assert from 'node:assert/strict'
 import {researchRetrievalPlan} from '../../supabase/functions/_shared/verifiedResearch.mjs'
@@ -88,7 +89,7 @@ export async function testSourceActionChecks(){
       reviews++
       const related=payloads.find(item=>item.related_output).related_output
       const reviewScope=payloads.find(item=>item.assigned_review).assigned_review.scope
-      if(['roadmap','letters'].includes(reviewScope))assert.equal(related.steps[0].action,fixAction?fixture.reply.steps[0].action:bad.steps[0].action,'every action and letter review sees the actual returned action')
+      if(['roadmap','letters'].includes(reviewScope))assert.equal(related.steps[0].action,questionActionStep(fixAction?fixture.reply.steps[0]:bad.steps[0],fixture.reply.open_questions).action,'every action and letter review sees the actual returned action')
       const part=payloads.find(item=>item.candidate).candidate
       output={issues:!fixAction&&part.steps?.some(step=>step.id==='request')?[{code:'meaning',location:'steps[0]',reason:'The action still relies on an unrelated contribution rule instead of seeking the contract.'}]:[]}
     }

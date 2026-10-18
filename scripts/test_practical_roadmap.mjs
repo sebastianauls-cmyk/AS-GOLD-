@@ -1,3 +1,4 @@
+import {questionActionStep} from '../supabase/functions/_shared/questionActionCoverage.mjs'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -22,7 +23,7 @@ const initialLetter=roadmapExportBlocks(record,{letterId:'kasse'})
 assert.equal(roadmapCurrentStatus(record).step.id,'frist')
 record={...record,...updateRoadmapProgress(record,{step_id:'frist',done:true,note:'Synthetischer Test: Empfangsbestätigung eingereicht, Zugang belegt.'})}
 assert.match(summaryValue(record,'Nächster Schritt'),/2\. Beide Auskunftsanfragen vorbereiten/,'After completing step 1, the customer summary must direct the customer to the still-open second step, not repeat step 1.')
-assert.equal(summaryValue(record,'Selbst erledigen'),record.result.steps[1].action)
+assert.equal(summaryValue(record,'Selbst erledigen'),questionActionStep(record.result.steps[1],record.result.open_questions).action)
 assert.equal(roadmapCurrentStatus(record).completed,1)
 
 record={...record,...updateRoadmapProgress(record,{step_id:'anfragen',done:true,note:'Beide Anfragen geprüft und versandt; Testbelege abgelegt.'})}

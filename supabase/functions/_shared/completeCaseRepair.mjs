@@ -148,6 +148,19 @@ export function localizedRepairTargets(candidate,feedback,schema){
     if(!schemaAt(schema,path))return null
     selected.set(label(path),path)
   }
+  // A question and both linked tasks form one bounded repair unit. Keep
+  // the actual references, never infer a topic/step association from prose.
+  // If the unit exceeds the existing cap, fail before requesting a patch.
+  const questionTargets=new Set([...selected.values()].filter(path=>path[0]==='open_questions').map(path=>path[1]))
+  const stepTargets=new Set([...selected.values()].filter(path=>path[0]==='steps').map(path=>get(candidate,path).id))
+  for(const [index,question] of (candidate.open_questions||[]).entries()){
+    const ids=[question.collect_step_id,question.check_step_id].filter(id=>typeof id==='string')
+    if(!questionTargets.has(index)&&!ids.some(id=>stepTargets.has(id)))continue
+    const path=['open_questions',index];selected.set(label(path),path)
+    for(const [stepIndex,step] of (candidate.steps||[]).entries())if(ids.includes(step.id)){
+      const path=['steps',stepIndex];selected.set(label(path),path)
+    }
+  }
   // A changed computed value cannot leave a later calculation using its old
   // result. Include every transitive consumer in original dependency order.
   const affected=new Set([...selected.values()].filter(path=>path[0]==='analysis'&&path[1]==='calculations').map(path=>get(candidate,path).id))

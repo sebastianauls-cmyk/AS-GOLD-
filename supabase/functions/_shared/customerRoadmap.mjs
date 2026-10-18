@@ -1,3 +1,4 @@
+import {questionActionStep} from './questionActionCoverage.mjs'
 // Shared by the server, the customer preview and the exports. No case-specific data.
 export const ROADMAP_VERSION = 'v136'
 export const ROADMAP_LANGUAGES = ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi']
@@ -228,7 +229,7 @@ export function roadmapSteps(record,{stale=false,today=new Date().toISOString().
     const done=!stale && !blocked && update?.done===true && text(update.note).length>=5
     if(done) complete.add(step.id)
     const urgent=step.deadline?.date && step.deadline.date<=today
-    return {...step,done,blocked,update,light:done?'green':stale?'white':urgent?'red':step.light}
+    return {...questionActionStep(step,list(record?.result?.open_questions),record?.output_language),done,blocked,update,light:done?'green':stale?'white':urgent?'red':step.light}
   })
 }
 

@@ -53,7 +53,10 @@ for(const options of [{},{letterId:record.result.letters[0].id}]){
   if(options.letterId){
     assert.doesNotMatch(headers,/SYNTHETIC-ADVISOR-LETTERHEAD/,'customer letter must not acquire the advisor letterhead')
     assert.match(document,/SYNTHETIC-CUSTOMER-SENDER/,'reviewed customer sender is preserved')
-  }else assert.match(headers,/SYNTHETIC-ADVISOR-LETTERHEAD/,'customer explanation retains its advisor letterhead')
+  }else {
+    assert.match(headers,/SYNTHETIC-ADVISOR-LETTERHEAD/,'customer explanation retains its advisor letterhead')
+    for(const question of record.result.open_questions)assert(document.includes('Antwort prüfen: '+question.question),'Word retains each mapped answer checklist')
+  }
 }
 let reopened=roadmapTestRecord()
 for(const id of ['frist','anfragen','antworten','abschluss'])reopened={...reopened,...updateRoadmapProgress(reopened,{step_id:id,done:true,note:'Bestätigung mit Beleg abgelegt.'})}
@@ -71,7 +74,8 @@ if(poppler) {
     'Automatisch wieder geöffnet nach Wiederöffnung von: 2. Beide Auskunftsanfragen vorbereiten',
     'Vorherige Schritte sind noch offen.',
     reopened.result.facts[0].evidence[0].quote,
-    reopened.source_documents[0].title
+    reopened.source_documents[0].title,
+    ...reopened.result.open_questions.map(question=>'Antwort prüfen: '+question.question)
   ])assert.ok(text.includes(expected),'PDF retains progress context and fact provenance: '+expected)
   assert.equal(text.split('Automatisch wieder geöffnet nach Wiederöffnung von:').length-1,2,'both direct and transitive reopening appear in the actual PDF')
   assert.equal(text.split('Vorherige Schritte sind noch offen.').length-1,2,'both blocked actions are identified in the actual PDF')

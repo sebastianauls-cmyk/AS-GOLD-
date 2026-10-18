@@ -72,6 +72,9 @@ export async function createTextPdf({blocks,header='ASH Workspace Gold',language
       if(groupHeight<=maxY-pageStartY&&y+groupHeight>maxY&&y>pageStartY)page()
     }
     if(block.blank){if(y>pageStartY)y=Math.min(maxY,y+block.height);continue}
+    // Short provenance/status paragraphs stay readable as a whole. Longer
+    // source excerpts still flow normally; never reserve more than a page.
+    if(block.kind==='meta'&&lines.length<=4&&block.height<=maxY-pageStartY&&y+block.height>maxY&&y>pageStartY)page()
     // Reserve the heading's top/bottom spacing as well as the first body line.
     // Otherwise a heading can fit while its entire paragraph moves off-page.
     if(heading&&y+5+lineHeight*Math.min(lines.length,3)+10+17*1.45>maxY)page()
