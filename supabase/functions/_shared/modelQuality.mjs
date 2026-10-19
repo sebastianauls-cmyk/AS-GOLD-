@@ -131,14 +131,20 @@ export async function callModel(providerKey,request,{deadline,fetchImpl,onRespon
   return {parsed,response_id:response.id,model:response.model,response}
 }
 
-export async function reviewModelCandidate({providerKey,candidate,reviewContent,deadline=Date.now()+45000,fetchImpl=fetch,onResponse,beforeRequest,attempt=1,callTimeoutMs=90000,reviewModel='gpt-5.6-luna',reviewFocus='',reviewLocations=null,normalizeReviewIssues=null,previousReview=null,cachePrefixLength=0,cacheSharedPrefixLength=0,cacheKey=null}) {
+export async function reviewModelCandidate({providerKey,candidate,reviewContent,deadline=Date.now()+45000,fetchImpl=fetch,onResponse,beforeRequest,attempt=1,callTimeoutMs=90000,reviewModel='gpt-5.6-luna',reviewFocus='',reviewLocations=null,reviewLocationCatalogue=null,normalizeReviewIssues=null,previousReview=null,cachePrefixLength=0,cacheSharedPrefixLength=0,cacheKey=null}) {
+  if(reviewLocationCatalogue){
+    if(!cachePrefixLength||!Array.isArray(reviewLocations)||!reviewLocations.length||!Array.isArray(reviewLocationCatalogue)||!reviewLocationCatalogue.length||reviewLocationCatalogue.length>256||reviewLocationCatalogue.some(location=>!present(location))||new Set(reviewLocationCatalogue).size!==reviewLocationCatalogue.length||reviewLocations.some(location=>!reviewLocationCatalogue.includes(location)))throw new ModelWorkflowError('Ungültiger Katalog der Prüffelder.',500,'review_cache_invalid')
+    // The stable catalogue describes possible paths, not this call's authority.
+    // Keep the exact allowlist after the cache boundary and in the receipt hash.
+    reviewFocus+='\nThe output schema lists possible locations across the complete workflow. For THIS request choose ONLY from allowed_review_locations='+JSON.stringify(reviewLocations)+'. A catalogue entry outside this assigned list is not permitted, even if it exists in related context. Report every material defect in the assigned scope; never omit a finding to obtain approval.'
+  }
   // Live negative controls require the full reasoning review. Do not downgrade
   // the evidence gate to fit a slow request; the common deadline still fails closed.
   const request={model:reviewModel,reasoning:{effort:'high'},instructions:REVIEW_INSTRUCTIONS+(reviewFocus?'\nREVIEW PART: '+reviewFocus:''),input:[{role:'user',content:[...reviewContent,{type:'input_text',text:JSON.stringify({candidate})}]}],text:{format:{type:'json_schema',name:'ash_evidence_review_v139',strict:true,schema:REVIEW_SCHEMA}},max_output_tokens:10000}
   if(reviewLocations){
     if(!Array.isArray(reviewLocations)||!reviewLocations.length||reviewLocations.some(location=>!present(location)))throw new ModelWorkflowError('Ungültige Zuordnung der Prüffelder.',500,'review_invalid')
     request.text.format.schema=structuredClone(REVIEW_SCHEMA)
-    request.text.format.schema.properties.issues.items.properties.location.enum=reviewLocations
+    request.text.format.schema.properties.issues.items.properties.location.enum=reviewLocationCatalogue||reviewLocations
   }
   if(cachePrefixLength){
     if(!Number.isInteger(cachePrefixLength)||cachePrefixLength<1||cachePrefixLength>reviewContent.length||reviewContent[cachePrefixLength-1]?.type!=='input_text'||!present(cacheKey))throw new ModelWorkflowError('Ungültige Konfiguration der Fallprüfung.',500,'review_cache_invalid')

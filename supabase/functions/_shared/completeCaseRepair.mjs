@@ -65,6 +65,20 @@ export function completeReviewLocations(candidate,sections){
   return [...locations]
 }
 
+// Output schemas precede the source prefix in the provider's prompt. Use one
+// bounded catalogue for every complete-case review, including foundation
+// reviews before the roadmap exists. Actual assignments remain a separate,
+// server-validated allowlist and are never widened by this catalogue.
+export function completeReviewLocationCatalogue(limits){
+  const locations=new Set(['output','analysis',...collections.map(label),...scalarPaths.map(label)])
+  for(const path of collections){
+    const limit=limits[label(path)]
+    if(!Number.isSafeInteger(limit)||limit<1||limit>100)throw new Error('Invalid complete-review catalogue limit')
+    for(let index=0;index<limit;index++)locations.add(label([...path,index]))
+  }
+  return Object.freeze([...locations])
+}
+
 // Run only AFTER the review's assignment/schema validation. All reviews see
 // topic conclusions and conditions in related_output; an accepted collection
 // finding can quote one of those claims without supplying its exact path.

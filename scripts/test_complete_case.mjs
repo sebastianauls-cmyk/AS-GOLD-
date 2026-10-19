@@ -628,6 +628,7 @@ big.analysis.topics=Array.from({length:10},(_,i)=>({...candidate.analysis.topics
 big.analysis.calculations=Array.from({length:24},(_,i)=>({...structuredClone(candidate.analysis.calculations[0]),id:'difference_'+i,topic_ids:['topic_'+(i%10)]}))
 const bigScope={issues:big.analysis.topics.map(({id,title})=>({id,title,reason:'Synthetic coverage boundary',calculation_needed:true})),research_topics:[]}
 const expectedCoverage=completeReviewCoverage(big),observedBatches=[]
+let stableCompleteReviewFormat=null
 const bigChecked=validateCompleteAnalysis(big,source,{...options,scope:bigScope})
 const expectedGroups=completeReviewGroups(bigChecked,expectedCoverage)
 assert.equal(expectedCoverage.length,25)
@@ -695,6 +696,8 @@ const bigFetch=async(url,options)=>{
     const {analysis,...plan}=big;output={...plan,topic_steps:analysis.topics.map(({id,step_ids})=>({id,step_ids}))}
   }else{
     assert.equal(request.reasoning.effort,'high')
+    if(stableCompleteReviewFormat)assert.deepEqual(request.text,stableCompleteReviewFormat,'foundation, calculation, roadmap and letter reviews use the same bounded output schema before cached originals')
+    else stableCompleteReviewFormat=structuredClone(request.text)
     assert(request.input[0].content.some(item=>item.text==='SYNTHETIC_COMPLETE_ORIGINALS'),'every batch retains the complete original evidence')
     const payloads=request.input.filter(message=>message.role==='user').flatMap(message=>message.content).flatMap(item=>{try{return [JSON.parse(item.text)]}catch{return []}})
     const assignment=payloads.find(item=>item.assigned_review).assigned_review,part=payloads.find(item=>item.candidate).candidate

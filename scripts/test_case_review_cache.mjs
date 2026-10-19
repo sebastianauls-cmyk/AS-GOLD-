@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {reviewModelCandidate} from '../supabase/functions/_shared/modelQuality.mjs'
+import {completeReviewLocationCatalogue} from '../supabase/functions/_shared/completeCaseRepair.mjs'
 
 // Provider transport is entirely simulated. This verifies reusable request
 // prefixes and receipt invalidation, not cache hits or live model quality.
@@ -54,4 +55,31 @@ assert.deepEqual(shared.input[0].content[0].prompt_cache_breakpoint,{mode:'expli
 assert.deepEqual(shared.input[0].content[1].prompt_cache_breakpoint,{mode:'explicit'},'identical module research can also reuse its complete prefix')
 assert.equal(original.prompt_cache_breakpoint,undefined,'neither breakpoint mutates originals')
 for(const value of [-1,2,99,1.5])await assert.rejects(reviewModelCandidate({...config,cacheSharedPrefixLength:value}),error=>error.code==='review_cache_invalid')
+
+// Reproduce the production cache obstruction: a per-section location enum
+// changes the hidden output instructions BEFORE otherwise identical originals.
+const catalogue=completeReviewLocationCatalogue({'analysis.topics':10,'analysis.calculations':24,facts:24,open_questions:24,steps:12,letters:6})
+assert(catalogue.includes('analysis.topics[9]')&&catalogue.includes('analysis.calculations[23]')&&catalogue.includes('letters[5]'))
+assert(!catalogue.includes('analysis.topics[10]')&&!catalogue.includes('letters[6]'))
+const scoped={...config,reviewLocationCatalogue:catalogue,reviewLocations:['output','analysis.topics[0]']}
+const start=requests.length
+const firstScoped=await reviewModelCandidate(scoped)
+const secondScoped=await reviewModelCandidate({...scoped,reviewLocations:['output','analysis.calculations[0]'],previousReview:firstScoped.receipt})
+const [topicRequest,numberRequest]=requests.slice(start)
+assert(!secondScoped.reused,'changing only the exact assignment must invalidate the approval receipt')
+assert.deepEqual(topicRequest.text,numberRequest.text,'the complete output schema now stays identical between assigned review sections')
+assert.equal(topicRequest.instructions,numberRequest.instructions)
+assert.deepEqual(topicRequest.reasoning,numberRequest.reasoning)
+assert.deepEqual(topicRequest.input[0],numberRequest.input[0],'complete originals remain byte-identical and untrusted')
+assert.notEqual(topicRequest.input[1].content[0].text,numberRequest.input[1].content[0].text,'exact allowed locations change only after the evidence cache boundary')
+assert(topicRequest.input[1].content[0].text.includes('allowed_review_locations='+JSON.stringify(scoped.reviewLocations)))
+assert((await reviewModelCandidate({...scoped,previousReview:firstScoped.receipt})).reused,'an unchanged complete request still reuses its own approval')
+for(const location of ['analysis.calculations[0]','analysis.topics[99]']){
+  await assert.rejects(reviewModelCandidate({...scoped,fetchImpl:async()=>Response.json({id:'synthetic-unassigned',status:'completed',output_text:JSON.stringify({issues:[{code:'meaning',location,reason:'A finding outside the assigned section.'}]})})}),error=>error.code==='review_invalid','neither another catalogue item nor an unknown path may pass the original assignment gate')
+}
+const beforeInvalidCatalogue=requests.length
+for(const delta of [{reviewLocationCatalogue:['output']},{reviewLocationCatalogue:['output','output']},{reviewLocations:null},{cachePrefixLength:0}]){
+  await assert.rejects(reviewModelCandidate({...scoped,...delta}),error=>error.code==='review_cache_invalid')
+}
+assert.equal(requests.length,beforeInvalidCatalogue,'invalid catalogue/assignment combinations stop before provider transport')
 console.log('Complete-case review prefixes and full-request approval invalidation: passed (mock provider).')
