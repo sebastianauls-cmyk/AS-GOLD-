@@ -68,11 +68,18 @@ function load(file){
   return mod.exports
 }
 const {RoadmapLetters}=load('app/modules/cases/RoadmapLetters.js')
-const {CustomerRoadmapView}=load('app/modules/cases/CustomerRoadmapPanel.js')
+const {CustomerRoadmapView,BackgroundCaseStatus}=load('app/modules/cases/CustomerRoadmapPanel.js')
 const record=roadmapTestRecord(),original=structuredClone(record)
 assert.ok(record.result.letters.length>0)
 const visibleNodes=element=>Array.isArray(element)?element.flatMap(visibleNodes):!React.isValidElement(element)?[]:[element,...(element.type==='details'?[]:visibleNodes(element.props.children))]
 const buttons=tree=>visibleNodes(tree).filter(node=>node.type==='button')
+const waitingHtml=renderToStaticMarkup(React.createElement(BackgroundCaseStatus,{job:{stage:'capacity'}}))
+assert.match(waitingHtml,/wartet auf einen freien Platz/)
+assert.match(waitingHtml,/24 Stunden/)
+assert.doesNotMatch(waitingHtml,/läuft im Hintergrund weiter/,'waiting must not be described as an already running analysis')
+let cancelled=0
+buttons(BackgroundCaseStatus({job:{stage:'capacity'},onCancel:()=>cancelled++}))[0].props.onClick()
+assert.equal(cancelled,1,'queued requests retain the real cancel control')
 const exported=[]
 const tree=RoadmapLetters({record,onExport:(...args)=>exported.push(args)})
 assert.equal(buttons(tree).length,record.result.letters.length*2,'both download buttons must be outside the collapsed preview')

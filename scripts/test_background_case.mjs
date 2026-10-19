@@ -8,6 +8,7 @@ import {processCaseAnalysisJob} from '../supabase/functions/_shared/caseAnalysis
 import {roadmapFingerprint,roadmapSource,roadmapStyle} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {testCaseCapacityAdmission} from './test_case_capacity_admission.mjs'
 import {testCaseModelBudget} from './test_case_model_budget.mjs'
 import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
 import {testRetainedCaseWork} from './test_retained_case_work.mjs'
@@ -145,6 +146,7 @@ try {
   const checkResponseCache=()=>testCaseResponseCache({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
   if(globalThis.process.argv.includes('--response-cache-only')){
     await db.exec(await readFile('supabase/migrations/20260922134000_complete_review_lifetime.sql','utf8'))
+    await db.exec(await readFile('supabase/migrations/20261019041252_case_capacity_admission.sql','utf8'))
     await checkResponseCache()
   }else{
   const legacyJob=await enqueue()
@@ -153,6 +155,8 @@ try {
   assert.equal(new Date((await stored(legacyJob.id)).expires_at).getTime(),new Date(legacyJob.expires_at).getTime(),'migration never extends an existing job')
   await cancel(legacyJob.id)
   await db.query('delete from public.case_analysis_jobs where id=$1',[legacyJob.id])
+  await db.exec(await readFile('supabase/migrations/20261019041252_case_capacity_admission.sql','utf8'))
+  await testCaseCapacityAdmission({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar})
 
   await assert.rejects(enqueue({acknowledged:false}),/authorization/)
   await assert.rejects(enqueue({output_language:null}),/authorization/)
@@ -362,6 +366,7 @@ try {
   // checkpoint path; its original created_at remains fixed through every step.
   job=await enqueue()
   await db.query("update public.case_analysis_jobs set created_at=now()-interval '46 minutes',expires_at=now()+interval '14 minutes' where id=$1",[job.id])
+  await db.query('update private.case_analysis_work set execution_started_at=(select created_at from public.case_analysis_jobs where id=$1) where job_id=$1',[job.id])
   const originalJobStart=(await stored(job.id)).created_at
   assert.equal((await drain(job.id)).status,'completed','background checkpoint expiry agrees with the existing database job lifetime')
   assert.equal(new Date((await stored(job.id)).created_at).getTime(),new Date(originalJobStart).getTime())

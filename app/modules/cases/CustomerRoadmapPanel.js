@@ -23,6 +23,10 @@ import { completeAnalysisBlocks, completeAnalysisCopy } from './lib/completeAnal
 import './customerRoadmap.css'
 
 function Dot({light,label}) {return <span className="roadmapLight"><span aria-hidden="true" style={{backgroundColor:ROADMAP_COLORS[light]}}/>{label}</span>}
+export function BackgroundCaseStatus({job,language='de',busy=false,onCancel}) {
+  const copy=backgroundCaseCopy(language),waiting=job.stage==='capacity'
+  return <div className="caseReadingProgress" data-testid="background-case-job" role="status" aria-live="polite"><b>{waiting?copy.capacityTitle:copy.title}</b><p>{waiting?copy.capacityWaiting:copy.working}</p>{!waiting&&<p>{roadmapProgressLabel(language,job.stage)}</p>}<button type="button" className="secondary" disabled={busy} onClick={onCancel}>{roadmapUi(language).cancel}</button></div>
+}
 function Evidence({items,documents,ui,onOpenDocument}) {
   if(!items?.length)return null
   return <details className="roadmapEvidence"><summary>{ui.evidence}</summary>{items.map((entry,index)=>{
@@ -285,7 +289,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   return <section className="customerRoadmapPanel" ref={panelRef} tabIndex={-1} id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>
     <header className="roadmapPanelHead"><div><h3 id={`roadmap-title-${item.id}`}>{simple.title}</h3><p>{simple.intro}</p></div>{record&&canCreate&&<button type="button" className="secondary" disabled={busy} onClick={expandForm}>{ui.refresh}</button>}</header>
     {loading&&<p role="status">{ui.loading}</p>}
-    {backgroundBusy&&<div className="caseReadingProgress" data-testid="background-case-job" role="status" aria-live="polite"><b>{backgroundCopy.title}</b><p>{backgroundCopy.working}</p><p>{roadmapProgressLabel(language,job.stage)}</p><button type="button" className="secondary" disabled={busy} onClick={cancelJob}>{ui.cancel}</button></div>}
+    {backgroundBusy&&<BackgroundCaseStatus job={job} language={language} busy={busy} onCancel={cancelJob}/>}
     {job?.status==='cancelled'&&<p role="status">{backgroundCopy.cancelled}</p>}
     {jobReadError&&<div role="status"><p>{backgroundCopy.statusUnavailable}</p><button type="button" className="secondary" disabled={busy} onClick={()=>setJobRefresh(value=>value+1)}>{automatic.status}</button></div>}
     {automaticStarted&&(busy||backgroundBusy)&&<p role="status">{automatic.running}</p>}

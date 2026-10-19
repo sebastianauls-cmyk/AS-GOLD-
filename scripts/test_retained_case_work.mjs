@@ -60,9 +60,9 @@ export async function testRetainedCaseWork({db,client,owner,caseId,secret,proces
     const used=await scalar("select count(*)::integer from private.case_model_calls where owner_id=$1 and created_at>=now()-interval '1 day'",[owner])
     await db.query("update private.case_model_budget_policy set max_calls=$1 where scope='owner'",[used])
     const limited=await fresh(),beforeLimit=modelCalls()
-    await run(await claim(limited.id))
-    assert.equal(modelCalls(),beforeLimit,'resuming retained work cannot bypass the remaining owner budget')
-    assert.equal((await stored(limited.id)).error_code,'budget_limit')
+    assert.equal((await stored(limited.id)).stage,'capacity')
+    assert.equal(await scalar('select count(*)::int from private.case_model_calls where job_id=$1',[limited.id]),0)
+    assert.equal(modelCalls(),beforeLimit,'retained work waits without calls when a whole-job envelope cannot be admitted')
     await db.query("update private.case_model_budget_policy set max_calls=$1 where scope='owner'",[ownerLimit])
     await cleanup()
 

@@ -92,9 +92,9 @@ export async function testCaseResponseCache({db,client,owner,caseId,secret,enque
     const used=await scalar("select count(*)::integer from private.case_model_calls where owner_id=$1 and created_at>=now()-interval '1 day'",[owner])
     await db.query("update private.case_model_budget_policy set max_calls=$1 where scope='owner'",[used])
     const limited=await fresh(),beforeLimit=modelCalls()
-    for(let i=0;i<5;i++)await run(await claim(limited.id),'third-deployment')
-    assert.equal((await stored(limited.id)).error_code,'budget_limit')
-    assert.equal(modelCalls(),beforeLimit,'four cached stages cost zero new calls; genuine review stops at unchanged budget')
+    assert.equal((await stored(limited.id)).stage,'capacity')
+    assert.equal(await scalar('select count(*)::int from private.case_model_calls where job_id=$1',[limited.id]),0)
+    assert.equal(modelCalls(),beforeLimit,'cached work cannot bypass the unchanged whole-job capacity requirement')
     await db.query("update private.case_model_budget_policy set max_calls=$1 where scope='owner'",[limit])
     await cleanup()
 

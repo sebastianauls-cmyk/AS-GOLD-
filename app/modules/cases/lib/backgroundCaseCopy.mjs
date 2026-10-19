@@ -12,4 +12,17 @@ const rows={
   bg:['Вашият отговор се подготвя','Заявката е запазена и се обработва във фонов режим. Можете да затворите страницата. Резултатът ще бъде в този случай.','Заявката е отменена. Документите ви остават запазени.','Текущото състояние не може да се зареди. Запазената заявка не се стартира повторно.'],
   vi:['Đang chuẩn bị câu trả lời','Yêu cầu đã được lưu và tiếp tục xử lý ở chế độ nền. Bạn có thể đóng trang này và xem kết quả sau trong hồ sơ này.','Yêu cầu đã bị hủy. Tài liệu của bạn vẫn được lưu.','Không thể tải trạng thái hiện tại. Yêu cầu đã lưu sẽ không bị khởi chạy lại.']
 }
-export function backgroundCaseCopy(language='de'){return Object.fromEntries(keys.map((key,index)=>[key,(rows[language]||rows.de)[index]]))}
+const capacity={
+  de:['Ihr Auftrag wartet auf einen freien Platz','Ihr Auftrag ist gespeichert. Er startet automatisch, sobald genügend Verarbeitungskapazität für den gesamten Auftrag frei ist. Während des Wartens startet keine KI-Anfrage. Sie können die Seite schließen oder den Auftrag abbrechen. Die Wartezeit ist auf 24 Stunden begrenzt.'],
+  en:['Your request is waiting for capacity','Your request is saved. It starts automatically when capacity for the whole request is available. No AI requests run while it waits. You can close this page or cancel. Waiting is limited to 24 hours.'],
+  fr:['Votre demande attend une place','Votre demande est enregistrée. Elle démarrera automatiquement lorsque la capacité nécessaire sera disponible. Aucun appel IA pendant l’attente. Vous pouvez fermer cette page ou annuler. Attente limitée à 24 heures.'],
+  tr:['İsteğiniz boş yer bekliyor','İsteğiniz kaydedildi. Tüm işlem için yeterli kapasite olduğunda otomatik başlar. Beklerken yapay zekâ çağrısı yapılmaz. Sayfayı kapatabilir veya iptal edebilirsiniz. Bekleme en fazla 24 saattir.'],
+  pl:['Zlecenie czeka na wolne miejsce','Zlecenie zapisano. Rozpocznie się automatycznie, gdy będzie dostępna moc potrzebna na całość. Podczas oczekiwania nie ma wywołań AI. Możesz zamknąć stronę lub anulować. Oczekiwanie trwa najwyżej 24 godziny.'],
+  ru:['Задание ожидает свободного места','Задание сохранено и запустится автоматически, когда хватит ресурсов на весь процесс. Во время ожидания запросов к ИИ нет. Можно закрыть страницу или отменить задание. Ожидание ограничено 24 часами.'],
+  ar:['طلبك ينتظر توفر سعة','تم حفظ الطلب وسيبدأ تلقائياً عند توفر سعة تكفي لمعالجته كاملاً. لا تُرسل طلبات ذكاء اصطناعي أثناء الانتظار. يمكنك إغلاق الصفحة أو الإلغاء. الانتظار محدود بـ24 ساعة.'],
+  fa:['درخواست شما منتظر ظرفیت آزاد است','درخواست ذخیره شده و با فراهم شدن ظرفیت کافی برای کل کار، خودکار شروع می‌شود. هنگام انتظار درخواستی به هوش مصنوعی ارسال نمی‌شود. می‌توانید صفحه را ببندید یا لغو کنید. انتظار حداکثر ۲۴ ساعت است.'],
+  ro:['Cererea așteaptă un loc liber','Cererea este salvată și pornește automat când există capacitate pentru întregul proces. Nu se fac apeluri AI în așteptare. Puteți închide pagina sau anula. Așteptarea este limitată la 24 de ore.'],
+  bg:['Заявката чака свободно място','Заявката е запазена и започва автоматично при достатъчен капацитет за целия процес. Докато чака, няма заявки към ИИ. Можете да затворите страницата или да отмените. Изчакването е до 24 часа.'],
+  vi:['Yêu cầu đang chờ chỗ trống','Yêu cầu đã lưu và sẽ tự động bắt đầu khi có đủ khả năng xử lý toàn bộ. Không có lệnh gọi AI trong lúc chờ. Bạn có thể đóng trang hoặc hủy. Thời gian chờ tối đa 24 giờ.']
+}
+export function backgroundCaseCopy(language='de'){return {...Object.fromEntries(keys.map((key,index)=>[key,(rows[language]||rows.de)[index]])),capacityTitle:(capacity[language]||capacity.de)[0],capacityWaiting:(capacity[language]||capacity.de)[1]}}

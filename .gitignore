@@ -13,3 +13,6 @@ supabase/.temp/
 # Local/CI-only interaction fixture; never part of a deployed app.
 /app/qa-case-flow/
 /app/qa-document-flow/
+
+# Bounded local verification reports; no model credentials or production data.
+.ash-checks/
