@@ -11,6 +11,7 @@ import {completeReviewCoverage,completeReviewGroups} from '../supabase/functions
 import {testCaseModelBudget} from './test_case_model_budget.mjs'
 import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
 import {testRetainedCaseWork} from './test_retained_case_work.mjs'
+import {testCaseResponseCache} from './test_case_response_cache.mjs'
 
 // Real Postgres semantics, real migrations, real worker/state machine, validators
 // and encrypted checkpoints. Only dispatch transport and model responses are fake.
@@ -60,6 +61,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260924005032_grouped_case_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260924120132_retain_failed_case_diagnostics.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20261008162652_case_model_billing_receipts.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20261019020357_validated_case_response_cache.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])
@@ -82,6 +84,8 @@ try {
   }
   const client={from:table=>new Query(table),rpc:async(name,args)=>{
     const calls={read_retained_case_work:['p_job_id','p_lease','p_cache_key'],save_retained_case_work:['p_job_id','p_lease','p_cache_key','p_ciphertext'],finish_case_analysis_job:['p_job_id','p_lease','p_outcome'],reserve_case_model_call:['p_job_id','p_lease','p_output_tokens','p_request_bytes','p_search_calls','p_stage'],settle_case_model_call:['p_job_id','p_lease','p_reservation_id','p_input_tokens','p_output_tokens','p_cached_tokens']}
+    calls.read_case_response_cache=['p_job_id','p_lease','p_cache_key']
+    calls.save_case_response_cache=['p_job_id','p_lease','p_cache_key','p_stage','p_response_id','p_ciphertext']
     calls.settle_case_model_call_with_receipt=[...calls.settle_case_model_call,'p_receipt']
     assert(calls[name])
     try{return {data:await scalar(`select public.${name}(${calls[name].map((_,i)=>'$'+(i+1)).join(',')})`,calls[name].map(key=>args[key])),error:null}}catch(error){return {data:null,error}}
@@ -137,6 +141,11 @@ try {
   const process=(job,cacheNamespace='synthetic-fixture-'+job.id)=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only',cacheNamespace})
   const drain=async id=>{for(let n=0;n<117;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
+  const checkResponseCache=()=>testCaseResponseCache({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
+  if(globalThis.process.argv.includes('--response-cache-only')){
+    await db.exec(await readFile('supabase/migrations/20260922134000_complete_review_lifetime.sql','utf8'))
+    await checkResponseCache()
+  }else{
   const legacyJob=await enqueue()
   assert.equal(new Date(legacyJob.expires_at)-new Date(legacyJob.created_at),45*60*1000)
   await db.exec(await readFile('supabase/migrations/20260922134000_complete_review_lifetime.sql','utf8'))
@@ -180,6 +189,7 @@ try {
   for(const item of reviewedParts.filter(({part})=>part.steps||part.letters))assert.deepEqual(item.related.steps,roadmapTestResult.steps.map(step=>questionActionStep(step,roadmapTestResult.open_questions)),'action and letter review retain every complete action for dependency/consistency checks')
 
   await testRetainedCaseWork({db,client,owner,caseId,secret,process,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
+  await checkResponseCache()
 
   // Actual RLS/execute privileges, not a string assertion or mocked access check.
   await db.query("select set_config('request.jwt.claim.sub',$1,false)",[owner]);await db.exec('set role authenticated')
@@ -516,4 +526,5 @@ try {
   await db.query('delete from cases where id=$1',[caseId])
   assert.equal(await scalar('select count(*)::integer from private.case_analysis_work'),0,'case deletion erases job payloads and checkpoints')
   console.log('Durable analysis: real SQL ownership/privileges, one-use dispatch, page-independent completion, crash recovery, stale-lease rejection, cancellation, consent/access/source guards, bounded retries, all four reviews, persisted failures, quota and deletion passed. Model and network responses are simulated; no live Sarah acceptance claimed.')
+  }
 }finally{globalThis.fetch=oldFetch;await db.close()}

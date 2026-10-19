@@ -6,10 +6,11 @@ import {openModelCheckpoint,sealModelCheckpoint} from './modelCheckpoint.mjs'
 import {retainedCaseWork} from './retainedCaseWork.mjs'
 import {MODEL_QUALITY_VERSION,ModelWorkflowError} from './modelQuality.mjs'
 import {safeCorrectionDiagnostic} from './completeCaseRepair.mjs'
+import {caseResponseCache} from './caseResponseCache.mjs'
 
 // Called only with a database-claimed, single-use job lease. No caller-supplied
 // identity, model input, checkpoint or result can enter this worker endpoint.
-export async function processCaseAnalysisJob({client,job,secret,providerKey,cacheNamespace,advance=advanceCompleteAnalysis}) {
+export async function processCaseAnalysisJob({client,job,secret,providerKey,cacheNamespace,reuseValidatedResponses=false,advance=advanceCompleteAnalysis}) {
   const log=(event,extra={})=>console.info('[case-analysis-job]',{event,job_id:job.id,...extra})
   const finish=async outcome=>{
     const {data,error}=await client.rpc('finish_case_analysis_job',{p_job_id:job.id,p_lease:job.lease,...outcome})
@@ -31,15 +32,18 @@ export async function processCaseAnalysisJob({client,job,secret,providerKey,cach
     const state=checkpoint?.state??await retained.restore()
     if(!checkpoint&&state)log('saved_work_restored',{stage:completeAnalysisStage(state)})
     const budget=caseModelBudget({client,job})
-    const analysis=await advance({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest:request,baseReviewContent:reviewContent,draftLetters,state,beforeRequest:budget.beforeRequest,onResponse:async event=>{if(event.stage==='retrieval')return;await budget.onResponse(event);const {stage,attempt,response_id,status,provider_status,provider_error_code,retry_after,usage}=event;log('model_response',{stage,attempt,response_id,status,provider_status,provider_error_code,retry_after,...(usage?{input_tokens:usage.input_tokens,output_tokens:usage.output_tokens,cached_tokens:usage.input_tokens_details?.cached_tokens??0,cache_write_tokens:Number.isSafeInteger(usage.input_tokens_details?.cache_write_tokens)&&usage.input_tokens_details.cache_write_tokens>=0&&usage.input_tokens_details.cache_write_tokens<=usage.input_tokens?usage.input_tokens_details.cache_write_tokens:null}:{})})}})
+    const responseCache=reuseValidatedResponses?caseResponseCache({client,job,secret,onReuse:detail=>log('validated_response_reused',detail)}):undefined
+    const analysis=await advance({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest:request,baseReviewContent:reviewContent,draftLetters,state,responseCache,beforeRequest:budget.beforeRequest,onResponse:async event=>{if(event.stage==='retrieval')return;await budget.onResponse(event);const {stage,attempt,response_id,status,provider_status,provider_error_code,retry_after,usage}=event;log('model_response',{stage,attempt,response_id,status,provider_status,provider_error_code,retry_after,...(usage?{input_tokens:usage.input_tokens,output_tokens:usage.output_tokens,cached_tokens:usage.input_tokens_details?.cached_tokens??0,cache_write_tokens:Number.isSafeInteger(usage.input_tokens_details?.cache_write_tokens)&&usage.input_tokens_details.cache_write_tokens>=0&&usage.input_tokens_details.cache_write_tokens<=usage.input_tokens?usage.input_tokens_details.cache_write_tokens:null}:{})})}})
     const fresh=await loadRoadmapSource(client,job.case_id,job.owner_id)
     if(!fresh||await roadmapFingerprint(fresh)!==job.source_fingerprint)throw new ModelWorkflowError('Während der Verarbeitung wurden Unterlagen geändert. Es wurde kein neues Ergebnis gespeichert.',409,'source_changed')
     if(analysis.status==='processing') {
+      await responseCache?.commit()
       await retained.save(analysis.state)
       const token=await sealModelCheckpoint({state:analysis.state,binding,secret,runId:job.id,issuedAt:Date.parse(job.created_at)})
       const saved=await finish({p_outcome:{status:'processing',checkpoint:token,stage:completeAnalysisStage(analysis.state)}})
       log(saved.status==='queued'?'step_saved':'job_stopped',{stage:completeAnalysisStage(analysis.state)})
     } else if(analysis.status==='completed'&&analysis.result) {
+      await responseCache?.commit()
       const saved=await finish({p_outcome:{status:'completed',result:analysis.result,model:analysis.model||request.model,workflow_version:MODEL_QUALITY_VERSION,source_documents:source.documents.map(({id,title,updated_at})=>({id,title,updated_at}))}})
       log(saved.status==='completed'?'reviewed_result_saved':'job_stopped')
     } else throw new ModelWorkflowError('Die Verarbeitung hat keinen gültigen Zwischenstand geliefert.',502,'workflow_invalid')

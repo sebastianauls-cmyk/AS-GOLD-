@@ -120,6 +120,7 @@
     "test:workspace-overview": "node scripts/test_workspace_overview.mjs && node scripts/test_simple_case_flow.mjs && npm run test:case-result-access",
     "test:public-product-tour": "node scripts/test_public_product_tour.mjs && node scripts/test_public_case_start.mjs",
     "test:product-deliverables": "node --import ./scripts/offline/noNetwork.mjs scripts/test_analysis_traceability.mjs && node --import ./scripts/offline/noNetwork.mjs scripts/test_customer_notes.mjs && node scripts/test_product_deliverables.mjs",
+    "test:case-response-cache": "node --import ./scripts/offline/noNetwork.mjs scripts/test_background_case.mjs --response-cache-only",
     "test:offline": "node --import ./scripts/offline/noNetwork.mjs scripts/offline/run.mjs",
     "test:payment-recovery": "node --import ./scripts/offline/noNetwork.mjs scripts/test_payment_recovery.mjs",
     "test:roadmap-overview-ui": "node --import ./scripts/offline/noNetwork.mjs scripts/test_roadmap_overview_ui.mjs",

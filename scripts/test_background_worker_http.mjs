@@ -20,5 +20,6 @@ available=true;assert.equal((await request({...body,owner_id:'forged',checkpoint
 await Promise.all(tasks)
 assert.equal(processed.length,1);assert.equal(processed[0].job,job,'worker only sees the database-claimed payload')
 assert.equal(processed[0].job.owner_id,'verified-database-owner')
+assert.equal(processed[0].reuseValidatedResponses,true,'production worker enables validated response reuse')
 assert.equal(processed[0].cacheNamespace,env.DENO_DEPLOYMENT_ID,'retention is bound to the deployed worker version')
 console.log('Background worker HTTP: method/origin/body limits, required one-use capability, denied claim, no caller identity/checkpoint injection and registered background task passed.')

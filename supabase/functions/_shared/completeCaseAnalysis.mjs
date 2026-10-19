@@ -334,9 +334,15 @@ function topicModelInstructions(source,style,outputLanguage){
 // Two research stages, then the existing bounded generation/review/correction.
 // The HTTP handler seals this server-only state and rechecks access and originals
 // on EVERY continuation. No unreviewed candidate is exposed to the customer.
-export async function advanceCompleteAnalysis({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest,baseReviewContent,draftLetters=true,state=null,fetchImpl=fetch,onResponse,beforeRequest}){
+export async function advanceCompleteAnalysis({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest,baseReviewContent,draftLetters=true,state=null,fetchImpl=fetch,onResponse,beforeRequest,responseCache}){
   const current=state||{stage:'planning'},countryScope=completeResearchScope(source),workingBasis=caseLegalWorkingBasis(source.case)
-  const invoke=(request,stage)=>callModel(providerKey,request,{deadline:Date.now()+140000,callTimeoutMs:130000,fetchImpl,onResponse,beforeRequest,stage,attempt:1})
+  const invoke=async(request,stage)=>{
+    const cached=await responseCache?.read(request,stage)
+    if(cached)return cached
+    const result=await callModel(providerKey,request,{deadline:Date.now()+140000,callTimeoutMs:130000,fetchImpl,onResponse,beforeRequest,stage,attempt:1})
+    await responseCache?.remember(request,stage,result)
+    return result
+  }
   const model='gpt-5.6-sol'
   if(current.stage==='planning'){
     const planningSource=roadmapModelSource(source)
@@ -629,7 +635,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     // A matching receipt used no model call. Advance over these bounded,
     // already approved groups in this lease instead of scheduling a worker
     // solely to compare another hash. The first paid review returns normally.
-    if(review.reused)return advanceCompleteAnalysis({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest,baseReviewContent,draftLetters,state:nextState,fetchImpl,onResponse,beforeRequest})
+    if(review.reused)return advanceCompleteAnalysis({providerKey,source,style,outputLanguage,referenceLanguage,baseRequest,baseReviewContent,draftLetters,state:nextState,fetchImpl,onResponse,beforeRequest,responseCache})
     return {status:'processing',state:nextState}
   }
   if(feedback.length){
