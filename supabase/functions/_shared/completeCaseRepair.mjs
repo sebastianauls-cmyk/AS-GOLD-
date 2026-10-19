@@ -7,6 +7,34 @@ const get=(value,path)=>path.reduce((item,key)=>item?.[key],value)
 const label=path=>path.map((key,index)=>typeof key==='number'?`[${key}]`:(index?'.':'')+key).join('')
 const own=(value,key)=>value!==null&&typeof value==='object'&&Object.hasOwn(value,key)
 
+// Foundation and roadmap are generated at different times. A correction of
+// the foundation cannot consume the first correction of a not-yet-created
+// roadmap. Each phase may be corrected ONCE, including mixed replacements.
+// Keep the phase ledger in the sealed state; neither a worker restart nor a
+// new review group resets it. Legacy second-attempt checkpoints are treated
+// conservatively as having spent both phases, not granted a new allowance.
+export function completeCaseCorrectionPhases(state){
+  const attempt=state.modelState?.attempt??1
+  const history=state.contentCorrectionPhases??(attempt===1?[]:attempt===2?[['foundation','roadmap']]:null)
+  if(!Number.isInteger(attempt)||attempt<1||attempt>3||!Array.isArray(history)||history.length!==attempt-1)throw new Error('Ungültige Korrekturrunde.')
+  const used=new Set()
+  for(const phases of history){
+    if(!Array.isArray(phases)||!phases.length||phases.length>2)throw new Error('Ungültige Korrekturrunde.')
+    for(const phase of phases){
+      if(!['foundation','roadmap'].includes(phase)||used.has(phase))throw new Error('Ungültige Korrekturrunde.')
+      used.add(phase)
+    }
+  }
+  return history.map(phases=>[...phases])
+}
+
+export function nextCaseCorrectionPhases(history,targets){
+  if(!Array.isArray(targets)||!targets.length)return null
+  const phases=[...new Set(targets.map(target=>target.path[0]==='analysis'?'foundation':'roadmap'))].sort()
+  if(phases.some(phase=>history.some(previous=>previous.includes(phase))))return null
+  return [...history.map(previous=>[...previous]),phases]
+}
+
 // Reviewers may return the original item ID instead of a full-result path.
 // Resolve only exact IDs assigned by the server to this review. The same ID
 // in a different collection must never redirect a correction to that item.
@@ -316,6 +344,13 @@ export async function createCorrectionTrace(targets,previous,candidate,findings)
     entries.push({location:target.location,changed:before.sha256!==after.sha256,before,after})
   }
   return {version:1,findings:traceFindings(findings),entries}
+}
+export function mergeCorrectionTraces(previous,current){
+  if(previous?.version!==1||!Array.isArray(previous.entries))return current
+  const changed=new Set(current.entries.map(entry=>entry.location))
+  // Preserve exact earlier comparisons for untouched fields. Removing their
+  // comparison would unnecessarily invalidate an identical approved review.
+  return {version:1,findings:[...previous.findings.filter(item=>!changed.has(item.location)),...current.findings],entries:[...previous.entries.filter(item=>!changed.has(item.location)),...current.entries]}
 }
 export function correctionReviewComparison(trace,locations){
   if(trace?.version!==1||!Array.isArray(trace.entries))return null

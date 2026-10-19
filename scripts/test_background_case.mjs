@@ -12,6 +12,7 @@ import {testCaseModelBudget} from './test_case_model_budget.mjs'
 import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
 import {testRetainedCaseWork} from './test_retained_case_work.mjs'
 import {testCaseResponseCache} from './test_case_response_cache.mjs'
+import {completedCorrectionPhaseResult} from './test_case_correction_phases.mjs'
 
 // Real Postgres semantics, real migrations, real worker/state machine, validators
 // and encrypted checkpoints. Only dispatch transport and model responses are fake.
@@ -515,6 +516,18 @@ try {
     assert.doesNotMatch(JSON.stringify(failed),/PRIVATE MALFORMED OUTPUT|PRIVATE REFUSAL/)
     await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
   }
+
+  // The real SQL completion boundary accepts the fully reviewed result from
+  // the sealed two-phase scenario, preserving both correction receipts.
+  job=await enqueue()
+  const phaseJob=await claim(job.id)
+  const phaseSaved=await finish(phaseJob,{status:'completed',result:completedCorrectionPhaseResult,model:'gpt-5.6-sol',workflow_version:'synthetic-phase-check',source_documents:[]})
+  assert.equal(phaseSaved.status,'completed')
+  const phaseResult=await scalar('select result from case_roadmaps where id=$1',[job.id])
+  assert.deepEqual(phaseResult.analysis.verification.content_correction_phases,[['foundation'],['roadmap']])
+  assert.equal(phaseResult.analysis.verification.correction_response_ids.length,2)
+  await db.query('delete from public.case_analysis_jobs where id=$1',[job.id])
+  await db.query('delete from public.case_roadmaps where id=$1',[job.id])
 
   await db.query('update auth.users set banned_until=now()+interval \'1 day\' where id=$1',[owner]);await assert.rejects(enqueue(),/authorization/)
   await db.query('update auth.users set banned_until=null where id=$1',[owner])
