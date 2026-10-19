@@ -46,3 +46,24 @@ checks bounded retries and manual recovery, and rejects duplicate starts,
 changed inputs, cancelled handoffs and restored access after refusal.
 The test is part of `test_case_result_access.mjs` and the existing readiness
 runner. It is not an authenticated browser or live model test.
+
+## Fixed: an older result read could hide a completed answer
+
+The opening result request and the job-status request previously ran in
+separate effects. When a completed job loaded its saved answer first, a
+delayed opening response could overwrite it with an empty or older snapshot,
+or leave an obsolete read error on screen. The new regression fails against
+that implementation: the expected completed record disappears.
+
+A single cancellable read sequence now owns status and result loading. Its
+existing bounded recovery also covers opening a saved result with no
+background job. A failed result read cannot consume upload authorization;
+after two automatic retries the existing status-refresh button can retry the
+reads. A completed job's referenced result must actually be present before
+the read succeeds. No result is fabricated and no model request is replayed.
+
+The production-component regression covers delayed empty/older/error
+responses, temporary and persistent result-read failures, manual reopening,
+exactly one authorized start after recovery and leaving before a read
+finishes. These are internal controlled transport tests, not proof of a new
+successful live AI case or of Android downloads.

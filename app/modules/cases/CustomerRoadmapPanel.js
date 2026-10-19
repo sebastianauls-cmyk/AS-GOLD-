@@ -125,6 +125,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
   const [savedJob,setSavedJob]=useState(null),[jobReadError,setJobReadError]=useState(false)
   const [jobLoaded,setJobLoaded]=useState(false),[automaticStarted,setAutomaticStarted]=useState(false)
   const [jobRefresh,setJobRefresh]=useState(0)
+  const resultLoadedForRef=useRef(null)
   const job=savedJob?.case_id===item.id?savedJob:null
   const backgroundBusy=!!job&&['queued','running'].includes(job.status)
   const mountedRef=useRef(true)
@@ -161,16 +162,6 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     return ()=>{cancelled=true}
   },[source,ui.error])
   useEffect(()=>{
-    let cancelled=false
-    listCustomerRoadmaps(supabase,item.id).then(({data,error})=>{
-      if(cancelled)return
-      if(error)setError(ui.error)
-      else {setRecords(data||[]);if(data?.length){setActiveId(data[0].id);setStyle(roadmapStyle(data[0].style));if(!automaticRun)setReferenceLanguage(data[0].reference_language);setShowForm(false)}}
-      setLoading(false)
-    }).catch(()=>{if(!cancelled){setError(ui.error);setLoading(false)}})
-    return ()=>{cancelled=true}
-  },[supabase,item.id,ui.error])
-  useEffect(()=>{
     let cancelled=false,timer,readFailures=0
     async function refreshJob(){
       try{
@@ -178,12 +169,24 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
         if(cancelled)return
         if(readError)throw readError
         const latest=data?.[0]||null
-        setSavedJob(latest);setJobReadError(false)
-        if(latest?.status==='completed'){
+        // One read sequence owns both status and results. A slower opening
+        // request must never overwrite a completed job's newer saved answer.
+        const opening=resultLoadedForRef.current!==item.id
+        if(opening||latest?.status==='completed'){
           const {data:roadmaps,error:resultError}=await listCustomerRoadmaps(supabase,item.id)
           if(cancelled)return
-          if(resultError||!roadmaps?.some(record=>record.id===latest.roadmap_id))throw new Error('Saved result unavailable')
-          setRecords(roadmaps);setActiveId(latest.roadmap_id);setShowForm(false);setConfirmed(false);setError('');setReviewIssues([])
+          if(resultError||(latest?.status==='completed'&&!roadmaps?.some(record=>record.id===latest.roadmap_id)))throw new Error('Saved result unavailable')
+          setRecords(roadmaps||[])
+          if(roadmaps?.length){
+            setActiveId(latest?.status==='completed'?latest.roadmap_id:roadmaps[0].id)
+            if(opening){setStyle(roadmapStyle(roadmaps[0].style));if(!automaticRun)setReferenceLanguage(roadmaps[0].reference_language)}
+            setShowForm(false)
+          }
+          resultLoadedForRef.current=item.id
+        }
+        setSavedJob(latest);setJobReadError(false);setLoading(false)
+        if(latest?.status==='completed'){
+          setConfirmed(false);setError('');setReviewIssues([])
         }else if(latest?.status==='failed'){
           setError(workflowErrorMessage({code:latest.error_code,error:latest.error_message},ui.error,language))
           setReviewIssues((latest.issues||[]).slice(0,8).map(issue=>String(issue.reason||'').slice(0,700)).filter(Boolean))
@@ -193,7 +196,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
         if(latest&&['queued','running'].includes(latest.status))timer=setTimeout(refreshJob,3000)
       }catch{
         if(!cancelled){
-          setJobReadError(true);setJobLoaded(true)
+          setJobReadError(true);setJobLoaded(true);setLoading(false)
           // Retry only these reads, twice. Never replay an enqueue or a model
           // request; a persistent failure keeps the explicit status control.
           if(++readFailures<=2)timer=setTimeout(refreshJob,3000*readFailures)

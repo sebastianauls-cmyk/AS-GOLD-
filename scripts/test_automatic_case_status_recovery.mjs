@@ -5,7 +5,7 @@ import {createRequire} from 'node:module'
 import React from 'react'
 import {transformSync} from 'next/dist/build/swc/index.js'
 import {createAutomaticCaseRun} from '../app/modules/cases/lib/automaticCaseRun.mjs'
-import {roadmapTestCase,roadmapTestDocuments} from '../app/modules/testing/customerRoadmapFixture.mjs'
+import {roadmapTestCase,roadmapTestDocuments,roadmapTestRecord} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {automaticCaseCopy} from '../app/modules/cases/lib/automaticCaseCopy.mjs'
 import {offlineNetworkAttempts} from './offline/noNetwork.mjs'
 
@@ -13,10 +13,10 @@ import {offlineNetworkAttempts} from './offline/noNetwork.mjs'
 // transport and hook state. No browser session, provider or live data is used.
 const require=createRequire(import.meta.url)
 const nodes=value=>Array.isArray(value)?value.flatMap(nodes):!React.isValidElement(value)?[]:[value,...nodes(value.props.children)]
-function scenario({readError=true,existingJob=null,allow=true}={}){
+function scenario({readError=true,existingJob=null,allow=true,automatic=true,listResults}={}){
   const slots=[],pending=[],cache=new Map(),timers=new Map()
   let cursor=0,dirty=true,tree,disposed=false,nextTimer=0
-  const state={readError,latest:existingJob,reads:0,starts:0,authorizations:0}
+  const state={readError,latest:existingJob,reads:0,resultReads:0,starts:0,authorizations:0}
   const hooks={...React,
     useState(initial){const index=cursor++;if(!(index in slots))slots[index]={value:typeof initial==='function'?initial():initial};return [slots[index].value,value=>{if(disposed)return;const next=typeof value==='function'?value(slots[index].value):value;if(!Object.is(next,slots[index].value)){slots[index].value=next;dirty=true}}]},
     useRef(initial){return hooks.useState(()=>({current:initial}))[0]},
@@ -26,7 +26,7 @@ function scenario({readError=true,existingJob=null,allow=true}={}){
   const schedule=(callback,delay=0)=>{const id=++nextTimer;timers.set(id,{callback,delay});return id}
   const cancel=id=>timers.delete(id)
   const service={
-    listCustomerRoadmaps:async()=>({data:[],error:null}),
+    listCustomerRoadmaps:async()=>{state.resultReads++;return listResults?listResults(state.resultReads):{data:[],error:null}},
     latestCustomerRoadmapJob:async()=>{state.reads++;return state.readError?{data:null,error:new TypeError('Synthetic connection interruption')}:{data:state.latest?[state.latest]:[],error:null}},
     authorizeRoadmap:async()=>{state.authorizations++;return {data:{},error:null}},
     generateCustomerRoadmap:async()=>{state.starts++;state.latest={id:'new-job',case_id:roadmapTestCase.id,status:'queued',stage:'capacity'};return {data:{job:state.latest},error:null}},
@@ -50,7 +50,7 @@ function scenario({readError=true,existingJob=null,allow=true}={}){
   }
   const Panel=load('app/modules/cases/CustomerRoadmapPanel.js').CustomerRoadmapPanel
   const input={ownerId:roadmapTestCase.owner_id,item:roadmapTestCase,documents:roadmapTestDocuments,assessments:[],outputLanguage:'de'}
-  const props={...input,supabase:{},continuation:{canContinue:allow},automaticRun:createAutomaticCaseRun(input)}
+  const props={...input,supabase:{},continuation:{canContinue:allow},automaticRun:automatic?createAutomaticCaseRun(input):null}
   return {state,props,
     async flush(){
       for(let turn=0;turn<30;turn++){
@@ -63,9 +63,64 @@ function scenario({readError=true,existingJob=null,allow=true}={}){
     retry(){const button=nodes(tree).find(node=>node.type==='button'&&node.props.children===automaticCaseCopy('de').status);assert.ok(button,'status-only retry is visible');button.props.onClick()},
     tick(){const [id,timer]=timers.entries().next().value||[];assert.ok(timer,'a bounded status refresh is scheduled');timers.delete(id);timer.callback();return timer.delay},
     get pendingTimers(){return timers.size},
+    get shownRecord(){return nodes(tree).find(node=>node.type?.name==='CustomerRoadmapView')?.props.record||null},
+    get alerts(){return nodes(tree).filter(node=>node.props.role==='alert')},
     render(){dirty=true},
     dispose(){disposed=true;for(const slot of slots)slot?.cleanup?.();timers.clear()}
   }
+}
+// An older opening read can finish after the completed job's result read.
+// Neither a stale empty snapshot nor a late transport error may hide a result.
+for(const delayedResponse of ['empty','older','error']){
+  let releaseInitial
+  const initial=new Promise(resolve=>{releaseInitial=resolve})
+  const record=roadmapTestRecord()
+  const test=scenario({readError:false,automatic:false,
+    existingJob:{id:'completed-job',case_id:roadmapTestCase.id,status:'completed',roadmap_id:record.id},
+    listResults:count=>count===1?initial:{data:[record],error:null}})
+  try{
+    await test.flush()
+    releaseInitial(delayedResponse==='error'?{data:null,error:new TypeError('Late result read failure')}:{data:delayedResponse==='older'?[{...record,id:'older-result'}]:[],error:null})
+    await test.flush()
+    for(let retry=0;retry<3&&test.pendingTimers;retry++){test.tick();await test.flush()}
+    assert.equal(test.shownRecord?.id,record.id,'a delayed opening response must not replace the completed saved result')
+    assert.equal(test.alerts.length,0,'a recovered result must not retain a late opening error')
+    assert.equal(test.state.starts,0,'reading a completed result must not generate another answer')
+    assert.equal(test.state.authorizations,0)
+  }finally{test.dispose()}
+}
+{
+  let unavailable=true
+  const record=roadmapTestRecord()
+  const test=scenario({readError:false,automatic:false,listResults:()=>unavailable?{data:null,error:new TypeError('Result read unavailable')}:{data:[record],error:null}})
+  try{
+    await test.flush()
+    assert.equal(test.tick(),3000);await test.flush()
+    assert.equal(test.tick(),6000);await test.flush()
+    assert.equal(test.state.resultReads,3,'saved results without a background job also get exactly two read retries')
+    assert.equal(test.pendingTimers,0,'result failures do not cause endless retries')
+    unavailable=false;test.retry();await test.flush()
+    assert.equal(test.shownRecord?.id,record.id,'manual status recovery reopens an existing saved result')
+    assert.equal(test.state.starts,0);assert.equal(test.state.authorizations,0)
+  }finally{test.dispose()}
+}
+{
+  const test=scenario({readError:false,listResults:count=>count===1?{data:null,error:new TypeError('Temporary result interruption')}:{data:[],error:null}})
+  try{
+    await test.flush();assert.equal(test.state.starts,0,'unread saved results block automatic generation')
+    test.tick();await test.flush()
+    assert.equal(test.state.starts,1,'successful result recovery retains exactly one authorized start')
+  }finally{test.dispose()}
+}
+{
+  let release
+  const pending=new Promise(resolve=>{release=resolve})
+  const test=scenario({readError:false,listResults:()=>pending})
+  await test.flush();test.dispose()
+  release({data:[roadmapTestRecord()],error:null});await test.flush()
+  assert.equal(test.shownRecord,null,'a response after leaving the panel cannot publish a result')
+  assert.equal(test.state.starts,0);assert.equal(test.state.authorizations,0)
+  assert.equal(test.pendingTimers,0)
 }
 
 {
@@ -141,4 +196,4 @@ for(const status of ['queued','running']){
   assert.equal(test.state.starts,0)
 }
 assert.deepEqual(offlineNetworkAttempts(),[],'no network transport may be attempted')
-console.log('Automatic case status recovery passed: temporary read failure, exactly one authorized handoff, existing jobs, changed originals and access refusal. Production component effects; all service responses simulated.')
+console.log('Case read recovery passed: delayed and failed result reads, completed-result retention, bounded retries, manual reopening, exactly one authorized handoff, existing jobs, changed originals, access refusal and leaving the panel. Production component effects; all service responses simulated.')
