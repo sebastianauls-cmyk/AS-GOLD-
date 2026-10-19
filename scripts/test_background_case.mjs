@@ -146,7 +146,7 @@ try {
   const checkResponseCache=()=>testCaseResponseCache({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
   if(globalThis.process.argv.includes('--response-cache-only')){
     await db.exec(await readFile('supabase/migrations/20260922134000_complete_review_lifetime.sql','utf8'))
-    await db.exec(await readFile('supabase/migrations/20261019041252_case_capacity_admission.sql','utf8'))
+    await db.exec(await readFile('supabase/migrations/20261019042356_case_capacity_admission.sql','utf8'))
     await checkResponseCache()
   }else{
   const legacyJob=await enqueue()
@@ -155,7 +155,7 @@ try {
   assert.equal(new Date((await stored(legacyJob.id)).expires_at).getTime(),new Date(legacyJob.expires_at).getTime(),'migration never extends an existing job')
   await cancel(legacyJob.id)
   await db.query('delete from public.case_analysis_jobs where id=$1',[legacyJob.id])
-  await db.exec(await readFile('supabase/migrations/20261019041252_case_capacity_admission.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20261019042356_case_capacity_admission.sql','utf8'))
   await testCaseCapacityAdmission({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar})
 
   await assert.rejects(enqueue({acknowledged:false}),/authorization/)
