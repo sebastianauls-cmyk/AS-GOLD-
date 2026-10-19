@@ -171,7 +171,7 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     return ()=>{cancelled=true}
   },[supabase,item.id,ui.error])
   useEffect(()=>{
-    let cancelled=false,timer
+    let cancelled=false,timer,readFailures=0
     async function refreshJob(){
       try{
         const {data,error:readError}=await latestCustomerRoadmapJob(supabase,item.id)
@@ -188,21 +188,27 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
           setError(workflowErrorMessage({code:latest.error_code,error:latest.error_message},ui.error,language))
           setReviewIssues((latest.issues||[]).slice(0,8).map(issue=>String(issue.reason||'').slice(0,700)).filter(Boolean))
         }
+        readFailures=0
         setJobLoaded(true)
         if(latest&&['queued','running'].includes(latest.status))timer=setTimeout(refreshJob,3000)
       }catch{
-        if(!cancelled){setJobReadError(true);setJobLoaded(true)}
+        if(!cancelled){
+          setJobReadError(true);setJobLoaded(true)
+          // Retry only these reads, twice. Never replay an enqueue or a model
+          // request; a persistent failure keeps the explicit status control.
+          if(++readFailures<=2)timer=setTimeout(refreshJob,3000*readFailures)
+        }
       }
     }
     refreshJob()
     return ()=>{cancelled=true;clearTimeout(timer)}
   },[supabase,item.id,job?.id,backgroundBusy,jobRefresh,ui.error,language])
   useEffect(()=>{
-    if(!automaticRun||loading||!jobLoaded||busyRef.current)return
+    if(!automaticRun||loading||!jobLoaded||jobReadError||busyRef.current)return
     const claimed=automaticRun.claim({ownerId,item,documents,assessments,outputLanguage,referenceLanguage})
     if(claimed==='consumed')return
     if(claimed!=='ready'){setError(simple.changed);return}
-    if(!canCreate||jobReadError)return
+    if(!canCreate)return
     // An existing live job is observed, never queued again. Consuming first also
     // prevents a rerender, remount or failed request from replaying this consent.
     if(backgroundBusy)return

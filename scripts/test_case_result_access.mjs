@@ -102,3 +102,5 @@ for(const full of [false,true]){
 assert.equal((html({continuation:{canContinue:false}}).match(/>PDF<\/button>/g)||[]).length,0,'the existing product access restriction still blocks all result exports')
 assert.deepEqual(record,original,'opening and exporting controls must not change the saved case')
 console.log('Case result access passed: normal login, workspace/privacy/ownership gates, foreign and missing cases, URL preservation, compact/full React render, direct letter exports and stale/busy/read-only restrictions. No authenticated browser acceptance claimed.')
+
+await import('./test_automatic_case_status_recovery.mjs')
