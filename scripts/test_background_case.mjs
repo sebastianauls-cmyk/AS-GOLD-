@@ -9,6 +9,7 @@ import {roadmapFingerprint,roadmapSource,roadmapStyle} from '../supabase/functio
 import {roadmapTestCase,roadmapTestDocuments,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 import {completeReviewCoverage,completeReviewGroups} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
 import {testCaseCapacityAdmission} from './test_case_capacity_admission.mjs'
+import {testCaseSearchAccounting} from './test_case_search_accounting.mjs'
 import {testCaseModelBudget} from './test_case_model_budget.mjs'
 import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
 import {testRetainedCaseWork} from './test_retained_case_work.mjs'
@@ -144,9 +145,16 @@ try {
   const drain=async id=>{for(let n=0;n<117;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
   const checkResponseCache=()=>testCaseResponseCache({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
-  if(globalThis.process.argv.includes('--response-cache-only')){
+  const applySearchAccounting=async()=>db.exec(await readFile('supabase/migrations/20261019044539_account_actual_case_search_usage.sql','utf8'))
+  const checkSearchAccounting=()=>testCaseSearchAccounting({db,owner,caseId,enqueue,claim,cancel,finish,stored,scalar,applyMigration:globalThis.process.argv.includes('--search-accounting-before')?null:applySearchAccounting})
+  if(globalThis.process.argv.some(arg=>['--search-accounting-only','--search-accounting-before'].includes(arg))){
     await db.exec(await readFile('supabase/migrations/20260922134000_complete_review_lifetime.sql','utf8'))
     await db.exec(await readFile('supabase/migrations/20261019042356_case_capacity_admission.sql','utf8'))
+    await checkSearchAccounting()
+  }else if(globalThis.process.argv.includes('--response-cache-only')){
+    await db.exec(await readFile('supabase/migrations/20260922134000_complete_review_lifetime.sql','utf8'))
+    await db.exec(await readFile('supabase/migrations/20261019042356_case_capacity_admission.sql','utf8'))
+    await applySearchAccounting()
     await checkResponseCache()
   }else{
   const legacyJob=await enqueue()
@@ -157,6 +165,7 @@ try {
   await db.query('delete from public.case_analysis_jobs where id=$1',[legacyJob.id])
   await db.exec(await readFile('supabase/migrations/20261019042356_case_capacity_admission.sql','utf8'))
   await testCaseCapacityAdmission({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar})
+  await checkSearchAccounting()
 
   await assert.rejects(enqueue({acknowledged:false}),/authorization/)
   await assert.rejects(enqueue({output_language:null}),/authorization/)
