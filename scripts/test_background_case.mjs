@@ -61,7 +61,7 @@ try {
   await db.exec(await readFile('supabase/migrations/20260924005032_grouped_case_reviews.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20260924120132_retain_failed_case_diagnostics.sql','utf8'))
   await db.exec(await readFile('supabase/migrations/20261008162652_case_model_billing_receipts.sql','utf8'))
-  await db.exec(await readFile('supabase/migrations/20261019020357_validated_case_response_cache.sql','utf8'))
+  await db.exec(await readFile('supabase/migrations/20261019021529_validated_case_response_cache.sql','utf8'))
   await db.query('insert into auth.users(id) values($1),($2)',[owner,other])
   await db.query("insert into private.user_access values($1,true,'approved','{\"full_analysis\":true,\"draft_letters\":true}'),($2,true,'approved','{\"full_analysis\":true}')",[owner,other])
   await db.query('insert into public.cases values($1,$2)',[caseId,owner])

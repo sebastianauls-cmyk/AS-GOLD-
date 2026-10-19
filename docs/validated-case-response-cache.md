@@ -16,4 +16,4 @@ Die bestehenden Auftrags-, Tages-, Token-, Such- und Laufzeitgrenzen bleiben unv
 
 Zusätzlich geprüft: geänderte Originale, Modell, Anweisung und Sprache; erneute Validierung älterer Antworten; fehlender Anbieterbeleg; verweigerter Nutzerzugriff; falsche Lease; ausgeschöpftes Budget vor einer echten Prüfung; beschädigte Verschlüsselung; Löschung und Ablauf. Die bestehenden Hintergrund- und vollständigen Falltests sowie die HTTP-Authentifizierungsprüfung bestehen ebenfalls mit simuliertem Anbieter.
 
-Auslieferungsreihenfolge: Migration `20261019020357_validated_case_response_cache.sql`, dann `gold-case-worker`. Der Server-Einstieg aktiviert `reuseValidatedResponses:true`; ältere Aufrufer bleiben kompatibel. Eine Auslieferung startet keinen Fall und keinen Modellaufruf.
+Auslieferungsreihenfolge: Migration `20261019021529_validated_case_response_cache.sql`, dann `gold-case-worker`. Der Server-Einstieg aktiviert `reuseValidatedResponses:true`; ältere Aufrufer bleiben kompatibel. Eine Auslieferung startet keinen Fall und keinen Modellaufruf.
