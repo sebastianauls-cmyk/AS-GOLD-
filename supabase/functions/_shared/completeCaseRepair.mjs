@@ -6,6 +6,9 @@ const scalarPaths=[['title'],['opening'],['key_points'],['meaning'],['next'],['c
 const get=(value,path)=>path.reduce((item,key)=>item?.[key],value)
 const label=path=>path.map((key,index)=>typeof key==='number'?`[${key}]`:(index?'.':'')+key).join('')
 const own=(value,key)=>value!==null&&typeof value==='object'&&Object.hasOwn(value,key)
+// The reviewer may classify an unsupported prerequisite as an invention,
+// source defect or changed meaning. Its explicit dependencies are the same.
+const claimIssueCodes=new Set(['source','meaning','invention'])
 
 // Foundation and roadmap are generated at different times. A correction of
 // the foundation cannot consume the first correction of a not-yet-created
@@ -117,7 +120,7 @@ export function resolveQuotedTopicIssueLocations(issues,candidate){
   const topics=candidate.analysis?.topics
   if(!Array.isArray(topics))return issues
   return issues.map(issue=>{
-    if(issue.location!=='analysis.topics'||!['source','meaning'].includes(issue.code)||typeof issue.reason!=='string')return issue
+    if(issue.location!=='analysis.topics'||!claimIssueCodes.has(issue.code)||typeof issue.reason!=='string')return issue
     const quotes=[...issue.reason.matchAll(/"([^"]+)"|„([^„“]+)“|“([^“”]+)”|«([^«»]+)»/gu)]
       .map(match=>match.slice(1).find(value=>value!==undefined))
       .filter(quote=>quote.length>=32&&!/(?:…|\.{3})/.test(quote))
@@ -178,7 +181,7 @@ export function localizedRepairTargets(candidate,feedback,schema){
     const path=locate(candidate,issue.location,schema)
     if(!path||!schemaAt(schema,path)||get(candidate,path)===undefined)return null
     selected.set(label(path),path)
-    if(['source','meaning'].includes(issue.code)&&path[0]==='analysis'&&path[1]==='topics')affectedTopicIds.add(get(candidate,path).id)
+    if(claimIssueCodes.has(issue.code)&&path[0]==='analysis'&&path[1]==='topics')affectedTopicIds.add(get(candidate,path).id)
   }
   // Global limitations may repeat the claim being corrected. Keep that
   // dependent text editable in the same single patch, even when the first
