@@ -253,16 +253,30 @@ export function localizedRepairTargets(candidate,feedback,schema){
 const topicTextFields=['conclusion','conditions']
 const isTopicTarget=target=>target.path.length===3&&target.path[0]==='analysis'&&target.path[1]==='topics'
 const exactObject=properties=>({type:'object',additionalProperties:false,properties,required:Object.keys(properties)})
-const topicFieldCheck=exactObject({action:{type:'string',enum:['preserve','replace']},reason:{type:'string',minLength:1,maxLength:500,description:'One concise field-specific justification: identify its supported facts/rules or precise unresolved question, and the unsupported assertion removed if changed. This is a correction decision, not an independent approval.'}})
+const topicFieldReason={type:'string',minLength:1,maxLength:500,pattern:'\\S',description:'One concise field-specific justification: identify its supported facts/rules or precise unresolved question, and the unsupported assertion removed if changed. This is a correction decision, not an independent approval.'}
+const topicFieldCheck=fieldSchema=>({anyOf:[
+  exactObject({action:{type:'string',enum:['preserve']},reason:structuredClone(topicFieldReason),replacement:{type:'null'}}),
+  exactObject({action:{type:'string',enum:['replace']},reason:structuredClone(topicFieldReason),replacement:structuredClone(fieldSchema)})
+]})
+function repairTargetSchema(target,candidate,schema){
+  const original=get(candidate,target.path),spec=structuredClone(schemaAt(schema,target.path))
+  if(spec?.properties?.id&&original?.id!==undefined)spec.properties.id={type:'string',enum:[original.id]}
+  return spec
+}
 
 export function localizedRepairSchema(targets,candidate,schema){
-  const properties={}
+  const properties={},topicChecks={}
   for(const target of targets){
-    const original=get(candidate,target.path),spec=structuredClone(schemaAt(schema,target.path))
-    if(spec?.properties?.id&&original?.id!==undefined)spec.properties.id={type:'string',enum:[original.id]}
+    const spec=repairTargetSchema(target,candidate,schema)
+    if(isTopicTarget(target)){
+      topicChecks[target.key]=exactObject(Object.fromEntries(topicTextFields.map(field=>[field,topicFieldCheck(spec.properties[field])])))
+      // Each text has exactly one owner: its atomic field decision. Preserve
+      // copies server-held text; replace supplies it here, never a second time.
+      for(const field of topicTextFields)delete spec.properties[field]
+      spec.required=spec.required.filter(field=>!topicTextFields.includes(field))
+    }
     properties[target.key]=spec
   }
-  const topicChecks=Object.fromEntries(targets.filter(isTopicTarget).map(target=>[target.key,exactObject(Object.fromEntries(topicTextFields.map(field=>[field,structuredClone(topicFieldCheck)])))]))
   return exactObject({
     requires_full_correction:{type:'boolean'},reason:{type:'string'},
     // Decide separately for BOTH fields before returning the complete patch.
@@ -293,10 +307,22 @@ export function applyLocalizedRepair(raw,targets,candidate,schema,resolve){
   }
   if(!raw.changes||typeof raw.changes!=='object'||Array.isArray(raw.changes)||Object.keys(raw.changes).sort().join(',')!==targets.map(target=>target.key).sort().join(','))fail('Die Korrektur muss genau die zugewiesenen Abschnitte enthalten.')
   if(hasTopicChecks&&(!raw.topic_checks||!matches(raw.topic_checks,repairSchema.properties.topic_checks.anyOf[0])))fail('Die Korrektur muss Ergebnis und Voraussetzungen jedes zugewiesenen Themas einzeln prüfen.')
-  const result=structuredClone(candidate),spec=repairSchema.properties.changes.anyOf[0]
+  const result=structuredClone(candidate)
   for(const target of targets){
-    const value=resolve(raw.changes[target.key],target.location)
-    if(!matches(value,spec.properties[target.key]))fail('Die Korrektur verändert die Struktur oder Kennung des Abschnitts '+target.location+'.')
+    let replacement=raw.changes[target.key]
+    if(isTopicTarget(target)){
+      if(!replacement||typeof replacement!=='object'||Array.isArray(replacement))fail('Die Korrektur enthält keinen gültigen Abschnitt '+target.location+'.')
+      if(topicTextFields.some(field=>own(replacement,field)))fail('Die Korrektur darf Ergebnis und Voraussetzungen nur einmal in der jeweiligen Feldprüfung liefern.')
+      replacement={...replacement}
+      for(const field of topicTextFields){
+        const check=raw.topic_checks[target.key][field]
+        replacement[field]=check.action==='preserve'?get(candidate,target.path)[field]:check.replacement
+      }
+    }
+    // Resolve evidence in the assembled topic, so rule markers retain their
+    // exact location and supporting sources. Then validate the full schema.
+    const value=resolve(replacement,target.location)
+    if(!matches(value,repairTargetSchema(target,candidate,schema)))fail('Die Korrektur verändert die Struktur oder Kennung des Abschnitts '+target.location+'.')
     if(isTopicTarget(target))for(const field of topicTextFields){
       const check=raw.topic_checks[target.key][field],changed=value[field]!==get(candidate,target.path)[field]
       // Compare resolved text, not passage-ID spelling. No self-assessment
