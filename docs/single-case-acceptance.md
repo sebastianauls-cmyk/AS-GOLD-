@@ -67,3 +67,27 @@ responses, temporary and persistent result-read failures, manual reopening,
 exactly one authorized start after recovery and leaving before a read
 finishes. These are internal controlled transport tests, not proof of a new
 successful live AI case or of Android downloads.
+
+## Fixed: an unavailable document draft read could authorize another AI request
+
+The document workflow treated a failed recovery SELECT as an absent completed
+draft. A repeated document-analysis action (including case preparation) could
+therefore authorize and invoke AI despite an existing recoverable draft. The
+production-workflow regression fails before this fix: one authorization instead
+of zero after a controlled read failure. This is distinct from the previously
+fixed case-job status and saved-roadmap races.
+
+Recovery now distinguishes an unavailable, missing or source-mismatched row
+from a successful matching read with no reusable draft. In the former case the
+action stops before authorization, audit writes or model invocation and reports
+the existing localized recovery message. It does not automatically retry the
+read. A later explicit action can restore the existing draft without new AI.
+A successful matching read without a reusable draft can still proceed through
+the unchanged consent, authorization and substantive document-review gates.
+
+`test_document_recovery.mjs` checks returned/thrown read failures, missing and
+changed sources, explicit recovery, persistent failures, the case-preparation
+path and silent/manual feedback in eleven languages. It retains the real SQL
+authorization/RLS and save/recovery tests and is included in the result-access
+suite. Controlled transports and blocked external network only; no paid API
+request, provider balance claim or new real single-case acceptance is implied.

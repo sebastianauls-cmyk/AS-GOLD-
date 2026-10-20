@@ -51,12 +51,15 @@ export function createDocumentWorkflowActions({
     return generated
   }
 
-  async function recoverDocumentAnalysis(document,{quiet=false,includeDocument=false,silent=false}={}){
+  async function recoverDocumentAnalysis(document,{quiet=false,includeDocument=false,silent=false,onUnavailable=()=>{}}={}){
     try{
       const {data:fresh,error}=await supabase.from('documents').select('*').eq('id',document.id).eq('owner_id',ownerId).maybeSingle()
       if(error)throw error
       if(!fresh||fresh.owner_id!==ownerId||fresh.file_path!==document.file_path||
-        fresh.data_classification!==document.data_classification||(fresh.case_id||'')!==(document.case_id||''))return false
+        fresh.data_classification!==document.data_classification||(fresh.case_id||'')!==(document.case_id||'')){
+        onUnavailable()
+        return false
+      }
       const linkedCase=data.cases.find(item=>item.id===document.case_id)
       const generated=restoreDocumentAnalysis(fresh,{
         outputLanguage:normalizeOutputLanguage(document.customer_copy_language||outputLanguage),
@@ -65,7 +68,7 @@ export function createDocumentWorkflowActions({
       })
       if(generated)return includeDocument?{generated,document:fresh}:presentAnalysis(generated,document,silent)
       if(!quiet)setMessage(analysisCopy.noDraft)
-    }catch{if(!quiet)setMessage(analysisCopy.recoveryFailed)}
+    }catch{onUnavailable();if(!quiet)setMessage(analysisCopy.recoveryFailed)}
     return false
   }
 
@@ -76,8 +79,18 @@ export function createDocumentWorkflowActions({
     if(!['synthetic','anonymized'].includes(document.data_classification)){if(!silent)setMessage(privacyCopy.uploadRequired);return false}
     // A repeated click after reconnecting must first recover the already-finished
     // result. It must not authorize another transfer or clear the recovery copy.
-    const recovered=await recoverDocumentAnalysis(document,{quiet:true,includeDocument:true,silent:true})
+    let recoveryUnavailable=false
+    const recovered=await recoverDocumentAnalysis(document,{quiet:true,includeDocument:true,silent:true,onUnavailable:()=>{recoveryUnavailable=true}})
     if(recovered)return presentAnalysis(recovered.generated,recovered.document,silent)
+    // A failed/missing/mismatched read is not evidence that no completed draft
+    // exists. Stop before authorization and leave the original/draft untouched.
+    if(recoveryUnavailable){
+      const details=await readDocumentAnalysisError({code:'request_failed'},analysisCopy.recoveryFailed,language)
+      details.message=analysisCopy.recoveryFailed
+      if(!silent)setMessage(details.message)
+      onFailure?.(details)
+      return false
+    }
     const authorization=await authorizeDocumentAnalysis(supabase,{ownerId,documentId:document.id,privacyNoticeVersion:PRIVACY_NOTICE_VERSION,termsVersion:TERMS_VERSION})
     if(authorization.error){if(!silent)setMessage(authorization.error.message);return false}
     setPrivacySettings(authorization.privacy)

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import './test_document_recovery.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
 import {createRequire} from 'node:module'

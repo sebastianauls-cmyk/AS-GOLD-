@@ -14,6 +14,7 @@ import {updateDocumentRecord} from '../app/modules/services/documentRepository.j
 import {readDocumentAnalysisError,recordDocumentAnalysisFailure} from '../app/modules/documents/documentAnalysisError.mjs'
 import {authorizeDocumentAnalysis} from '../app/modules/services/complianceRepository.js'
 import {recordCommittedAction} from '../app/modules/workspace/committedAction.mjs'
+import {prepareCaseDocuments,preparationFailureMessage} from '../app/modules/cases/lib/casePreparation.mjs'
 
 const owner='11111111-1111-4111-8111-111111111111',id='22222222-2222-4222-8222-222222222222'
 const at='2026-09-20T17:40:00.000Z'
@@ -23,9 +24,17 @@ const retained={...item,analysis_draft:{document_id:id,file_path:item.file_path,
 
 // Execute the actual UI workflow with failed HTTP delivery after server completion.
 // The recovery route is only a scoped SELECT; it never authorizes or invokes AI.
-function workflow({delivery='lost',stored=retained,audit='ok',localFailure=false,completedBeforeRequest=false}={}){
+function workflow({delivery='lost',stored=retained,audit='ok',localFailure=false,completedBeforeRequest=false,readFailures=[],language='de'}={}){
   const state={authorizations:0,invocations:0,reads:0,messages:[],filters:[]}
-  const query={select(){return this},eq(k,v){state.filters.push([k,v]);return this},async maybeSingle(){state.reads++;return {data:completedBeforeRequest||state.invocations?stored:item,error:null}}}
+  const query={select(){return this},eq(k,v){state.filters.push([k,v]);return this},async maybeSingle(){
+    state.reads++
+    const failure=readFailures.shift()
+    if(failure==='throw')throw new TypeError('PRIVATE read transport failure')
+    if(failure==='error')return {data:null,error:{message:'PRIVATE read failure'}}
+    if(failure==='missing')return {data:null,error:null}
+    if(failure==='changed')return {data:{...retained,file_path:'another-source.pdf'},error:null}
+    return {data:completedBeforeRequest||state.invocations?stored:item,error:null}
+  }}
   const context={...recovery,recordCommittedAction,mapDocumentLanguageWorkflowResult,normalizeOutputLanguage:key=>key||'de',readCountryContext:()=> 'DE',
     PRIVACY_NOTICE_VERSION:'test',TERMS_VERSION:'test',
     authorizeDocumentAnalysis:async()=>{state.authorizations++;return {privacy:{},document:item}},
@@ -35,9 +44,48 @@ function workflow({delivery='lost',stored=retained,audit='ok',localFailure=false
   vm.createContext(context)
   const source=fs.readFileSync('app/modules/documents/documentWorkflow.js','utf8').replace(/^import .*$/gm,'').replace('export function ','function ')
   vm.runInContext(source+'\nthis.create=createDocumentWorkflowActions',context)
-  const actions=context.create({supabase:{from:table=>{assert.equal(table,'documents');return query}},ownerId:owner,data:{cases:[]},language:'de',privacyCurrent:true,outputLanguage:'de',analysisCopy:{...documentAnalysisRecoveryCopy('de'),failed:'failed'},serverCopy:{auditFailed:'audit unavailable'},setPrivacySettings(){},setMessage:value=>state.messages.push(value),recordLocalAction(){if(localFailure)throw new Error('device storage unavailable')},recordServerAudit:async type=>{if(type==='document_analysis_generated'&&audit==='pending'||type==='document_ai_transfer_authorized'&&audit==='authorization-pending')return new Promise(()=>{});if(type==='document_analysis_generated'&&audit==='failed'||type==='document_ai_transfer_authorized'&&audit==='authorization-failed')throw new Error('audit unavailable');return true}})
+  const actions=context.create({supabase:{from:table=>{assert.equal(table,'documents');return query}},ownerId:owner,data:{cases:[]},language,privacyCurrent:true,outputLanguage:'de',analysisCopy:{...documentAnalysisRecoveryCopy(language),failed:'failed'},serverCopy:{auditFailed:'audit unavailable'},setPrivacySettings(){},setMessage:value=>state.messages.push(value),recordLocalAction(){if(localFailure)throw new Error('device storage unavailable')},recordServerAudit:async type=>{if(type==='document_analysis_generated'&&audit==='pending'||type==='document_ai_transfer_authorized'&&audit==='authorization-pending')return new Promise(()=>{});if(type==='document_analysis_generated'&&audit==='failed'||type==='document_ai_transfer_authorized'&&audit==='authorization-failed')throw new Error('audit unavailable');return true}})
   return {actions,state}
 }
+// A failed read is not proof that a completed draft is absent. The explicit
+// action must stop before reauthorization/AI, then allow a read-only recovery.
+for(const failure of ['error','throw','missing','changed']){
+  const {actions,state}=workflow({completedBeforeRequest:true,readFailures:[failure]})
+  let details
+  const generated=await actions.analyzeDocument(item,{onFailure:value=>{details=value}})
+  assert.equal(state.authorizations,0,'unavailable recovery must not authorize another analysis')
+  assert.equal(state.invocations,0,'unavailable recovery must not replay a model request')
+  assert.equal(generated,false)
+  assert.equal(state.reads,1,'the failed read is not automatically retried')
+  assert.equal(details.message,documentAnalysisRecoveryCopy('de').recoveryFailed)
+  assert.doesNotMatch(JSON.stringify(details),/PRIVATE/)
+  assert.equal((await actions.analyzeDocument(item)).fields.extracted_text,result.extracted_text)
+  assert.equal(state.authorizations,0,'a later explicit action restores the existing result')
+  assert.equal(state.invocations,0)
+}
+for(const language of ['de','en','pl','tr','ru','ar','fr','fa','ro','bg','vi']){
+  const {actions,state}=workflow({readFailures:['error','throw'],language})
+  for(const silent of [true,false]){
+    let failure
+    assert.equal(await actions.analyzeDocument(item,{silent,onFailure:value=>{failure=value}}),false)
+    assert.equal(failure.message,documentAnalysisRecoveryCopy(language).recoveryFailed)
+    assert.ok(failure.detailsLabel)
+    assert.ok(failure.technical)
+  }
+  assert.equal(state.authorizations,0);assert.equal(state.invocations,0)
+  assert.equal(state.messages.at(-1),documentAnalysisRecoveryCopy(language).recoveryFailed)
+}
+{
+  const {actions,state}=workflow({readFailures:['error','throw']})
+  let failure
+  await assert.rejects(prepareCaseDocuments({item:{id:'case',owner_id:owner},documents:[{...item,case_id:'case'}],outputLanguage:'de',referenceLanguage:'de',onRecover:actions.recoverDocumentAnalysis,onAnalyze:actions.analyzeDocument}),error=>{
+    failure=error
+    return error.code==='reading_failed'
+  })
+  assert.equal(preparationFailureMessage(failure,{},'fallback'),documentAnalysisRecoveryCopy('de').recoveryFailed)
+  assert.equal(state.authorizations,0);assert.equal(state.invocations,0,'case preparation also stops at the failed draft read')
+}
+console.log('Document recovery read guard: failed/thrown/missing/changed reads stop before authorization or AI; explicit recovery, case preparation, persistent failure and 11-language silent/manual messages passed.')
 {
   const {actions,state}=workflow()
   const generated=await actions.analyzeDocument(item)
