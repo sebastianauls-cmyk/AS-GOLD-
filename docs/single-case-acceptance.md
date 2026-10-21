@@ -91,3 +91,24 @@ path and silent/manual feedback in eleven languages. It retains the real SQL
 authorization/RLS and save/recovery tests and is included in the result-access
 suite. Controlled transports and blocked external network only; no paid API
 request, provider balance claim or new real single-case acceptance is implied.
+
+## Fixed: the German review day lagged behind after local midnight
+
+The live German single-case job started on 21 October 2026 at 00:26
+Europe/Berlin, but the worker derived `review_date=2026-10-20` by slicing its
+UTC timestamp. Date-sensitive urgency, research and independent review could
+therefore use yesterday during the first one or two hours of the German
+business day. The changing UTC date also changed the protected reuse binding
+inside the same local day.
+
+The worker now derives one Europe/Berlin review date from the persisted job
+start and passes that same date through the roadmap prompt, research context,
+complete analysis and every independent review. Direct roadmap requests use
+the same German business-date function. The real production start instant is
+an explicit regression; winter midnight, invalid instants and prompt/review
+propagation are checked too.
+
+The five bounded offline readiness suites passed with external network blocked
+and controlled model answers. This correction makes no provider request and
+does not claim that the failed live job produced a reviewed customer result or
+that Word/PDF downloads have passed the live single-case acceptance.

@@ -23,9 +23,17 @@ import {roadmapExportBlocks} from '../app/modules/services/customerRoadmapExport
 import {quotationIndex,resolveQuotationIds,indexedQuotationSchema,indexedModelData} from '../supabase/functions/_shared/quotationIndex.mjs'
 import {loadPrimarySources,primarySourceCatalogue,retrieveOfficialEvidence,supportingPrimaryEvidence} from '../supabase/functions/_shared/verifiedResearch.mjs'
 import {runLocalizedRepairChecks} from './test_localized_case_repair.mjs'
+import {caseReviewDate} from '../supabase/functions/_shared/caseReviewDate.mjs'
 
 // Imported asynchronous checks finish before this historical-clock check runs.
 await runRentalSourceFallbackChecks()
+
+const productionRunStart='2026-10-20T22:26:54.256Z'
+assert.equal(new Date(productionRunStart).toISOString().slice(0,10),'2026-10-20','the old UTC slice reproduces yesterday after German midnight')
+assert.equal(caseReviewDate(productionRunStart),'2026-10-21','the German business date matches the actual local run day')
+assert.equal(caseReviewDate('2026-01-01T22:59:59.999Z'),'2026-01-01','winter conversion does not advance before local midnight')
+assert.equal(caseReviewDate('2026-01-01T23:00:00.000Z'),'2026-01-02','winter conversion advances exactly at local midnight')
+assert.throws(()=>caseReviewDate('not-a-date'),/Invalid review instant/)
 
 const original='Original '+('x'.repeat(310))+' Ende. Betrag 2.345,67 EUR.'
 const quoteMap=quotationIndex({documents:[{id:'original',extracted_text:original}]},[])
@@ -941,7 +949,10 @@ console.log('Complete analysis: exact arithmetic, provenance, bounded generation
 // Use the real caller's roadmap prompt: topic drafting and reconciliation
 // must not inherit commands to create actions/letters before a plan exists.
 {
-  const context=roadmapModelContext({source,style:{tone:'formal'},outputLanguage:'de',referenceLanguage:'de',permissions:{draft_letters:true}})
+  const reviewDate='2026-10-21'
+  const context=roadmapModelContext({source,style:{tone:'formal'},outputLanguage:'de',referenceLanguage:'de',permissions:{draft_letters:true},reviewDate})
+  assert(context.request.instructions.includes('Review date: '+reviewDate+'; past dates are past.'))
+  assert.equal(JSON.parse(context.reviewContent[0].text).review_date,reviewDate)
   const seen=[],sizes={}
   const isolatedFetch=async(url,options)=>{
     const request=JSON.parse(options.body),name=request.text.format.name
@@ -957,8 +968,8 @@ console.log('Complete analysis: exact arithmetic, provenance, bounded generation
     }
     return fetchImpl(url,options)
   }
-  let flow=await advanceCompleteAnalysis({...args,baseRequest:context.request,baseReviewContent:context.reviewContent,fetchImpl:isolatedFetch})
-  for(let i=0;flow.status==='processing'&&i<16;i++)flow=await advanceCompleteAnalysis({...args,baseRequest:context.request,baseReviewContent:context.reviewContent,fetchImpl:isolatedFetch,state:flow.state})
+  let flow=await advanceCompleteAnalysis({...args,baseRequest:context.request,baseReviewContent:context.reviewContent,fetchImpl:isolatedFetch,reviewDate})
+  for(let i=0;flow.status==='processing'&&i<16;i++)flow=await advanceCompleteAnalysis({...args,baseRequest:context.request,baseReviewContent:context.reviewContent,fetchImpl:isolatedFetch,state:flow.state,reviewDate})
   assert.equal(flow.status,'completed')
   assert.deepEqual(seen,['ash_complete_topics_v167','ash_complete_reconciliation_v172','ash_complete_plan_v157'])
   assert.deepEqual(flow.result.analysis.verification.review_coverage,completeReviewCoverage(flow.result),'isolation does not remove any independent review')
