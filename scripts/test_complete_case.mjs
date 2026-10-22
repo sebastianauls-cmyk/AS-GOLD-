@@ -843,6 +843,7 @@ for(const rejectWholeCase of [false,true]){
       let payload;try{payload=JSON.parse(item.text)}catch{continue}
       payloads.push(payload)
       if(payload.retrieved_sources){
+        if(name!=='ash_evidence_review_v139')for(const item of payload.retrieved_sources)assert.equal(item.checked_at,'2026-09-23','all generation paths use the observed date, including scoped calculations')
         const generationAssignment=request.input[messageIndex].content.map(block=>{try{return JSON.parse(block.text).research_context}catch{return null}}).find(Boolean)
         if((payload.research_context||generationAssignment)?.mode==='module'){
           assert.equal(round,1,'all repairs restore full research instead of repeating a context gap')

@@ -30,6 +30,8 @@ Run `python3 scripts/verify_case_readiness.py`. It runs five finite local suites
 
 ## Outstanding acceptance
 
+As of 2026-10-21 the operator pause is also checked at the final SQL call-reservation boundary, including leases issued before a pause. This is an on/off stop for new complete-case provider requests, not a positive currency ceiling and not cancellation of requests already sent. The research-cache regression now proves an identical researched restart uses four instead of ten simulated calls while re-fetching source bodies and retaining all four independent reviews.
+
 1. Establish a monetary limit. Counting reported excess searches in subsequent decisions is now implemented; it cannot undo or guarantee the cost of the request already sent. Missing responses still retain their original reservation without proving the provider's actual use. Token, cache-write, actual service-tier and search-content costs must be covered; byte-based resource limits must not be described as dollar limits. Official references checked 2026-10-19: https://developers.openai.com/api/docs/pricing, https://developers.openai.com/api/docs/guides/token-counting and https://developers.openai.com/api/docs/guides/spend-limits. Provider hard limits can also overshoot while enforcement propagates.
 2. A new paid test requires the user's specific permission and sufficient provider balance. None is scheduled or started by this change.
 3. Complete the real authenticated flow with original upload/OCR, a useful reviewed stored result, Android usability and actual Word/PDF downloads. Internal replies do not prove live content quality.

@@ -4,7 +4,7 @@ import {CASE_EVIDENCE_RULES,DOCUMENT_ATTRIBUTION_RULES,CASE_LEGAL_SCOPE_RULES,ca
 import { ROADMAP_SCHEMA, ROADMAP_CUSTOMER_NOTES_RULES, roadmapModelSource, splitVerbatimRoadmapEvidence, validateRoadmapResult } from './customerRoadmap.mjs'
 import { callModel, reviewModelCandidate, ModelWorkflowError } from './modelQuality.mjs'
 import { RESEARCH_COUNTRIES, SHARED_RESEARCH_DOMAINS } from './researchCountries.mjs'
-import { searchRetrievedSources, researchRetrievalPlan, retrieveOfficialEvidence, primarySourceCatalogue, loadPrimarySources, supportingPrimaryEvidence } from './verifiedResearch.mjs'
+import { searchRetrievedSources, researchRetrievalPlan, retrieveOfficialEvidence, primarySourceCatalogue, loadPrimarySources, supportingPrimaryEvidence, modelResearchEvidence } from './verifiedResearch.mjs'
 import { calculateExpression, quoteContainsNumber } from './checkedCalculations.mjs'
 import {selectCaseResearch,caseResearchManifest,reviewResearchAssignment,MODULE_RESEARCH_INSTRUCTIONS} from './caseResearchContext.mjs'
 import {completeReviewLocations,completeReviewLocationCatalogue,completeCaseCorrectionPhases,nextCaseCorrectionPhases,resolveReviewIssueLocations,resolveQuotedTopicIssueLocations,localizedRepairTargets,localizedRepairSchema,localizedRepairAssignments,applyLocalizedRepair,localizedRepairChanged,createCorrectionTrace,mergeCorrectionTraces,correctionReviewComparison,correctionFailureDiagnostics} from './completeCaseRepair.mjs'
@@ -401,7 +401,8 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     onResponse?.({stage:'retrieval',sources:research})
     const deferred=[...new Set([...(current.deferred_research_urls||[]),...retrieval.deferred])].filter(url=>!available.has(url))
     const missing=[...new Set([...(current.missing_research_urls||[]),...missingSelected])].filter(url=>!available.has(url))
-    return {status:'processing',state:{...current,stage:more?'research':recover?'research_recovery':'analysis',research_index:nextIndex,failed_topics:failedTopics,pending_research_topics:[...pending].map(([topic,urls])=>({topic,urls})),research,unreachable:[...new Set([...(current.unreachable||[]),...unreachable])].filter(url=>!available.has(url)),deferred_research_urls:deferred,missing_research_urls:missing,discovery_gaps:[...(current.discovery_gaps||[]),...(searched.parsed.gaps||[])],search_response_id:searched.response_id}}
+    const searchReceipts=[...(current.searchReceipts||[]),{response_id:searched.response_id,reused:searched.reused===true}]
+    return {status:'processing',state:{...current,stage:more?'research':recover?'research_recovery':'analysis',research_index:nextIndex,failed_topics:failedTopics,pending_research_topics:[...pending].map(([topic,urls])=>({topic,urls})),research,unreachable:[...new Set([...(current.unreachable||[]),...unreachable])].filter(url=>!available.has(url)),deferred_research_urls:deferred,missing_research_urls:missing,discovery_gaps:[...(current.discovery_gaps||[]),...(searched.parsed.gaps||[])],search_response_id:searched.response_id,searchReceipts}}
   }
   if(current.stage!=='analysis'||!current.scope||!Array.isArray(current.research))throw new ModelWorkflowError('Ungültiger Auswertungsablauf.',409)
   if(!current.modelState){
@@ -411,7 +412,8 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     onResponse?.({stage:'retrieval',sources:current.research})
   }
   const quotes=quotationIndex(source,current.research)
-  const indexed=indexedModelData(roadmapModelSource(source),current.research,quotes)
+  const modelResearch=modelResearchEvidence(current.research)
+  const indexed=indexedModelData(roadmapModelSource(source),modelResearch,quotes)
   const availableResearch=new Set(current.research.map(item=>item.url))
   const unreadSources=(current.deferred_research_urls||[]).filter(url=>!availableResearch.has(url))
   const missingSources=(current.missing_research_urls||[]).filter(url=>!availableResearch.has(url))
@@ -514,10 +516,10 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     }
     const partRequest={...request,reasoning:{effort:component==='topics'?'high':'medium'},instructions:(component==='topics'?topicModelInstructions(source,style,outputLanguage)+'\n'+QUOTATION_INSTRUCTIONS:request.instructions)+'\nThis is one bounded component of the complete analysis. '+componentInstructions[component],input:[...request.input,{role:'user',content:[{type:'input_text',text:JSON.stringify({component,analysis:current.draftAnalysis||null,completed_analysis:component==='calculations'?outline.analysis:topicDraft?.analysis||null,assigned_topics:assignedTopics,calculation_plan:outline?.calculation_plan||null,assigned_calculations:assigned,structural_feedback:current.draftFeedback||[],correction})}]}],text:{format:{type:'json_schema',name:writingPlan?'ash_complete_plan_v157':component==='topics'?'ash_complete_topics_v167':component==='outline'?'ash_complete_outline_v166':'ash_complete_numbers_v172',strict:true,schema:indexedQuotationSchema(writingPlan?PLAN_SCHEMA:component==='topics'?topicBatchSchema(current.scope.issues):component==='outline'?outlineSchema:calculationBatchSchema(outline.calculation_plan))}},max_output_tokens:writingPlan?11000:8000}
     if(component==='calculations'&&!current.fullResearch&&!inputRepair){
-      const selected=selectCaseResearch({research:current.research,analysis:outline.analysis,calculationPlan:outline.calculation_plan,calculationIds:assigned.map(item=>item.id)})
+      const selected=selectCaseResearch({research:modelResearch,analysis:outline.analysis,calculationPlan:outline.calculation_plan,calculationIds:assigned.map(item=>item.id)})
       if(selected.mode==='module'){
         const scoped=indexedModelData(roadmapModelSource(source),selected.research,quotes)
-        partRequest.input[0]={role:'user',content:[{type:'input_text',text:JSON.stringify({style,source:scoped.source,...context,retrieved_sources:scoped.research,research_context:{mode:selected.mode,topic_ids:selected.topic_ids,calculation_ids:selected.calculation_ids,available_sources:await caseResearchManifest(current.research)}})}]}
+        partRequest.input[0]={role:'user',content:[{type:'input_text',text:JSON.stringify({style,source:scoped.source,...context,retrieved_sources:scoped.research,research_context:{mode:selected.mode,topic_ids:selected.topic_ids,calculation_ids:selected.calculation_ids,available_sources:await caseResearchManifest(modelResearch)}})}]}
         partRequest.instructions=partRequest.instructions.replace('All originals, fetched sources and the complete calculation_plan are supplied.','All originals, the module-selected full fetched sources and the complete calculation_plan are supplied.')+'\n'+MODULE_RESEARCH_INSTRUCTIONS
       }
     }
@@ -653,7 +655,7 @@ export async function advanceCompleteAnalysis({providerKey,source,style,outputLa
     // and byte-identical approvals; every changed review input is checked again.
     return {status:'processing',state:{...current,contentCorrectionPhases:nextCorrectionPhases,localizedRepair:{},reviewReceipts,reusedReviewIds:[],reviewIndex:0,reviewFeedback:[],reviewIds:[],reviewCoverage:null,reviewGroups:null,draftAnalysis:null,draftFeedback:[],modelState:{stage:'generation',attempt:attempt+1,previous:candidate,feedback,validationContext}}}
   }
-  return {status:'completed',attempts:attempt,model:current.modelState.model,response_id:current.modelState.response_id,review_response_id:review.response_id,result:{...candidate,analysis:{...candidate.analysis,research_sources:current.research,verification:{version:COMPLETE_ANALYSIS_VERSION,search_response_id:current.search_response_id,review_response_id:review.response_id,review_response_ids:reviewIds,reused_review_response_ids:reusedReviewIds,review_scopes:groups.map(group=>coverage[group[0]].scope),review_coverage:coverage,review_groups:groups,foundation_review_version:current.foundationReview?.reviewIds?.length?FOUNDATION_REVIEW_VERSION:null,foundation_review_response_ids:current.foundationReview?.reviewIds||[],analysis_response_id:current.analysis_response_id,analysis_response_ids:current.analysis_response_ids||[current.analysis_response_id],correction_response_ids:current.correction_response_ids||[],content_correction_phases:correctionPhases,question_action_version:'v1',checked_at:new Date().toISOString()}}}}
+  return {status:'completed',attempts:attempt,model:current.modelState.model,response_id:current.modelState.response_id,review_response_id:review.response_id,result:{...candidate,analysis:{...candidate.analysis,research_sources:current.research,verification:{version:COMPLETE_ANALYSIS_VERSION,search_response_id:current.search_response_id,search_response_ids:(current.searchReceipts||[]).map(item=>item.response_id),reused_search_response_ids:(current.searchReceipts||[]).filter(item=>item.reused).map(item=>item.response_id),review_response_id:review.response_id,review_response_ids:reviewIds,reused_review_response_ids:reusedReviewIds,review_scopes:groups.map(group=>coverage[group[0]].scope),review_coverage:coverage,review_groups:groups,foundation_review_version:current.foundationReview?.reviewIds?.length?FOUNDATION_REVIEW_VERSION:null,foundation_review_response_ids:current.foundationReview?.reviewIds||[],analysis_response_id:current.analysis_response_id,analysis_response_ids:current.analysis_response_ids||[current.analysis_response_id],correction_response_ids:current.correction_response_ids||[],content_correction_phases:correctionPhases,question_action_version:'v1',checked_at:new Date().toISOString()}}}}
 }
 
 export function completeAnalysisStage(state){

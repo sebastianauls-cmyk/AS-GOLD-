@@ -2,13 +2,22 @@ import {ModelWorkflowError} from './modelQuality.mjs'
 import {openRetainedCaseWork,sealRetainedCaseWork} from './retainedCaseWork.mjs'
 
 // Reusable draft responses, never review approvals or job capabilities. Every
-// hit passes the CURRENT stage validators again. Web research, corrections and
-// independent reviews are deliberately excluded.
+// hit passes the CURRENT stage validators again. Discovery can be reused only
+// for the exact dated search request; its URLs are fetched again by advance().
+// Source bodies, corrections and independent review approvals are not cached.
 const stages=new Set(['planning','analysis_generation','generation'])
+const discoveryStages=new Set(['research','research_recovery'])
 const domain='ash-validated-case-response-v1'
 const canonical=value=>Array.isArray(value)?value.map(canonical):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,canonical(value[key])])):value
 const unavailable=()=>new ModelWorkflowError('Bereits erarbeitete Teilergebnisse konnten nicht sicher geladen oder gespeichert werden. Der Auftrag wurde angehalten.',503,'retained_work_unavailable')
-const eligible=(request,stage)=>stages.has(stage)&&!request.tools?.length
+const eligible=(request,stage)=>{
+  if(stages.has(stage))return !request.tools?.length
+  if(!discoveryStages.has(stage)||request.tools?.length!==1||request.tools[0].type!=='web_search')return false
+  try{
+    const input=JSON.parse(request.input)
+    return /^\d{4}-\d{2}-\d{2}$/.test(input.review_date)&&Array.isArray(input.research_topics)&&input.research_topics.length>0
+  }catch{return false}
+}
 
 export function caseResponseCache({client,job,secret,onReuse}){
   const pending=new Map()
@@ -32,7 +41,7 @@ export function caseResponseCache({client,job,secret,onReuse}){
       const result=await openRetainedCaseWork({token:saved.ciphertext,binding:domain+':'+key,secret,originJobId:saved.origin_job_id})
       if(result.response?.status!=='completed'||result.response_id!==saved.response_id||result.response?.id!==saved.response_id||!result.parsed||typeof result.parsed!=='object')throw unavailable()
       onReuse?.({stage,response_id:result.response_id,origin_job_id:saved.origin_job_id})
-      return result
+      return {...result,reused:true}
     },
     async remember(request,stage,result){
       if(!eligible(request,stage))return
