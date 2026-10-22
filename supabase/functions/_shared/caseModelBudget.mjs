@@ -17,6 +17,7 @@ export function caseModelBudget({client,job}) {
         p_search_calls:searchCalls,p_stage:stage
       })
       if(error||!data)throw unavailable()
+      if(data.limit==='paused')throw new ModelWorkflowError('Die kostenpflichtige Fallauswertung ist pausiert. Es wurde keine weitere KI-Anfrage gestartet. Ihre Unterlagen bleiben gespeichert.',409,'budget_limit')
       if(!data.reservation_id)throw new ModelWorkflowError('Die Verbrauchsgrenze für diesen Auftrag oder den heutigen Betrieb ist erreicht. Es wurde keine weitere KI-Anfrage gestartet. Die Unterlagen bleiben gespeichert.',409,'budget_limit')
       reservation=data.reservation_id;outputLimit=request.max_output_tokens
     },

@@ -76,6 +76,13 @@ export function primarySourceCatalogue(domains,now=Date.now(),records=PRIMARY_SO
   return records.filter(item=>{const day=Date.parse(item.checked_at.slice(0,10));return officialUrl(item.url,domains)&&day<=today&&today-day<=86400000})
     .map(({url,title,checked_at})=>({url,title,checked_at}))
 }
+
+// Models need the observed source DATE, not a new millisecond on every retry.
+// Keep full timestamps in the persisted evidence. All source text, hashes,
+// final URLs, truncation and retrieval modes still bind the model request.
+export function modelResearchEvidence(research){
+  return research.map(item=>({...item,checked_at:typeof item.checked_at==='string'?item.checked_at.slice(0,10):item.checked_at}))
+}
 async function cachedSource(url,domains,maxChars,records){
   if(!primarySourceCatalogue(domains,Date.now(),records).some(item=>item.url===url))return null
   const item=records.find(item=>item.url===url)

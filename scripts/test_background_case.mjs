@@ -14,6 +14,8 @@ import {testCaseModelBudget} from './test_case_model_budget.mjs'
 import {testCaseRepairCredit} from './test_case_repair_credit.mjs'
 import {testRetainedCaseWork} from './test_retained_case_work.mjs'
 import {testCaseResponseCache} from './test_case_response_cache.mjs'
+import {testCaseDiscoveryCache} from './test_case_discovery_cache.mjs'
+import {testCasePaidPause} from './test_case_paid_pause.mjs'
 import {completedCorrectionPhaseResult} from './test_case_correction_phases.mjs'
 
 // Real Postgres semantics, real migrations, real worker/state machine, validators
@@ -144,8 +146,16 @@ try {
   const process=(job,cacheNamespace='synthetic-fixture-'+job.id)=>processCaseAnalysisJob({client,job,secret,providerKey:'synthetic-only',cacheNamespace})
   const drain=async id=>{for(let n=0;n<117;n++){const j=await stored(id);if(!['queued','running'].includes(j.status))return j;if(await scalar('select failures>0 from private.case_analysis_work where job_id=$1',[id]))await db.query('update private.case_analysis_work set available_at=now() where job_id=$1',[id]);const claimed=await claim(id);assert(claimed,'each queued checkpoint has a fresh dispatch');await process(claimed)}throw Error('unbounded worker')}
 
-  const checkResponseCache=()=>testCaseResponseCache({db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls})
-  const applySearchAccounting=async()=>db.exec(await readFile('supabase/migrations/20261019044539_account_actual_case_search_usage.sql','utf8'))
+  const checkResponseCache=async()=>{
+    const fixture={db,client,owner,caseId,secret,enqueue,claim,cancel,finish,stored,scalar,modelCalls:()=>modelCalls}
+    await testCaseResponseCache(fixture)
+    await testCaseDiscoveryCache(fixture)
+    await testCasePaidPause(fixture)
+  }
+  const applySearchAccounting=async()=>{
+    await db.exec(await readFile('supabase/migrations/20261019044539_account_actual_case_search_usage.sql','utf8'))
+    await db.exec(await readFile('supabase/migrations/20261021080719_bounded_case_reuse.sql','utf8'))
+  }
   const checkSearchAccounting=()=>testCaseSearchAccounting({db,owner,caseId,enqueue,claim,cancel,finish,stored,scalar,applyMigration:globalThis.process.argv.includes('--search-accounting-before')?null:applySearchAccounting})
   if(globalThis.process.argv.some(arg=>['--search-accounting-only','--search-accounting-before'].includes(arg))){
     await db.exec(await readFile('supabase/migrations/20260922134000_complete_review_lifetime.sql','utf8'))
