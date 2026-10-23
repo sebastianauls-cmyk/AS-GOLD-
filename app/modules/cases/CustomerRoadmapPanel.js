@@ -20,6 +20,7 @@ import { backgroundCaseCopy } from './lib/backgroundCaseCopy.mjs'
 import { automaticCaseCopy } from './lib/automaticCaseCopy.mjs'
 import { caseDocuments, preparationContext, prepareCaseDocuments, savePreparedCaseDocuments, preparationFailureMessage } from './lib/casePreparation.mjs'
 import { completeAnalysisBlocks, completeAnalysisCopy } from './lib/completeAnalysisDisplay.mjs'
+import { recordCommittedAction } from '../workspace/committedAction.mjs'
 import './customerRoadmap.css'
 
 function Dot({light,label}) {return <span className="roadmapLight"><span aria-hidden="true" style={{backgroundColor:ROADMAP_COLORS[light]}}/>{label}</span>}
@@ -109,7 +110,7 @@ export function CustomerRoadmapView({record,stale=false,documents=[],onOpenDocum
   </div>
 }
 
-export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,onAnalyzeDocument,onRecoverDocument,onSaveDocument,onAddDocument,onResultReady,continuation={},automaticRun=null}) {
+export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,assessments,language='de',outputLanguage='de',onOpenDocument,onPrivacyUpdate,onAnalyzeDocument,onRecoverDocument,onSaveDocument,onAddDocument,onResultReady,recordLocalAction=()=>{},recordServerAudit=()=>true,continuation={},automaticRun=null}) {
   const ui=roadmapUi(language)
   const simple=simpleCaseCopy(language)
   const backgroundCopy=backgroundCaseCopy(language)
@@ -292,7 +293,9 @@ export function CustomerRoadmapPanel({supabase,ownerId,item,client,documents,ass
     setRecords(previous=>previous.map(entry=>entry.id===saved.id?saved:entry))
     const artifact=await createRoadmapExport(saved,type,{letterId})
     if(!isCurrent())return false
-    downloadExportArtifact(artifact);return true
+    downloadExportArtifact(artifact)
+    recordCommittedAction(recordLocalAction,recordServerAudit,'export_created',{format:type.toUpperCase()},'case',item.id)
+    return true
   })
   function expandForm() {setShowForm(true);requestAnimationFrame(()=>formRef.current?.scrollIntoView({behavior:'smooth',block:'start'}))}
   return <section className="customerRoadmapPanel" ref={panelRef} tabIndex={-1} id="customer-roadmap" aria-labelledby={`roadmap-title-${item.id}`}>

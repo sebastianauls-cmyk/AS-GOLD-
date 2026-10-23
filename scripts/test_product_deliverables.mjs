@@ -133,17 +133,21 @@ for(const replacement of ['deleted','newer']){
 // either the saved record or the export writer is still pending.
 const exportCallback=fs.readFileSync('app/modules/cases/CustomerRoadmapPanel.js','utf8').match(/const exportFile=([\s\S]*?)\n  function expandForm/)[1]
 for(const scenario of ['fresh','read-error','leave-during-read','change-during-write']){
-  const tables=structuredClone(fixture.tables),downloads=[],updates=[],mountedRef={current:true}
+  const tables=structuredClone(fixture.tables),downloads=[],updates=[],localEvents=[],serverEvents=[],mountedRef={current:true}
   Object.assign(tables.case_roadmaps[0],updateRoadmapProgress(fixture.record,{step_id:'clarify',done:true,note:'SERVER CONFIRMED'}))
   const exportViewRef={current:{caseId:fixture.item.id,roadmapId:fixture.record.id,fingerprint:fixture.record.source_fingerprint,stale:false}}
   const context={run:task=>task(),stale:false,ui:roadmapUi('de'),exportViewRef,mountedRef,supabase:database(tables,{failTable:scenario==='read-error'?'case_roadmaps':undefined}),ownerId:owner,item:fixture.item,record:fixture.record,language:'de',
     loadRoadmapExportData:async(...args)=>{const fresh=await loadRoadmapExportData(...args);if(scenario==='leave-during-read')mountedRef.current=false;return fresh},
-    setRecords:update=>updates.push(update([fixture.record])),createRoadmapExport:async(record,type,options)=>{assert.equal(record.progress.clarify.note,'SERVER CONFIRMED');assert.equal(options.letterId,'selected-letter');if(scenario==='change-during-write')exportViewRef.current={...exportViewRef.current,fingerprint:'changed'};return {record,type}},downloadExportArtifact:artifact=>downloads.push(artifact)}
+    setRecords:update=>updates.push(update([fixture.record])),createRoadmapExport:async(record,type,options)=>{assert.equal(record.progress.clarify.note,'SERVER CONFIRMED');assert.equal(options.letterId,'selected-letter');if(scenario==='change-during-write')exportViewRef.current={...exportViewRef.current,fingerprint:'changed'};return {record,type}},downloadExportArtifact:artifact=>downloads.push(artifact),
+    recordLocalAction:event=>localEvents.push(event),recordServerAudit:(...args)=>{serverEvents.push(args);return true},recordCommittedAction}
   const action=new Function(...Object.keys(context),'return '+exportCallback)(...Object.values(context))
   if(scenario==='read-error')await assert.rejects(action('docx','selected-letter'),/Read unavailable/)
   else assert.equal(await action('docx','selected-letter'),scenario==='fresh')
+  await Promise.resolve()
   assert.equal(downloads.length,scenario==='fresh'?1:0,scenario+' must never download the old cached record')
   assert.equal(updates.length,['fresh','change-during-write'].includes(scenario)?1:0)
+  assert.deepEqual(localEvents,scenario==='fresh'?['export_created']:[],scenario+' records only a delivered direct export')
+  assert.deepEqual(serverEvents,scenario==='fresh'?[['export_created',{format:'DOCX'},'case',fixture.item.id]]:[],scenario+' records the exact direct export server-side')
 }
 await assert.rejects(loadCaseExportData(database(fixture.tables,{failTable:'case_roadmaps'}),{ownerId:owner,caseId:fixture.item.id}),/Read unavailable/,'read failure must never produce a partial success')
 await assert.rejects(loadCaseExportData(database(fixture.tables),{ownerId:foreign,caseId:fixture.item.id}))
