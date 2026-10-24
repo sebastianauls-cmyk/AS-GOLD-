@@ -109,7 +109,7 @@ for(const delayedCommit of [false,true]){
 }
 
 const workflowSource=fs.readFileSync('app/modules/documents/documentWorkflow.js','utf8').replace(/^import .*$/gm,'').replace('export function ','function ')
-function workflow({audit='pending',localFailure=true,metadata='ok',generated=false,failSave=false}={}){
+function workflow({audit='pending',localFailure=true,metadata='ok',generated=false,failSave=false,openResult={opened:true,url:''}}={}){
   const row={id:'saved-document',owner_id:owner,case_id:'synthetic-case',data_classification:'synthetic',title:'Erfundene Rechnung',extracted_text:'Original gespeichert.'}
   const state={data:{documents:[{...row,extracted_text:null}],cases:[{id:row.case_id}],assessments:[],sourceStatus:[]},message:'',selected:null,uploads:0,saves:0,reset:0,audits:[],opening:0}
   const context={recordCommittedAction,documentUploadReadinessMessage,parseIntakeQuality,validateDocumentUploadReadiness,currentAssessments,caseGuidanceCopy,
@@ -117,7 +117,7 @@ function workflow({audit='pending',localFailure=true,metadata='ok',generated=fal
     uploadWorkspaceDocument:async(client,input)=>{state.uploads++;state.uploadInput=input;return {data:row,error:null}},
     updateDocumentRecord:async()=>{state.saves++;return failSave?{error:new Error('Actual save rejected')}:{data:row,error:null}},
     createAssessmentRecord:async()=>{if(metadata==='rejected')throw new Error('Assessment unavailable');return {assessment:{id:'assessment',case_id:row.case_id},updatedCase:{id:row.case_id,traffic_light:'yellow'},error:null}},
-    createWorkspaceDocumentSignedUrl:async()=>({}),window:{},openPrivateDocument:async()=>{state.opening++;return true}}
+    createWorkspaceDocumentSignedUrl:async()=>({}),window:{},openPrivateDocument:async()=>{state.opening++;return openResult}}
   vm.createContext(context);vm.runInContext(workflowSource+'\nthis.create=createDocumentWorkflowActions',context)
   const actions=context.create({supabase:{from:()=>({insert(){return this},select(){return this},async single(){if(metadata==='rejected')throw new Error('Source unavailable');return {data:{id:'source'},error:null}}})},ownerId:owner,data:state.data,access:{app_role:'owner'},language:'de',privacyCurrent:true,privacyCopy:{},notices:{},analysisCopy:{savedMessage:'Gespeichert',badge:'Test'},caseCopy:{documentReview:'Dokument gespeichert'},serverCopy:{},
     setData:update=>{state.data=update(state.data)},setMessage:value=>{state.message=typeof value==='function'?value(state.message):value},setSelectedDocument:value=>{state.selected=value},setUploading(){},setSection(){},
@@ -135,9 +135,24 @@ try{
     assert.equal(await bounded(actions.updateDocument(row.id,draft)),true)
     assert.equal(state.data.documents[0].extracted_text,row.extracted_text)
     assert.equal(state.message,'Dokument gespeichert ✓')
-    assert.equal(await bounded(actions.openDocument({...row,file_path:'synthetic/file.txt'})),true)
+    assert.equal((await bounded(actions.openDocument({...row,file_path:'synthetic/file.txt'}))).opened,true)
     assert.equal(state.opening,1)
     assert.deepEqual(state.audits,['document_uploaded','document_reviewed','document_opened'])
+  }
+  {
+    const {actions,state,row}=workflow({audit:'ok',openResult:{opened:false,url:'https://synthetic.invalid/file'}})
+    const fallback=await actions.openDocument({...row,file_path:'synthetic/file.txt'})
+    await Promise.resolve()
+    assert.equal(fallback.opened,false)
+    assert.equal(fallback.url,'https://synthetic.invalid/file')
+    assert.deepEqual(state.audits,[],'a generated fallback URL is not evidence that the original was opened')
+    assert.equal(typeof fallback.confirmOpened,'function')
+    fallback.confirmOpened()
+    await Promise.resolve()
+    assert.deepEqual(state.audits,['document_opened'],'the fallback click records the actual original opening')
+    fallback.confirmOpened()
+    await Promise.resolve()
+    assert.deepEqual(state.audits,['document_opened'],'repeated fallback clicks do not create duplicate evidence')
   }
   for(const keepNativeInput of [false,true]){
     const {actions,state,event}=workflow({audit:'ok'})
@@ -173,4 +188,4 @@ try{
   await Promise.resolve()
 }finally{console.warn=originalWarn}
 for(const language of ['de','en','fr','tr','pl','ru','ar','fa','ro','bg','vi'])assert.notEqual(documentUploadReadinessMessage(language,'upload_confirmation'),documentUploadReadinessMessage(language,'upload_failed'))
-console.log('Document persistence: three fictional inputs; lost/empty/thrown replies; owner-bound recovery; delayed commits and explicit retries reuse one file/ID; uncertain saves never delete originals; definite rejection cleanup; audit-independent upload/save/open and visible partial metadata saves passed. No model calls.')
+console.log('Document persistence: three fictional inputs; lost/empty/thrown replies; owner-bound recovery; delayed commits and explicit retries reuse one file/ID; uncertain saves never delete originals; definite rejection cleanup; audit-independent upload/save/open, click-confirmed fallback evidence and visible partial metadata saves passed. No model calls.')
