@@ -215,7 +215,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
   const [savedFingerprint,setSavedFingerprint]=useState(()=>documentDraftFingerprint(initialReview.baseline))
   const [saving,setSaving]=useState(false)
   const saveBusy=useRef(false)
-  const [originalUrl,setOriginalUrl]=useState('')
+  const [originalFallback,setOriginalFallback]=useState(null)
   const dirty=!!draft.analysis_generated||documentDraftFingerprint(draft)!==savedFingerprint
   function openAnalysis(){
     const panel=analysisPanel.current
@@ -231,9 +231,9 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
     return ()=>window.removeEventListener('beforeunload',warn)
   },[dirty])
   async function openOriginal(){
-    setOriginalUrl('')
+    setOriginalFallback(null)
     const result=await onOpen(item)
-    if(result?.url)setOriginalUrl(result.url)
+    if(result?.url)setOriginalFallback({url:result.url,confirmOpened:result.confirmOpened})
   }
   async function save(event){
     event.preventDefault()
@@ -257,7 +257,7 @@ export function DocumentDetail({copy:on, analysis, privacy, language='de', outpu
       {item.case_id&&onPrepareApproval&&<button className="secondary" type="button" disabled={dirty||saving} onClick={()=>onPrepareApproval(item)}>{navigationCopy.prepareLetter}</button>}
     </div></section>
     {dirty&&<div role="status" className="attentionBox"><p>{evidenceCopy.saveFirst}</p><button className="primary" type="submit" form={fieldId(item.id,'review-form')} disabled={saving}>{analysis?.save||on.saveDocument}</button></div>}
-    {originalUrl&&<a className="secondary" href={originalUrl} target="_blank" rel="noopener noreferrer">{evidenceCopy.openFallback}</a>}
+    {originalFallback&&<a className="secondary" href={originalFallback.url} target="_blank" rel="noopener noreferrer" onClick={originalFallback.confirmOpened}>{evidenceCopy.openFallback}</a>}
     <div className={`readinessCard ${draft.extracted_text?'':'attentionBox'}`}><b>{on.assessmentState}</b><p>{draft.extracted_text?on.textAvailable:analysisPhase==='failed'?(analysis?.analysisFailed||analysis?.failed):(analysis?.notStarted||on.noExtraction)}</p></div>
     <section className="actionCard coreForm documentLanguagePair">
       <label htmlFor={fieldId(item.id,'reference-copy-language')}>{letterUi.referenceLanguage}<select id={fieldId(item.id,'reference-copy-language')} value={draft.reference_copy_language} onChange={event=>setDraft({...draft,reference_copy_language:event.target.value})} required>{OUTPUT_LANGUAGES.map(key=><option value={key} key={key}>{outputLanguageLabels[key]}</option>)}</select></label>
