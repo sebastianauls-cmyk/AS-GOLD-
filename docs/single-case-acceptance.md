@@ -23,6 +23,22 @@ does not establish live AI quality or a passed customer case. Do not run the
 same unchanged successful checks repeatedly. A later paid run needs specific
 user authorization, provider balance and an agreed bounded test scope.
 
+## Fixed: a blocked original tab was recorded as opened
+
+The mobile-safe original-file action reserves a new tab before requesting its
+short-lived signed URL. If the browser blocks that tab, the app exposes the URL
+as an explicit fallback link. The workflow previously wrote `document_opened`
+as soon as it produced that link, even if the user never followed it. This
+could falsely satisfy the evidence trail for reviewing the original.
+
+The workflow now records an immediately opened tab at once, but treats a
+fallback URL only as an opportunity to open the file. The fallback link records
+the event on its first actual click, with duplicate clicks suppressed. Signed
+URL failures still record nothing. The production-workflow regression first
+reproduces the premature event, then verifies no event before the fallback
+click and exactly one afterwards. It uses fictional content and blocked
+external network; it does not claim a real Android or live-case acceptance.
+
 ## Fixed: upload handoff lost after a status read error
 
 The production panel consumed the one-time upload authorization before
