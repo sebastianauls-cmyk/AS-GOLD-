@@ -29,3 +29,35 @@ Der Prüflauf verwendet deshalb jetzt das offizielle, zur installierten Playwrig
 Der KI-Start wurde vor dem Setzen der Verarbeitungsbestätigung durch die automatische Freigabeprüfung abgewiesen. Begründung: Die Zustimmung zur konkreten Übertragung der synthetischen Unterlagen an OpenAI und zu möglichen API-Kosten fehlt. Es wurde kein Ersatzweg verwendet. Die Betriebspause blieb aktiv; es gab keinen Auftrag für diesen Fall.
 
 Eine erfolgreiche echte Generierung mit Prüfung der acht Kriterien sowie die anschließend neu erzeugten Word-/PDF-Dateien sind daher noch nicht nachgewiesen. Die Vorbereitung und die gezielten Regressionstests sind keine vollständige fachliche Produktabnahme.
+
+## Verbindlich vorbereiteter nächster Einzelfall
+
+`live-run-plan.json` legt den nächsten zulässigen Gesamttest jetzt vollständig
+und maschinenprüfbar fest. Der frühere Fall und seine Aufträge werden nicht
+neu gestartet. Stattdessen muss der Test nach einer gesonderten Freigabe als
+neuer Fall durch die normale Produktionsanmeldung angelegt werden. Verwendet
+werden genau die beiden unveränderten Dateien in `input/`; Dateigrößen und
+SHA-256-Werte sowie die acht bisherigen Inhaltskriterien sind gesperrt.
+
+Der Plan erlaubt genau einen neuen Auftrag, null historische Neustarts und null
+automatische Wiederholungen. Vor diesem einen Start müssen ein aktueller
+Anbieterbeleg, eine verbindliche Geldobergrenze mit Betrag und Währung sowie
+Sebastians ausdrückliche Freigabe für genau diesen Lauf dokumentiert sein. Die
+Verarbeitungspause, das Modell und die fachlichen Gegenprüfungen dürfen nicht
+stillschweigend gelockert werden. `live_model_run_authorized=false` hält fest,
+dass diese Voraussetzungen derzeit nicht erfüllt beziehungsweise nicht
+freigegeben sind.
+
+Bestanden ist der Test nur mit normaler Anmeldung und Zugangsprüfung, erneutem
+Originalupload, lesbaren und tatsächlich geöffneten Originalen, genau einer
+Auftrags-ID, vollständigen unveränderten Gegenprüfungen, gespeichertem Ergebnis,
+erneutem Öffnen nach Verlassen des Falls, tatsächlichen Word- und PDF-Downloads
+für Bericht und jedes Anschreiben, Inhaltsvergleich der geöffneten Dateien und
+praktischer Android-Prüfung. Laufzeit und tatsächlicher Anbietergebrauch werden
+ebenfalls festgehalten. Ein Serverlauf, eine Simulation oder nur lokal erzeugte
+Dateiblobs genügen ausdrücklich nicht.
+
+`scripts/verify_single_case_acceptance_plan.mjs` prüft diese Sperren ohne
+Netzwerk oder Modellzugriff und läuft innerhalb der bestehenden
+Ergebniszugangs-Suite. Änderungen an Originalen, Kriterien oder dem begrenzten
+Startumfang machen die Prüfung rot, bevor ein echter Lauf vorbereitet wird.
