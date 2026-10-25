@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "prepared_at": "2026-10-25",
+  "status": "prepared_not_authorized",
+  "purpose": "One bounded end-to-end acceptance through the normal production UI; no capacity claim.",
+  "case": {
+    "template": "SYN-ENERGIE-100",
+    "classification": "synthetic",
+    "create_new_case_through_normal_ui": true,
+    "prior_case_id_reference_only": "5d659c55-d310-4890-ba1b-b3b28f8dffd7",
+    "restart_prior_job": false,
+    "output_language": "de",
+    "reference_language": "de"
+  },
+  "locked_inputs": [
+    {
+      "path": "input/01_Energieabrechnung_SYN.txt",
+      "bytes": 876,
+      "sha256": "5661f0e845e41dc2f1ef2cb6a50fbd326be15d5faf7390ee2722aadaf8b08bb2"
+    },
+    {
+      "path": "input/02_Zahlungsbestaetigung_SYN.txt",
+      "bytes": 794,
+      "sha256": "85cc54a31d0bfdea878f6733dd7ccdc1ee4b40042646be2786d64abeecec768d"
+    }
+  ],
+  "locked_content_criteria": {
+    "path": "acceptance.json",
+    "criteria_count": 8,
+    "sha256": "e5664ce113cecea04ed3e91ffad718dd3ba6b861d2d06c5744c535ec17e56802"
+  },
+  "run_limits": {
+    "maximum_new_jobs": 1,
+    "maximum_historical_restarts": 0,
+    "maximum_automatic_retries": 0,
+    "maximum_input_files": 2,
+    "maximum_runtime_minutes": 60
+  },
+  "preconditions_before_the_single_start": [
+    "A dated current provider-balance record exists.",
+    "A binding monetary cap for this one job is documented in currency and amount.",
+    "Sebastian has explicitly authorized this exact paid run after seeing the cap.",
+    "The processing pause is changed only within that authorization and without changing model or review quality.",
+    "The normal production login, access approval and current consent checks all pass.",
+    "No queued or running case-analysis job exists for the test owner."
+  ],
+  "required_evidence": [
+    "normal_authentication_and_access",
+    "two_original_uploads_with_names_sizes_and_hashes",
+    "readable_saved_originals_and_actual_original_open",
+    "exactly_one_authorized_job_id",
+    "unchanged_generation_correction_and_independent_review_gates",
+    "completed_job_with_saved_roadmap_id",
+    "all_eight_locked_content_criteria_checked_against_originals",
+    "result_reopened_after_leaving_the_case",
+    "downloaded_docx_for_report_and_each_letter",
+    "downloaded_pdf_for_report_and_each_letter",
+    "downloaded_files_opened_and_content_compared_with_saved_result",
+    "android_login_original_open_result_reopen_and_download_controls",
+    "actual_runtime_and_provider_usage_record"
+  ],
+  "pass_rule": "Pass only when every required evidence item and all eight locked content criteria pass. A simulation, server-only run, generated blob without browser download, or missing saved result is not a pass.",
+  "stop_and_fail_conditions": [
+    "A second job is created or attempted.",
+    "The job ends failed, cancelled, expired, quota-limited or review-unresolved.",
+    "The saved roadmap is absent, stale or cannot be reopened through normal access.",
+    "Any original, amount, source attribution, open question, Word file, PDF file or Android step fails its check.",
+    "The documented monetary cap or authorized scope would be exceeded."
+  ],
+  "live_model_run_authorized": false,
+  "capacity_acceptance_in_scope": false
+}
