@@ -23,6 +23,28 @@ does not establish live AI quality or a passed customer case. Do not run the
 same unchanged successful checks repeatedly. A later paid run needs specific
 user authorization, provider balance and an agreed bounded test scope.
 
+## Fixed: direct text originals could show garbled umlauts
+
+The private document view already stored and displayed the extracted UTF-8
+text correctly, but its original-file action navigated straight to a signed
+Storage URL. A browser could interpret a plain-text response without an
+explicit charset as a legacy encoding, so the unchanged original bytes showed
+garbled German umlauts in the raw tab.
+
+TXT and CSV originals now use the same short-lived signed read permission but
+open through a browser-local object URL with an explicit charset. UTF-8 is used
+for ordinary text; UTF-16 byte-order marks remain authoritative. The Blob is
+built from the fetched bytes without converting the content, and its temporary
+URL is released after the tab or fallback link has had time to load. Other file
+types keep the existing direct signed-URL path, and a browser that cannot fetch
+the signed text object still retains that path as a fallback.
+
+The production-workflow regression first fails because the raw signed URL is
+opened, then verifies the charset-safe object URL, readable umlauts and
+byte-for-byte identity. External network remains blocked and no model request
+is made. This fixes the text-original presentation; it does not by itself prove
+the remaining live case result, exports or Android acceptance.
+
 ## Fixed: a blocked original tab was recorded as opened
 
 The mobile-safe original-file action reserves a new tab before requesting its
