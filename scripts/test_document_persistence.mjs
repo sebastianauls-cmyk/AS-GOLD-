@@ -6,6 +6,7 @@ import {recordCommittedAction} from '../app/modules/workspace/committedAction.mj
 import {documentUploadReadinessMessage,parseIntakeQuality,validateDocumentUploadReadiness} from '../app/modules/documents/documentUploadReadiness.mjs'
 import {currentAssessments} from '../app/modules/cases/lib/caseEvidence.mjs'
 import {caseGuidanceCopy} from '../app/modules/cases/lib/caseGuidanceCopy.mjs'
+import {openPrivateDocument} from '../app/modules/documents/openPrivateDocument.mjs'
 
 // Real upload repository and UI workflow; only transport, storage and audit are
 // simulated. None of these failures may trigger a model call or destroy a file.
@@ -65,6 +66,24 @@ for(const bytes of [Buffer.from([0xc3,0x28]),Buffer.from('binary\0text'),Buffer.
   assert.equal(result.error,null,'an unreadable text preview must not lose the original file')
   assert.equal(result.data.extracted_text,null,'invalid, binary and empty input must not be marked as extracted text')
   assert.equal(state.uploads,1);assert.equal(state.rows.size,1);assert.equal(state.objects.size,1);assert.equal(state.removals,0)
+}
+{
+  const original='Zahlungsbestätigung: Grüße und 300,00 €'
+  const bytes=Buffer.from(original,'utf8')
+  const state={blob:null,replaced:''}
+  const tab={closed:false,opener:{},location:{replace(url){state.replaced=url}},close(){}}
+  const browser={
+    open:()=>tab,
+    fetch:async()=>new Response(bytes,{headers:{'content-type':'text/plain'}}),
+    Blob,
+    URL:{createObjectURL(blob){state.blob=blob;return 'blob:synthetic-original'},revokeObjectURL(){}}
+  }
+  const result=await openPrivateDocument({browser,filePath:'synthetic/Zahlungsbestaetigung_SYN.txt',getSignedUrl:async()=>({data:{signedUrl:'https://synthetic.invalid/raw-text'},error:null})})
+  assert.equal(result.opened,true)
+  assert.equal(state.replaced,'blob:synthetic-original','text originals must open through a charset-safe local URL')
+  assert.equal(state.blob.type,'text/plain;charset=utf-8')
+  assert.equal(Buffer.compare(Buffer.from(await state.blob.arrayBuffer()),bytes),0,'the original bytes must remain unchanged')
+  assert.equal(await state.blob.text(),original,'UTF-8 umlauts must stay readable in the raw original')
 }
 for(const read of ['error','throw','foreign']){
   const input=options(new File(['SYNTHETIC'],'Source.txt')),{client,state}=transport({read})

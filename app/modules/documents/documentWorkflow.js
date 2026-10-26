@@ -224,13 +224,14 @@ export function createDocumentWorkflowActions({
   async function openDocument(document){
     if(!document.file_path) return
     try{
-      const result=await openPrivateDocument({browser:window,getSignedUrl:()=>createWorkspaceDocumentSignedUrl(supabase,document.file_path,300)})
+      const result=await openPrivateDocument({browser:window,filePath:document.file_path,getSignedUrl:()=>createWorkspaceDocumentSignedUrl(supabase,document.file_path,300)})
       const recordOpened=()=>recordCommittedAction(recordLocalAction,recordServerAudit,'document_opened',{},'document',document.id)
-      if(result.opened){recordOpened();return result}
+      const releaseLater=()=>{if(result.release)window.setTimeout(result.release,60000)}
+      if(result.opened){recordOpened();releaseLater();return result}
       // A signed fallback URL is only an opportunity to open the original. The
       // audit becomes true when the user actually follows that link.
       let confirmed=false
-      return {...result,confirmOpened(){if(confirmed)return;confirmed=true;recordOpened()}}
+      return {...result,confirmOpened(){if(confirmed)return;confirmed=true;recordOpened();releaseLater()}}
     }catch(error){setMessage(error.message);return false}
   }
 
