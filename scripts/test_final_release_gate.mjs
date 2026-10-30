@@ -20,11 +20,14 @@ const smoke=fs.readFileSync(new URL('../.github/workflows/production-guest-smoke
 assert.match(smoke,/app-gold-workspace\.vercel\.app/)
 assert.match(smoke,/production-guest-smoke\.spec\.js/)
 assert.match(smoke,/--project=desktop-chromium/,'production smoke must consume only one anonymous live session per run')
+assert.match(smoke,/Production guest capacity reached correctly/)
 assert.match(smoke,/schedule:/)
 
 const guest=fs.readFileSync(new URL('../app/modules/auth/workspaceAuthWorkflow.js',import.meta.url),'utf8')
 assert.match(guest,/startAnonymousTestSession/)
 assert.match(guest,/clearGuestTestRequest/)
+assert.match(guest,/quota_exhausted/)
+assert.match(guest,/guestCopy\.capacity/)
 
 const approvals=fs.readFileSync(new URL('../app/modules/cases/approvalWorkflow.js',import.meta.url),'utf8')
 assert.match(approvals,/preview/i)
