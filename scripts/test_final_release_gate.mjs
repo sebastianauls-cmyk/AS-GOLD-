@@ -19,6 +19,7 @@ for(const token of ['test:pricing-tiers','test:tier-acceptance']) assert.match(p
 const smoke=fs.readFileSync(new URL('../.github/workflows/production-guest-smoke.yml',import.meta.url),'utf8')
 assert.match(smoke,/app-gold-workspace\.vercel\.app/)
 assert.match(smoke,/production-guest-smoke\.spec\.js/)
+assert.match(smoke,/--project=desktop-chromium/,'production smoke must consume only one anonymous live session per run')
 assert.match(smoke,/schedule:/)
 
 const guest=fs.readFileSync(new URL('../app/modules/auth/workspaceAuthWorkflow.js',import.meta.url),'utf8')
