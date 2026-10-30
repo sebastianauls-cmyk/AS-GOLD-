@@ -12,7 +12,8 @@ on:
       - 'app/modules/services/**'
       - 'supabase/migrations/**'
   schedule:
-    - cron: '23 1,7,13,19 * * *'
+    # The DB grants at most 20 anonymous-test signups per rolling 24h. Avoid exhausting that shared safety cap.
+    - cron: '23 1 * * *'
   workflow_dispatch:
 
 permissions:
@@ -45,7 +46,9 @@ jobs:
       - name: Install isolated browser dependencies
         run: npm ci
       - name: Run production guest smoke
-        run: npx playwright test specs/production-guest-smoke.spec.js
+        # One real production guest only; mobile flows are covered by isolated local E2E tests.
+        # Retries would create additional guest identities and exhaust the 20/24h safety cap.
+        run: npx playwright test specs/production-guest-smoke.spec.js --project=desktop-chromium --workers=1 --retries=0
       - name: Save production smoke artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
