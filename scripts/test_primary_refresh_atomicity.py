@@ -7,7 +7,12 @@ import importlib.util
 import io
 import json
 import pathlib
+import re
+import shutil
+import subprocess
+import sys
 import tempfile
+import textwrap
 import unittest
 import urllib.error
 from unittest.mock import patch
@@ -17,6 +22,73 @@ refresh=importlib.util.module_from_spec(spec)
 spec.loader.exec_module(refresh)
 
 class RefreshTests(unittest.TestCase):
+    def test_workflow_must_not_ignore_refresh_failure(self):
+        # CLI safety is ineffective if Actions reports a failed refresh as green.
+        workflow=(refresh.ROOT/'.github/workflows/refresh-primary-sources.yml').read_text()
+        ignored_failures=re.findall(r'^\s*continue-on-error:\s*([^\n#]+)',workflow,re.M)
+        self.assertTrue(all(value.strip()=='false' for value in ignored_failures),
+                        'The refresh workflow must propagate step/job failures.')
+
+    def test_cli_outage_partial_failure_and_complete_restart(self):
+        # Run the actual CLI against an isolated catalogue and deterministic HTTP
+        # transport. Only a complete restart may publish any new checked_at value.
+        bootstrap=textwrap.dedent('''\
+            import re, runpy, sys, urllib.error
+            from unittest.mock import patch
+            script, mode = sys.argv[1:]
+            class Response:
+                status = 200
+                headers = {'content-type': 'text/html; charset=utf-8'}
+                def __init__(self, url): self.url = url
+                def __enter__(self): return self
+                def __exit__(self, *args): pass
+                def read(self, limit):
+                    section = re.search(r'/__(\\w+)\\.html$', self.url).group(1)
+                    return ('<title>§ ' + section + '</title><p>§ ' + section
+                            + ' Synthetic public source.' * 10 + '</p>').encode()
+            def request(req, **kwargs):
+                if mode == 'outage':
+                    raise urllib.error.URLError(TimeoutError('synthetic connection timeout'))
+                if mode == 'partial' and req.full_url.endswith('/bgb/__632.html'):
+                    raise urllib.error.HTTPError(req.full_url, 404, 'synthetic missing provision', {}, None)
+                return Response(req.full_url)
+            sys.argv = [script, '--if-stale']
+            with patch('urllib.request.urlopen', side_effect=request), patch('time.sleep'):
+                runpy.run_path(script, run_name='__main__')
+        ''')
+        with tempfile.TemporaryDirectory() as folder:
+            root=pathlib.Path(folder)
+            script=root/'scripts/refresh_primary_sources.py'
+            script.parent.mkdir()
+            shutil.copyfile(refresh.__file__,script)
+            target=root/'supabase/functions/_shared/primarySourceCache.mjs'
+            target.parent.mkdir(parents=True)
+            self.write_catalogue(target,[self.record(checked='2000-01-01T00:00:00+00:00')])
+            def contents(): return [target.read_bytes(),target.with_suffix('.json').read_bytes()]
+            def run(mode):
+                return subprocess.run([sys.executable,'-c',bootstrap,str(script),mode],
+                                      capture_output=True,text=True,timeout=15)
+            before=contents()
+            for mode,reason in [('outage','cannot currently be fetched'),('partial','Refresh incomplete')]:
+                with self.subTest(mode=mode):
+                    result=run(mode)
+                    self.assertNotEqual(result.returncode,0,result.stdout)
+                    self.assertIn(reason,result.stderr)
+                    self.assertEqual(contents(),before)
+            result=run('complete')
+            self.assertEqual(result.returncode,0,result.stderr)
+            records=json.loads(target.with_suffix('.json').read_text())
+            self.assertEqual(len(records),sum(map(len,refresh.PROVISIONS.values())))
+            with patch.object(refresh,'TARGET',target):
+                self.assertTrue(refresh.catalogue_is_current())
+            after=contents()
+            self.assertNotEqual(after,before)
+            # A same-day rerun must skip network calls even with a failing transport.
+            result=run('outage')
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertIn('no fetch or date change',result.stdout)
+            self.assertEqual(contents(),after)
+
     def record(self, section='631', checked='2026-10-09T06:00:00+00:00'):
         text=f'§ {section} BGB. ' + 'Synthetic source fixture. ' * 10
         url=f'https://www.gesetze-im-internet.de/bgb/__{section}.html'
