@@ -7,7 +7,16 @@ test('production guest workspace creates and reopens a synthetic case without pa
 
   await page.goto('/?start=guest-test')
   const guest=page.locator('.guestSessionNotice')
-  await expect(guest).toContainText('Passwortloser Testzugang aktiv',{timeout:45000})
+  try{
+    await expect(guest).toContainText('Passwortloser Testzugang aktiv',{timeout:25000})
+  }catch(error){
+    // Do not mask a denied real guest sign-in as a green smoke test.
+    // Supabase deliberately caps anonymous test accounts at 20 per rolling 24h.
+    if(await page.getByRole('heading',{name:'Arbeitsbereich nicht freigegeben'}).isVisible()){
+      throw new Error('Production guest session was denied: check the Supabase anonymous-test cap (20/24h), access status and registration trigger before retrying.')
+    }
+    throw error
+  }
   await expect(guest).toContainText('höchstens 2 Dokumente')
 
   const goal=page.getByRole('textbox',{name:'Wobei brauchen Sie Hilfe?'})
