@@ -1,3 +1,4 @@
+// PRODUCT CONTRACT: authentication, guest testing and workspace loading are release-critical. Guest mode is synthetic-only and must not weaken owner scoping or normal access checks.
 import { ensureRegistrationPrivacy, getWorkspaceAccess, loadWorkspaceBundle } from '../services/workspaceRepository'
 import { AUTH_REDIRECT_URL, getAuthSession, registerTestAccount, sendPasswordReset, signInSession, startAnonymousTestSession, updatePassword } from '../services/authRepository'
 import { clearGuestTestRequest } from './guestTestRequest.mjs'

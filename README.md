@@ -1,9 +1,9 @@
-# ASH Workspace Gold Workspace – V132
+# ASH Workspace Gold Workspace – V158
 
 Rekonstruierte, vollständige Quellcode-Basis der laufenden ASH-Workspace-Gold-Anwendung.
 
 ## Verbindlicher Versionsstand
-- Gesamt- und Produktionsstand: **V132**. Der öffentliche Stand wird unter https://app-gold-workspace.vercel.app bereitgestellt.
+- Gesamt- und Produktionsstand: **V158**. Der öffentliche Stand wird unter https://app-gold-workspace.vercel.app bereitgestellt.
 - V132 führt die vollständige Marke **ASH Workspace Gold** ein: neuer ASH-Monogrammauftritt, erneuerte Browser- und Installationssymbole, konsistente App- und Ausgabebezeichnungen sowie aktualisierte Downloads, Bestätigungen und Metadaten. Die bestehende Produktionsadresse bleibt für vorhandene Nutzer und Links unverändert erreichbar.
 - V131 ergänzt in jeder Fallakte einen fallbezogenen Rechtsraumvergleich zwischen Heimat- und Zielland. Der Nutzer wählt das konkrete Rechtsgebiet und formuliert die Einzelfrage des Kunden; die quellengebundene Recherche trennt zuerst das anwendbare Recht von der bloßen Länderauswahl und zeigt anschließend belegte Regeln beider Seiten, praktische Unterschiede, offene Angaben, nächste Schritte und klickbare amtliche Primärquellen. Fehlende Quellen bleiben weiß/ungeklärt, sämtliche Ergebnisse sind unveränderliche Rechercheentwürfe und müssen vor verbindlicher Nutzung fachlich geprüft werden.
 - V130 ergänzt auf der gesamten öffentlichen Startseite einen eigenständigen, mitlaufenden Zurück-Button. Er liegt außerhalb der gefilterten Kopfzeile, bleibt deshalb auch auf Smartphones beim Scrollen sichtbar und führt zuverlässig an den Seitenanfang zurück. Die getrennte Rückstellung auf Deutsch bleibt innerhalb der Sprachauswahl erhalten und erscheint nur, wenn App- oder Ausgabesprache nicht Deutsch ist.
@@ -21,6 +21,12 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden ASH-Workspace-Gold-A
 - V31 ergänzt V30 um flaggenbasierte Sprachwahl, automatisch lokalisierte Rechtsseiten und sicher serverseitig validierte Promo-Codes.
 - V29 übernimmt den vollständigen V28-Funktionsstand, repariert die Repository-Quelldatei und ergänzt Abhängigkeits-, Header-, Export-, Passwort-, Audit- und Datenbankhärtungen.
 - Frühere Versionsbezeichnungen bleiben nur als nachvollziehbare Entwicklungshistorie erhalten.
+
+## Verbindlicher Abschlussvertrag
+- Maßgeblich für Produktgrenzen, Tariflogik, Freigaben, externe Konfigurationen und Release-Abnahme ist `docs/FINAL_PRODUCT_CONTRACT.md`.
+- Aktive Bezahlstufen: **Gold Start 19,90 €**, **Gold Professional 89,90 €**, **Gold Business 499,90 €** je 30 Tage.
+- Legacy-Tarife dürfen nur als inaktive historische Datensätze bestehen bleiben.
+- Fertigstellung vor Erweiterung: keine neuen Module, solange reproduzierbare Fehler oder Abnahmelücken offen sind.
 
 ## Stand
 - Öffentliche Produkt- und Preisübersicht

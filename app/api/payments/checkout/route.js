@@ -1,3 +1,4 @@
+// PRODUCT CONTRACT: only Start, Professional and Business may enter checkout. Live payments remain locked until separate legal and operational approval.
 import { sumupCheckoutPayload } from '../../../modules/payments/sumupCheckout.mjs'
 import {
   authenticatePaymentRequest,
