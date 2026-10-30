@@ -28,10 +28,11 @@ jobs:
         run: python3 scripts/test_primary_refresh_atomicity.py
       - name: Refresh only a stale or incomplete catalogue
         id: refresh
-        continue-on-error: true
+        # Preserving old snapshots is safe fallback, not a successful refresh.
+        # Keep retrieval failures visible so later/manual runs can recover them.
         run: python3 scripts/refresh_primary_sources.py --if-stale
       - name: Diagnose a failed public connection
-        if: steps.refresh.outcome == 'failure'
+        if: failure() && steps.refresh.outcome == 'failure'
         run: |
           python3 - <<'PY'
           import json, subprocess
@@ -39,11 +40,6 @@ jobs:
               result = subprocess.run(['curl', family, '--silent', '--show-error', '--head', '--connect-timeout', '8', '--max-time', '18', 'https://www.gesetze-im-internet.de/bgb/__631.html'], capture_output=True, text=True)
               print(json.dumps({'family': family, 'exit_code': result.returncode, 'response': result.stdout[:1500], 'error': result.stderr[:500]}))
           PY
-      - name: Keep existing verified snapshots when the official host is temporarily unavailable
-        if: steps.refresh.outcome == 'failure'
-        run: |
-          echo "::warning::Official primary-source refresh could not complete. Existing verified snapshots remain unchanged."
-          python3 scripts/test_primary_refresh_atomicity.py
       - name: Commit only successfully fetched public source snapshots
         if: steps.refresh.outcome == 'success'
         run: |
