@@ -12,7 +12,7 @@ on:
       - 'app/modules/services/**'
       - 'supabase/migrations/**'
   schedule:
-    - cron: '23 1,7,13,19 * * *'
+    - cron: '23 20 * * *'
   workflow_dispatch:
 
 permissions:
