@@ -1,13 +1,26 @@
 import {test,expect} from '@playwright/test'
 
+// A real guest consumes one of 20 rolling-24h Supabase access slots.
+// Protect them even when a broad browser suite runs against production.
+// Only the dedicated GitHub workflow may perform the real sign-in.
+test.describe.configure({retries:0})
+
 test('production guest workspace creates and reopens a synthetic case without paid AI',async({page})=>{
-  test.skip(process.env.ASH_BROWSER_LOCAL==='true','Production-only smoke test.')
+  test.skip(process.env.ASH_BROWSER_LOCAL==='true'||process.env.GITHUB_WORKFLOW!=='ASH Production Guest Smoke','Real guest signup is reserved for the dedicated production-smoke workflow.')
   const errors=[]
   page.on('pageerror',error=>errors.push(error.message))
 
   await page.goto('/?start=guest-test')
   const guest=page.locator('.guestSessionNotice')
-  await expect(guest).toContainText('Passwortloser Testzugang aktiv',{timeout:45000})
+  try{
+    await expect(guest).toContainText('Passwortloser Testzugang aktiv',{timeout:25000})
+  }catch(error){
+    // A quota-denied sign-in is a failed smoke, never a successful or silently skipped run.
+    if(await page.getByRole('heading',{name:'Arbeitsbereich nicht freigegeben'}).isVisible()){
+      throw new Error('Production guest access denied; inspect Supabase anonymous-test 20/24h quota and approval trigger.')
+    }
+    throw error
+  }
   await expect(guest).toContainText('höchstens 2 Dokumente')
 
   const goal=page.getByRole('textbox',{name:'Wobei brauchen Sie Hilfe?'})
