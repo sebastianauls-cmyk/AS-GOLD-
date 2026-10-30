@@ -1,3 +1,5 @@
+// PRODUCT CONTRACT: docs/FINAL_PRODUCT_CONTRACT.md
+// The active paid public ladder is Start -> Professional -> Business. Legacy tiers may remain only for backwards compatibility and must not be reactivated publicly.
 export const terms = [
   { months: 1, discount: 0, label: '1 Monat' },
   { months: 3, discount: 5, label: '3 Monate' },
