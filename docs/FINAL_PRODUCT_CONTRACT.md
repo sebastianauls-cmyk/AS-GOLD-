@@ -54,7 +54,7 @@ Ein Produktionsstand gilt technisch nur dann als freigabefähig, wenn gleichzeit
 - produktives Vercel-Deployment READY
 - keine bekannten reproduzierbaren Runtime-Blocker
 
-Der Produktions-Gast-Smoke-Test prüft die echte Live-App kostenfrei mit genau einer synthetischen Gast-Sitzung: anonyme Anmeldung, Fallerstellung, Persistenz und Wiederöffnung. Cross-Device-Verhalten (Desktop/Android/iPhone) wird im getrennten Browser-Gate geprüft, damit die Produktionsprüfung die bewusst begrenzte tägliche Gastquote nicht selbst aufbraucht.
+Der Produktions-Gast-Smoke-Test prüft die echte Live-App kostenfrei einmal täglich mit genau einer synthetischen Gast-Sitzung: anonyme Anmeldung, Fallerstellung, Persistenz und Wiederöffnung. Cross-Device-Verhalten (Desktop/Android/iPhone) wird im getrennten Browser-Gate geprüft, damit die Produktionsprüfung die bewusst begrenzte Gastquote nicht selbst aufbraucht. Für die Quote zählen nur tatsächlich freigeschaltete Gastzugänge; abgewiesene anonyme Auth-Identitäten dürfen die 24-Stunden-Grenze nicht verlängern.
 
 ## 5. Externe Konfigurationen – ausdrücklich nicht als fertig vortäuschen
 
