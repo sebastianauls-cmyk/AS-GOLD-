@@ -20,6 +20,11 @@ const smoke=fs.readFileSync(new URL('../.github/workflows/production-guest-smoke
 assert.match(smoke,/app-gold-workspace\.vercel\.app/)
 assert.match(smoke,/production-guest-smoke\.spec\.js/)
 assert.match(smoke,/schedule:/)
+// The real production guest smoke must not burn through the anonymous 20/24h safety limit.
+assert.match(smoke,/cron: '23 1 \* \* \*'/)
+assert.match(smoke,/--project=desktop-chromium/)
+assert.match(smoke,/--retries=0/)
+assert.match(smoke,/--workers=1/)
 
 const guest=fs.readFileSync(new URL('../app/modules/auth/workspaceAuthWorkflow.js',import.meta.url),'utf8')
 assert.match(guest,/startAnonymousTestSession/)
