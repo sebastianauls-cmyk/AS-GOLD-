@@ -1,5 +1,7 @@
 'use client'
 
+// PRODUCT CONTRACT: Google/Microsoft integrations are optional external capabilities. Do not represent them as active unless OAuth is actually configured; without credentials the UI must fail closed and explain the missing configuration.
+
 import { useEffect, useState } from 'react'
 import OptionalExtensions from '../optional/OptionalExtensions'
 import { LegalFooter } from '../compliance/LegalFooter'
