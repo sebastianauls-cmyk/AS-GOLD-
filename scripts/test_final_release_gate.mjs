@@ -20,6 +20,12 @@ const smoke=fs.readFileSync(new URL('../.github/workflows/production-guest-smoke
 assert.match(smoke,/app-gold-workspace\.vercel\.app/)
 assert.match(smoke,/production-guest-smoke\.spec\.js/)
 assert.match(smoke,/--project=desktop-chromium/,'production smoke must consume only one anonymous live session per run')
+assert.match(smoke,/cron: '23 1 \* \* \*'/,'production guest smoke must not exhaust rolling 20/24h cap')
+assert.match(smoke,/ASH_PRODUCTION_GUEST_SMOKE: 'true'/)
+assert.match(smoke,/--retries=0/)
+assert.match(smoke,/--workers=1/)
+const guestSpec=read('tests/browser/specs/production-guest-smoke.spec.js')
+assert.match(guestSpec,/ASH_PRODUCTION_GUEST_SMOKE/,'all other browser pipelines must skip real production guest signups')
 assert.match(smoke,/schedule:/)
 
 const guest=fs.readFileSync(new URL('../app/modules/auth/workspaceAuthWorkflow.js',import.meta.url),'utf8')
