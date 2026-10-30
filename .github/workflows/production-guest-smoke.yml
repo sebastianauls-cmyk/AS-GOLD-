@@ -12,7 +12,8 @@ on:
       - 'app/modules/services/**'
       - 'supabase/migrations/**'
   schedule:
-    - cron: '23 1,7,13,19 * * *'
+    # One daily real-account check: the DB caps anonymous guests at 20 per rolling 24h.
+    - cron: '23 1 * * *'
   workflow_dispatch:
 
 permissions:
@@ -35,6 +36,7 @@ jobs:
     env:
       ASH_BROWSER_BASE_URL: https://app-gold-workspace.vercel.app
       ASH_BROWSER_LOCAL: 'false'
+      ASH_PRODUCTION_GUEST_SMOKE: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,7 +47,8 @@ jobs:
       - name: Install isolated browser dependencies
         run: npm ci
       - name: Run production guest smoke
-        run: npx playwright test specs/production-guest-smoke.spec.js --project=desktop-chromium
+        # Retries and parallel devices would consume multiple anonymous accounts.
+        run: npx playwright test specs/production-guest-smoke.spec.js --project=desktop-chromium --workers=1 --retries=0
       - name: Save production smoke artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
