@@ -12,7 +12,7 @@ import {
 
 export const dynamic='force-dynamic'
 
-const PLAN_KEYS=new Set(['start','klar','analyse','komplett','business'])
+const PLAN_KEYS=new Set(['start','professional','business'])
 const TERM_MONTHS=new Set([1,3,6,12])
 
 function checkoutErrorCode(error){
