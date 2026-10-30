@@ -1,3 +1,4 @@
+// PRODUCT CONTRACT: evidence review is a workflow state, never a legal success probability. Every trusted assessment must remain tied to the exact reviewed document revision and excerpt.
 const normalize = value => String(value || '').trim().replace(/\s+/gu, ' ')
 const belongsToCase = (entry, item) => entry.case_id === item?.id && (!item?.owner_id || entry.owner_id === item.owner_id)
 
