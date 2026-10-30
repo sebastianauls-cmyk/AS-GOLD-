@@ -41,6 +41,7 @@ begin
       'test_phase',true,
       'test_access',v_guest_allowed,
       'guest_access',v_guest_allowed,
+      'quota_exhausted',not v_guest_allowed,
       'access_source','anonymous_test',
       'guest_access_ends_at',v_guest_ends_at,
       'auto_renew',false,
