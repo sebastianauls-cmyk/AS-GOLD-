@@ -73,7 +73,9 @@ jobs:
       - name: Check pinned browser test version
         run: npx playwright --version
       - name: Check the proposed application or published production page
-        run: npm test
+        # Real guest creation is verified by the dedicated production smoke workflow.
+        # Running it here as well exhausts the deliberate rolling 20/24h anonymous cap.
+        run: npm test -- --grep-invert "production guest workspace"
       - name: Save screenshots and browser reports
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
