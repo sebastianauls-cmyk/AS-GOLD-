@@ -45,7 +45,7 @@ jobs:
       - name: Install isolated browser dependencies
         run: npm ci
       - name: Run production guest smoke
-        run: npx playwright test specs/production-guest-smoke.spec.js
+        run: npx playwright test specs/production-guest-smoke.spec.js --project=desktop-chromium
       - name: Save production smoke artifacts
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4
