@@ -17,10 +17,11 @@ for(const script of ['test:pricing-tiers','test:tier-acceptance','test:product-d
 for(const token of ['test:pricing-tiers','test:tier-acceptance']) assert.match(pkg.scripts.prebuild,new RegExp(token.replace(':','\\:')))
 
 const smoke=fs.readFileSync(new URL('../.github/workflows/production-guest-smoke.yml',import.meta.url),'utf8')
+const smokeSpec=fs.readFileSync(new URL('../tests/browser/specs/production-guest-smoke.spec.js',import.meta.url),'utf8')
 assert.match(smoke,/app-gold-workspace\.vercel\.app/)
 assert.match(smoke,/production-guest-smoke\.spec\.js/)
 assert.match(smoke,/--project=desktop-chromium/,'production smoke must consume only one anonymous live session per run')
-assert.match(smoke,/Production guest capacity reached correctly/)
+assert.match(smokeSpec,/Production guest capacity reached correctly/)
 assert.match(smoke,/schedule:/)
 
 const guest=fs.readFileSync(new URL('../app/modules/auth/workspaceAuthWorkflow.js',import.meta.url),'utf8')
