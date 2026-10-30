@@ -1,8 +1,14 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import {plans} from '../app/modules/pricing/catalog.js'
+import {APP_VERSION} from '../app/modules/release/appRelease.mjs'
 
 assert.deepEqual(plans.map(p=>p.key),['free','start','professional','business'])
+const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8')
+const contract=read('docs/FINAL_PRODUCT_CONTRACT.md')
+const readme=read('README.md')
+assert.match(readme,new RegExp('ASH Workspace Gold Workspace – '+APP_VERSION))
+for(const fragment of ['Gold Start – 19,90 EUR','Gold Professional – 89,90 EUR','Gold Business – 499,90 EUR','Keine externe Kundenkommunikation ohne ausdrückliche Freigabe','Supabase Leaked-Password-Protection']) assert.ok(contract.includes(fragment),`product contract missing: ${fragment}`)
 
 const pkg=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8'))
 for(const script of ['test:pricing-tiers','test:tier-acceptance','test:product-deliverables','test:v114-readiness']){
