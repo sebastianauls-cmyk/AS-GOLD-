@@ -25,6 +25,8 @@ assert.match(smoke,/cron: '23 1 \* \* \*'/)
 assert.match(smoke,/--project=desktop-chromium/)
 assert.match(smoke,/--retries=0/)
 assert.match(smoke,/--workers=1/)
+const publicBrowser=read('.github/workflows/browser-check.yml')
+assert.match(publicBrowser,/--grep-invert "production guest workspace"/)
 
 const guest=fs.readFileSync(new URL('../app/modules/auth/workspaceAuthWorkflow.js',import.meta.url),'utf8')
 assert.match(guest,/startAnonymousTestSession/)
