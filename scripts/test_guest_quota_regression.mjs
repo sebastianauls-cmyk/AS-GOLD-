@@ -6,6 +6,7 @@ const migration=fs.readFileSync(new URL('../supabase/migrations/20261030201200_g
 assert.match(migration,/from private\.user_access ua/)
 assert.match(migration,/permissions->>'access_source'='anonymous_test'/)
 assert.match(migration,/permissions->>'guest_access'/)
+assert.match(migration,/'quota_exhausted',not v_guest_allowed/)
 assert.match(migration,/status='approved'/)
 assert.match(migration,/active is true/)
 assert.match(migration,/count\(\*\)<20/)
