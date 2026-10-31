@@ -1,16 +1,9 @@
 name: ASH Production Guest Smoke
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/production-guest-smoke.yml'
-      - 'tests/browser/specs/production-guest-smoke.spec.js'
-      - 'app/modules/auth/**'
-      - 'app/modules/workspace/**'
-      - 'app/modules/cases/**'
-      - 'app/modules/services/**'
-      - 'supabase/migrations/**'
+  # Live sign-in consumes an approved anonymous test slot (20 per rolling 24h).
+  # Git pushes are already checked by CI/browser tests; never exhaust production
+  # guest capacity by launching this live test on every code or SQL change.
   schedule:
     - cron: '23 20 * * *'
   workflow_dispatch:
