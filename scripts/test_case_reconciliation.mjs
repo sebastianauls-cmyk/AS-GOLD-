@@ -1,6 +1,7 @@
 import {repairReplyWithFieldDecisions} from './fixtures/repairFieldDecisions.mjs'
 import assert from 'node:assert/strict'
 import {advanceCompleteAnalysis,validateCompleteAnalysis,completeReviewGroups,RESEARCH_SCOPE_RULES} from '../supabase/functions/_shared/completeCaseAnalysis.mjs'
+import {caseReviewDate} from '../supabase/functions/_shared/caseReviewDate.mjs'
 import {roadmapSource} from '../supabase/functions/_shared/customerRoadmap.mjs'
 import {roadmapTestCase,roadmapTestResult} from '../app/modules/testing/customerRoadmapFixture.mjs'
 
@@ -156,6 +157,10 @@ let rejected={status:'processing',state:structuredClone(start)}
 await assert.rejects(async()=>{for(let n=0;rejected.status==='processing'&&n<16;n++)rejected=await advanceCompleteAnalysis({...args,fetchImpl:rejectionTransport,state:rejected.state})},error=>error.code==='review_unresolved')
 assert.equal(repairs,1);assert(!rejected.result)
 
+// A UTC date may still be yesterday just after midnight in Germany.
+assert.equal(caseReviewDate('2026-10-31T23:30:00Z'),'2026-11-01')
+assert.equal(caseReviewDate('2026-10-31T22:30:00Z'),'2026-10-31')
+
 // A later regression adds a future first due date and two deliberately
 // different benefit categories. These are invented rules, not legal advice.
 const temporalSource=structuredClone(source)
@@ -185,7 +190,7 @@ const temporal=await advanceCompleteAnalysis({...args,source:temporalSource,stat
   assert.deepEqual(JSON.parse(request.input.at(-1).content[0].text).checked_analysis.limitations,[staleLimit,retainedLimit])
   assert.equal(JSON.parse(request.input[0].content[1].text).retrieved_sources.length,research.length,'global limitations are reconciled with all fetched sources')
   const originals=JSON.parse(request.input[0].content[0].text)
-  assert.equal(originals.review_date,new Date().toISOString().slice(0,10))
+  assert.equal(originals.review_date,caseReviewDate(), 'reconciliation must use the German business date, not the UTC calendar date')
   assert.match(request.instructions,/first due date is still in the future/)
   assert.match(request.instructions,/payer or institution, benefit\/product category/)
   assert.equal(request.text.format.schema.properties.topics.items.properties.sources.items.properties.url,undefined)

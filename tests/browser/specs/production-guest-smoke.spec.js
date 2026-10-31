@@ -14,10 +14,15 @@ test('production guest workspace creates and reopens a synthetic case without pa
   const guest=page.locator('.guestSessionNotice')
   const capacity=page.getByText('Der sichere Testzugang ist für heute ausgelastet.',{exact:false})
   const state=await Promise.race([
-    guest.waitFor({state:'visible',timeout:25000}).then(()=> 'ready'),
+    guest.waitFor({state:'attached',timeout:25000}).then(()=> 'ready'),
     capacity.waitFor({state:'visible',timeout:25000}).then(()=> 'capacity')
   ])
   if(state==='capacity') test.skip(true,'Production guest capacity reached correctly; no product defect.')
+  // The guest notice is intentionally inside the collapsed 'Konto und weitere Bereiche'
+  // details panel. Attachment proves the active session; expand the panel to check copy.
+  await expect(page.getByRole('heading',{name:'Meine Übersicht'})).toBeVisible()
+  await page.locator('details.workspaceMore > summary').click()
+  await expect(guest).toBeVisible()
   await expect(guest).toContainText('Passwortloser Testzugang aktiv')
   await expect(guest).toContainText('höchstens 2 Dokumente')
 
