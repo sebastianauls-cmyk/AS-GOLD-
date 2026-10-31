@@ -7,6 +7,11 @@ assert.deepEqual(plans.map(p=>p.key),['free','start','professional','business'])
 const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8')
 const contract=read('docs/FINAL_PRODUCT_CONTRACT.md')
 const readme=read('README.md')
+const privateAdvisorRls=read('supabase/migrations/20261031004000_private_advisors_rls_guard.sql')
+for (const name of ['advisors','advisor_referrals']) {
+  assert.match(privateAdvisorRls,new RegExp('ALTER TABLE private\\\\.'+name+' ENABLE ROW LEVEL SECURITY;','i'),`private.${name} must be RLS protected`)
+}
+assert.doesNotMatch(privateAdvisorRls,/^\\s*(?:GRANT|REVOKE|CREATE POLICY|DROP|DELETE|TRUNCATE)\\b/im,'RLS hardening must not change data or privileges')
 assert.match(readme,new RegExp('ASH Workspace Gold Workspace – '+APP_VERSION))
 for(const fragment of ['Gold Start – 19,90 EUR','Gold Professional – 89,90 EUR','Gold Business – 499,90 EUR','Keine externe Kundenkommunikation ohne ausdrückliche Freigabe','Supabase Leaked-Password-Protection']) assert.ok(contract.includes(fragment),`product contract missing: ${fragment}`)
 
