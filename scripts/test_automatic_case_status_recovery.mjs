@@ -53,11 +53,18 @@ function scenario({readError=true,existingJob=null,allow=true,automatic=true,lis
   const props={...input,supabase:{},continuation:{canContinue:allow},automaticRun:automatic?createAutomaticCaseRun(input):null}
   return {state,props,
     async flush(){
-      for(let turn=0;turn<30;turn++){
-        if(dirty){dirty=false;cursor=0;tree=Panel(props);while(pending.length)pending.shift()()}
-        await new Promise(setImmediate)
+      // The real roadmap fingerprint uses asynchronous WebCrypto. On a busy CI
+      // runner 30 immediate turns may end while that digest is still settling.
+      // Require several quiet event-loop turns, but keep a hard bound so real
+      // render/effect loops still fail this test instead of being hidden.
+      let quiet=0
+      for(let turn=0;turn<400;turn++){
+        if(dirty){dirty=false;cursor=0;tree=Panel(props);while(pending.length)pending.shift()();quiet=0}
+        await new Promise(resolve=>setTimeout(resolve,1))
+        if(!dirty&&pending.length===0&&++quiet>=12)return tree
       }
       assert.equal(dirty,false,'controlled component must settle')
+      assert.equal(pending.length,0,'controlled effects must settle')
       return tree
     },
     retry(){const button=nodes(tree).find(node=>node.type==='button'&&node.props.children===automaticCaseCopy('de').status);assert.ok(button,'status-only retry is visible');button.props.onClick()},
