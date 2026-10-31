@@ -26,7 +26,7 @@ assert.match(smoke,/app-gold-workspace\.vercel\.app/)
 assert.match(smoke,/production-guest-smoke\.spec\.js/)
 assert.match(smoke,/--project=desktop-chromium/,'production smoke must consume only one anonymous live session per run')
 assert.match(smoke,/^  schedule:/m,'production smoke must be scheduled')
-assert.match(smoke,/^    - cron: ['"]23 20 \\* \\* \\*['"]/m,'production smoke must run only once per day')
+assert.match(smoke,/^    - cron: ['"]23 20 \* \* \*['"]/m,'production smoke must run only once per day')
 assert.match(smoke,/^  workflow_dispatch:/m,'manual smoke remains available')
 assert.doesNotMatch(smoke,/^  push:/m,'do not consume live guest quota on every repository push')
 
