@@ -68,6 +68,20 @@ const guestTestCopy={
   vi:{starting:'Đang mở không gian thử nghiệm an toàn …',unavailable:'Thử nghiệm không mật khẩu hiện chưa khả dụng. Hãy dùng đăng nhập thông thường.',displayName:'Quyền truy cập thử nghiệm tổng hợp',active:'Quyền thử nghiệm không mật khẩu đang hoạt động',scope:'Chỉ dữ liệu tổng hợp hoặc ẩn danh hiệu quả · tối đa 2 tài liệu · 2 giờ'}
 }
 
+const guestCapacityCopy={
+  de:'Der sichere Testzugang ist für heute ausgelastet. Bitte versuchen Sie es später erneut oder verwenden Sie die normale Anmeldung.',
+  en:'The secure test access has reached today’s capacity. Please try again later or use the regular sign-in.',
+  fr:'L’accès de test sécurisé a atteint sa capacité pour aujourd’hui. Réessayez plus tard ou utilisez la connexion normale.',
+  tr:'Güvenli test erişimi bugün için kapasitesine ulaştı. Daha sonra tekrar deneyin veya normal girişi kullanın.',
+  pl:'Bezpieczny dostęp testowy osiągnął dzisiejszy limit. Spróbuj ponownie później lub użyj zwykłego logowania.',
+  ru:'Безопасный тестовый доступ исчерпал лимит на сегодня. Попробуйте позже или используйте обычный вход.',
+  ar:'بلغ الوصول التجريبي الآمن سعته لهذا اليوم. حاول لاحقًا أو استخدم تسجيل الدخول العادي.',
+  fa:'ظرفیت دسترسی آزمایشی امن برای امروز تکمیل شده است. بعداً دوباره تلاش کنید یا از ورود عادی استفاده کنید.',
+  ro:'Accesul de test sigur a atins capacitatea pentru astăzi. Încercați mai târziu sau folosiți autentificarea normală.',
+  bg:'Безопасният тестов достъп достигна капацитета за днес. Опитайте по-късно или използвайте обичайното влизане.',
+  vi:'Quyền thử nghiệm an toàn đã đạt giới hạn hôm nay. Hãy thử lại sau hoặc dùng đăng nhập thông thường.'
+}
+
 const eur=value=>`${Number(value||0).toFixed(2).replace('.',',')} €`
 
 const pageCatalogs={
@@ -160,7 +174,7 @@ export default function WorkspaceController({publicOnly=false,initialPaymentConf
   const n=notices[language]||notices.de
   const pui=passwordUi[language]||passwordUi.de
   const recoveryCopy=passwordRecoveryUi[language]||passwordRecoveryUi.de
-  const guestCopy=guestTestCopy[language]||guestTestCopy.de
+  const guestCopy={...(guestTestCopy[language]||guestTestCopy.de),capacity:guestCapacityCopy[language]||guestCapacityCopy.de}
   const uui=uploadUi[language]||uploadUi.de
   const v28=getV28PrivacyCopy(language)
   const v29Password=getV29PasswordCopy(language)
