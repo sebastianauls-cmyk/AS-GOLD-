@@ -43,3 +43,9 @@ assert.deepEqual(upgradeOptions('start'),['professional:70.00','business:480.00'
 assert.deepEqual(upgradeOptions('professional'),['business:410.00'])
 assert.deepEqual(upgradeOptions('business'),[])
 console.log('gold_available_upgrades invoker ACL and three-tier upgrade price regression passed')
+
+const startLimitMigration=fs.readFileSync(new URL('../supabase/migrations/20261031031500_align_start_public_full_analysis.sql',import.meta.url),'utf8')
+assert.match(startLimitMigration,/UPDATE public\.plan_limits[\s\S]*?SET full_analysis = false/i)
+assert.match(startLimitMigration,/WHERE plan_id = 'gold_start'/i)
+assert.doesNotMatch(startLimitMigration,/^\s*(?:DELETE|TRUNCATE|DROP|GRANT|REVOKE)\b/im,'Gold Start capability reconciliation must be non-destructive')
+console.log('Gold Start full-analysis flag aligned with the reduced Start service level')
