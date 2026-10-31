@@ -73,6 +73,12 @@ export function createWorkspaceAuthActions({
     if(accessSnapshot.error){setMessage(getWorkspaceConnectionCopy(language).unavailable);setScreen('workspace-unavailable');return false}
     const row=accessSnapshot.access
     if(!row?.active||row?.status!=='approved'){
+      const guestCapacity=row?.permissions?.access_source==='anonymous_test'&&row?.permissions?.quota_exhausted===true
+      if(guestCapacity){
+        setMessage(guestCopy.capacity||guestCopy.unavailable)
+        setScreen('login')
+        return false
+      }
       setMessage(pendingMessages[language]||pendingMessages.de)
       setScreen('workspace-denied')
       return false
