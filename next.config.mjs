@@ -24,7 +24,7 @@ const securityHeaders=[
   {key:'X-Frame-Options',value:'DENY'},
   {key:'X-XSS-Protection',value:'0'},
   {key:'Cross-Origin-Opener-Policy',value:'same-origin'},
-  {key:'Permissions-Policy',value:'camera=(), microphone=(self), geolocation=(), payment=(), usb=()'},
+  {key:'Permissions-Policy',value:'camera=(self), microphone=(self), geolocation=(), payment=(), usb=()'},
 ]
 
 if(process.env.NODE_ENV==='production'){

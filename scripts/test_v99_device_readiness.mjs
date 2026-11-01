@@ -1,4 +1,6 @@
 import fs from 'node:fs'
+import assert from 'node:assert/strict'
+import nextConfig from '../next.config.mjs'
 
 const panel=fs.readFileSync('app/modules/documents/DeviceReadinessPanel.js','utf8')
 const surface=fs.readFileSync('app/modules/documents/DocumentsSurface.js','utf8')
@@ -6,6 +8,14 @@ const voice=fs.readFileSync('app/modules/documents/VoiceContextInput.js','utf8')
 const errorCopy=fs.readFileSync('app/modules/documents/voiceErrorCopy.mjs','utf8')
 
 const need=(source,needle,label)=>{if(!source.includes(needle))throw new Error(`V99 device guard missing ${label}: ${needle}`)}
+
+// The deployed Permissions-Policy must not pre-deny a user-initiated camera check.
+// Restrict camera and microphone to this origin; browser consent remains required.
+const appHeaders=(await nextConfig.headers()).find(rule=>rule.source==='/:path*')?.headers||[]
+const mediaPolicy=appHeaders.find(header=>header.key.toLowerCase()==='permissions-policy')?.value||''
+assert.match(mediaPolicy,/(?:^|,\s*)camera=\(self\)(?:,|$)/,'same-origin camera readiness must be permitted')
+assert.match(mediaPolicy,/(?:^|,\s*)microphone=\(self\)(?:,|$)/,'same-origin microphone check must remain permitted')
+assert.match(mediaPolicy,/(?:^|,\s*)geolocation=\(\)(?:,|$)/,'unrelated geolocation access remains denied')
 
 need(surface,"./DeviceReadinessPanel",'device readiness import')
 need(surface,'<DeviceReadinessPanel language={interfaceLanguage}/>','device readiness mount')
