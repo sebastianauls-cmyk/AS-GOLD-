@@ -24,6 +24,8 @@ jobs:
         run: python3 scripts/test_primary_refresh_atomicity.py
       - name: Run current release gates
         run: npm run prebuild
+      - name: Run non-paid extreme and pilot stress regression
+        run: node scripts/test_v131_pilot_stress.mjs
       - name: Build production bundle
         run: npm run build
   pdf-evidence:
