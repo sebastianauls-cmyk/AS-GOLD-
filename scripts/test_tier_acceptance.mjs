@@ -26,6 +26,34 @@ const startNext=prioritizeNextStep({language:'de',deadlineStatus:startDeadline.s
 assert.equal(startNext.kind,'deadline')
 assert.ok(startNext.action.length>10)
 
+// KLAR: a different synthetic matter must identify a contradictory demand,
+// show which supporting evidence remains absent and flag the imminent date,
+// without presenting that diagnostic result as a completed deep analysis.
+const klarCase={id:'tier-klar',owner_id:'tier-owner',title:'Offene Nebenkostenabrechnung',goal:'Beträge und Frist vergleichen',summary:'Zwei Schreiben nennen unterschiedliche Beträge.',deadline_at:'2026-11-02',next_action:''}
+const klarDocs=[
+  {id:'klar-1',case_id:klarCase.id,owner_id:klarCase.owner_id,title:'Erste Forderung',document_date:'2026-10-20',extracted_text:'Forderung 3.000,00 EUR. Die Abrechnung liegt nicht bei.'},
+  {id:'klar-2',case_id:klarCase.id,owner_id:klarCase.owner_id,title:'Mahnung',document_date:'2026-10-27',extracted_text:'Forderung 3.300,00 EUR. Bitte zahlen Sie bis 02.11.2026. Eine Aufstellung fehlt.'}
+]
+const klarConsistency=analyzeCaseConsistency({caseItem:klarCase,documents:klarDocs,assessments:[]})
+assert.ok(klarConsistency.deviations.some(item=>item.concept==='forderung'),'Klar must expose contradictory demand amounts')
+assert.ok(klarConsistency.gaps.includes('assessment'),'Klar must keep unreviewed findings visible')
+assert.ok(klarConsistency.gaps.includes('next_action'),'Klar must flag the missing action rather than invent one')
+const klarDeadline=analyzeCaseDeadlines(klarCase,klarDocs,new Date('2026-10-30T12:00:00Z'))
+assert.equal(klarDeadline.status,'high','Klar must prioritize a payment deadline in three days')
+const klarEvidence=caseEvidenceStatus(klarCase,klarDocs,[])
+assert.equal(klarEvidence.complete,false,'Klar must not claim full evidence review without assessments')
+assert.equal(klarEvidence.uncovered.length,2,'Klar must expose both uncovered source documents')
+assert.match(byKey.klar.excluded,/keine vorbereiteten Schreiben/i,'Klar must not promise correspondence')
+
+// Price-independent tier limits: Analyse provides deeper case intelligence,
+// while Komplett adds the letter workflow and Enterprise stays contact-only.
+assert.equal(byKey.analyse.price,89.90)
+assert.match(byKey.analyse.excluded,/Keine vollständige Weiterbearbeitung/i)
+assert.equal(byKey.komplett.price,249.90)
+assert.match(byKey.komplett.checks,/vorbereitete Schreiben/i)
+assert.equal(byKey.enterprise.contactOnly,true)
+assert.equal(byKey.enterprise.price,null)
+
 // ANALYSE/KOMPLETT: several documents with different amounts, dates and missing evidence.
 // ASH must make the conflict visible, preserve chronology, require evidence and create a usable handoff.
 const proCase={id:'tier-professional',owner_id:'tier-owner',title:'Mehrdokumentenfall',goal:'Forderung und Zahlungen abgleichen',summary:'Mehrere Schreiben enthalten unterschiedliche Beträge.',deadline_at:'2026-11-05',next_action:'Differenzen und Belege prüfen'}
@@ -144,5 +172,6 @@ assert.doesNotMatch(businessXml,/Fremdfall|Fremddokument|Fremdentwurf/,'Export m
 
 console.log('TIER ACCEPTANCE PASS')
 console.log(`START: deadline=${startDeadline.status}, ampel=${startAmpel.trafficLight}, next=${startNext.kind}`)
+console.log(`KLAR: deviations=${klarConsistency.deviations.length}, gaps=${klarConsistency.gaps.length}, deadline=${klarDeadline.status}, uncovered=${klarEvidence.uncovered.length}`)
 console.log(`ANALYSE/KOMPLETT: deviations=${proConsistency.deviations.length}, chronology=${timeline.length}, evidence=${evidence.entries[0].status}, handoff=${handoff.ready}`)
 console.log('BUSINESS: synthetic owner-scoped multi-client reopen, stale/foreign approval rejection, approved revision persistence and real DOCX archive passed (not a live E2E test)')
