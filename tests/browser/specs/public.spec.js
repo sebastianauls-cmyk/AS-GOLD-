@@ -270,3 +270,12 @@ test('language menus remain usable with an open video and preserve country and v
   await noHorizontalOverflow(page)
   await capture(page,testInfo,'language-menu-over-video')
 })
+
+test('live document entry preserves same-origin camera and microphone permissions',async({page})=>{
+  const response=await page.goto('/entdecken?lang=de',{waitUntil:'domcontentloaded'})
+  expect(response?.status()).toBe(200)
+  const policy=response?.headers()['permissions-policy']||''
+  expect(policy,'the deployed response must allow user-initiated camera checks').toMatch(/(?:^|,\s*)camera=\(self\)(?:,|$)/)
+  expect(policy,'microphone checks must also remain user-permitted').toMatch(/(?:^|,\s*)microphone=\(self\)(?:,|$)/)
+  expect(policy,'unrelated geolocation must remain blocked').toMatch(/(?:^|,\s*)geolocation=\(\)(?:,|$)/)
+})
