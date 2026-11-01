@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import {plans} from '../app/modules/pricing/catalog.js'
 import {APP_VERSION} from '../app/modules/release/appRelease.mjs'
 
-assert.deepEqual(plans.map(p=>p.key),['free','start','professional','business'])
+assert.deepEqual(plans.map(p=>p.key),['free','start','klar','analyse','komplett','business','enterprise'])
 const read=path=>fs.readFileSync(new URL('../'+path,import.meta.url),'utf8')
 const contract=read('docs/FINAL_PRODUCT_CONTRACT.md')
 const readme=read('README.md')
@@ -13,7 +13,7 @@ for (const name of ['advisors','advisor_referrals']) {
 }
 assert.doesNotMatch(privateAdvisorRls,/^\s*(?:GRANT|REVOKE|CREATE POLICY|DROP|DELETE|TRUNCATE)\b/im,'RLS hardening must not change data or privileges')
 assert.match(readme,new RegExp('ASH Workspace Gold Workspace – '+APP_VERSION))
-for(const fragment of ['Gold Start – 19,90 EUR','Gold Professional – 89,90 EUR','Gold Business – 499,90 EUR','Keine externe Kundenkommunikation ohne ausdrückliche Freigabe','Supabase Leaked-Password-Protection']) assert.ok(contract.includes(fragment),`product contract missing: ${fragment}`)
+for(const fragment of ['Gold Start – 19,90 EUR','Gold Klar – 39,90 EUR','Gold Analyse – 89,90 EUR','Gold Komplett – 249,90 EUR','Gold Business – 499,90 EUR','Enterprise / White-Label','Keine externe Kundenkommunikation ohne ausdrückliche Freigabe','Supabase Leaked-Password-Protection']) assert.ok(contract.includes(fragment),`product contract missing: ${fragment}`)
 
 const pkg=JSON.parse(fs.readFileSync(new URL('../package.json',import.meta.url),'utf8'))
 for(const script of ['test:pricing-tiers','test:tier-acceptance','test:product-deliverables','test:v114-readiness']){
@@ -49,6 +49,7 @@ assert.match(integrations,/can_send/)
 assert.match(integrations,/can_read/)
 
 const checkout=fs.readFileSync(new URL('../app/api/payments/checkout/route.js',import.meta.url),'utf8')
-for(const key of ['start','professional','business']) assert.match(checkout,new RegExp("'"+key+"'"))
+for(const key of ['start','klar','analyse','komplett','business']) assert.match(checkout,new RegExp("'"+key+"'"))
+assert.doesNotMatch(checkout,/PLAN_KEYS[^\n]*enterprise/,'Enterprise must never enter checkout')
 
 console.log('FINAL RELEASE GATE PASS: pricing, tier acceptance, production guest smoke, auth, approvals, integrations and checkout contracts are present.')

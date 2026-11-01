@@ -1,4 +1,4 @@
-// PRODUCT CONTRACT: only Start, Professional and Business may enter checkout. Live payments remain locked until separate legal and operational approval.
+// PRODUCT CONTRACT: only the five fixed Gold tiers may enter checkout. Enterprise remains contact-only. Live payments remain locked until separate legal and operational approval.
 import { sumupCheckoutPayload } from '../../../modules/payments/sumupCheckout.mjs'
 import {
   authenticatePaymentRequest,
@@ -13,7 +13,7 @@ import {
 
 export const dynamic='force-dynamic'
 
-const PLAN_KEYS=new Set(['start','professional','business'])
+const PLAN_KEYS=new Set(['start','klar','analyse','komplett','business'])
 const TERM_MONTHS=new Set([1,3,6,12])
 
 function checkoutErrorCode(error){

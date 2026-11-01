@@ -24,8 +24,8 @@ Rekonstruierte, vollständige Quellcode-Basis der laufenden ASH-Workspace-Gold-A
 
 ## Verbindlicher Abschlussvertrag
 - Maßgeblich für Produktgrenzen, Tariflogik, Freigaben, externe Konfigurationen und Release-Abnahme ist `docs/FINAL_PRODUCT_CONTRACT.md`.
-- Aktive Bezahlstufen: **Gold Start 19,90 €**, **Gold Professional 89,90 €**, **Gold Business 499,90 €** je 30 Tage.
-- Legacy-Tarife dürfen nur als inaktive historische Datensätze bestehen bleiben.
+- Aktive Bezahlstufen: **Gold Start 19,90 €**, **Gold Klar 39,90 €**, **Gold Analyse 89,90 €**, **Gold Komplett 249,90 €** und **Gold Business 499,90 €** je 30 Tage.
+- **Enterprise / White-Label** ist ein Kontaktangebot ohne Online-Checkout. Der frühere Tarif Gold Professional bleibt ausschließlich als inaktiver historischer Datensatz erhalten.
 - Fertigstellung vor Erweiterung: keine neuen Module, solange reproduzierbare Fehler oder Abnahmelücken offen sind.
 
 ## Stand

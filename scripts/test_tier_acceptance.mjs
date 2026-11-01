@@ -15,7 +15,7 @@ import {caseEvidenceStatus} from '../app/modules/cases/lib/caseEvidence.mjs'
 const byKey=Object.fromEntries(plans.map(plan=>[plan.key,plan]))
 
 // START: one simple matter. ASH must identify the urgent issue and return a usable next step
-// without pretending to perform the deeper Professional workflow.
+// without pretending to perform the deeper Analyse/Komplett workflow.
 const startCase={id:'tier-start',owner_id:'tier-owner',title:'Mahnung nach Teilzahlung',goal:'Verstehen, was jetzt zu tun ist',summary:'Eine Rechnung wurde teilweise bezahlt.',next_action:''}
 const startDoc={id:'tier-start-doc',case_id:startCase.id,owner_id:startCase.owner_id,title:'Mahnung',document_date:'2026-10-29',created_at:'2026-10-29T10:00:00Z',updated_at:'2026-10-29T10:00:00Z',extracted_text:'Mahnung. Restbetrag 3.000,00 EUR. Bitte zahlen Sie bis 02.11.2026. Eine Abschlussbestätigung liegt noch nicht vor.'}
 const startDeadline=analyzeCaseDeadlines(startCase,[startDoc],new Date('2026-10-30T12:00:00Z'))
@@ -26,7 +26,7 @@ const startNext=prioritizeNextStep({language:'de',deadlineStatus:startDeadline.s
 assert.equal(startNext.kind,'deadline')
 assert.ok(startNext.action.length>10)
 
-// PROFESSIONAL: several documents with different amounts, dates and missing evidence.
+// ANALYSE/KOMPLETT: several documents with different amounts, dates and missing evidence.
 // ASH must make the conflict visible, preserve chronology, require evidence and create a usable handoff.
 const proCase={id:'tier-professional',owner_id:'tier-owner',title:'Mehrdokumentenfall',goal:'Forderung und Zahlungen abgleichen',summary:'Mehrere Schreiben enthalten unterschiedliche Beträge.',deadline_at:'2026-11-05',next_action:'Differenzen und Belege prüfen'}
 const proDocs=[
@@ -35,16 +35,16 @@ const proDocs=[
  {id:'p3',case_id:proCase.id,owner_id:proCase.owner_id,title:'Korrektur',document_date:'2026-10-28',created_at:'2026-10-28T10:00:00Z',updated_at:'2026-10-28T10:00:00Z',extracted_text:'Korrektur. Forderung 3.000,00 EUR. Die zusätzliche Forderung von 300,00 EUR wird zurückgezogen. Zahlung ist noch nicht bestätigt.'}
 ]
 const proConsistency=analyzeCaseConsistency({caseItem:proCase,documents:proDocs,assessments:[]})
-assert.ok(proConsistency.deviations.length>0,'Professional must expose conflicting amounts/dates across documents')
+assert.ok(proConsistency.deviations.length>0,'Analyse must expose conflicting amounts/dates across documents')
 const timeline=sortTimelineEntries(proDocs.map(documentTimelineEntry))
-assert.deepEqual(timeline.map(row=>row.date),['2026-10-20','2026-10-25','2026-10-28'],'Professional must preserve document chronology')
+assert.deepEqual(timeline.map(row=>row.date),['2026-10-20','2026-10-25','2026-10-28'],'Analyse must preserve document chronology')
 const assessment={id:'a1',case_id:proCase.id,owner_id:proCase.owner_id,title:'Offener Restbetrag',traffic_light:'yellow',reasoning:'Die Korrektur nennt 3.000,00 EUR; Zahlung ist noch offen.',next_step:'Zahlungsempfängerdaten und Abschlussbestätigung anfordern.',source_document_id:'p3',source_document_updated_at:'2026-10-28T10:00:00Z',source_excerpt:'Zahlung ist noch nicht bestätigt.',source_locator:'Korrektur, letzter Satz',source_reviewed_at:'2026-10-30T12:00:00Z'}
 const evidence=caseEvidenceStatus(proCase,proDocs,[assessment])
-assert.equal(evidence.entries[0].status,'reviewed','Professional must retain a verifiable source reference')
+assert.equal(evidence.entries[0].status,'reviewed','Analyse must retain a verifiable source reference')
 const handoff=buildProfessionalHandoff({title:proCase.title,goal:proCase.goal,summary:proCase.summary,deadline:proCase.deadline_at,nextAction:proCase.next_action,documents:proDocs.map(d=>({title:d.title,date:d.document_date})),assessments:[{trafficLight:'yellow',title:assessment.title,reasoning:assessment.reasoning,nextStep:assessment.next_step}],timeline})
-assert.equal(handoff.ready,true,'Professional must create a complete structured handoff')
+assert.equal(handoff.ready,true,'Komplett must create a complete structured handoff')
 
-// BUSINESS: Professional plus organization/control. The active product must expose multiple clients/cases,
+// BUSINESS: Komplett plus organization/control. The active product must expose multiple clients/cases,
 // approvals, audit trail, integrations and exports instead of merely promising "more AI".
 const controller=fs.readFileSync(new URL('../app/modules/workspace/WorkspaceController.js',import.meta.url),'utf8')
 const repoSource=fs.readFileSync(new URL('../app/modules/services/workspaceRepository.js',import.meta.url),'utf8')
@@ -144,5 +144,5 @@ assert.doesNotMatch(businessXml,/Fremdfall|Fremddokument|Fremdentwurf/,'Export m
 
 console.log('TIER ACCEPTANCE PASS')
 console.log(`START: deadline=${startDeadline.status}, ampel=${startAmpel.trafficLight}, next=${startNext.kind}`)
-console.log(`PROFESSIONAL: deviations=${proConsistency.deviations.length}, chronology=${timeline.length}, evidence=${evidence.entries[0].status}, handoff=${handoff.ready}`)
+console.log(`ANALYSE/KOMPLETT: deviations=${proConsistency.deviations.length}, chronology=${timeline.length}, evidence=${evidence.entries[0].status}, handoff=${handoff.ready}`)
 console.log('BUSINESS: synthetic owner-scoped multi-client reopen, stale/foreign approval rejection, approved revision persistence and real DOCX archive passed (not a live E2E test)')

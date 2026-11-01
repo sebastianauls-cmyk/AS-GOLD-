@@ -130,8 +130,10 @@ for(const {key:language,rtl} of LANGUAGE_CATALOG){
   nodes(head).find(node=>node.type==='button').props.onClick();assert.deepEqual(events.pop(),['screen','login'])
   const pricing=PublicPricingSection({...props,c,onRegister:()=>events.push(['screen','register'])})
   const registerButtons=nodes(pricing).filter(node=>node.type==='button')
-  assert.equal(registerButtons.length,localizedPlans.length)
+  assert.equal(registerButtons.length,localizedPlans.filter(plan=>!plan.contactOnly).length)
   registerButtons.forEach(button=>{button.props.onClick();assert.deepEqual(events.pop(),['screen','register'])})
+  const enterpriseContact=nodes(pricing).find(node=>node.type==='a'&&node.props.href==='/kontakt')
+  assert.ok(enterpriseContact,'Enterprise must lead to contact instead of registration or checkout')
 }
 for(const file of ['PublicProductTour.js','publicExperienceCopy.mjs','PublicLanguageCountryModule.js','publicLanguageCountryCopy.mjs'])assert.doesNotMatch(fs.readFileSync(`app/modules/public/${file}`,'utf8'),/supabase|fetch\(|axios/,'the public preview must never fetch private case records or trigger AI')
 console.log('Public product journey passed: 11 languages, 14 countries in independent origin/target selectors, plain explanation and translation preview, same-country handling, 8 tour areas and their callbacks, registration/login, tariffs, video and one installation entry. Browser layout acceptance remains separate.')
