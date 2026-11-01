@@ -6,12 +6,20 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  # A source refresh commits with GITHUB_TOKEN. That push does not start
+  # ordinary push workflows; verify the resulting main SHA after completion.
+  workflow_run:
+    workflows: ['Refresh public primary texts']
+    types: [completed]
 
 permissions:
   contents: read
 
 jobs:
   verify:
+    # On a source refresh, run only when it succeeded and advanced main.
+    # A no-op scheduled refresh must not consume CI runner time.
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_sha != github.sha) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -29,6 +37,9 @@ jobs:
       - name: Build production bundle
         run: npm run build
   pdf-evidence:
+    # On a source refresh, run only when it succeeded and advanced main.
+    # A no-op scheduled refresh must not consume CI runner time.
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_sha != github.sha) }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
