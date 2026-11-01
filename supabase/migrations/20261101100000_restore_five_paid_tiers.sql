@@ -2,6 +2,21 @@
 -- Enterprise / White-Label is contact-only and intentionally has no database plan.
 -- Gold Professional remains inactive for historical references only.
 
+-- Move every affected row to a collision-free temporary rank first because
+-- private.gold_plans.rank is unique.
+update private.gold_plans
+set rank=case plan_key
+  when 'start' then 101
+  when 'klar' then 102
+  when 'analyse' then 103
+  when 'komplett' then 104
+  when 'business' then 105
+  when 'professional' then 190
+end,
+active=case when plan_key='professional' then false else active end,
+updated_at=now()
+where plan_key in ('start','klar','analyse','komplett','business','professional');
+
 update private.gold_plans
 set rank=1,price_eur=19.90,term_days=30,document_limit=null,
     full_analysis=false,draft_letters=false,business_mode=false,active=true,updated_at=now()
@@ -30,6 +45,21 @@ where plan_key='business';
 update private.gold_plans
 set rank=90,active=false,updated_at=now()
 where plan_key='professional';
+
+-- Keep the public sort order collision-free as well if a database constraint
+-- is added later.
+update public.pricing_plans
+set sort_order=case plan_id
+  when 'gold_start' then 101
+  when 'gold_klar' then 102
+  when 'gold_analyse' then 103
+  when 'gold_komplett' then 104
+  when 'gold_business' then 105
+  when 'gold_professional' then 190
+end,
+active=case when plan_id='gold_professional' then false else active end,
+updated_at=now()
+where plan_id in ('gold_start','gold_klar','gold_analyse','gold_komplett','gold_business','gold_professional');
 
 update public.pricing_plans
 set display_name='Gold Start',monthly_price=19.90,sort_order=1,is_free=false,active=true,updated_at=now()
