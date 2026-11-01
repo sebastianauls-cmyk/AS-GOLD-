@@ -6,6 +6,9 @@ const read=path=>fs.readFileSync(new URL(`../${path}`,import.meta.url),'utf8')
 
 assert.ok(APP_RELEASE.number>=110,'navigation and metadata corrections require release V110 or newer')
 
+const discovery=read('app/entdecken/page.js')
+assert.match(discovery, /export const metadata=\{title:'ASH kennenlernen'\}/, 'public discovery title must append the product name only through the root template')
+
 const legalRoutes=['cookies','datenschutz','datenschutzsteuerung','impressum','ki-transparenz','kontakt','nutzungsbedingungen','rechtliches','widerruf']
 for(const route of legalRoutes){
   const page=read(`app/${route}/page.js`)
