@@ -1,6 +1,12 @@
 name: ASH Production Guest Smoke
 
 on:
+  # One controlled push trigger is used for the current production acceptance.
+  # It is restricted to this workflow file and removed again after the run.
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/production-guest-smoke.yml'
   # Live sign-in consumes an approved anonymous test slot (20 per rolling 24h).
   # Git pushes are already checked by CI/browser tests; never exhaust production
   # guest capacity by launching this live test on every code or SQL change.
