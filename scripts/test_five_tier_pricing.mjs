@@ -1,11 +1,21 @@
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
-import {plans,goalTier,tierRank} from '../app/modules/pricing/catalog.js'
+import {plans,goalTier,tierRank,planJourney} from '../app/modules/pricing/catalog.js'
 
 const keys=plans.map(plan=>plan.key)
 assert.deepEqual(keys,['free','start','klar','analyse','komplett','business','enterprise'])
 
 const byKey=Object.fromEntries(plans.map(plan=>[plan.key,plan]))
+
+// Business must describe the active predecessor (Komplett) in every public language.
+// Professional is an inactive legacy plan and must not be advertised as included.
+for(const [language,journey] of Object.entries(planJourney)){
+  assert.match(journey.business.expectation,/Komplett/u,
+    `Business journey in ${language} must refer to the active Komplett tier`)
+  assert.doesNotMatch(journey.business.expectation,/Professional/u,
+    `Business journey in ${language} must not promote inactive Professional`)
+}
+
 assert.equal(byKey.start.price,19.90)
 assert.equal(byKey.klar.price,39.90)
 assert.equal(byKey.analyse.price,89.90)
