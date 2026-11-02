@@ -45,7 +45,7 @@ export const planJourney = {
     klar:{stage:'Seviye 3 · Netlik',headline:'Ne eksik, ne önemli?',knowledge:'Belgeleriniz var; eksikleri, çelişkileri ve süreleri görmek istiyorsunuz.',expectation:'Sadece özet değil, açık öncelikler bekliyorsunuz.'},
     analyse:{stage:'Seviye 4 · Değerlendirme',headline:'Durumum nedir?',knowledge:'Bağlantıları, riskleri ve seçenekleri anlamak istiyorsunuz.',expectation:'Somut sonraki adımlarla daha derin bir değerlendirme bekliyorsunuz.'},
     komplett:{stage:'Seviye 5 · İşleme',headline:'Dosyam kapsamlı işlensin',knowledge:'Konunuz karmaşık ve bir bütün olarak yapılandırılıp işlenmeli.',expectation:'Tek akışta analiz, öneriler ve hazırlanmış yazılar bekliyorsunuz.'},
-    business:{stage:'Seviye 6 · Business',headline:'Birden çok dosya ve kişiyi yönetiyorum',knowledge:'Müşteri, dosya, onay, entegrasyon, standart ve tekrarlanan süreçlerle çalışıyorsunuz.',expectation:'Professional dosya zekâsı ile kontrollü organizasyon ve süreç yönetimi bekliyorsunuz.'},
+    business:{stage:'Seviye 6 · Business',headline:'Birden çok dosya ve kişiyi yönetiyorum',knowledge:'Müşteri, dosya, onay, entegrasyon, standart ve tekrarlanan süreçlerle çalışıyorsunuz.',expectation:'Komplett düzeyinde kapsamlı dosya işleme ile kontrollü organizasyon ve süreç yönetimi bekliyorsunuz.'},
     enterprise:{stage:'Seviye 7 · Enterprise',headline:'Kuruma özel uygulama',knowledge:'Koordineli kurulum, yönetişim, entegrasyon veya white-label görünümüne ihtiyacınız var.',expectation:'Belgeli bir teklif ve yalnızca açıkça kararlaştırılan hizmetlerin etkinleştirilmesini beklersiniz.'}
   },
   pl:{
@@ -55,7 +55,7 @@ export const planJourney = {
     klar:{stage:'Poziom 3 · Jasność',headline:'Czego brakuje i co jest ważne?',knowledge:'Masz już dokumenty i chcesz wykryć braki, sprzeczności oraz terminy.',expectation:'Oczekujesz jasnych priorytetów, a nie tylko podsumowania.'},
     analyse:{stage:'Poziom 4 · Ocena',headline:'Jaka jest moja sytuacja?',knowledge:'Chcesz zrozumieć zależności, ryzyka i możliwe działania.',expectation:'Oczekujesz pogłębionej oceny i konkretnych kolejnych kroków.'},
     komplett:{stage:'Poziom 5 · Opracowanie',headline:'Chcę kompleksowo opracować sprawę',knowledge:'Sprawa jest złożona i powinna być uporządkowana oraz opracowana jako całość.',expectation:'Oczekujesz analizy, rekomendacji i przygotowanych pism w jednym procesie.'},
-    business:{stage:'Poziom 6 · Business',headline:'Zarządzam wieloma sprawami i osobami',knowledge:'Pracujesz z klientami, sprawami, akceptacjami, integracjami, standardami i procesami.',expectation:'Oczekujesz inteligencji sprawy Professional oraz kontrolowanego zarządzania organizacją i procesami.'},
+    business:{stage:'Poziom 6 · Business',headline:'Zarządzam wieloma sprawami i osobami',knowledge:'Pracujesz z klientami, sprawami, akceptacjami, integracjami, standardami i procesami.',expectation:'Oczekujesz kompleksowej obsługi spraw na poziomie Komplett oraz kontrolowanego zarządzania organizacją i procesami.'},
     enterprise:{stage:'Poziom 7 · Enterprise',headline:'Indywidualne wdrożenie',knowledge:'Potrzebujesz uzgodnionego wdrożenia, governance, integracji lub wersji white-label.',expectation:'Oczekujesz udokumentowanej oferty i aktywacji tylko wyraźnie uzgodnionych usług.'}
   },
   ru:{
@@ -65,7 +65,7 @@ export const planJourney = {
     klar:{stage:'Уровень 3 · Ясность',headline:'Чего не хватает и что важно?',knowledge:'У вас уже есть документы, и вы хотите увидеть пробелы, противоречия и сроки.',expectation:'Вы ожидаете ясные приоритеты, а не только резюме.'},
     analyse:{stage:'Уровень 4 · Оценка',headline:'Каково моё положение?',knowledge:'Вы хотите понять связи, риски и варианты действий.',expectation:'Вы ожидаете углублённую оценку с конкретными следующими шагами.'},
     komplett:{stage:'Уровень 5 · Обработка',headline:'Я хочу комплексно обработать дело',knowledge:'Ситуация сложная и должна быть структурирована и обработана как единое целое.',expectation:'Вы ожидаете анализ, рекомендации и подготовленные письма в одном процессе.'},
-    business:{stage:'Уровень 6 · Business',headline:'Я управляю несколькими делами и людьми',knowledge:'Вы работаете с клиентами, делами, согласованиями, интеграциями, стандартами и процессами.',expectation:'Вы ожидаете интеллектуальную обработку Professional плюс контролируемое управление организацией и процессами.'},
+    business:{stage:'Уровень 6 · Business',headline:'Я управляю несколькими делами и людьми',knowledge:'Вы работаете с клиентами, делами, согласованиями, интеграциями, стандартами и процессами.',expectation:'Вы ожидаете комплексную обработку дел уровня Komplett и контролируемое управление организацией и процессами.'},
     enterprise:{stage:'Уровень 7 · Enterprise',headline:'Индивидуальное внедрение',knowledge:'Вам нужны согласованное внедрение, управление, интеграции или white-label.',expectation:'Вы ожидаете документированное предложение и активацию только согласованных услуг.'}
   },
   ar:{
@@ -75,7 +75,7 @@ export const planJourney = {
     klar:{stage:'المستوى 3 · الوضوح',headline:'ما الناقص وما المهم؟',knowledge:'لديك مستندات وتريد اكتشاف النواقص والتناقضات والمواعيد.',expectation:'تتوقع أولويات واضحة، وليس مجرد ملخص.'},
     analyse:{stage:'المستوى 4 · التقييم',headline:'ما هو موقفي؟',knowledge:'تريد فهم الروابط والمخاطر وخيارات التصرف.',expectation:'تتوقع تقييماً أعمق مع خطوات تالية محددة.'},
     komplett:{stage:'المستوى 5 · المعالجة',headline:'أريد معالجة الحالة بشكل شامل',knowledge:'حالتك معقدة ويجب تنظيمها ومعالجتها كوحدة متكاملة.',expectation:'تتوقع تحليلاً وتوصيات وخطابات مُعدة ضمن سير عمل واحد.'},
-    business:{stage:'المستوى 6 · Business',headline:'أدير عدة حالات وأشخاص',knowledge:'تعمل مع عملاء وحالات وموافقات وتكاملات ومعايير وعمليات متكررة.',expectation:'تتوقع ذكاء الحالة Professional مع إدارة منظمة ومضبوطة للعمليات.'},
+    business:{stage:'المستوى 6 · Business',headline:'أدير عدة حالات وأشخاص',knowledge:'تعمل مع عملاء وحالات وموافقات وتكاملات ومعايير وعمليات متكررة.',expectation:'تتوقع معالجة شاملة للحالات بمستوى Komplett إلى جانب إدارة منظمة ومضبوطة للعمليات.'},
     enterprise:{stage:'المستوى 7 · Enterprise',headline:'تنفيذ مخصص للمؤسسة',knowledge:'تحتاج إلى إطلاق منسق أو حوكمة أو تكاملات أو هوية white-label.',expectation:'تتوقع عرضاً موثقاً وتفعيل الخدمات المتفق عليها صراحة فقط.'}
   }
 }
