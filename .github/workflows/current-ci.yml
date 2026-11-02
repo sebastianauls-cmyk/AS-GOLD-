@@ -28,6 +28,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Verify export-owner relation integrity in disposable Postgres
+        run: node scripts/test_v160_export_owner_integrity.mjs
       - name: Verify complete primary-source refresh
         run: python3 scripts/test_primary_refresh_atomicity.py
       - name: Run current release gates
