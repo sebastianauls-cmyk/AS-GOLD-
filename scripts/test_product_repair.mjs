@@ -32,7 +32,7 @@ for(let step=0;step<4;step++) {
     assert.equal(Buffer.from(segments[0],'base64url').length,12,'AES-GCM IV has 12 bytes')
     const expectedPlaintext=JSON.stringify({state:result.state,issuedAt,runId:recovered.runId})
     assert.equal(Buffer.from(segments[1],'base64url').length,Buffer.byteLength(expectedPlaintext)+16,'ciphertext carries a 16-byte AES-GCM authentication tag')
-    assert.deepEqual(recovered.state,result.state,'the authenticated checkpoint restores exactly the original unreviewed state')
+    assert.deepEqual(recovered.state,JSON.parse(JSON.stringify(result.state)),'the authenticated checkpoint restores exactly the JSON-serializable unreviewed state')
     state=recovered.state
   }else {assert.equal(result.status,'completed');assert.equal(result.attempts,2);assert.deepEqual(result.result,roadmapTestResult)}
 }
