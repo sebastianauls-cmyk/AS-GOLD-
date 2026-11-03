@@ -23,8 +23,17 @@ for(let step=0;step<4;step++) {
   if(step<3) {
     assert.equal(result.status,'processing');assert.equal(result.result,undefined,'no early approval')
     token=await sealModelCheckpoint({state:result.state,binding,secret,issuedAt})
-    assert.ok(!token.includes('candidate')&&!token.includes('Nora'),'unreviewed content is encrypted')
-    state=(await openModelCheckpoint({token,binding,secret})).state
+    // Ciphertext is base64url, so a random token can contain a short readable
+    // name by chance. Check AES-GCM framing and authenticated round-trip
+    // instead of searching random ciphertext for accidental substrings.
+    const recovered=await openModelCheckpoint({token,binding,secret})
+    const segments=token.split('.')
+    assert.equal(segments.length,2,'sealed checkpoint has IV and ciphertext segments')
+    assert.equal(Buffer.from(segments[0],'base64url').length,12,'AES-GCM IV has 12 bytes')
+    const expectedPlaintext=JSON.stringify({state:result.state,issuedAt,runId:recovered.runId})
+    assert.equal(Buffer.from(segments[1],'base64url').length,Buffer.byteLength(expectedPlaintext)+16,'ciphertext carries a 16-byte AES-GCM authentication tag')
+    assert.deepEqual(recovered.state,JSON.parse(JSON.stringify(result.state)),'the authenticated checkpoint restores exactly the JSON-serializable unreviewed state')
+    state=recovered.state
   }else {assert.equal(result.status,'completed');assert.equal(result.attempts,2);assert.deepEqual(result.result,roadmapTestResult)}
 }
 assert.ok(mock.requests.every(value=>value.reasoning.effort==='high'),'full review retained')
