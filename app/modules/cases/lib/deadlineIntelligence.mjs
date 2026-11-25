@@ -100,6 +100,13 @@ export function extractDeadlineDates(value){
     if(!date) continue
     const context=sentenceContext(text,match.index,match[0].length)
     const before=context.slice(0,context.indexOf(match[0]))
+    // Explicitly denied deadlines are not actionable dates. Restrict this to
+    // complete, unambiguous clauses; preserve questions, conditional language
+    // and separate positive deadlines for review.
+    const after=context.slice(context.indexOf(match[0])+match[0].length)
+    const deniedBefore=/^(?:es\s+)?besteht\s+keine\s+(?:zahlungs|antwort|stellungnahme)?frist\s+bis(?:\s+zum)?\s*$/iu.test(before)&&/^\s*$/u.test(after)
+    const deniedAfter=/^(?:eine|die)\s+(?:zahlungs|antwort|stellungnahme)?frist\s+bis(?:\s+zum)?\s*$/iu.test(before)&&/^\s+besteht\s+nicht\s*$/iu.test(after)
+    if(deniedBefore||deniedAfter)continue
     const earlier=[...before.matchAll(new RegExp(DATE_RE.source,'g'))].at(-1)
     const localCue=earlier?before.slice(earlier.index+earlier[0].length):before
     // "Abrechnungszeitraum 01.08.2025 bis 31.07.2026" describes the

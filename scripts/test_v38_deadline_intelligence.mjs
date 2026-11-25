@@ -55,6 +55,27 @@ assert.equal(analyzeDeadlines({text:'Unterlagen zum Abrechnungszeitraum bitte bi
 assert.equal(analyzeDeadlines({text:'Besprechung vom 03.10.2026 bis 05.10.2026.',now:receiptDate}).primary,null)
 assert.equal(analyzeDeadlines({text:'Frist bis 05.10.2026.',now:receiptDate}).status,'overdue','actual overdue deadlines remain visible')
 
+
+// Explicitly denied deadlines must not trigger an urgent recommendation.
+const denialNow=new Date('2026-11-25T12:00:00Z')
+for(const text of [
+  'Rechnung R-123. Es besteht keine Zahlungsfrist bis 27.11.2026. Die Zahlung ist freiwillig.',
+  'Eine Frist bis 27.11.2026 besteht nicht. Der Termin zur Besprechung ist am 04.12.2026.',
+  'Es besteht keine Frist bis zum 27.11.2026.',
+  'Die Zahlungsfrist bis zum 27.11.2026 besteht nicht.'
+]){
+  const result=analyzeDeadlines({text,now:denialNow})
+  assert.equal(result.status,'uncertain',text)
+  assert.equal(result.primary,null,text)
+}
+const denialMixed='Es besteht keine Zahlungsfrist bis 27.11.2026. Ihre Stellungnahme muss bis 04.12.2026 eingehen.'
+assert.equal(analyzeDeadlines({text:denialMixed,now:denialNow}).primary.date,'2026-12-04')
+assert.equal(analyzeDeadlines({text:denialMixed,now:denialNow}).candidates,1)
+assert.equal(analyzeDeadlines({text:'Es besteht keine Zahlungsfrist bis 27.11.2026.',caseDeadline:'2026-11-27',now:denialNow}).primary.source,'case')
+assert.equal(analyzeDeadlines({text:'Es besteht eine Zahlungsfrist bis 27.11.2026.',now:denialNow}).status,'immediate')
+assert.equal(analyzeDeadlines({text:'Die Frist bis 27.11.2026 wurde aufgehoben. Ihre Stellungnahme muss bis 04.12.2026 eingehen.',now:denialNow}).primary.date,'2026-12-04')
+assert.equal(analyzeDeadlines({text:'Es besteht keine Zahlungsfrist bis 27.11.2026?',now:denialNow}).candidates,1,'unclear question remains reviewable')
+
 const card=fs.readFileSync(new URL('../app/modules/cases/DeadlineCard.js',import.meta.url),'utf8')
 const layout=fs.readFileSync(new URL('../app/layout.js',import.meta.url),'utf8')
 const directCases=fs.readFileSync(new URL('../app/modules/cases/CaseWorkspace.js',import.meta.url),'utf8')
